@@ -1,6 +1,6 @@
 import { ShieldAlert, ShieldCheck, Clock3, Lock, Download } from 'lucide-react';
-import SectionCard from '../components/ui/SectionCard';
-import StatusBadge from '../components/ui/StatusBadge';
+import SectionCard from '../../components/ui/SectionCard';
+import StatusBadge from '../../components/ui/StatusBadge';
 
 const auditLogs = [
   { time: '14:32:07', event: 'HOSTEL_SUSPENDED', target: 'HST-003 · Green Valley Residency', severity: 'danger', code: 'LOG-8821' },

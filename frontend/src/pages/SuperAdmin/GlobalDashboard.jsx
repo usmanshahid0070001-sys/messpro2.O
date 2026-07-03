@@ -1,13 +1,11 @@
-import { ArrowUpRight, Building2, Database, Users, Utensils, Shield, Sparkles } from 'lucide-react';
-import StatusBadge from '../components/ui/StatusBadge';
-import SectionCard from '../components/ui/SectionCard';
-import StatCard from '../components/ui/StatCard';
+import { ArrowUpRight, Building2, Database, Users, Utensils } from 'lucide-react';
+import StatCard from '../../components/ui/StatCard';
 
 const metrics = [
-  { label: 'Platform MRR', value: '$94,280', note: 'Monthly recurring', delta: '+18.4%', icon: Database, accent: '#fb923c' },
-  { label: 'Active Hostels', value: '63', note: '4 pending review', delta: '+3', icon: Building2, accent: '#22c55e' },
-  { label: 'Total Students', value: '12,847', note: 'Across all tenants', delta: '+924', icon: Users, accent: '#14b8a6' },
-  { label: 'Meals Served', value: '284K', note: 'This month', delta: '+12.1%', icon: Utensils, accent: '#eab308' },
+  { label: 'Platform MRR', value: '$94,280', note: 'Monthly recurring', change: '+18.4%', icon: Database, accent: '#fb923c' },
+  { label: 'Active Hostels', value: '63', note: '4 pending review', change: '+3', icon: Building2, accent: '#22c55e' },
+  { label: 'Total Students', value: '12,847', note: 'Across all tenants', change: '+924', icon: Users, accent: '#14b8a6' },
+  { label: 'Meals Served', value: '284K', note: 'This month', change: '+12.1%', icon: Utensils, accent: '#eab308' },
 ];
 
 const planData = [
@@ -33,7 +31,7 @@ export default function GlobalDashboard() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.65fr_0.85fr]">
-        <div className="rounded-3xl border border-white/10 bg-slate-900/90 p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+        <div className="card p-5">
           <div className="mb-4 flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Revenue Trend</p>
@@ -44,28 +42,82 @@ export default function GlobalDashboard() {
               +32.8% YTD
             </span>
           </div>
-          <div className="relative overflow-hidden rounded-3xl bg-slate-950/70 p-4">
-            <svg viewBox="0 0 680 300" className="h-[320px] w-full">
-              <defs>
-                <linearGradient id="revLine" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#fb923c" stopOpacity="0.42" />
-                  <stop offset="100%" stopColor="#fb923c" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <rect x="0" y="0" width="680" height="300" rx="24" fill="#0f172a" />
-              <path d="M60 214 C140 206 220 216 300 190 C380 170 460 160 540 150 C620 136 660 120 720 104" fill="none" stroke="#fb923c" strokeWidth="4" strokeLinecap="round" />
-              <path d="M60 214 C140 206 220 216 300 190 C380 170 460 160 540 150 C620 136 660 120 720 104 L720 300 L60 300 Z" fill="url(#revLine)" opacity="0.9" />
-            </svg>
+
+          <div className="chart-viewport">
+            <div className="chart-surface">
+              <svg viewBox="0 0 680 300" className="h-[320px] w-full" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="revLine" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#fb923c" stopOpacity="0.42" />
+                    <stop offset="100%" stopColor="#fb923c" stopOpacity="0" />
+                  </linearGradient>
+                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="8" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                <rect x="0" y="0" width="680" height="300" rx="24" fill="#0f172a" />
+
+                <path
+                  d="M60 214 C140 206 220 216 300 190 C380 170 460 160 540 150 C620 136 660 120 720 104"
+                  fill="none"
+                  stroke="#fb923c"
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                  strokeOpacity="0.12"
+                  filter="url(#glow)"
+                />
+                {/* x-axis labels (months) */}
+                <g className="chart-axes" fill="#9aa0ad" fontSize="12" textAnchor="middle">
+                  <text x="60" y="272">Jan</text>
+                  <text x="140" y="272">Feb</text>
+                  <text x="220" y="272">Mar</text>
+                  <text x="300" y="272">Apr</text>
+                  <text x="380" y="272">May</text>
+                  <text x="460" y="272">Jun</text>
+                  <text x="540" y="272">Jul</text>
+                  <text x="620" y="272">Aug</text>
+                </g>
+
+                {/* y-axis labels */}
+                <g className="chart-axes" fill="#9aa0ad" fontSize="12" textAnchor="end">
+                  <text x="46" y="40">$100k</text>
+                  <text x="46" y="100">$75k</text>
+                  <text x="46" y="160">$50k</text>
+                  <text x="46" y="220">$25k</text>
+                  <text x="46" y="280">$0k</text>
+                </g>
+
+                <path
+                  d="M60 214 C140 206 220 216 300 190 C380 170 460 160 540 150 C620 136 660 120 720 104 L720 300 L60 300 Z"
+                  fill="url(#revLine)"
+                  opacity="0.9"
+                />
+
+                <path
+                  d="M60 214 C140 206 220 216 300 190 C380 170 460 160 540 150 C620 136 660 120 720 104"
+                  fill="none"
+                  stroke="#fb923c"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-3xl border border-white/10 bg-slate-900/90 p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+          <div className="card p-5">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-white">Plan Breakdown</p>
               </div>
             </div>
+
             <div className="space-y-4">
               {planData.map((plan) => (
                 <div key={plan.name}>
@@ -79,6 +131,7 @@ export default function GlobalDashboard() {
                 </div>
               ))}
             </div>
+
             <div className="mt-6 rounded-3xl border border-white/10 bg-slate-950/60 p-4">
               <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Platform Health</p>
               <div className="mt-4 space-y-3 text-sm text-slate-300">
@@ -100,13 +153,14 @@ export default function GlobalDashboard() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-slate-900/90 p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+      <div className="card p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-white">Recent Audit Events</p>
           </div>
           <button className="text-sm text-orange-400 hover:text-orange-300">View all →</button>
         </div>
+
         <div className="grid gap-3 text-sm text-slate-300">
           {auditEvents.map((event) => (
             <div key={event.time} className="grid gap-2 rounded-3xl border border-white/10 bg-slate-950/70 p-4 md:grid-cols-[90px_200px_1fr] items-center">

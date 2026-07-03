@@ -15,7 +15,18 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #020617;
+  background: linear-gradient(90deg, #030614 0%, #07111a 100%);
+  background-color: #020617;
+}
+
+/* Global CSS variables for MessPro theme */
+:root {
+  --mp-bg: #030614;
+  --mp-surface: #0b1220;
+  --mp-panel: #0f172a;
+  --mp-accent: #fb923c;
+  --mp-muted: #9a9fae;
+  --mp-border: rgba(255,255,255,0.06);
 }
 
 * {

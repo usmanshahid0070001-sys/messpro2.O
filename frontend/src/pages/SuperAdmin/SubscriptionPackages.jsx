@@ -1,6 +1,6 @@
 import { CreditCard, BarChart3, ArrowUpRight } from 'lucide-react';
-import SectionCard from '../components/ui/SectionCard';
-import StatusBadge from '../components/ui/StatusBadge';
+import SectionCard from '../../components/ui/SectionCard';
+import StatusBadge from '../../components/ui/StatusBadge';
 
 const packages = [
   { tier: 'Basic', price: '$49/mo', limit: '500 students', admins: '2 admins', support: 'Email only', badge: 'warning' },

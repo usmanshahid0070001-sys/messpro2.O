@@ -1,6 +1,6 @@
 import { Building2, Users, ClipboardList, AlertTriangle } from 'lucide-react';
-import SectionCard from '../components/ui/SectionCard';
-import StatusBadge from '../components/ui/StatusBadge';
+import SectionCard from '../../components/ui/SectionCard';
+import StatusBadge from '../../components/ui/StatusBadge';
 
 const tenants = [
   { id: 'HST-001', name: 'Al-Noor Boys Hostel', location: 'Lahore', admin: 'Usman Tariq', plan: 'Enterprise', status: 'Active', revenue: '$2,840' },

@@ -1,6 +1,6 @@
 export default function StatCard({ label, value, note, change, icon: Icon, accent }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 shadow-sm shadow-black/20">
+    <div className="card p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm text-slate-400">{label}</p>

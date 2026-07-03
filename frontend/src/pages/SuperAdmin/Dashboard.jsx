@@ -1,6 +1,6 @@
-import StatCard from '../components/ui/StatCard';
-import SectionCard from '../components/ui/SectionCard';
-import StatusBadge from '../components/ui/StatusBadge';
+import StatCard from '../../components/ui/StatCard';
+import SectionCard from '../../components/ui/SectionCard';
+import StatusBadge from '../../components/ui/StatusBadge';
 
 function Building2Icon(props) {
   return (

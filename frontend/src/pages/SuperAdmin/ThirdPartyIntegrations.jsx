@@ -1,6 +1,6 @@
 import { Cloud, Zap, ShieldCheck, ArrowRight } from 'lucide-react';
-import SectionCard from '../components/ui/SectionCard';
-import ToggleSwitch from '../components/ui/ToggleSwitch';
+import SectionCard from '../../components/ui/SectionCard';
+import ToggleSwitch from '../../components/ui/ToggleSwitch';
 
 const integrations = [
   { name: 'Stripe', type: 'Payment', active: true },

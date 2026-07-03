@@ -1,6 +1,6 @@
 import { SlidersHorizontal, Paintbrush, Layers } from 'lucide-react';
-import SectionCard from '../components/ui/SectionCard';
-import ToggleSwitch from '../components/ui/ToggleSwitch';
+import SectionCard from '../../components/ui/SectionCard';
+import ToggleSwitch from '../../components/ui/ToggleSwitch';
 
 const settings = [
   { label: 'Auto meal verification', description: 'Enable automated validation for daily meal claims.', enabled: true },
@@ -15,10 +15,10 @@ export default function CustomizationMatrix() {
       <SectionCard title="Feature controls" subtitle="Platform configuration toggles for the Super Admin." action={<button className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10">Save changes</button>}>
         <div className="grid gap-4 lg:grid-cols-2">
           {settings.map((setting) => (
-            <div key={setting.label} className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">
+            <div key={setting.label} className="card p-5">
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-slate-800 p-3 text-slate-200">
-                  <Slider className="h-5 w-5" />
+                  <SlidersHorizontal className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="font-semibold text-white">{setting.label}</p>

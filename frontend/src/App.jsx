@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import SuperAdminLayout from './components/layout/SuperAdminLayout.jsx';
-import GlobalDashboard from './pages/GlobalDashboard.jsx';
-import TenantManagement from './pages/TenantManagement.jsx';
-import SubscriptionPackages from './pages/SubscriptionPackages.jsx';
-import CustomizationMatrix from './pages/CustomizationMatrix.jsx';
-import ThirdPartyIntegrations from './pages/ThirdPartyIntegrations.jsx';
-import SecurityControls from './pages/SecurityControls.jsx';
+import GlobalDashboard from './pages/SuperAdmin/GlobalDashboard.jsx';
+import TenantManagement from './pages/SuperAdmin/TenantManagement.jsx';
+import SubscriptionPackages from './pages/SuperAdmin/SubscriptionPackages.jsx';
+import CustomizationMatrix from './pages/SuperAdmin/CustomizationMatrix.jsx';
+import ThirdPartyIntegrations from './pages/SuperAdmin/ThirdPartyIntegrations.jsx';
+import SecurityControls from './pages/SuperAdmin/SecurityControls.jsx';
 
 export default function App() {
   return (
