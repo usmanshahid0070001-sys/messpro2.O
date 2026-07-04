@@ -2,11 +2,93 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- SEO -->
+    <title>MessPro — Smart Mess Management System</title>
+    <meta name="description" content="MessPro is a modern mess management platform for universities and hostels. Manage meals, billing, attendance, and more." />
+    <meta name="keywords" content="mess management, hostel management, meal tracking, billing system, university mess" />
+    <link rel="canonical" href="https://messprouet.vercel.app/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="MessPro — Smart Mess Management System" />
+    <meta property="og:description" content="Modern mess management platform for universities and hostels." />
+    <meta property="og:url" content="https://messprouet.vercel.app/" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MessPro — Smart Mess Management System" />
+    <meta name="twitter:description" content="Modern mess management platform for universities and hostels." />
+
+    <!-- Google Fonts: Inter + Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- PWA -->
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <meta name="theme-color" content="#060812" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "MessPro",
+      "description": "Smart Mess Management System for universities and hostels",
+      "url": "https://messprouet.vercel.app/",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web"
+    }
+    </script>
+
+    <!-- Initial Loader Styles -->
+    <style>
+      #initial-loader-container {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #060812;
+        transition: opacity 0.5s ease;
+      }
+      .loader-spinner {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 3px solid rgba(99, 102, 241, 0.2);
+        border-top-color: #3b82f6;
+        animation: spin 0.8s linear infinite;
+      }
+      .loader-text {
+        font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        color: #ffffff;
+        font-size: 16px;
+        margin-left: 10px;
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      .loader-dot { color: #3b82f6; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
   </head>
   <body>
+    <!-- Initial Loading Screen (faded out by React after mount) -->
+    <div id="initial-loader-container">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="loader-spinner"></div>
+        <span class="loader-text">Loading MessPro<span class="loader-dot">.</span></span>
+      </div>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
