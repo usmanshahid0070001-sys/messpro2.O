@@ -11,6 +11,7 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+    
   return (
     <aside className="hidden w-72 shrink-0 border-r border-white/10 bg-slate-950/95 lg:flex lg:flex-col">
       <div className="border-b border-white/10 px-6 py-6">
