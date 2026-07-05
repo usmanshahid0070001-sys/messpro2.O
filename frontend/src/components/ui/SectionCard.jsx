@@ -1,14 +1,16 @@
 export default function SectionCard({ title, subtitle, children, action }) {
   return (
-    <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-sm shadow-black/20">
-      <div className="mb-4 flex items-start justify-between gap-3">
+    <section className="glass-panel rounded-3xl p-6 md:p-8 shadow-sm">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
-          {subtitle ? <p className="mt-1 text-sm text-slate-400">{subtitle}</p> : null}
+          <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h2>
+          {subtitle ? <p className="mt-1.5 text-sm font-semibold text-slate-500 dark:text-[#888888]">{subtitle}</p> : null}
         </div>
-        {action}
+        {action && <div className="shrink-0">{action}</div>}
       </div>
-      {children}
+      <div className="w-full">
+        {children}
+      </div>
     </section>
   );
 }

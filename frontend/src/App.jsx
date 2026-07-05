@@ -14,13 +14,8 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import ManagerDashboard from "./pages/ManagerDashboard.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 
-// SuperAdmin (existing)
-import GlobalDashboard from "./pages/SuperAdmin/GlobalDashboard.jsx";
-import TenantManagement from "./pages/SuperAdmin/TenantManagement.jsx";
-import SubscriptionPackages from "./pages/SuperAdmin/SubscriptionPackages.jsx";
-import CustomizationMatrix from "./pages/SuperAdmin/CustomizationMatrix.jsx";
-import ThirdPartyIntegrations from "./pages/SuperAdmin/ThirdPartyIntegrations.jsx";
-import SecurityControls from "./pages/SuperAdmin/SecurityControls.jsx";
+// SuperAdmin Dashboard
+import SuperAdminDashboard from "./pages/SuperAdminDashboard.jsx";
 
 export default function App() {
   return (
@@ -46,57 +41,41 @@ export default function App() {
 
         {/* ─── Protected Tenant Dashboard Routes ─────────────────── */}
         <Route
-          path="/admin-dashboard"
+          path="/admin-dashboard/*"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
-              <DashboardLayout />
+              <AdminDashboard />
             </ProtectedRoute>
           }
-        >
-          <Route index element={<AdminDashboard />} />
-          {/* Add more nested admin routes here */}
-        </Route>
+        />
         
         <Route
-          path="/manager-dashboard"
+          path="/manager-dashboard/*"
           element={
             <ProtectedRoute allowedRoles={["manager"]}>
-              <DashboardLayout />
+              <ManagerDashboard />
             </ProtectedRoute>
           }
-        >
-          <Route index element={<ManagerDashboard />} />
-          {/* Add more nested manager routes here */}
-        </Route>
+        />
         
         <Route
-          path="/student-dashboard"
+          path="/student-dashboard/*"
           element={
             <ProtectedRoute allowedRoles={["student"]}>
-              <DashboardLayout />
+              <StudentDashboard />
             </ProtectedRoute>
           }
-        >
-          <Route index element={<StudentDashboard />} />
-          {/* Add more nested student routes here */}
-        </Route>
+        />
 
-        {/* ─── SuperAdmin Routes (existing) ───────────────────────── */}
+        {/* ─── SuperAdmin Route ───────────────────────── */}
         <Route
-          path="/super-admin"
+          path="/super-admin/*"
           element={
             <ProtectedRoute allowedRoles={["superadmin"]}>
-              <DashboardLayout />
+              <SuperAdminDashboard />
             </ProtectedRoute>
           }
-        >
-          <Route index element={<GlobalDashboard />} />
-          <Route path="hostels" element={<TenantManagement />} />
-          <Route path="subscriptions" element={<SubscriptionPackages />} />
-          <Route path="customization" element={<CustomizationMatrix />} />
-          <Route path="integrations" element={<ThirdPartyIntegrations />} />
-          <Route path="security" element={<SecurityControls />} />
-        </Route>
+        />
 
         {/* ─── Fallback ───────────────────────────────────────────── */}
         <Route path="*" element={<Navigate to="/" replace />} />

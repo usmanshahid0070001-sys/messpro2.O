@@ -1,71 +1,91 @@
-import { Outlet, useLocation } from 'react-router-dom';
-import UnifiedSidebar from './UnifiedSidebar';
-import UnifiedTopBar from './UnifiedTopBar';
-import { useAuth } from '../../context/AuthContext';
+import { Outlet } from "react-router-dom";
+import DashboardNavbar from "./DashboardNavbar";
+import DashboardSidebar from "./DashboardSidebar";
+import useUIStore from "../../store/useUIStore";
 
-// Centralized page titles and subtitles mapping
-const PAGE_META = {
-  // SuperAdmin
-  '/super-admin': { title: 'Platform Overview', sub: 'MessPro SaaS · Platform Control Center' },
-  '/super-admin/hostels': { title: 'Tenant Management', sub: 'Manage tenant locations, contracts, and billing status.' },
-  '/super-admin/subscriptions': { title: 'Subscription Packages', sub: 'Review package performance and contract health.' },
-  '/super-admin/customization': { title: 'Customization Matrix', sub: 'Configure platform defaults, feature toggles, and policies.' },
-  '/super-admin/integrations': { title: 'Third-Party Integrations', sub: 'Third-party gateway connectivity and status management.' },
-  '/super-admin/security': { title: 'Security Controls', sub: 'System protection, audit trails, and emergency controls.' },
-  
-  // Admin
-  '/admin-dashboard': { title: 'Admin Overview', sub: 'Manage your hostel operations' },
-  '/admin-dashboard/users': { title: 'Staff & Users', sub: 'Manage staff and student access' },
-  '/admin-dashboard/billing': { title: 'Billing', sub: 'Review financial transactions' },
-  '/admin-dashboard/settings': { title: 'Settings', sub: 'Hostel configuration' },
-  
-  // Manager
-  '/manager-dashboard': { title: 'Manager Overview', sub: 'Daily operations control' },
-  '/manager-dashboard/menu': { title: 'Menu Planning', sub: 'Set up weekly meals' },
-  '/manager-dashboard/inventory': { title: 'Inventory', sub: 'Stock management' },
-  '/manager-dashboard/reports': { title: 'Reports', sub: 'Consumption and waste reports' },
-
-  // Student
-  '/student-dashboard': { title: 'Student Overview', sub: 'Your mess portal' },
-  '/student-dashboard/menu': { title: 'Weekly Menu', sub: 'See whats cooking' },
-  '/student-dashboard/invoices': { title: 'Invoices', sub: 'Your billing history' },
-  '/student-dashboard/feedback': { title: 'Feedback', sub: 'Share your thoughts' },
-};
-
-export default function DashboardLayout() {
-  const location = useLocation();
-  const { role } = useAuth();
-  
-  // Fallback defaults if route isn't mapped
-  const currentMeta = PAGE_META[location.pathname] || { 
-    title: role ? `${role.charAt(0).toUpperCase() + role.slice(1)} Dashboard` : 'Dashboard', 
-    sub: 'Welcome back' 
-  };
+export default function DashboardLayout({
+  userRole,
+  navItems,
+  activeTab,
+  setActiveTab,
+  children,
+}) {
+  const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#030712] text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
-      <div className="flex min-h-screen relative overflow-hidden">
-        
-        {/* Sidebar Component */}
-        <UnifiedSidebar />
-        
-        {/* Main Content Area */}
-        <div className="flex flex-1 flex-col min-w-0 transition-all duration-300">
-          
-          <UnifiedTopBar title={currentMeta.title} subtitle={currentMeta.sub} />
-          
-          {/* Outlet Wrapper */}
-          <main className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8 bg-slate-50/30 dark:bg-[#030712] transition-colors duration-300 relative">
-            
-            {/* Ambient Background Blur (Subtle, Premium look) */}
-            <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-indigo-50/50 to-transparent dark:from-indigo-950/20 pointer-events-none -z-10 transition-colors duration-300"></div>
+    <div className="min-h-screen bg-slate-50/50 dark:bg-[#050505] font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
+      
+      {/* Global Navbar */}
+      <DashboardNavbar />
 
-            <div className="max-w-7xl mx-auto w-full pb-20">
-              <Outlet />
+      <div className="flex pt-[72px] min-h-screen relative z-10">
+        {/* Desktop Sidebar (Hover-based) */}
+        <DashboardSidebar
+          navItems={navItems}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          userRole={userRole}
+        />
+
+        {/* Dynamic Page Content */}
+        <main 
+          className="flex-1 overflow-y-auto p-4 md:p-6 md:pt-8 pb-10 transition-all duration-300 ease-in-out lg:ml-[116px]"
+        >
+          <div className="h-full max-w-[1400px] mx-auto">
+            {children || <Outlet />}
+          </div>
+        </main>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          onClick={toggleMobileMenu}
+        />
+      )}
+
+      {/* Mobile Drawer */}
+      <div 
+        className={`fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-[#0a0a0a] border-r border-slate-200 dark:border-[#222222] z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-black font-black flex items-center justify-center">
+              M
             </div>
-          </main>
+            <span className="text-xl font-black text-slate-900 dark:text-white">MessPro</span>
+          </div>
+
+          <nav className="space-y-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    toggleMobileMenu();
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold ${
+                    isActive 
+                      ? "bg-slate-100 dark:bg-[#1a1a1a] text-slate-900 dark:text-white" 
+                      : "text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#111111]"
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </div>
+
     </div>
   );
 }

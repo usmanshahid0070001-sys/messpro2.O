@@ -18,10 +18,10 @@ body {
   min-height: 100vh;
 }
 
-/* Dark mode body background - Richer Metallic Black */
+/* Dark mode body background - Clean Monochrome Black */
 .dark body,
 body.dark {
-  background-color: #030712; /* Deep slate/zinc black instead of raw 050505 */
+  background-color: #050505;
   color: #f8fafc;
 }
 
@@ -53,13 +53,13 @@ input {
 }
 
 .dark {
-  /* Rich Dark Theme Variables */
-  --mp-bg: #030712;
-  --mp-surface: #0f172a;
-  --mp-panel: #1e293b;
+  /* Clean Monochrome Dark Theme Variables */
+  --mp-bg: #050505;
+  --mp-surface: #0a0a0a;
+  --mp-panel: #111111;
   --mp-accent: #ffffff;
-  --mp-muted: #94a3b8;
-  --mp-border: rgba(255,255,255,0.06);
+  --mp-muted: #888888;
+  --mp-border: #222222;
 }
 
 /* ─── GLASSMORPHISM UTILITIES ─────────────────────────────────────────── */
@@ -67,14 +67,14 @@ input {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .dark .glass-panel {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(10, 10, 10, 0.6);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid #222222;
 }
 
 /* ─── SCROLLBAR UTILITIES ─────────────────────────────────────────────── */

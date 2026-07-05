@@ -1,54 +1,35 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
-import {
-  managerPayBill,
-  managerPartiallyPayBill,
-  managerUpdateMenu,
-} from '../../api/endpoints/manager.api';
+import { managerApi } from '../../api/endpoints/manager.api';
 
-// ─── MANAGER MUTATION HOOKS ─────────────────────────────────────────────────
-
-export const usePayBill = (options = {}) => {
+export const useUpdateMenu = () => {
   const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: managerPayBill,
+    mutationFn: (menuData) => managerApi.updateMenu(menuData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['managerAllBills'] });
-      toast.success('Bill paid successfully!');
+      queryClient.invalidateQueries({ queryKey: ['menuSchedule'] });
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Payment failed');
-    },
-    ...options,
   });
 };
 
-export const usePartialPayBill = (options = {}) => {
+export const usePayBill = () => {
   const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: managerPartiallyPayBill,
+    mutationFn: (billId) => managerApi.payBill(billId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['managerAllBills'] });
-      toast.success('Partial payment recorded!');
+      queryClient.invalidateQueries({ queryKey: ['allBills'] });
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Partial payment failed');
-    },
-    ...options,
   });
 };
 
-export const useUpdateManagerMenu = (options = {}) => {
+export const usePartialPayBill = () => {
   const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: managerUpdateMenu,
+    mutationFn: ({ billId, amount }) => managerApi.partialPayBill(billId, amount),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['managerMenu'] });
-      toast.success('Menu updated!');
+      queryClient.invalidateQueries({ queryKey: ['allBills'] });
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to update menu');
-    },
-    ...options,
   });
 };

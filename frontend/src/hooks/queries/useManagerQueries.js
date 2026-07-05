@@ -1,41 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  managerGetDailyCounts,
-  managerGetMenu,
-  managerGetStudentBill,
-  managerGetAllBills,
-} from '../../api/endpoints/manager.api';
+import { managerApi } from '../../api/endpoints/manager.api';
 
-// ─── MANAGER QUERY HOOKS ────────────────────────────────────────────────────
-
-export const useManagerDailyCounts = (date) => {
+export const useDailyCounts = (date) => {
   return useQuery({
     queryKey: ['dailyCounts', date],
-    queryFn: () => managerGetDailyCounts(date),
-    enabled: !!date,
-    refetchInterval: 30000, // 30 seconds for live data
+    queryFn: () => managerApi.getDailyCounts(date),
+    refetchInterval: 30000,
     staleTime: 1000 * 30,
+    enabled: !!date,
   });
 };
 
-export const useManagerMenu = () => {
+export const useMenuSchedule = () => {
   return useQuery({
-    queryKey: ['managerMenu'],
-    queryFn: managerGetMenu,
+    queryKey: ['menuSchedule'],
+    queryFn: () => managerApi.getMenu(),
   });
 };
 
-export const useManagerStudentBill = (rollNumber) => {
+export const useAllBills = () => {
   return useQuery({
-    queryKey: ['managerStudentBill', rollNumber],
-    queryFn: () => managerGetStudentBill(rollNumber),
-    enabled: !!rollNumber,
-  });
-};
-
-export const useManagerAllBills = () => {
-  return useQuery({
-    queryKey: ['managerAllBills'],
-    queryFn: managerGetAllBills,
+    queryKey: ['allBills'],
+    queryFn: () => managerApi.getAllBills(),
   });
 };

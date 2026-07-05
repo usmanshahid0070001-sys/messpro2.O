@@ -1,3 +1,115 @@
+import { useState } from "react";
+import { Utensils, LayoutDashboard, CreditCard } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useLocation, useNavigate } from "react-router-dom";
+
+// Feature Components (to be migrated in Phase 3)
+import LiveCounts from "../features/manager/LiveCounts";
+// import WeeklyMenu from "../features/manager/WeeklyMenu";
+// import ManageBills from "../features/manager/ManageBills";
+
+// Shared UI Components (V1 Layout + Premium Theme)
+import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/shared/PageHeader";
+
+// Auth & API
+import { useAuth } from "../context/AuthContext";
+
 export default function ManagerDashboard() {
-  return <div className="p-8">Manager Dashboard Placeholder</div>;
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const pathParts = location.pathname.split("/");
+  const currentTab = pathParts[pathParts.length - 1];
+
+  const activeTab = (currentTab === "manager-dashboard" || !currentTab) 
+                    ? "overview" 
+                    : currentTab;
+
+  const setActiveTab = (tabId) => {
+    navigate(`/manager-dashboard/${tabId}`);
+  };
+
+  const navItems = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "menu", label: "Weekly Menu", icon: Utensils },
+    { id: "bills", label: "Bill Management", icon: CreditCard },
+  ];
+
+  const getHeaderContent = () => {
+    switch (activeTab) {
+      case "menu":
+        return {
+          title: "Weekly",
+          highlightText: "Menu",
+          subtitle: "Curate and manage the dining schedule for the week.",
+          badgeText: "Menu Management",
+          icon: Utensils,
+        };
+      case "bills":
+        return {
+          title: "Bill",
+          highlightText: "Clearance Desk",
+          subtitle: "Search, filter, and process partial or full bill payments.",
+          badgeText: "Financial Operations",
+          icon: CreditCard,
+        };
+      default:
+        return {
+          title: "Hello,",
+          highlightText: user?.name || "Manager",
+          subtitle: "Monitor real-time meal counts and session active bookings.",
+          badgeText: "Kitchen Command Center",
+          icon: LayoutDashboard,
+        };
+    }
+  };
+
+  const headerContent = getHeaderContent();
+
+  return (
+    <DashboardLayout
+      userRole="manager"
+      navItems={navItems}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+    >
+      <PageHeader
+        title={headerContent.title}
+        highlightText={headerContent.highlightText}
+        subtitle={headerContent.subtitle}
+        badgeText={headerContent.badgeText}
+        icon={headerContent.icon}
+      />
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {activeTab === "overview" && (
+            <div className="max-w-4xl mx-auto">
+              <LiveCounts />
+            </div>
+          )}
+
+          {activeTab === "menu" && (
+            <div className="w-full max-w-5xl mx-auto flex items-center justify-center h-64 glass-panel rounded-3xl">
+              <p className="text-slate-500 font-bold">Weekly Menu (Migration Pending)</p>
+            </div>
+          )}
+
+          {activeTab === "bills" && (
+            <div className="w-full flex items-center justify-center h-64 glass-panel rounded-3xl">
+               <p className="text-slate-500 font-bold">Manage Bills (Migration Pending)</p>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </DashboardLayout>
+  );
 }

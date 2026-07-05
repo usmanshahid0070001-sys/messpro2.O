@@ -29,7 +29,7 @@ export default function LoginForm() {
 
   const onSubmit = (data) => {
     setShowForgot(false);
-    
+
     loginMutation.mutate(
       {
         rollNumber: data.identifier,
@@ -48,7 +48,7 @@ export default function LoginForm() {
           }
           toast.error(
             error.response?.data?.message ||
-              "Login failed. Please check your credentials.",
+            "Login failed. Please check your credentials.",
           );
         },
       }
@@ -57,7 +57,7 @@ export default function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-white dark:bg-[#050505] transition-colors duration-300 relative overflow-hidden">
-      
+
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -82,7 +82,7 @@ export default function LoginForm() {
             <img
               src="/pwa-512x512.png"
               alt="MessPro Logo"
-              className="relative w-full h-full object-contain drop-shadow-sm dark:drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] grayscale dark:brightness-200"
+              className="relative w-full h-full object-contain drop-shadow-sm dark:drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] dark:brightness-180"
             />
           </motion.div>
 
