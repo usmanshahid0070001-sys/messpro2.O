@@ -1,21 +1,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { studentApi } from '../../api/endpoints/student.api';
 import toast from 'react-hot-toast';
-import { studentUpdateSelections } from '../../api/endpoints/student.api';
 
-// ─── STUDENT MUTATION HOOKS ─────────────────────────────────────────────────
-
-export const useUpdateMealSelections = (options = {}) => {
+export const useUpdateMealSelections = () => {
   const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: (payload) => studentUpdateSelections({ weeklyAttendance: payload }),
+    mutationFn: (selections) => studentApi.updateMealSelections(selections),
     onSuccess: () => {
+      // Invalidate all weekly selections to fetch fresh data
       queryClient.invalidateQueries({ queryKey: ['weeklySelections'] });
-      toast.success('Meal selections saved!');
+      toast.success('Meal selections updated successfully!');
     },
     onError: (error) => {
-      const msg = error.response?.data?.message || 'Failed to save selections';
-      toast.error(msg);
-    },
-    ...options,
+      toast.error(error.response?.data?.message || 'Failed to update meal selections');
+    }
   });
 };

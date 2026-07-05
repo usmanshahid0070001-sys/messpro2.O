@@ -6,7 +6,7 @@ import { loginSchema } from "./authSchema.js";
 import { motion } from "framer-motion";
 import { Lock, User, Loader2, AlertCircle } from "lucide-react";
 
-import api from "../../api/client";
+import { useLoginMutation } from "../../hooks/mutations/useAuthMutations";
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 
@@ -25,38 +25,39 @@ export default function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data) => {
-    try {
-      setShowForgot(false);
+  const loginMutation = useLoginMutation();
 
-      const response = await api.post(`/api/auth/login`, {
+  const onSubmit = (data) => {
+    setShowForgot(false);
+    
+    loginMutation.mutate(
+      {
         rollNumber: data.identifier,
         password: data.password,
-      });
-
-      const { user } = response.data;
-
-      login(user);
-      toast.success(`Welcome back, ${user.name}!`);
-
-      navigate(`/${user.role}-dashboard`);
-    } catch (error) {
-      if (error.response?.status === 401) {
-        setShowForgot(true);
+      },
+      {
+        onSuccess: (responseData) => {
+          const { user } = responseData;
+          login(user);
+          toast.success(`Welcome back, ${user.name}!`);
+          navigate(`/${user.role === 'admin' ? 'admin-dashboard' : user.role === 'manager' ? 'manager-dashboard' : user.role === 'student' ? 'student-dashboard' : 'super-admin'}`);
+        },
+        onError: (error) => {
+          if (error.response?.status === 401) {
+            setShowForgot(true);
+          }
+          toast.error(
+            error.response?.data?.message ||
+              "Login failed. Please check your credentials.",
+          );
+        },
       }
-
-      toast.error(
-        error.response?.data?.message ||
-          "Login failed. Please check your credentials.",
-      );
-    }
+    );
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-white dark:bg-[#050505] transition-colors duration-300 relative overflow-hidden">
       
-      {/* Background Ambient Glow (Sleek Neutral) */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-slate-100/50 dark:bg-[#111111] rounded-full blur-[120px] pointer-events-none"></div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -167,10 +168,10 @@ export default function LoginForm() {
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              disabled={isSubmitting}
+              disabled={loginMutation.isPending}
               className="w-full flex items-center justify-center gap-2 py-4 mt-8 font-bold text-white dark:text-black uppercase tracking-widest bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 rounded-2xl transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? (
+              {loginMutation.isPending ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 "Sign In"

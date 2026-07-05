@@ -5,6 +5,9 @@ import LoginForm from "./features/auth/LoginForm.jsx";
 import ProtectedRoute from "./features/auth/ProtectedRoute.jsx";
 import PublicRoute from "./features/auth/PublicRoute.jsx";
 
+// Dashboard Layout
+import DashboardLayout from "./components/layout/DashboardLayout.jsx";
+
 // Tenant Dashboard Pages
 import LandingPage from "./pages/LandingPage/index.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
@@ -12,7 +15,6 @@ import ManagerDashboard from "./pages/ManagerDashboard.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 
 // SuperAdmin (existing)
-import SuperAdminLayout from "./components/layout/SuperAdminLayout.jsx";
 import GlobalDashboard from "./pages/SuperAdmin/GlobalDashboard.jsx";
 import TenantManagement from "./pages/SuperAdmin/TenantManagement.jsx";
 import SubscriptionPackages from "./pages/SuperAdmin/SubscriptionPackages.jsx";
@@ -44,36 +46,47 @@ export default function App() {
 
         {/* ─── Protected Tenant Dashboard Routes ─────────────────── */}
         <Route
-          path="/admin-dashboard/*"
+          path="/admin-dashboard"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
-              <AdminDashboard />
+              <DashboardLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AdminDashboard />} />
+          {/* Add more nested admin routes here */}
+        </Route>
+        
         <Route
-          path="/manager-dashboard/*"
+          path="/manager-dashboard"
           element={
             <ProtectedRoute allowedRoles={["manager"]}>
-              <ManagerDashboard />
+              <DashboardLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<ManagerDashboard />} />
+          {/* Add more nested manager routes here */}
+        </Route>
+        
         <Route
-          path="/student-dashboard/*"
+          path="/student-dashboard"
           element={
             <ProtectedRoute allowedRoles={["student"]}>
-              <StudentDashboard />
+              <DashboardLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<StudentDashboard />} />
+          {/* Add more nested student routes here */}
+        </Route>
 
         {/* ─── SuperAdmin Routes (existing) ───────────────────────── */}
         <Route
           path="/super-admin"
           element={
             <ProtectedRoute allowedRoles={["superadmin"]}>
-              <SuperAdminLayout />
+              <DashboardLayout />
             </ProtectedRoute>
           }
         >

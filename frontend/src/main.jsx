@@ -6,7 +6,9 @@ import { Toaster } from 'react-hot-toast';
 // Local Imports
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
-import { ThemeProvider } from './context/ThemeContext.jsx';
+import { Provider } from 'react-redux';
+import { store } from './store/store.js';
+import useUIStore from './store/useUIStore.js';
 import { initVersionCheck } from './utils/versionCheck.js';
 import './index.css';
 
@@ -46,6 +48,20 @@ const customToastOptions = {
 
 // Smoothly fades out and removes the initial index.html loading screen
 const RootApp = () => {
+  // Initialize theme from Zustand
+  const { theme } = useUIStore();
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+  }, [theme]);
+
   useEffect(() => {
     const loader = document.getElementById('initial-loader-container');
     if (loader) {
@@ -68,7 +84,7 @@ const RootApp = () => {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+      <Provider store={store}>
         <AuthProvider>
           
           <RootApp />
@@ -79,7 +95,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           />
           
         </AuthProvider>
-      </ThemeProvider>
+      </Provider>
     </QueryClientProvider>
   </React.StrictMode>
 );

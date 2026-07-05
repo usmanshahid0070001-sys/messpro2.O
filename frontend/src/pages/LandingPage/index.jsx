@@ -8,7 +8,7 @@ import {
   AnimatePresence,
 } from "framer-motion";
 import { ArrowRight, Activity, Users, ShieldCheck, Terminal, Server, Mail, Globe, ExternalLink, Moon, Sun, Menu, CheckCircle2, Zap, Smartphone, Calculator, Check, Lock, Database } from "lucide-react";
-import { useTheme } from "../../context/ThemeContext";
+import useUIStore from "../../store/useUIStore";
 import { useAuth } from "../../context/AuthContext";
 
 // ─── CONSTANTS & DATA ────────────────────────────────────────────────────────
@@ -189,7 +189,7 @@ const FadeIn = ({ children, delay = 0, y = 30, className = "" }) => {
 
 const LandingNavbar = () => {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useUIStore();
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const scrollY = useScrollY();

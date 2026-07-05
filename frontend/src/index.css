@@ -18,17 +18,17 @@ body {
   min-height: 100vh;
 }
 
-/* Dark mode body background - Metallic Black */
+/* Dark mode body background - Richer Metallic Black */
 .dark body,
 body.dark {
-  background-color: #050505; /* Deep black */
-  color: #f1f5f9;
+  background-color: #030712; /* Deep slate/zinc black instead of raw 050505 */
+  color: #f8fafc;
 }
 
 /* Light mode body background - Crisp White */
 .light body,
 body {
-  background-color: #ffffff;
+  background-color: #fafafa;
   color: #0f172a;
 }
 
@@ -44,22 +44,37 @@ input {
 /* ─── GLOBAL CSS VARIABLES ────────────────────────────────────────────── */
 :root {
   /* Light Theme Variables */
-  --mp-bg: #ffffff;
-  --mp-surface: #f8fafc;
+  --mp-bg: #fafafa;
+  --mp-surface: #ffffff;
   --mp-panel: #ffffff;
-  --mp-accent: #0f172a; /* Sleek slate accent instead of purple */
+  --mp-accent: #0f172a; 
   --mp-muted: #64748b;
-  --mp-border: rgba(0,0,0,0.08);
+  --mp-border: rgba(0,0,0,0.06);
 }
 
 .dark {
-  /* Metallic Black Theme Variables */
-  --mp-bg: #050505;
-  --mp-surface: #121212;
-  --mp-panel: #1a1a1a;
+  /* Rich Dark Theme Variables */
+  --mp-bg: #030712;
+  --mp-surface: #0f172a;
+  --mp-panel: #1e293b;
   --mp-accent: #ffffff;
-  --mp-muted: #888888;
-  --mp-border: rgba(255,255,255,0.08);
+  --mp-muted: #94a3b8;
+  --mp-border: rgba(255,255,255,0.06);
+}
+
+/* ─── GLASSMORPHISM UTILITIES ─────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ─── SCROLLBAR UTILITIES ─────────────────────────────────────────────── */

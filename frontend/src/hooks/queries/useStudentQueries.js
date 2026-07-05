@@ -1,52 +1,37 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  studentGetWeeklySelections,
-  studentGetMealSchedule,
-  studentGetHistory,
-  studentGetMonthlyBill,
-  studentGetMealTimings,
-} from '../../api/endpoints/student.api';
-
-// ─── STUDENT QUERY HOOKS ────────────────────────────────────────────────────
+import { studentApi } from '../../api/endpoints/student.api';
 
 export const useWeeklySelections = (dates) => {
   return useQuery({
     queryKey: ['weeklySelections', dates],
-    queryFn: () => studentGetWeeklySelections(dates),
-    enabled: !!dates,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    queryFn: () => studentApi.getWeeklySelections(dates),
+    enabled: !!dates && dates.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
 export const useMenuSchedule = () => {
   return useQuery({
     queryKey: ['weeklyMenuSchedule'],
-    queryFn: studentGetMealSchedule,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    queryFn: () => studentApi.getMenuSchedule(),
+    staleTime: 10 * 60 * 1000,
   });
 };
 
 export const useMealHistory = (year, month) => {
   return useQuery({
     queryKey: ['mealHistory', year, month],
-    queryFn: () => studentGetHistory({ year, month }),
-    enabled: year != null && month != null,
-    staleTime: 1000 * 60 * 5,
+    queryFn: () => studentApi.getMealHistory(year, month),
+    enabled: !!year && !!month,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
 export const useMonthlyBill = (month) => {
   return useQuery({
     queryKey: ['monthlyBill', month],
-    queryFn: () => studentGetMonthlyBill(month),
+    queryFn: () => studentApi.getMonthlyBill(month),
     enabled: !!month,
-    staleTime: 1000 * 60 * 5,
-  });
-};
-
-export const useMealTimings = () => {
-  return useQuery({
-    queryKey: ['mealTimings'],
-    queryFn: studentGetMealTimings,
+    staleTime: 5 * 60 * 1000,
   });
 };
