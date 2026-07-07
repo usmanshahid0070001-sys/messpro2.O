@@ -1,5 +1,6 @@
 import { ArrowUpRight, Building2, Database, Users, Utensils } from 'lucide-react';
 import StatCard from '../../components/ui/StatCard';
+import SectionCard from '../../components/ui/SectionCard';
 
 const metrics = [
   { label: 'Platform MRR', value: '$94,280', note: 'Monthly recurring', change: '+18.4%', icon: Database, accent: '#fb923c' },

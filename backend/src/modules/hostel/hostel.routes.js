@@ -1,5 +1,5 @@
 import express from 'express';
-import { createHostel, getHostels,updateSettings } from './hostel.controller.js';
+import { createHostel, getHostels, updateSettings } from './hostel.controller.js';
 
 
 const router = express.Router();
@@ -10,6 +10,6 @@ router.route('/')
   .post(createHostel);
 
 
-  router.route('/:id/settings').patch(updateSettings);
+router.route('/:id/settings').patch(updateSettings);
 
 export default router;

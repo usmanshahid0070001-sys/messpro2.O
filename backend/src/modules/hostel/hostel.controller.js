@@ -1,5 +1,5 @@
 import hostelService from "./hostel.service.js";
-import { createHostelSchema,updateSettingsSchema } from './hostel.validation.js';
+import { createHostelSchema, updateSettingsSchema } from './hostel.validation.js';
 import { catchAsync } from "../../utils/catchAsync.js";
 
 // export const createHostel=async (req,res)=>{
@@ -34,7 +34,7 @@ import { catchAsync } from "../../utils/catchAsync.js";
 //   try {
 //     // Ask the service for the data
 //     const hostels = await hostelService.getAllHostels();
-    
+
 //     // Serialize and send the response[cite: 22]
 //     res.status(200).json({ success: true, count: hostels.length, data: hostels });
 //   } catch (error) {
@@ -80,7 +80,7 @@ export const getHostels = catchAsync(async (req, res) => {
 });
 
 export const updateSettings = catchAsync(async (req, res) => {
-  const hostelId = req.params.id; 
+  const hostelId = req.params.id;
   const validatedData = updateSettingsSchema.parse(req.body);
   const updatedHostel = await hostelService.updateHostelSettings(hostelId, validatedData);
   res.status(200).json({ success: true, data: updatedHostel });
