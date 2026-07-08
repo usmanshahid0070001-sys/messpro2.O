@@ -5,9 +5,6 @@ import LoginForm from "./features/auth/LoginForm.jsx";
 import ProtectedRoute from "./features/auth/ProtectedRoute.jsx";
 import PublicRoute from "./features/auth/PublicRoute.jsx";
 
-// Dashboard Layout
-import DashboardLayout from "./components/layout/DashboardLayout.jsx";
-
 // Tenant Dashboard Pages
 import LandingPage from "./pages/LandingPage/index.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
@@ -48,7 +45,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/manager-dashboard/*"
           element={
@@ -57,7 +54,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/student-dashboard/*"
           element={
