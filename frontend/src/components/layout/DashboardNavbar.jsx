@@ -15,7 +15,7 @@ export default function DashboardNavbar() {
   const handleLogout = async () => {
     setShowUserMenu(false);
     await logout();
-    navigate("/login");
+    navigate("/");
   };
 
   return (

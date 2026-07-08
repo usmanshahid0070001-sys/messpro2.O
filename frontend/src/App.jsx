@@ -6,7 +6,6 @@ import ProtectedRoute from "./features/auth/ProtectedRoute.jsx";
 import PublicRoute from "./features/auth/PublicRoute.jsx";
 
 // Tenant Dashboard Pages
-import LandingPage from "./pages/LandingPage/index.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import ManagerDashboard from "./pages/ManagerDashboard.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
@@ -23,17 +22,13 @@ export default function App() {
           path="/"
           element={
             <PublicRoute>
-              <LandingPage />
+              <LoginForm />
             </PublicRoute>
           }
         />
         <Route
           path="/login"
-          element={
-            <PublicRoute>
-              <LoginForm />
-            </PublicRoute>
-          }
+          element={<Navigate to="/" replace />}
         />
 
         {/* ─── Protected Tenant Dashboard Routes ─────────────────── */}

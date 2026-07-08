@@ -14,7 +14,7 @@ export default function DashboardNavbar({ onMenuToggle, isSidebarCollapsed }) {
   const handleLogout = async () => {
     setShowUserMenu(false);
     await logout();
-    navigate("/login");
+    navigate("/");
   };
 
   return (

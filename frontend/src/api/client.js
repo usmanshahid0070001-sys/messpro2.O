@@ -31,10 +31,10 @@ api.interceptors.response.use(
     if (status === 401 && !isVerifyCall) {
       localStorage.removeItem("userInfo");
 
-      if (window.location.pathname !== '/login' && !isNavigating) {
+      if (window.location.pathname !== '/' && !isNavigating) {
         isNavigating = true;
         toast.error("Session expired. Please log in again.");
-        window.location.href = '/login';
+        window.location.href = '/';
       }
     }
 
