@@ -62,15 +62,15 @@ export default function StudentDashboard() {
 
   // The Live Date Card to be passed into the PageHeader (Upgraded with monochrome glassmorphism)
   const DateWidget = (
-    <div className="flex items-center gap-3 bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-md p-3 rounded-2xl border border-slate-200/50 dark:border-[#222222] shadow-sm w-fit">
-      <div className="w-10 h-10 bg-slate-100 dark:bg-[#111111] rounded-xl flex items-center justify-center shadow-inner text-slate-700 dark:text-[#888888]">
+    <div className="flex items-center gap-3 bg-[#fafafa]/60 dark:bg-[#0a0a0a]/60 backdrop-blur-md p-3 rounded-2xl border border-[#e0e0e0] dark:border-[#222222] shadow-sm w-fit">
+      <div className="w-10 h-10 bg-[#f5f5f5] dark:bg-[#111111] rounded-xl flex items-center justify-center shadow-inner text-[#404040] dark:text-[#888888]">
         <CalendarDays className="w-5 h-5" />
       </div>
       <div className="pr-2">
-        <p className="text-[10px] font-black text-slate-500 dark:text-[#555555] uppercase tracking-[0.2em] mb-0.5">
+        <p className="text-[10px] font-black text-[#737373] dark:text-[#555555] uppercase tracking-[0.2em] mb-0.5">
           Today is
         </p>
-        <p className="text-sm font-black text-slate-800 dark:text-white">
+        <p className="text-sm font-black text-[#171717] dark:text-white">
           {currentDate}
         </p>
       </div>

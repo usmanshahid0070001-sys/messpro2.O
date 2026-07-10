@@ -37,7 +37,7 @@ export default function MobileBottomNav({ navItems, activeTab, setActiveTab }) {
       <div className="px-4 pb-4 pt-8 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-slate-950 dark:via-slate-950/90">
         
         {/* Inner Glass Card (Restores pointer events for buttons) */}
-        <div className="pointer-events-auto bg-white/80 dark:bg-[#121212]/90 backdrop-blur-xl rounded-2xl border border-slate-200 dark:border-[#2a2a2a] shadow-lg">
+        <div className="pointer-events-auto bg-[#fafafa]/80 dark:bg-[#121212]/90 backdrop-blur-xl rounded-2xl border border-[#e0e0e0] dark:border-[#2a2a2a] shadow-lg">
           <div className="flex items-center justify-around px-2 py-3">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -53,8 +53,8 @@ export default function MobileBottomNav({ navItems, activeTab, setActiveTab }) {
                   <div
                     className={`p-2 rounded-xl transition-all duration-300 ${
                       isActive
-                        ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm"
-                        : "text-slate-400 dark:text-slate-500 hover:bg-slate-100/50 dark:hover:bg-[#1a1a1a]/50"
+                        ? "bg-[#111111] dark:bg-white text-white dark:text-slate-900 shadow-sm"
+                        : "text-[#a3a3a3] dark:text-slate-500 hover:bg-[#f5f5f5]/50 dark:hover:bg-[#1a1a1a]/50"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -62,8 +62,8 @@ export default function MobileBottomNav({ navItems, activeTab, setActiveTab }) {
                   <span
                     className={`text-[10px] font-bold transition-all duration-300 mt-1 ${
                       isActive
-                        ? "text-slate-900 dark:text-white"
-                        : "text-slate-400 dark:text-slate-500"
+                        ? "text-[#111111] dark:text-white"
+                        : "text-[#a3a3a3] dark:text-slate-500"
                     }`}
                   >
                     {item.label.length > 10 ? item.label.substring(0, 10) + "..." : item.label}

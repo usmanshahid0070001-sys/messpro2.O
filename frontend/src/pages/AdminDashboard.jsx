@@ -78,7 +78,7 @@ export default function AdminDashboard() {
 
   const renderPlaceholder = (text) => (
     <div className="w-full h-64 glass-panel rounded-3xl flex items-center justify-center">
-      <p className="text-slate-500 font-bold">{text} (Migration Pending)</p>
+      <p className="text-[#737373] font-bold">{text} (Migration Pending)</p>
     </div>
   );
 

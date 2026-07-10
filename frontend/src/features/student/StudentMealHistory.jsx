@@ -61,9 +61,9 @@ export default function StudentMealHistory() {
   const getStatusConfig = (status, isFuture) => {
     if (isFuture)
       return {
-        bg: "bg-slate-50 dark:bg-[#0f172a]/30",
-        text: "text-slate-300 dark:text-slate-600",
-        border: "border-slate-200 dark:border-white/5 border-dashed",
+        bg: "bg-[#fafafa] dark:bg-[#0f172a]/30",
+        text: "text-[#d4d4d4] dark:text-slate-600",
+        border: "border-[#e0e0e0] dark:border-white/5 border-dashed",
       };
     if (status === "MATCH")
       return {
@@ -85,9 +85,9 @@ export default function StudentMealHistory() {
       };
 
     return {
-      bg: "bg-slate-100 dark:bg-[#1e293b]",
-      text: "text-slate-400 dark:text-slate-500",
-      border: "border-slate-200 dark:border-white/10",
+      bg: "bg-[#f5f5f5] dark:bg-[#1e293b]",
+      text: "text-[#a3a3a3] dark:text-slate-500",
+      border: "border-[#e0e0e0] dark:border-white/10",
     };
   };
 
@@ -126,51 +126,51 @@ export default function StudentMealHistory() {
     <div className="glass-panel rounded-[2.5rem] shadow-sm overflow-hidden flex flex-col h-full relative">
       <div className="absolute -top-32 -left-32 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
       
-      <div className="flex items-center justify-between p-5 md:p-6 border-b border-slate-100 dark:border-white/5 bg-white/50 dark:bg-[#030712]/50 backdrop-blur-md sticky top-0 z-20">
-        <div className="flex w-full items-center justify-between bg-slate-100/50 dark:bg-[#0f172a]/50 p-1.5 rounded-2xl border border-slate-200/50 dark:border-white/5">
+      <div className="flex items-center justify-between p-5 md:p-6 border-b border-[#f5f5f5] dark:border-white/5 bg-[#fafafa]/50 dark:bg-[#030712]/50 backdrop-blur-md sticky top-0 z-20">
+        <div className="flex w-full items-center justify-between bg-[#f5f5f5]/50 dark:bg-[#0f172a]/50 p-1.5 rounded-2xl border border-[#e0e0e0] dark:border-white/5">
           <button
             onClick={handlePrevMonth}
-            className="p-2 hover:bg-white dark:hover:bg-[#1e293b] rounded-xl text-slate-600 dark:text-slate-300 transition-all shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+            className="p-2 hover:bg-white dark:hover:bg-[#1e293b] rounded-xl text-[#737373] dark:text-slate-300 transition-all shadow-sm border border-transparent hover:border-[#e0e0e0] dark:hover:border-white/10"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
             <CalendarDays className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
-            <span className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">
+            <span className="text-sm font-black text-[#171717] dark:text-white uppercase tracking-widest">
               {viewDate.toLocaleString("default", { month: "long", year: "numeric" })}
             </span>
           </div>
           <button
             onClick={handleNextMonth}
             disabled={viewMonth >= currentMonthNum && viewYear >= currentYearNum}
-            className="p-2 hover:bg-white dark:hover:bg-[#1e293b] rounded-xl text-slate-600 dark:text-slate-300 transition-all shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-white/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none disabled:border-transparent"
+            className="p-2 hover:bg-white dark:hover:bg-[#1e293b] rounded-xl text-[#737373] dark:text-slate-300 transition-all shadow-sm border border-transparent hover:border-[#e0e0e0] dark:hover:border-white/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none disabled:border-transparent"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      <div className="p-5 md:p-8 flex-1 bg-slate-50/30 dark:bg-transparent overflow-y-auto custom-scrollbar relative z-10">
+      <div className="p-5 md:p-8 flex-1 bg-[#fafafa]/30 dark:bg-transparent overflow-y-auto custom-scrollbar relative z-10">
         {/* Legend */}
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 mb-8 p-4 bg-white/60 dark:bg-[#0f172a]/60 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-white/5">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 mb-8 p-4 bg-[#fafafa]/60 dark:bg-[#0f172a]/60 backdrop-blur-sm rounded-2xl border border-[#e0e0e0] dark:border-white/5">
           <div className="flex items-center gap-2">
             <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></div>
-            <span className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">Attended</span>
+            <span className="text-xs font-black text-[#737373] dark:text-slate-300 uppercase tracking-widest">Attended</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3.5 h-3.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"></div>
-            <span className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">Missed</span>
+            <span className="text-xs font-black text-[#737373] dark:text-slate-300 uppercase tracking-widest">Missed</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3.5 h-3.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></div>
-            <span className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">Guest/Extra</span>
+            <span className="text-xs font-black text-[#737373] dark:text-slate-300 uppercase tracking-widest">Guest/Extra</span>
           </div>
         </div>
 
         {/* Days Header */}
         <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-3">
           {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((day) => (
-            <div key={day} className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center py-1">
+            <div key={day} className="text-[10px] font-black text-[#a3a3a3] dark:text-slate-500 uppercase tracking-widest text-center py-1">
               {day}
             </div>
           ))}
@@ -201,11 +201,11 @@ export default function StudentMealHistory() {
                     isToday
                       ? "border-2 border-indigo-500 bg-indigo-50/50 dark:bg-indigo-500/10 shadow-md"
                       : isFuture
-                        ? "border-2 border-dashed border-slate-200 dark:border-[#1e293b] bg-slate-50/50 dark:bg-[#0f172a]/30"
-                        : "border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1e293b]/50 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-500/50"
+                        ? "border-2 border-dashed border-[#e0e0e0] dark:border-[#1e293b] bg-[#fafafa]/50 dark:bg-[#0f172a]/30"
+                        : "border border-[#d4d4d4] dark:border-white/10 bg-white dark:bg-[#1e293b]/50 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-500/50"
                   }`}
                 >
-                  <span className={`text-xs font-black mb-auto ${isToday ? "text-indigo-600 dark:text-indigo-400" : isFuture ? "text-slate-400 dark:text-slate-600" : "text-slate-800 dark:text-slate-200"}`}>
+                  <span className={`text-xs font-black mb-auto ${isToday ? "text-indigo-600 dark:text-indigo-400" : isFuture ? "text-[#a3a3a3] dark:text-slate-600" : "text-[#171717] dark:text-slate-200"}`}>
                     {day}
                   </span>
 
@@ -231,9 +231,9 @@ export default function StudentMealHistory() {
         <AnimatePresence mode="wait">
           {!billLoading && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-10 relative">
-              <div className="glass-panel border-slate-200 dark:border-white/10 rounded-[2rem] p-6 sm:p-8 shadow-xl">
+              <div className="glass-panel border-[#e0e0e0] dark:border-white/10 rounded-[2rem] p-6 sm:p-8 shadow-xl">
                 <div className="flex justify-between items-start mb-8">
-                  <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-3">
+                  <h3 className="text-base font-black text-[#111111] dark:text-white uppercase tracking-widest flex items-center gap-3">
                     <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl">
                       <Receipt className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     </div>
@@ -249,9 +249,9 @@ export default function StudentMealHistory() {
                 </div>
 
                 {!billData ? (
-                  <div className="text-center py-10 bg-slate-50/50 dark:bg-[#0f172a]/50 rounded-2xl border border-slate-200 dark:border-white/5 border-dashed">
-                    <Ban className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                    <p className="text-xs font-bold text-slate-500 dark:text-[#94a3b8] uppercase tracking-widest">
+                  <div className="text-center py-10 bg-[#fafafa]/50 dark:bg-[#0f172a]/50 rounded-2xl border border-[#e0e0e0] dark:border-white/5 border-dashed">
+                    <Ban className="w-10 h-10 text-[#d4d4d4] dark:text-slate-600 mx-auto mb-3" />
+                    <p className="text-xs font-bold text-[#737373] dark:text-[#94a3b8] uppercase tracking-widest">
                       Bill not generated yet.
                     </p>
                   </div>
@@ -259,12 +259,12 @@ export default function StudentMealHistory() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center text-sm">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-600 dark:text-[#94a3b8]">Base Meal Cost</span>
+                        <span className="font-bold text-[#737373] dark:text-[#94a3b8]">Base Meal Cost</span>
                         <button onClick={() => setShowDetails(!showDetails)} className="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-md transition-colors group">
-                          <Info className={`w-4 h-4 transition-colors ${showDetails ? "text-indigo-600" : "text-slate-400 group-hover:text-indigo-500"}`} />
+                          <Info className={`w-4 h-4 transition-colors ${showDetails ? "text-indigo-600" : "text-[#a3a3a3] group-hover:text-indigo-500"}`} />
                         </button>
                       </div>
-                      <span className="font-black text-slate-900 dark:text-white">Rs. {billData.mealCost}</span>
+                      <span className="font-black text-[#111111] dark:text-white">Rs. {billData.mealCost}</span>
                     </div>
 
                     <AnimatePresence>
@@ -273,24 +273,24 @@ export default function StudentMealHistory() {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden bg-slate-50/80 dark:bg-[#0f172a]/80 rounded-xl border border-slate-100 dark:border-white/5"
+                          className="overflow-hidden bg-[#fafafa]/80 dark:bg-[#0f172a]/80 rounded-xl border border-[#f5f5f5] dark:border-white/5"
                         >
                           <div className="p-4">
-                            <div className="grid grid-cols-3 text-[10px] font-black text-slate-400 dark:text-[#64748b] uppercase tracking-widest border-b border-slate-200 dark:border-white/10 pb-2 mb-3">
+                            <div className="grid grid-cols-3 text-[10px] font-black text-[#a3a3a3] dark:text-[#64748b] uppercase tracking-widest border-b border-[#e0e0e0] dark:border-white/10 pb-2 mb-3">
                               <span>Date</span>
                               <span className="text-center">Meal</span>
                               <span className="text-right">Price</span>
                             </div>
                             <div className="max-h-40 overflow-y-auto custom-scrollbar space-y-2 pr-2">
                               {billData.mealsTaken.map((meal, idx) => (
-                                <div key={idx} className="grid grid-cols-3 text-xs font-bold text-slate-600 dark:text-slate-300 items-center">
+                                <div key={idx} className="grid grid-cols-3 text-xs font-bold text-[#737373] dark:text-slate-300 items-center">
                                   <span>{new Date(meal.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span>
                                   <span className="text-center flex justify-center">
                                     <span className={`text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full border ${meal.mealType.toLowerCase() === "lunch" ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" : "bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20"}`}>
                                       {meal.mealType}
                                     </span>
                                   </span>
-                                  <span className="text-right text-slate-900 dark:text-slate-100">Rs. {meal.priceCharged}</span>
+                                  <span className="text-right text-[#111111] dark:text-slate-100">Rs. {meal.priceCharged}</span>
                                 </div>
                               ))}
                             </div>
@@ -314,19 +314,19 @@ export default function StudentMealHistory() {
                     )}
 
                     <div className="flex justify-between items-center text-sm">
-                      <span className="font-bold text-slate-600 dark:text-[#94a3b8]">Surcharges & Fees</span>
-                      <span className="font-black text-slate-900 dark:text-white">Rs. {billData.factor + billData.serviceCharges}</span>
+                      <span className="font-bold text-[#737373] dark:text-[#94a3b8]">Surcharges & Fees</span>
+                      <span className="font-black text-[#111111] dark:text-white">Rs. {billData.factor + billData.serviceCharges}</span>
                     </div>
 
                     <div className="flex justify-between items-center text-sm pb-3">
-                      <span className="font-bold text-slate-600 dark:text-[#94a3b8]">Fuel Allocation</span>
-                      <span className="font-black text-slate-900 dark:text-white">Rs. {billData.fuelCharges}</span>
+                      <span className="font-bold text-[#737373] dark:text-[#94a3b8]">Fuel Allocation</span>
+                      <span className="font-black text-[#111111] dark:text-white">Rs. {billData.fuelCharges}</span>
                     </div>
 
-                    <div className="border-t border-slate-200 dark:border-white/10 pt-4">
+                    <div className="border-t border-[#e0e0e0] dark:border-white/10 pt-4">
                       <div className="flex justify-between items-center text-base">
-                        <span className="font-black text-slate-900 dark:text-white">Total Invoice</span>
-                        <span className="font-black text-slate-900 dark:text-white">Rs. {billData.totalBill.toLocaleString()}</span>
+                        <span className="font-black text-[#111111] dark:text-white">Total Invoice</span>
+                        <span className="font-black text-[#111111] dark:text-white">Rs. {billData.totalBill.toLocaleString()}</span>
                       </div>
 
                       {billData.amountPaid > 0 && (
@@ -337,10 +337,10 @@ export default function StudentMealHistory() {
                       )}
                     </div>
 
-                    <div className="border-t-2 border-dashed border-slate-300 dark:border-white/10 my-5"></div>
+                    <div className="border-t-2 border-dashed border-[#d4d4d4] dark:border-white/10 my-5"></div>
 
                     <div className="flex justify-between items-end">
-                      <span className="text-xs font-black text-slate-500 dark:text-[#64748b] uppercase tracking-widest mb-1.5">Current Due</span>
+                      <span className="text-xs font-black text-[#737373] dark:text-[#64748b] uppercase tracking-widest mb-1.5">Current Due</span>
                       <span className={`text-4xl font-black tracking-tighter ${billData.paid ? "text-emerald-500" : "text-indigo-600 dark:text-indigo-400"}`}>
                         <span className="text-xl">Rs. </span>
                         {(billData.paid ? 0 : (billData.remainingAmount !== undefined ? billData.remainingAmount : billData.totalBill)).toLocaleString()}
