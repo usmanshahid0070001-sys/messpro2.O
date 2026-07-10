@@ -4,11 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { loginSchema } from "./authSchema.js";
 import { motion } from "framer-motion";
-import { Lock, User, Loader2, AlertCircle } from "lucide-react";
+import { Lock, User, Loader2, AlertCircle, BadgeCheck } from "lucide-react";
 
 import { useLoginMutation } from "../../hooks/mutations/useAuthMutations";
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
+import { getDashboardPath } from "../../utils/authRoutes";
 
 export default function LoginForm() {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ export default function LoginForm() {
   });
 
   const loginMutation = useLoginMutation();
+  const apiBaseUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "" : "http://localhost:5000");
 
   const onSubmit = (data) => {
     setShowForgot(false);
@@ -40,7 +42,7 @@ export default function LoginForm() {
           const { user } = responseData;
           login(user);
           toast.success(`Welcome back, ${user.name}!`);
-          navigate(`/${user.role === 'admin' ? 'admin-dashboard' : user.role === 'manager' ? 'manager-dashboard' : user.role === 'student' ? 'student-dashboard' : 'super-admin'}`);
+          navigate(getDashboardPath(user.role));
         },
         onError: (error) => {
           if (error.response?.status === 401) {
@@ -163,20 +165,31 @@ export default function LoginForm() {
               </div>
             </div>
 
-            {/* Submit Button */}
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loginMutation.isPending}
-              className="w-full flex items-center justify-center gap-2 py-4 mt-8 font-bold text-white dark:text-black uppercase tracking-widest bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 rounded-2xl transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {loginMutation.isPending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                "Sign In"
-              )}
-            </motion.button>
+            <div className="pt-2 space-y-3">
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={loginMutation.isPending}
+                className="w-full flex items-center justify-center gap-2 py-4 font-bold text-white dark:text-black uppercase tracking-widest bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 rounded-2xl transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loginMutation.isPending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Sign In"
+                )}
+              </motion.button>
+
+              <a
+                href={`${apiBaseUrl}/api/auth/google`}
+                className="w-full flex items-center justify-center gap-2 py-4 font-bold text-slate-900 dark:text-white border border-slate-200/80 dark:border-[#222222] rounded-2xl transition-all hover:bg-slate-50 dark:hover:bg-[#111111] hover:border-slate-300 dark:hover:border-[#333333] shadow-sm"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900/5 dark:bg-white/10">
+                  <BadgeCheck className="w-5 h-5" />
+                </div>
+                Continue with Google
+              </a>
+            </div>
           </form>
         </div>
 

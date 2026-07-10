@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Loader2 } from "lucide-react";
+import { getDashboardPath } from "../../utils/authRoutes";
 
 export default function PublicRoute({ children }) {
   const { user, loading } = useAuth();
@@ -15,7 +16,7 @@ export default function PublicRoute({ children }) {
   }
 
   if (user && user.role) {
-    return <Navigate to={`/${user.role}-dashboard`} replace />;
+    return <Navigate to={getDashboardPath(user.role)} replace />;
   }
 
   // If NO user, show the landing/login page

@@ -3,6 +3,11 @@ export const globalErrorHandler = (err, req, res, next) => {
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal Server Error';
 
+  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Invalid or expired authentication token.';
+  }
+
   // Handle Mongoose CastError (Bad ID format)
   if (err.name === 'CastError') {
     statusCode = 400;

@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { getDashboardPath } from "../../utils/authRoutes";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { isAuthenticated, role, loading } = useAuth();
@@ -31,7 +32,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
   // Check role access
   if (role && allowedRoles && !allowedRoles.includes(role)) {
-    return <Navigate to={`/${role}-dashboard`} replace />;
+    return <Navigate to={getDashboardPath(role)} replace />;
   }
 
   return children;
