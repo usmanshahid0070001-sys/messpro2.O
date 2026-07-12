@@ -20,10 +20,36 @@ const hostelSchema = new mongoose.Schema({
 
 
     //each hostel status and plan (tenant)
-    plan: {
-        type: String,
-        enum: ['Basic', 'Premium', 'Enterprise'],
-        default: 'Basic'
+    // plan: {
+    //     type: String,
+    //     enum: ['Basic', 'Standard', 'Premium', 'Enterprise'],
+    //     default: 'Basic'
+    // },
+    // Inside your hostel.model.js, update the plan and settings section:
+
+  plan: {
+    // We store the ID just so we know which template they originated from
+    planId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plan' },
+    name: { type: String, required: true },
+    
+    // THE SNAPSHOT: The exact limits copied from the Plan at the time of creation
+    limits: {
+      maxStudents: { type: Number, required: true },
+      maxManagers: { type: Number, required: true }
+    },
+    features: {
+      allowedAttendanceMethods: [String],
+      allowedBillingModels: [String],
+      allowAutoMealVerification: Boolean
+    }
+  },
+    trialExpiresAt: {
+        type: Date,
+        default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    },
+    isTrial: {
+        type: Boolean,
+        default: true
     },
     status: {
         type: String,
@@ -34,8 +60,8 @@ const hostelSchema = new mongoose.Schema({
     settings: {
         authMethod: {
             type: String,
-            enum: ['RollNumber', 'Email', 'CNIC'],
-            default: 'RollNumber'
+            enum: ['Email'],
+            
         },
         attendanceMethod: {
             type: String,

@@ -12,8 +12,6 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  identifier: z.string().min(1, 'Identifier is required.').optional(),
-  rollNumber: z.string().min(1, 'Roll number is required.').optional(),
-  email: z.string().email().optional(),
+  email: z.string().email('A valid email is required.'),
   password: z.string().min(1, 'Password is required.'),
 });

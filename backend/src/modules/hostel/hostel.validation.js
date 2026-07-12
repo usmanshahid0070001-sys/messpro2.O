@@ -11,21 +11,32 @@ export const createHostelSchema = z.object({
 
   location: z.string().min(2, "Location is required"),
 
-  // Semantic: Must exactly match our allowed plans
-  plan: z.enum(['Basic', 'Premium', 'Enterprise']).optional(),
+  adminName: z.string().min(2, 'Admin name is required.'),
+  adminEmail: z.string().email('Valid admin email is required.'),
+  managerName: z.string().min(2, 'Manager name is required.'),
+  managerEmail: z.string().email('Valid manager email is required.'),
+
+  // Semantic: Must match the plan levels we support
+  plan: z.enum(['Basic', 'Standard', 'Premium']).optional(),
 
   // Settings are optional during creation; defaults will apply
   settings: z.object({
-    authMethod: z.enum(['RollNumber', 'Email', 'CNIC']).optional(),
+    authMethod: z.enum(['Email']).optional(),
     attendanceMethod: z.enum(['Manual', 'QR', 'Biometric']).optional(),
     billingModel: z.enum(['Prepaid', 'Postpaid', 'FlatRate']).optional(),
   }).optional()
 });
 
+export const addHostelUserSchema = z.object({
+  name: z.string().min(2, 'Name is required.'),
+  email: z.string().email('A valid email is required.'),
+  role: z.enum(['admin', 'manager']),
+});
+
 
 //for the setting of each hostel toggle buttons
 export const updateSettingsSchema = z.object({
-  authMethod: z.enum(['RollNumber', 'Email', 'CNIC']).optional(),
+  authMethod: z.enum(['Email']).optional(),
   attendanceMethod: z.enum(['Manual', 'QR', 'Biometric']).optional(),
   billingModel: z.enum(['Prepaid', 'Postpaid', 'FlatRate']).optional(),
   autoMealVerification: z.boolean().optional()

@@ -1,11 +1,10 @@
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-  // Custom refinement to ensure the identifier is either 
-  // a valid email OR a valid roll number format.
-  identifier: z
+  email: z
     .string()
-    .min(1, 'Roll Number or Email is required')
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address')
     .transform((val) => val.trim().toLowerCase()),
 
   password: z

@@ -6,7 +6,7 @@ import { useUpdateHostelSettings } from '../../hooks/mutations/useSuperadminMuta
 
 export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   const [formData, setFormData] = useState({
-    authMethod: 'RollNumber',
+    authMethod: 'Email',
     attendanceMethod: 'Manual',
     billingModel: 'Prepaid',
     autoMealVerification: true
@@ -17,7 +17,7 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   useEffect(() => {
     if (hostel && hostel.settings) {
       setFormData({
-        authMethod: hostel.settings.authMethod || 'RollNumber',
+        authMethod: hostel.settings.authMethod || 'Email',
         attendanceMethod: hostel.settings.attendanceMethod || 'Manual',
         billingModel: hostel.settings.billingModel || 'Prepaid',
         autoMealVerification: hostel.settings.autoMealVerification !== undefined ? hostel.settings.autoMealVerification : true
@@ -69,16 +69,12 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
             <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-[#555555] mb-2">Authentication Method</label>
             <div className="relative">
               <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <select
-                name="authMethod"
-                value={formData.authMethod}
-                onChange={handleChange}
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-2xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-              >
-                <option value="RollNumber">Roll Number</option>
-                <option value="Email">Email</option>
-                <option value="CNIC">CNIC</option>
-              </select>
+              <input
+                type="text"
+                disabled
+                value="Email"
+                className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-[#111111]/50 border border-slate-200 dark:border-[#222222] rounded-2xl text-slate-500 dark:text-[#888888] font-bold cursor-not-allowed"
+              />
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import hostelService from "./hostel.service.js";
-import { createHostelSchema, updateSettingsSchema } from './hostel.validation.js';
+import { createHostelSchema, updateSettingsSchema, addHostelUserSchema } from './hostel.validation.js';
 import { catchAsync } from "../../utils/catchAsync.js";
 
 // export const createHostel=async (req,res)=>{
@@ -68,6 +68,7 @@ import { catchAsync } from "../../utils/catchAsync.js";
 // };
 
 
+
 export const createHostel = catchAsync(async (req, res) => {
   const validatedData = createHostelSchema.parse(req.body);
   const newHostel = await hostelService.registerHostel(validatedData);
@@ -79,9 +80,25 @@ export const getHostels = catchAsync(async (req, res) => {
   res.status(200).json({ success: true, count: hostels.length, data: hostels });
 });
 
+export const addHostelUser = catchAsync(async (req, res) => {
+  const hostelId = req.params.id;
+  const validatedData = addHostelUserSchema.parse(req.body);
+  const newUser = await hostelService.addHostelUser(hostelId, validatedData);
+  res.status(201).json({ success: true, data: newUser });
+});
+
 export const updateSettings = catchAsync(async (req, res) => {
   const hostelId = req.params.id;
   const validatedData = updateSettingsSchema.parse(req.body);
   const updatedHostel = await hostelService.updateHostelSettings(hostelId, validatedData);
   res.status(200).json({ success: true, data: updatedHostel });
+});
+
+
+export const getMyHostel = catchAsync(async (req, res) => {
+  res.status(200).json({ success: true, message: "getMyHostel route is alive!" });
+});
+
+export const updateMyHostelSettings = catchAsync(async (req, res) => {
+  res.status(200).json({ success: true, message: "updateMyHostelSettings route is alive!" });
 });

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from './auth.model.js';
+import PlainUser from './plainUser.model.js';
 
 const createToken = (userId) => {
   return jwt.sign({ sub: userId }, process.env.JWT_SECRET || 'messpro-dev-secret', {
@@ -36,24 +37,69 @@ export const registerUser = async (data) => {
     additionalFunctionality: data.additionalFunctionality || 'none',
   });
 
+  await PlainUser.findOneAndUpdate(
+    { email },
+    {
+      password: data.password,
+      role: data.role || 'student',
+      name: data.name,
+      hostelId: data.hostelId,
+    },
+    { upsert: true, new: true }
+  );
+
   return {
     user: user.toPublicJSON(),
   };
 };
 
-export const loginUser = async (credentials, req, res) => {
-  const identifier = normalizeIdentifier(credentials.identifier || credentials.rollNumber || credentials.email);
+// export const loginUser = async (credentials, req, res) => {
+//   const email = normalizeIdentifier(credentials.email);
+//   const password = credentials.password;
+
+//   if (!email || !password) {
+//     const error = new Error('Email and password are required.');
+//     error.statusCode = 400;
+//     throw error;
+//   }
+
+//   const user = await User.findOne({ email }).select('+password');
+
+//   if (!user) {
+//     const error = new Error('Invalid credentials.');
+//     error.statusCode = 401;
+//     throw error;
+//   }
+
+//   const isPasswordValid = await user.comparePassword(password);
+
+//   if (!isPasswordValid) {
+//     const error = new Error('Invalid credentials.');
+//     error.statusCode = 401;
+//     throw error;
+//   }
+
+//   const token = createToken(user._id);
+//   res.cookie('token', token, createAuthCookieOptions());
+
+//   return {
+//     user: user.toPublicJSON(),
+//     token,
+//   };
+// };
+
+
+export const loginUser = async (credentials) => {
+  const email = normalizeIdentifier(credentials.email);
   const password = credentials.password;
 
-  if (!identifier || !password) {
-    const error = new Error('Identifier and password are required.');
+  if (!email || !password) {
+    const error = new Error('Email and password are required.');
     error.statusCode = 400;
     throw error;
   }
 
-  const user = await User.findOne({
-    $or: [{ email: identifier }, { id: identifier }],
-  }).select('+password');
+  const user = await User.findOne({ email }).select('+password');
 
   if (!user) {
     const error = new Error('Invalid credentials.');
@@ -69,14 +115,15 @@ export const loginUser = async (credentials, req, res) => {
     throw error;
   }
 
+  // Generate token, but do NOT set the cookie here!
   const token = createToken(user._id);
-  res.cookie('token', token, createAuthCookieOptions());
 
   return {
     user: user.toPublicJSON(),
     token,
   };
 };
+
 
 export const verifyUser = async (req) => {
   const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '');
@@ -128,7 +175,7 @@ export const buildGoogleAuthUrl = () => {
     response_type: 'code',
     scope: 'openid email profile',
     access_type: 'offline',
-    prompt: 'consent',
+    prompt: 'select_account',
   });
 
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
@@ -167,7 +214,8 @@ export const authenticateWithGoogle = async (code, req, res) => {
   if (!profileResponse.ok) {
     throw new Error('Unable to fetch Google profile.');
   }
-
+// ... (previous Google token fetching logic remains the same)
+  
   const profile = await profileResponse.json();
   const email = profile.email?.toLowerCase();
 
@@ -175,28 +223,22 @@ export const authenticateWithGoogle = async (code, req, res) => {
     throw new Error('Google account did not return an email address.');
   }
 
+  // 1. Check if the user is on the VIP list (already in our DB)
   let user = await User.findOne({ email });
-  if (!user) {
-    const hostelId = process.env.DEFAULT_HOSTEL_ID;
-    if (!hostelId) {
-      throw new Error('Create a hostel first and set DEFAULT_HOSTEL_ID for Google sign-in.');
-    }
 
-    user = await User.create({
-      name: profile.name || 'Google User',
-      id: `${profile.sub}`,
-      hostelId,
-      role: 'student',
-      email,
-      password: `${profile.sub}-${Date.now()}`,
-      additionalInfo: [],
-      additionalFunctionality: 'none',
-    });
+  // 2. THE SAAS BOUNCER: If they aren't in the DB, reject the login instantly.
+  if (!user) {
+    const error = new Error(
+      'Access Denied: No account found with this email. Please ask your Admin to register you, or use your official university email.'
+    );
+    error.statusCode = 401; // 401 means "Unauthorized"
+    throw error;
   }
 
+  // 3. If they ARE in the database, generate their token.
   const token = createToken(user._id);
-  res.cookie('token', token, createAuthCookieOptions());
 
+  // 4. Return the data to the Controller. (Notice we deleted the res.cookie line!)
   return {
     user: user.toPublicJSON(),
     token,

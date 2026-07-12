@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema(
   {
@@ -10,10 +11,12 @@ const userSchema = new mongoose.Schema(
     },
     id: {
       type: String,
-      required: true,
       unique: true,
       trim: true,
       lowercase: true,
+      required: function () {
+        return this.role === 'student';
+      },
     },
     hostelId: {
       type: String,
@@ -60,6 +63,14 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userSchema.pre('validate', function (next) {
+  if (!this.id) {
+    const localPart = this.email?.split('@')[0] ?? 'user';
+    this.id = `${this.role}-${localPart}-${crypto.randomBytes(3).toString('hex')}`;
+  }
+  next();
+});
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {

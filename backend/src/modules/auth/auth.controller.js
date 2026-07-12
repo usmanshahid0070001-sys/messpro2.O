@@ -9,9 +9,17 @@ import {
   authenticateWithGoogle,
 } from './auth.service.js';
 
+// Centralized cookie configuration helper moved to the top
+const createAuthCookieOptions = () => ({
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+});
+
 export const register = catchAsync(async (req, res) => {
   const data = registerSchema.parse(req.body);
-  const result = await registerUser(data);
+  const result = await registerUser(data);  
 
   res.status(201).json({
     success: true,
@@ -22,12 +30,17 @@ export const register = catchAsync(async (req, res) => {
 
 export const login = catchAsync(async (req, res) => {
   const data = loginSchema.parse(req.body);
-  const result = await loginUser(data, req, res);
+  
+  // Call the service (no req/res passed!)
+  const result = await loginUser(data);
+
+  // The Controller sets the cookie!
+  res.cookie('token', result.token, createAuthCookieOptions());
 
   res.status(200).json({
     success: true,
     message: 'Login successful.',
-    ...result,
+    ...result, 
   });
 });
 
@@ -42,9 +55,13 @@ export const verify = catchAsync(async (req, res) => {
 });
 
 export const logout = catchAsync(async (req, res) => {
-  const result = await logoutUser(req, res);
-
-  res.status(200).json(result);
+  // Clear the cookie directly in the controller
+  res.clearCookie('token', createAuthCookieOptions());
+  
+  res.status(200).json({ 
+    success: true, 
+    message: 'Logged out successfully.' 
+  });
 });
 
 export const googleAuth = catchAsync(async (req, res) => {
@@ -59,7 +76,11 @@ export const googleCallback = catchAsync(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Google login was cancelled.' });
   }
 
-  const result = await authenticateWithGoogle(code, req, res);
+  // Passing the code to the service
+  const result = await authenticateWithGoogle(code);
+
+  // Set the token cookie using our clean helper function
+  res.cookie('token', result.token, createAuthCookieOptions());
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   res.redirect(`${frontendUrl}/?auth=google`);

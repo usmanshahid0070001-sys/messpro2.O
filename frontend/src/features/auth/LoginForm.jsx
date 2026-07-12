@@ -34,7 +34,7 @@ export default function LoginForm() {
 
     loginMutation.mutate(
       {
-        rollNumber: data.identifier,
+        email: data.email,
         password: data.password,
       },
       {
@@ -102,26 +102,26 @@ export default function LoginForm() {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5 relative z-10"
           >
-            {/* Identifier Input */}
+            {/* Email Input */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider ml-1">
-                Roll Number / Email
+                Email Address
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <User className="w-5 h-5 text-slate-400 dark:text-[#555555] group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" />
                 </div>
                 <input
-                  type="text"
-                  placeholder="e.g. 2021-CS-123"
-                  {...register("identifier")}
+                  type="email"
+                  placeholder="e.g. yourname@domain.com"
+                  {...register("email")}
                   className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-[#111111] border border-slate-200/80 dark:border-[#222222] rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-white/20 focus:border-slate-900 dark:focus:border-white focus:bg-white dark:focus:bg-[#1a1a1a] transition-all placeholder:text-slate-400 dark:placeholder:text-[#555555]"
                 />
               </div>
-              {errors.identifier && (
+              {errors.email && (
                 <p className="text-xs font-bold text-rose-500 dark:text-rose-400 ml-1 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />{" "}
-                  {errors.identifier.message}
+                  {errors.email.message}
                 </p>
               )}
             </div>

@@ -46,6 +46,7 @@ connectDB()
 
 app.use('/api/auth', authRoutes);
 app.use('/api/hostels', hostelRoutes);
+app.use('/api/plans', planRoutes);
 
 
 
