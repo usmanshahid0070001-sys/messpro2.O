@@ -80,7 +80,7 @@ export default function LoginForm() {
             }}
             className="relative w-20 h-20 mx-auto mb-6 hover:scale-105 transition-transform"
           >
-            <div className="absolute inset-0 bg-slate-200 dark:bg-[#1a1a1a] rounded-3xl blur-lg opacity-50" />
+            <div className="absolute inset-0 bg-[#e0e0e0] dark:bg-[#1a1a1a] rounded-3xl blur-lg opacity-50" />
             <img
               src="/pwa-512x512.png"
               alt="MessPro Logo"
@@ -88,28 +88,28 @@ export default function LoginForm() {
             />
           </motion.div>
 
-          <h1 className="text-4xl font-black tracking-tight font-display text-slate-900 dark:text-white mb-2">
+          <h1 className="text-4xl font-black tracking-tight font-display text-[#111111] dark:text-white mb-2">
             MessPro
           </h1>
-          <p className="text-slate-500 dark:text-[#888888] font-medium">
+          <p className="text-[#737373] dark:text-[#888888] font-medium">
             Login to your account
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white dark:bg-[#0a0a0a] backdrop-blur-2xl rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] border border-slate-100 dark:border-[#222222] relative overflow-hidden">
+        <div className="bg-white dark:bg-[#0a0a0a] backdrop-blur-2xl rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] border border-[#f5f5f5] dark:border-[#222222] relative overflow-hidden">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5 relative z-10"
           >
             {/* Email Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider ml-1">
+              <label className="text-xs font-bold text-[#737373] dark:text-[#888888] uppercase tracking-wider ml-1">
                 Email Address
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="w-5 h-5 text-slate-400 dark:text-[#555555] group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" />
+                  <User className="w-5 h-5 text-[#a3a3a3] dark:text-[#555555] group-focus-within:text-[#111111] dark:group-focus-within:text-white transition-colors" />
                 </div>
                 <input
                   type="email"
@@ -128,18 +128,18 @@ export default function LoginForm() {
 
             {/* Password Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 dark:text-[#888888] uppercase tracking-wider ml-1">
+              <label className="text-xs font-bold text-[#737373] dark:text-[#888888] uppercase tracking-wider ml-1">
                 Password
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="w-5 h-5 text-slate-400 dark:text-[#555555] group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" />
+                  <Lock className="w-5 h-5 text-[#a3a3a3] dark:text-[#555555] group-focus-within:text-[#111111] dark:group-focus-within:text-white transition-colors" />
                 </div>
                 <input
                   type="password"
                   placeholder="••••••••"
                   {...register("password")}
-                  className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-[#111111] border border-slate-200/80 dark:border-[#222222] rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-white/20 focus:border-slate-900 dark:focus:border-white focus:bg-white dark:focus:bg-[#1a1a1a] transition-all placeholder:text-slate-400 dark:placeholder:text-[#555555]"
+                  className="w-full pl-11 pr-4 py-4 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0]/80 dark:border-[#222222] rounded-2xl text-sm font-semibold text-[#111111] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#111111]/10 dark:focus:ring-white/20 focus:border-[#111111] dark:focus:border-white focus:bg-white dark:focus:bg-[#1a1a1a] transition-all placeholder:text-[#a3a3a3] dark:placeholder:text-[#555555]"
                 />
               </div>
 
@@ -157,7 +157,7 @@ export default function LoginForm() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     href="#"
-                    className="text-xs font-bold text-slate-900 dark:text-white hover:underline transition-colors w-fit"
+                    className="text-xs font-bold text-[#111111] dark:text-white hover:underline transition-colors w-fit"
                   >
                     Forgot password?
                   </motion.a>
@@ -171,7 +171,7 @@ export default function LoginForm() {
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={loginMutation.isPending}
-                className="w-full flex items-center justify-center gap-2 py-4 font-bold text-white dark:text-black uppercase tracking-widest bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 rounded-2xl transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 py-4 font-bold text-white dark:text-black uppercase tracking-widest bg-[#111111] dark:bg-white hover:bg-[#171717] dark:hover:bg-slate-200 rounded-2xl transition-all disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {loginMutation.isPending ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -182,9 +182,9 @@ export default function LoginForm() {
 
               <a
                 href={`${apiBaseUrl}/api/auth/google`}
-                className="w-full flex items-center justify-center gap-2 py-4 font-bold text-slate-900 dark:text-white border border-slate-200/80 dark:border-[#222222] rounded-2xl transition-all hover:bg-slate-50 dark:hover:bg-[#111111] hover:border-slate-300 dark:hover:border-[#333333] shadow-sm"
+                className="w-full flex items-center justify-center gap-2 py-4 font-bold text-[#111111] dark:text-white border border-[#e0e0e0]/80 dark:border-[#222222] rounded-2xl transition-all hover:bg-[#fafafa] dark:hover:bg-[#111111] hover:border-[#d4d4d4] dark:hover:border-[#333333] shadow-sm"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900/5 dark:bg-white/10">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#111111]/5 dark:bg-white/10">
                   <BadgeCheck className="w-5 h-5" />
                 </div>
                 Continue with Google
@@ -195,13 +195,13 @@ export default function LoginForm() {
 
         {/* Contact Us Footer */}
         <div className="mt-8 text-center">
-          <p className="text-sm font-medium text-slate-500 dark:text-[#888888]">
+          <p className="text-sm font-medium text-[#737373] dark:text-[#888888]">
             Having trouble?{" "}
             <a
               href="https://docs.google.com/forms/d/e/1FAIpQLSdCLlfVcyCuvTwrpQrQ3HPtd6FHsYQ4iZu_OXOlDLtmMjwlPw/viewform?usp=dialog"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-bold text-slate-900 dark:text-white hover:underline transition-colors"
+              className="font-bold text-[#111111] dark:text-white hover:underline transition-colors"
             >
               Contact Us
             </a>

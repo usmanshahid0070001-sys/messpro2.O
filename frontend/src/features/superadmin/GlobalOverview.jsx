@@ -42,8 +42,8 @@ export default function GlobalOverview() {
             </span>
           }
         >
-          <div className="bg-slate-50 dark:bg-[#111111] rounded-[2rem] p-6 shadow-inner border border-slate-200/50 dark:border-[#222222]">
-            <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-[#1a1a1a]">
+          <div className="bg-[#fafafa] dark:bg-[#111111] rounded-[2rem] p-6 shadow-inner border border-[#e0e0e0] dark:border-[#222222]">
+            <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl p-4 shadow-sm border border-[#f5f5f5] dark:border-[#1a1a1a]">
               <svg viewBox="0 0 680 300" className="h-[320px] w-full" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="revLine" x1="0" x2="0" y1="0" y2="1">
@@ -64,13 +64,13 @@ export default function GlobalOverview() {
                   d="M60 214 C140 206 220 216 300 190 C380 170 460 160 540 150 C620 136 660 120 720 104"
                   fill="none"
                   stroke="#dddddd"
-                  className="dark:stroke-[#dddddd] stroke-slate-400"
+                  className="dark:stroke-[#dddddd] stroke-[#a3a3a3]"
                   strokeWidth="4"
                   strokeLinecap="round"
                 />
 
                 {/* x-axis labels (months) */}
-                <g className="fill-slate-500 dark:fill-[#555555] font-bold text-[10px] uppercase tracking-widest" textAnchor="middle">
+                <g className="fill-[#737373] dark:fill-[#555555] font-bold text-[10px] uppercase tracking-widest" textAnchor="middle">
                   <text x="60" y="272">Jan</text>
                   <text x="140" y="272">Feb</text>
                   <text x="220" y="272">Mar</text>
@@ -82,7 +82,7 @@ export default function GlobalOverview() {
                 </g>
 
                 {/* y-axis labels */}
-                <g className="fill-slate-500 dark:fill-[#555555] font-bold text-[10px] uppercase tracking-widest" textAnchor="end">
+                <g className="fill-[#737373] dark:fill-[#555555] font-bold text-[10px] uppercase tracking-widest" textAnchor="end">
                   <text x="46" y="40">$100k</text>
                   <text x="46" y="100">$75k</text>
                   <text x="46" y="160">$50k</text>
@@ -99,31 +99,31 @@ export default function GlobalOverview() {
             <div className="space-y-6">
               {planData.map((plan) => (
                 <div key={plan.name}>
-                  <div className="mb-2 flex items-center justify-between gap-3 text-sm font-bold text-slate-700 dark:text-[#888888]">
+                  <div className="mb-2 flex items-center justify-between gap-3 text-sm font-bold text-[#404040] dark:text-[#888888]">
                     <span className="uppercase tracking-widest text-[10px]">{plan.name}</span>
-                    <span className="text-slate-900 dark:text-white">{plan.value} hostels</span>
+                    <span className="text-[#111111] dark:text-white">{plan.value} hostels</span>
                   </div>
-                  <div className="h-2 rounded-full bg-slate-100 dark:bg-[#1a1a1a]">
-                    <div className="h-2 rounded-full bg-slate-800 dark:bg-white" style={{ width: `${plan.percent}%` }} />
+                  <div className="h-2 rounded-full bg-[#f5f5f5] dark:bg-[#1a1a1a]">
+                    <div className="h-2 rounded-full bg-[#171717] dark:bg-white" style={{ width: `${plan.percent}%` }} />
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-8 rounded-3xl border border-slate-200/50 dark:border-[#222222] bg-slate-50/50 dark:bg-[#0a0a0a] p-6 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-[#555555]">Platform Health</p>
-              <div className="mt-5 space-y-4 text-sm font-bold text-slate-700 dark:text-[#888888]">
+            <div className="mt-8 rounded-3xl border border-[#e0e0e0] dark:border-[#222222] bg-[#fafafa]/50 dark:bg-[#0a0a0a] p-6 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#737373] dark:text-[#555555]">Platform Health</p>
+              <div className="mt-5 space-y-4 text-sm font-bold text-[#404040] dark:text-[#888888]">
                 <div className="flex items-center justify-between">
                   <span>API Uptime</span>
-                  <span className="text-slate-900 dark:text-white">99.97%</span>
+                  <span className="text-[#111111] dark:text-white">99.97%</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Avg Response</span>
-                  <span className="text-slate-900 dark:text-white">142ms</span>
+                  <span className="text-[#111111] dark:text-white">142ms</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Suspended</span>
-                  <span className="text-slate-900 dark:text-white">1 tenant</span>
+                  <span className="text-[#111111] dark:text-white">1 tenant</span>
                 </div>
               </div>
             </div>
@@ -134,14 +134,14 @@ export default function GlobalOverview() {
       <SectionCard 
         title="Recent Audit Events" 
         subtitle="Global system activity"
-        action={<button className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-[#888888] hover:text-slate-900 dark:hover:text-white transition-colors">View all →</button>}
+        action={<button className="text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#888888] hover:text-[#111111] dark:hover:text-white transition-colors">View all →</button>}
       >
         <div className="grid gap-3">
           {auditEvents.map((event) => (
-            <div key={event.time} className="grid gap-3 rounded-2xl border border-slate-200/50 dark:border-[#222222] bg-slate-50/50 dark:bg-[#0a0a0a] p-4 md:grid-cols-[100px_220px_1fr] items-center hover:bg-slate-100 dark:hover:bg-[#111111] transition-colors">
-              <div className="font-mono text-[10px] font-bold text-slate-500 dark:text-[#555555] uppercase tracking-widest">{event.time}</div>
-              <div className="text-xs font-black tracking-widest text-slate-900 dark:text-white uppercase">{event.code}</div>
-              <div className="text-sm font-semibold text-slate-600 dark:text-[#888888]">{event.detail}</div>
+            <div key={event.time} className="grid gap-3 rounded-2xl border border-[#e0e0e0] dark:border-[#222222] bg-[#fafafa]/50 dark:bg-[#0a0a0a] p-4 md:grid-cols-[100px_220px_1fr] items-center hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition-colors">
+              <div className="font-mono text-[10px] font-bold text-[#737373] dark:text-[#555555] uppercase tracking-widest">{event.time}</div>
+              <div className="text-xs font-black tracking-widest text-[#111111] dark:text-white uppercase">{event.code}</div>
+              <div className="text-sm font-semibold text-[#737373] dark:text-[#888888]">{event.detail}</div>
             </div>
           ))}
         </div>

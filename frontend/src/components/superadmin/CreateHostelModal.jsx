@@ -38,23 +38,23 @@ export default function CreateHostelModal({ isOpen, onClose }) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-[2rem] border border-slate-200/50 dark:border-[#222222] shadow-xl overflow-hidden"
+        className="relative w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-[2rem] border border-[#e0e0e0] dark:border-[#222222] shadow-xl overflow-hidden"
       >
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-[#1a1a1a]">
+        <div className="flex items-center justify-between p-6 border-b border-[#f5f5f5] dark:border-[#1a1a1a]">
           <div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-white">Create New Hostel</h2>
-            <p className="text-sm font-bold text-slate-500 dark:text-[#888888]">Add a new tenant to the platform.</p>
+            <h2 className="text-xl font-black text-[#111111] dark:text-white">Create New Hostel</h2>
+            <p className="text-sm font-bold text-[#737373] dark:text-[#888888]">Add a new tenant to the platform.</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-[#111111] transition-colors text-slate-500 dark:text-[#888888]">
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition-colors text-[#737373] dark:text-[#888888]">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-[#555555] mb-2">Hostel Name</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Hostel Name</label>
             <div className="relative">
-              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a3a3a3]" />
               <input
                 type="text"
                 name="name"
@@ -62,15 +62,15 @@ export default function CreateHostelModal({ isOpen, onClose }) {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="e.g., Green Valley Residency"
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-2xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-[#555555] mb-2">Subdomain</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Subdomain</label>
             <div className="relative">
-              <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a3a3a3]" />
               <input
                 type="text"
                 name="subdomain"
@@ -78,15 +78,15 @@ export default function CreateHostelModal({ isOpen, onClose }) {
                 value={formData.subdomain}
                 onChange={handleChange}
                 placeholder="e.g., green-valley"
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-2xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-[#555555] mb-2">Location</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Location</label>
             <div className="relative">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a3a3a3]" />
               <input
                 type="text"
                 name="location"
@@ -94,20 +94,20 @@ export default function CreateHostelModal({ isOpen, onClose }) {
                 value={formData.location}
                 onChange={handleChange}
                 placeholder="e.g., Islamabad"
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-2xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-[#555555] mb-2">Plan</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Plan</label>
             <div className="relative">
-              <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a3a3a3]" />
               <select
                 name="plan"
                 value={formData.plan}
                 onChange={handleChange}
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#222222] rounded-2xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
               >
                 <option value="Basic">Basic</option>
                 <option value="Premium">Premium</option>
@@ -120,7 +120,7 @@ export default function CreateHostelModal({ isOpen, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-2xl font-black text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-[#1a1a1a] hover:bg-slate-200 dark:hover:bg-[#222222] transition-colors"
+              className="flex-1 px-4 py-3 rounded-2xl font-black text-[#404040] dark:text-slate-300 bg-[#f5f5f5] dark:bg-[#1a1a1a] hover:bg-[#e0e0e0] dark:hover:bg-[#222222] transition-colors"
             >
               Cancel
             </button>

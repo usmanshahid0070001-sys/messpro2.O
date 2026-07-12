@@ -23,21 +23,21 @@ export default function ManageTenants() {
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <SectionCard title="Tenant Demand" subtitle="Monitoring tenant status and allocations."> 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-[2rem] border border-slate-200/50 dark:border-[#222222] bg-slate-50/50 dark:bg-[#0a0a0a] p-6 shadow-sm transition-transform hover:scale-[1.02] duration-300">
-              <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-[#555555]">
-                <Building2 className="h-5 w-5 text-slate-700 dark:text-[#888888]" /> 
+            <div className="rounded-[2rem] border border-[#e0e0e0] dark:border-[#222222] bg-[#fafafa]/50 dark:bg-[#0a0a0a] p-6 shadow-sm transition-transform hover:scale-[1.02] duration-300">
+              <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[#737373] dark:text-[#555555]">
+                <Building2 className="h-5 w-5 text-[#404040] dark:text-[#888888]" /> 
                 Current portfolio
               </div>
-              <p className="mt-4 text-4xl font-black text-slate-900 dark:text-white tracking-tight">{hostels.length} <span className="text-xl text-slate-400">hostels</span></p>
-              <p className="mt-2 text-xs font-bold text-slate-500 dark:text-[#888888]">Active across multiple cities.</p>
+              <p className="mt-4 text-4xl font-black text-[#111111] dark:text-white tracking-tight">{hostels.length} <span className="text-xl text-[#a3a3a3]">hostels</span></p>
+              <p className="mt-2 text-xs font-bold text-[#737373] dark:text-[#888888]">Active across multiple cities.</p>
             </div>
-            <div className="rounded-[2rem] border border-slate-200/50 dark:border-[#222222] bg-slate-50/50 dark:bg-[#0a0a0a] p-6 shadow-sm transition-transform hover:scale-[1.02] duration-300">
-              <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-[#555555]">
-                <ClipboardList className="h-5 w-5 text-slate-700 dark:text-[#888888]" /> 
+            <div className="rounded-[2rem] border border-[#e0e0e0] dark:border-[#222222] bg-[#fafafa]/50 dark:bg-[#0a0a0a] p-6 shadow-sm transition-transform hover:scale-[1.02] duration-300">
+              <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[#737373] dark:text-[#555555]">
+                <ClipboardList className="h-5 w-5 text-[#404040] dark:text-[#888888]" /> 
                 Contract coverage
               </div>
-              <p className="mt-4 text-4xl font-black text-slate-900 dark:text-white tracking-tight">89<span className="text-xl text-slate-400">%</span></p>
-              <p className="mt-2 text-xs font-bold text-slate-500 dark:text-[#888888]">Annual renewals confirmed.</p>
+              <p className="mt-4 text-4xl font-black text-[#111111] dark:text-white tracking-tight">89<span className="text-xl text-[#a3a3a3]">%</span></p>
+              <p className="mt-2 text-xs font-bold text-[#737373] dark:text-[#888888]">Annual renewals confirmed.</p>
             </div>
           </div>
         </SectionCard>
@@ -53,10 +53,10 @@ export default function ManageTenants() {
                 <AlertTriangle className="h-5 w-5" />
               </div>
             </div>
-            <div className="rounded-3xl border border-slate-200/50 dark:border-[#222222] bg-slate-50/50 dark:bg-[#0a0a0a] p-6 shadow-sm flex items-center justify-between">
+            <div className="rounded-3xl border border-[#e0e0e0] dark:border-[#222222] bg-[#fafafa]/50 dark:bg-[#0a0a0a] p-6 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-[#555555]">Average uptime</p>
-                <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">99.95%</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#737373] dark:text-[#555555]">Average uptime</p>
+                <p className="mt-2 text-2xl font-black text-[#111111] dark:text-white">99.95%</p>
               </div>
             </div>
           </div>
@@ -76,8 +76,8 @@ export default function ManageTenants() {
           </button>
         }
       >
-        <div className="overflow-hidden rounded-[2rem] border border-slate-200/50 dark:border-[#222222] bg-white dark:bg-[#0a0a0a] shadow-sm">
-          <div className="grid gap-0 border-b border-slate-100 dark:border-[#1a1a1a] bg-slate-50/50 dark:bg-[#111111] px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-[#555555] sm:grid-cols-[100px_minmax(200px,1fr)_120px_100px_120px_100px]">
+        <div className="overflow-hidden rounded-[2rem] border border-[#e0e0e0] dark:border-[#222222] bg-white dark:bg-[#0a0a0a] shadow-sm">
+          <div className="grid gap-0 border-b border-[#f5f5f5] dark:border-[#1a1a1a] bg-[#fafafa]/50 dark:bg-[#111111] px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#737373] dark:text-[#555555] sm:grid-cols-[100px_minmax(200px,1fr)_120px_100px_120px_100px]">
             <span>ID</span>
             <span>Hostel</span>
             <span>Admin</span>
@@ -85,21 +85,21 @@ export default function ManageTenants() {
             <span>Status</span>
             <span>Actions</span>
           </div>
-          <div className="divide-y divide-slate-100 dark:divide-[#1a1a1a]">
+          <div className="divide-y divide-[#f5f5f5] dark:divide-[#1a1a1a]">
             {loading ? (
-              <div className="p-8 text-center text-slate-500 font-bold">Loading hostels...</div>
+              <div className="p-8 text-center text-[#737373] font-bold">Loading hostels...</div>
             ) : hostels.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 font-bold">No hostels found. Create one to get started.</div>
+              <div className="p-8 text-center text-[#737373] font-bold">No hostels found. Create one to get started.</div>
             ) : (
               hostels.map((hostel) => (
-                <div key={hostel._id} className="grid gap-0 px-6 py-5 text-sm sm:grid-cols-[100px_minmax(200px,1fr)_120px_100px_120px_100px] hover:bg-slate-50 dark:hover:bg-[#111111] transition-colors items-center">
-                  <span className="font-mono text-xs font-bold text-slate-500 dark:text-[#888888]">{hostel._id.slice(-6)}</span>
+                <div key={hostel._id} className="grid gap-0 px-6 py-5 text-sm sm:grid-cols-[100px_minmax(200px,1fr)_120px_100px_120px_100px] hover:bg-[#fafafa] dark:hover:bg-[#111111] transition-colors items-center">
+                  <span className="font-mono text-xs font-bold text-[#737373] dark:text-[#888888]">{hostel._id.slice(-6)}</span>
                   <div>
-                    <p className="font-black text-slate-900 dark:text-white">{hostel.name}</p>
-                    <p className="text-xs font-bold text-slate-500 dark:text-[#555555] mt-0.5">{hostel.location}</p>
+                    <p className="font-black text-[#111111] dark:text-white">{hostel.name}</p>
+                    <p className="text-xs font-bold text-[#737373] dark:text-[#555555] mt-0.5">{hostel.location}</p>
                   </div>
-                  <p className="font-bold text-slate-600 dark:text-[#888888]">Superadmin</p>
-                  <p className="font-bold text-slate-700 dark:text-[#dddddd]">{hostel.plan || 'Basic'}</p>
+                  <p className="font-bold text-[#737373] dark:text-[#888888]">Superadmin</p>
+                  <p className="font-bold text-[#404040] dark:text-[#dddddd]">{hostel.plan || 'Basic'}</p>
                   <div>
                     <StatusBadge tone={hostel.status === 'Active' ? 'success' : hostel.status === 'Suspended' ? 'danger' : 'warning'}>
                       {hostel.status || 'Active'}
@@ -108,7 +108,7 @@ export default function ManageTenants() {
                   <div>
                     <button 
                       onClick={() => setSelectedHostelSettings(hostel)}
-                      className="p-2 bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#2a2a2a] transition-colors"
+                      className="p-2 bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#737373] dark:text-slate-300 rounded-lg hover:bg-[#e0e0e0] dark:hover:bg-[#2a2a2a] transition-colors"
                       title="Settings"
                     >
                       <Settings className="w-4 h-4" />

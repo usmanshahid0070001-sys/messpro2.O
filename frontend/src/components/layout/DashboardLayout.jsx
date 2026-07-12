@@ -13,7 +13,7 @@ export default function DashboardLayout({
   const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-[#050505] font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen bg-[#fafafa]/50 dark:bg-[#050505] font-sans text-[#111111] dark:text-slate-100 transition-colors duration-300">
       
       {/* Global Navbar */}
       <DashboardNavbar />
@@ -47,16 +47,16 @@ export default function DashboardLayout({
 
       {/* Mobile Drawer */}
       <div 
-        className={`fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-[#0a0a0a] border-r border-slate-200 dark:border-[#222222] z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-[#0a0a0a] border-r border-[#e0e0e0] dark:border-[#222222] z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-black font-black flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#111111] dark:bg-white text-white dark:text-black font-black flex items-center justify-center">
               M
             </div>
-            <span className="text-xl font-black text-slate-900 dark:text-white">MessPro</span>
+            <span className="text-xl font-black text-[#111111] dark:text-white">MessPro</span>
           </div>
 
           <nav className="space-y-2">
@@ -73,8 +73,8 @@ export default function DashboardLayout({
                   }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold ${
                     isActive 
-                      ? "bg-slate-100 dark:bg-[#1a1a1a] text-slate-900 dark:text-white" 
-                      : "text-slate-500 dark:text-[#888888] hover:bg-slate-50 dark:hover:bg-[#111111]"
+                      ? "bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#111111] dark:text-white" 
+                      : "text-[#737373] dark:text-[#888888] hover:bg-[#fafafa] dark:hover:bg-[#111111]"
                   }`}
                 >
                   <Icon className="w-5 h-5" />

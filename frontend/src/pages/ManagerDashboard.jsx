@@ -99,13 +99,13 @@ export default function ManagerDashboard() {
 
           {activeTab === "menu" && (
             <div className="w-full max-w-5xl mx-auto flex items-center justify-center h-64 glass-panel rounded-3xl">
-              <p className="text-slate-500 font-bold">Weekly Menu (Migration Pending)</p>
+              <p className="text-[#737373] font-bold">Weekly Menu (Migration Pending)</p>
             </div>
           )}
 
           {activeTab === "bills" && (
             <div className="w-full flex items-center justify-center h-64 glass-panel rounded-3xl">
-               <p className="text-slate-500 font-bold">Manage Bills (Migration Pending)</p>
+               <p className="text-[#737373] font-bold">Manage Bills (Migration Pending)</p>
             </div>
           )}
         </motion.div>

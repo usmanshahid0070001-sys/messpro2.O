@@ -136,8 +136,8 @@ export default function WeeklyMealSelection() {
     return (
       <div className="flex flex-col items-center justify-center p-8 glass-panel rounded-[2rem] text-center">
         <AlertCircle className="w-12 h-12 text-rose-500 mb-4 animate-bounce" />
-        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Error Loading Data</h3>
-        <button onClick={() => refetch()} className="px-6 py-2 bg-slate-900 dark:bg-white dark:text-black text-white font-bold rounded-xl flex items-center gap-2">
+        <h3 className="text-xl font-black text-[#111111] dark:text-white mb-2">Error Loading Data</h3>
+        <button onClick={() => refetch()} className="px-6 py-2 bg-[#111111] dark:bg-white dark:text-black text-white font-bold rounded-xl flex items-center gap-2">
           <RefreshCw className="w-4 h-4" /> Retry
         </button>
       </div>
@@ -158,11 +158,11 @@ export default function WeeklyMealSelection() {
       {/* Premium Sticky Action Header */}
       <div className="sticky top-0 z-30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 glass-panel rounded-3xl shadow-sm">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-2xl font-black tracking-tight text-[#111111] dark:text-white flex items-center gap-2">
             <Calendar className="w-7 h-7 text-indigo-500 dark:text-indigo-400" />
             Weekly Menu Plan
           </h2>
-          <p className="mt-1 text-sm font-semibold text-slate-500 dark:text-[#94a3b8]">
+          <p className="mt-1 text-sm font-semibold text-[#737373] dark:text-[#94a3b8]">
             Customize your meals. Locked days cannot be changed.
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function WeeklyMealSelection() {
           disabled={saveMutation.isPending || !isDirty}
           className={`flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl font-bold tracking-wide transition-all ${
             !isDirty
-              ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+              ? "bg-[#e0e0e0] dark:bg-slate-800 text-[#a3a3a3] dark:text-slate-500 cursor-not-allowed"
               : "bg-indigo-600 dark:bg-indigo-500 text-white shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 dark:hover:bg-indigo-400"
           }`}
         >
@@ -202,8 +202,8 @@ export default function WeeklyMealSelection() {
                 transition={{ delay: idx * 0.05 }}
                 className={`p-6 rounded-[2rem] border transition-colors relative overflow-hidden ${
                   isPastOrToday 
-                    ? 'bg-slate-50/50 dark:bg-[#0f172a]/30 border-slate-200/50 dark:border-white/5 opacity-80' 
-                    : 'glass-panel border-slate-200 dark:border-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/30'
+                    ? 'bg-[#fafafa]/50 dark:bg-[#0f172a]/30 border-[#e0e0e0] dark:border-white/5 opacity-80' 
+                    : 'glass-panel border-[#e0e0e0] dark:border-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/30'
                 }`}
               >
                 {/* Decorative background element */}
@@ -211,20 +211,20 @@ export default function WeeklyMealSelection() {
                   <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
                 )}
 
-                <div className="flex items-center justify-between mb-5 border-b border-slate-100 dark:border-white/10 pb-4">
+                <div className="flex items-center justify-between mb-5 border-b border-[#f5f5f5] dark:border-white/10 pb-4">
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${
-                      isPastOrToday ? 'bg-slate-200 dark:bg-slate-800 text-slate-400' : 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
+                      isPastOrToday ? 'bg-[#e0e0e0] dark:bg-slate-800 text-[#a3a3a3]' : 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
                     }`}>
                       {shortDay}
                     </div>
                     <div>
-                      <h3 className="text-lg font-black text-slate-900 dark:text-white">{dayName}</h3>
-                      <p className="text-xs font-bold text-slate-500 dark:text-[#94a3b8]">{dateString}</p>
+                      <h3 className="text-lg font-black text-[#111111] dark:text-white">{dayName}</h3>
+                      <p className="text-xs font-bold text-[#737373] dark:text-[#94a3b8]">{dateString}</p>
                     </div>
                   </div>
                   {isPastOrToday && (
-                    <span className="px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                    <span className="px-3 py-1 bg-[#e0e0e0] dark:bg-slate-800 text-[#737373] dark:text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-lg">
                       Locked
                     </span>
                   )}
@@ -232,7 +232,7 @@ export default function WeeklyMealSelection() {
 
                 <div className="space-y-3">
                   {availableMeals.length === 0 ? (
-                    <div className="text-center py-4 text-sm font-semibold text-slate-400">No meals scheduled</div>
+                    <div className="text-center py-4 text-sm font-semibold text-[#a3a3a3]">No meals scheduled</div>
                   ) : (
                     availableMeals.map((mealType) => {
                       const dishName = dayMenu[mealType];
@@ -250,21 +250,21 @@ export default function WeeklyMealSelection() {
                           } ${
                             isSelected
                               ? 'border-indigo-500 bg-indigo-50/50 dark:border-indigo-400/50 dark:bg-indigo-500/10 shadow-sm'
-                              : 'border-transparent bg-slate-100 dark:bg-[#1e293b] hover:bg-slate-200 dark:hover:bg-[#334155]'
+                              : 'border-transparent bg-[#f5f5f5] dark:bg-[#1e293b] hover:bg-[#e0e0e0] dark:hover:bg-[#334155]'
                           }`}
                         >
                           <div className="flex items-center gap-4 flex-1 min-w-0">
                             {isSelected ? (
-                              <CheckCircle2 className={`w-6 h-6 flex-shrink-0 ${isEditable ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+                              <CheckCircle2 className={`w-6 h-6 flex-shrink-0 ${isEditable ? 'text-indigo-600 dark:text-indigo-400' : 'text-[#a3a3a3]'}`} />
                             ) : (
-                              <div className="w-6 h-6 flex-shrink-0 rounded-full border-2 border-slate-300 dark:border-slate-600" />
+                              <div className="w-6 h-6 flex-shrink-0 rounded-full border-2 border-[#d4d4d4] dark:border-slate-600" />
                             )}
                             
                             <div className="flex-1 min-w-0 pr-4">
-                              <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-[#94a3b8] mb-0.5">
+                              <p className="text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#94a3b8] mb-0.5">
                                 {mealType}
                               </p>
-                              <p className={`font-bold truncate text-sm sm:text-base ${isSelected ? 'text-indigo-950 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                              <p className={`font-bold truncate text-sm sm:text-base ${isSelected ? 'text-indigo-950 dark:text-white' : 'text-[#404040] dark:text-slate-300'}`}>
                                 {dishName}
                               </p>
                             </div>
@@ -272,7 +272,7 @@ export default function WeeklyMealSelection() {
                           
                           {/* Animated Toggle Switch */}
                           <div className={`relative flex items-center justify-center w-12 h-6 rounded-full transition-colors duration-300 shrink-0 ${
-                            isSelected ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-700'
+                            isSelected ? 'bg-indigo-500' : 'bg-[#d4d4d4] dark:bg-slate-700'
                           }`}>
                             <motion.div
                               layout

@@ -53,16 +53,16 @@ export default function UnifiedSidebar() {
       )}
 
       {/* Sidebar Content */}
-      <aside className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-slate-100 dark:bg-slate-950/95 border-r border-slate-200 dark:border-white/10 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[#f5f5f5] dark:bg-slate-950/95 border-r border-[#e0e0e0] dark:border-white/10 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
         {/* Sidebar Header */}
-        <div className="flex items-center gap-3 border-b border-slate-200 dark:border-white/10 px-6 py-6 h-20 shrink-0">
+        <div className="flex items-center gap-3 border-b border-[#e0e0e0] dark:border-white/10 px-6 py-6 h-20 shrink-0">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-orange-500 dark:to-amber-400 text-lg font-bold text-white shadow-lg">
             M
           </div>
           <div className="flex flex-col min-w-0 overflow-hidden">
-            <span className="truncate text-lg font-bold text-slate-900 dark:text-white">MessPro</span>
-            <span className="truncate text-xs font-semibold text-slate-500 dark:text-slate-400 capitalize">
+            <span className="truncate text-lg font-bold text-[#111111] dark:text-white">MessPro</span>
+            <span className="truncate text-xs font-semibold text-[#737373] dark:text-slate-400 capitalize">
               {role ? role.replace('superadmin', 'Super Admin') : 'User'}
             </span>
           </div>
@@ -81,7 +81,7 @@ export default function UnifiedSidebar() {
                   `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
                     isActive
                       ? 'bg-indigo-500/10 text-indigo-700 dark:bg-orange-500/10 dark:text-orange-400'
-                      : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white'
+                      : 'text-[#737373] hover:bg-[#e0e0e0]/50 hover:text-[#111111] dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white'
                   }`
                 }
               >
@@ -93,7 +93,7 @@ export default function UnifiedSidebar() {
         </nav>
 
         {/* Footer Area */}
-        <div className="border-t border-slate-200 dark:border-white/10 p-4 shrink-0 space-y-4">
+        <div className="border-t border-[#e0e0e0] dark:border-white/10 p-4 shrink-0 space-y-4">
           
           {/* System Health (Optional, could be only for admins) */}
           {(role === 'superadmin' || role === 'admin') && (
@@ -107,17 +107,17 @@ export default function UnifiedSidebar() {
           )}
 
           {/* User Profile Summary */}
-          <div className="flex items-center gap-3 rounded-2xl p-3 bg-slate-50 border border-slate-200 dark:bg-[#0a0a0a] dark:border-[#222222]">
-            <div className="h-10 w-10 shrink-0 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300">
+          <div className="flex items-center gap-3 rounded-2xl p-3 bg-[#fafafa] border border-[#e0e0e0] dark:bg-[#0a0a0a] dark:border-[#222222]">
+            <div className="h-10 w-10 shrink-0 rounded-full bg-[#e0e0e0] dark:bg-slate-800 flex items-center justify-center font-bold text-[#737373] dark:text-slate-300">
               {user?.name?.charAt(0) || 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{user?.name || 'User'}</p>
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{user?.email || user?.rollNumber || ''}</p>
+              <p className="truncate text-sm font-bold text-[#111111] dark:text-white">{user?.name || 'User'}</p>
+              <p className="truncate text-xs font-medium text-[#737373] dark:text-slate-400">{user?.email || user?.rollNumber || ''}</p>
             </div>
             <button 
               onClick={logout}
-              className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-colors"
+              className="p-2 text-[#a3a3a3] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />

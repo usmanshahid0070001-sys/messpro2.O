@@ -13,7 +13,7 @@ export default function DashboardLayout({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#050505] font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-[#050505] font-sans text-[#111111] dark:text-slate-100 transition-colors duration-300">
       {/* Global Navbar */}
       <DashboardNavbar
         onMenuToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}

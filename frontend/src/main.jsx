@@ -25,7 +25,7 @@ const queryClient = new QueryClient({
 });
 
 const customToastOptions = {
-  className: 'dark:bg-slate-800 dark:text-white bg-white text-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl font-sans font-bold text-sm rounded-2xl',
+  className: 'dark:bg-slate-800 dark:text-white bg-white text-[#111111] border border-[#e0e0e0] dark:border-slate-700 shadow-xl font-sans font-bold text-sm rounded-2xl',
   style: { padding: '12px 20px' },
   success: { iconTheme: { primary: '#10b981', secondary: '#ffffff' } },
   error: { iconTheme: { primary: '#f43f5e', secondary: '#ffffff' } },
@@ -36,7 +36,7 @@ const customToastOptions = {
           className="w-5 h-5 rounded-full border-[3px] border-indigo-500/20 border-t-blue-500 animate-spin" 
           style={{ animationTimingFunction: 'linear' }}
         />
-        <span className="font-display font-black tracking-tight text-slate-900 dark:text-white text-base animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
+        <span className="font-display font-black tracking-tight text-[#111111] dark:text-white text-base animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
           Loading MessPro<span className="text-blue-500">.</span>
         </span>
       </div>
