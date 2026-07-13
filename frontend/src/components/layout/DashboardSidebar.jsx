@@ -18,7 +18,7 @@ export default function DashboardSidebar({
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       className={`hidden lg:flex fixed left-4 md:left-6 top-[88px] bottom-6 flex-col z-30 transition-all duration-300 ease-in-out ${isHovered ? 'w-[280px]' : 'w-[88px]'
-        } glass-panel rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden`}
+        } glass-panel rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden`}
     >
       {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
@@ -42,7 +42,7 @@ export default function DashboardSidebar({
               onMouseLeave={() => setHoveredItem(null)}
             >
               {/* Fixed-position icon slot - identical box in both states, so the icon never shifts */}
-              <div className="w-[56px] h-[46px] flex items-center justify-center flex-shrink-0">
+              <div className="w-[60px] h-[46px] flex items-center justify-center flex-shrink-0">
                 <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-[#111111] dark:text-white' : 'text-[#a3a3a3] dark:text-[#555555] group-hover:text-[#404040] dark:group-hover:text-white'
                   }`} />
               </div>

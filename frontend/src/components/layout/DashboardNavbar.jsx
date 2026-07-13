@@ -24,7 +24,7 @@ export default function DashboardNavbar() {
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="glass-panel rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)]"
+          className="glass-panel rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)]"
         >
           <div className="flex items-center justify-between px-4 py-2.5 md:px-6">
             {/* Left: Mobile Menu Toggle + Logo */}
@@ -37,10 +37,8 @@ export default function DashboardNavbar() {
               </button>
 
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-                <div className="relative flex items-center justify-center w-9 h-9 hidden md:flex">
-                  <div className="w-8 h-8 rounded-lg bg-[#111111] dark:bg-white text-white dark:text-black font-black flex items-center justify-center">
-                    M
-                  </div>
+                <div className="relative flex items-center justify-center w-9 h-9 md:flex">
+                  <img src="/pwa-192x192.png" alt="MessPro Logo" className="w-8 h-8 rounded-lg object-contain" />
                 </div>
                 <span className="text-xl md:text-2xl font-black tracking-tight text-[#111111] dark:text-white">
                   MessPro<span className="text-[#a3a3a3] dark:text-[#555555]">.</span>
@@ -107,19 +105,6 @@ export default function DashboardNavbar() {
                             {user?.email || "user@messpro.com"}
                           </p>
                         </div>
-
-                        {!isPWA && (
-                          <button
-                            onClick={() => {
-                              setShowUserMenu(false);
-                              navigate("/", { state: { fromDashboard: true } });
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#404040] dark:text-[#888888] hover:bg-[#fafafa] dark:hover:bg-[#111111] dark:hover:text-white transition-colors cursor-pointer border-b border-[#f5f5f5] dark:border-[#222222]"
-                          >
-                            <Home className="w-4 h-4" />
-                            Home
-                          </button>
-                        )}
 
                         <button
                           onClick={handleLogout}
