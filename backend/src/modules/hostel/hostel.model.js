@@ -60,7 +60,7 @@ const hostelSchema = new mongoose.Schema({
     settings: {
         authMethod: {
             type: String,
-            enum: ['Email'],
+            enum: ['Email', 'RollNumber'],
             
         },
         attendanceMethod: {

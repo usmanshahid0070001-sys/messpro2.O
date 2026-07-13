@@ -14,5 +14,10 @@ export const superadminApi = {
   updateHostelSettings: async (id, settingsData) => {
     const response = await api.patch(`/api/hostels/${id}/settings`, settingsData);
     return response.data;
+  },
+
+  addHostelUser: async (id, userData) => {
+    const response = await api.post(`/api/hostels/${id}/users`, userData);
+    return response.data;
   }
 };

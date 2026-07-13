@@ -22,3 +22,14 @@ export const useUpdateHostelSettings = () => {
     }
   });
 };
+
+export const useAddHostelUser = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, userData }) => superadminApi.addHostelUser(id, userData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'hostels'] });
+    }
+  });
+};

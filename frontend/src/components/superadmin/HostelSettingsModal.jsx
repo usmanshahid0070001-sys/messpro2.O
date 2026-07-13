@@ -1,26 +1,23 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, ShieldCheck, Clock, CreditCard, Utensils } from 'lucide-react';
+import { X, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useUpdateHostelSettings } from '../../hooks/mutations/useSuperadminMutations';
+import { usePlans } from '../../hooks/queries/usePlanQueries';
 
 export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   const [formData, setFormData] = useState({
-    authMethod: 'Email',
-    attendanceMethod: 'Manual',
-    billingModel: 'Prepaid',
-    autoMealVerification: true
+    plan: ''
   });
   
   const { mutateAsync: updateHostelSettings, isPending: loading } = useUpdateHostelSettings();
+  const { data: plansData, isLoading: loadingPlans } = usePlans();
+  const plans = plansData?.data || [];
 
   useEffect(() => {
-    if (hostel && hostel.settings) {
+    if (hostel && hostel.plan) {
       setFormData({
-        authMethod: hostel.settings.authMethod || 'Email',
-        attendanceMethod: hostel.settings.attendanceMethod || 'Manual',
-        billingModel: hostel.settings.billingModel || 'Prepaid',
-        autoMealVerification: hostel.settings.autoMealVerification !== undefined ? hostel.settings.autoMealVerification : true
+        plan: hostel.plan.planId || ''
       });
     }
   }, [hostel]);
@@ -28,10 +25,10 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   if (!isOpen || !hostel) return null;
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value
     }));
   };
 
@@ -47,7 +44,7 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -66,70 +63,28 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Authentication Method</label>
-            <div className="relative">
-              <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                disabled
-                value="Email"
-                className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-[#111111]/50 border border-slate-200 dark:border-[#222222] rounded-2xl text-slate-500 dark:text-[#888888] font-bold cursor-not-allowed"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Attendance Method</label>
-            <div className="relative">
-              <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a3a3a3]" />
-              <select
-                name="attendanceMethod"
-                value={formData.attendanceMethod}
-                onChange={handleChange}
-                className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-              >
-                <option value="Manual">Manual</option>
-                <option value="QR">QR Code</option>
-                <option value="Biometric">Biometric</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Billing Model</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Hostel Subscription Plan</label>
             <div className="relative">
               <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a3a3a3]" />
               <select
-                name="billingModel"
-                value={formData.billingModel}
+                name="plan"
+                value={formData.plan}
                 onChange={handleChange}
-                className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                disabled={loadingPlans}
+                className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none disabled:opacity-50"
               >
-                <option value="Prepaid">Prepaid</option>
-                <option value="Postpaid">Postpaid</option>
-                <option value="FlatRate">Flat Rate</option>
+                {loadingPlans ? (
+                  <option value="">Loading plans...</option>
+                ) : plans.length === 0 ? (
+                  <option value="">No plans available</option>
+                ) : (
+                  plans.map(p => (
+                    <option key={p._id} value={p._id}>{p.name} (${p.price})</option>
+                  ))
+                )}
               </select>
             </div>
-          </div>
-
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-3">
-              <Utensils className="w-5 h-5 text-[#a3a3a3]" />
-              <div>
-                <label className="block text-sm font-black text-[#111111] dark:text-white">Auto Meal Verification</label>
-                <span className="text-xs font-bold text-[#737373] dark:text-[#888888]">Automatically verify meals on entry</span>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                name="autoMealVerification"
-                checked={formData.autoMealVerification}
-                onChange={handleChange}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-[#e0e0e0] dark:bg-[#222222] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
+            <p className="mt-2 text-xs font-medium text-[#737373] dark:text-[#888888]">Changing the plan updates limits and allowed features for this hostel.</p>
           </div>
 
           <div className="pt-4 flex gap-3">

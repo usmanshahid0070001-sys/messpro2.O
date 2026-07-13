@@ -2,30 +2,10 @@ import crypto from 'crypto';
 import hostelRepository from './hostel.repository.js';
 import User from '../auth/auth.model.js';
 import PlainUser from '../auth/plainUser.model.js';
+import Plan from '../plan/plan.model.js';
 import { sendEmail } from '../../utils/email.js';
 
-export const PLAN_FEATURES = {
-  Basic: {
-    allowedAttendanceMethods: ['Manual'],
-    allowedBillingModels: ['Prepaid'],
-    allowAutoMealVerification: false,
-  },
-  Standard: {
-    allowedAttendanceMethods: ['Manual', 'QR'],
-    allowedBillingModels: ['Prepaid', 'Postpaid'],
-    allowAutoMealVerification: true,
-  },
-  Premium: {
-    allowedAttendanceMethods: ['Manual', 'QR', 'Biometric'],
-    allowedBillingModels: ['Prepaid', 'Postpaid', 'FlatRate'],
-    allowAutoMealVerification: true,
-  },
-  Enterprise: {
-    allowedAttendanceMethods: ['Manual', 'QR', 'Biometric'],
-    allowedBillingModels: ['Prepaid', 'Postpaid', 'FlatRate'],
-    allowAutoMealVerification: true,
-  }
-};
+
 
 class HostelService {
   async registerHostel(data) {
@@ -39,11 +19,30 @@ class HostelService {
       throw new Error('This subdomain is already in use. Please choose another.');
     }
 
+    let planData = null;
+    if (data.plan) {
+      planData = await Plan.findById(data.plan);
+    }
+    if (!planData) {
+      planData = await Plan.findOne(); // fallback to any existing plan
+    }
+    
+    if (!planData) {
+      throw new Error('No subscription plans found in the database. Please create a plan first.');
+    }
+
+    const planSnapshot = {
+      planId: planData._id,
+      name: planData.name,
+      limits: planData.limits,
+      features: planData.features,
+    };
+
     const hostel = await hostelRepository.create({
       name: data.name,
       subdomain: data.subdomain,
       location: data.location,
-      plan: data.plan || 'Basic',
+      plan: planSnapshot,
       settings: {
         authMethod: data.settings?.authMethod || 'Email',
         attendanceMethod: data.settings?.attendanceMethod || 'Manual',
@@ -73,35 +72,29 @@ class HostelService {
     return await hostelRepository.findAll();
   }
 
-  validateHostelSettings(hostel, settingsData) {
-    const isTrialActive = hostel.isTrial && hostel.trialExpiresAt && new Date() < new Date(hostel.trialExpiresAt);
-    const plan = isTrialActive ? 'Premium' : (hostel.plan || 'Basic');
-
-    const limits = PLAN_FEATURES[plan] || PLAN_FEATURES.Basic;
-
-    if (settingsData.attendanceMethod && !limits.allowedAttendanceMethods.includes(settingsData.attendanceMethod)) {
-      throw new Error(`Attendance method "${settingsData.attendanceMethod}" is not allowed under the "${plan}" plan.`);
-    }
-
-    if (settingsData.billingModel && !limits.allowedBillingModels.includes(settingsData.billingModel)) {
-      throw new Error(`Billing model "${settingsData.billingModel}" is not allowed under the "${plan}" plan.`);
-    }
-
-    if (settingsData.autoMealVerification === true && !limits.allowAutoMealVerification) {
-      throw new Error(`Auto Meal Verification is not allowed under the "${plan}" plan.`);
-    }
-  }
-
   async updateHostelSettings(hostelId, newSettingsData) {
     const hostel = await hostelRepository.findById(hostelId);
     if (!hostel) {
       throw new Error('Hostel not found.');
     }
 
-    this.validateHostelSettings(hostel, newSettingsData);
+    const updateData = {};
 
-    const mergedSettings = { ...hostel.settings, ...newSettingsData };
-    return await hostelRepository.updateSettings(hostelId, mergedSettings);
+    if (newSettingsData.plan) {
+      const planData = await Plan.findById(newSettingsData.plan);
+      if (!planData) {
+        throw new Error('Selected plan not found.');
+      }
+      
+      updateData.plan = {
+        planId: planData._id,
+        name: planData.name,
+        limits: planData.limits,
+        features: planData.features,
+      };
+    }
+
+    return await hostelRepository.updateHostel(hostelId, updateData);
   }
 
   async createHostelUser(hostelId, userData) {

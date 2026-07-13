@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
@@ -13,6 +14,16 @@ export default function DashboardLayout({
   children,
 }) {
   const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
+  const setActiveSectionLabel = useUIStore.getState().setActiveSectionLabel;
+
+  // Sync the active section label to the store so the navbar can display it
+  // Only activeTab triggers this — navItems reference is unstable (new array each render)
+  useEffect(() => {
+    const activeItem = navItems.find((item) => item.id === activeTab);
+    setActiveSectionLabel(activeItem?.label || '');
+    return () => setActiveSectionLabel('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-[#fafafa]/50 dark:bg-[#050505] font-sans text-[#111111] dark:text-slate-100 transition-colors duration-300 selection:bg-black/10 dark:selection:bg-white/10">
@@ -20,7 +31,7 @@ export default function DashboardLayout({
       {/* Global Navbar */}
       <DashboardNavbar />
 
-      <div className="flex pt-[80px] lg:pt-[88px] min-h-screen relative z-10">
+      <div className="flex pt-[80px] lg:pt-[88px] min-h-screen relative">
         {/* Desktop Sidebar (Hover-based) */}
         <DashboardSidebar
           navItems={navItems}

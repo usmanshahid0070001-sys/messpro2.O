@@ -24,10 +24,10 @@ class HostelRepository{
     return await Hostel.findById(id);
   }
 
-  async updateSettings(id,newSettings){
+  async updateHostel(id, updateData){
     return await Hostel.findByIdAndUpdate(id,
         {
-            $set:{settings:newSettings}
+            $set: updateData
         },
         {
             new:true,

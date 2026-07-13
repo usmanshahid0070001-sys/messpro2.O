@@ -9,18 +9,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
-// Feature Components (to be migrated in Phase 4)
-// import BillSummary from "../features/admin/BillSummary";
-// import ManageUsers from "../features/admin/ManageUsers";
-// import MealSettings from "../features/admin/MealSettings";
-// import GenerateBills from "../features/admin/GenerateBills";
-// import AttendanceUpload from "../features/admin/AttendenceUpload";
-// import MealControl from "../features/admin/MealControl";
-// import WeeklyMenu from "../features/admin/WeeklyMenu";
-
-// Shared UI Components (V1 Layout + Premium Theme)
+// Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
-import PageHeader from "../components/shared/PageHeader";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -52,29 +42,6 @@ export default function AdminDashboard() {
     { id: "weeklyMenu", label: "Weekly Menu", icon: FileText },
   ];
 
-  const getHeaderContent = () => {
-    switch (activeTab) {
-      case "billSummary":
-        return { title: "Financial", highlightText: "Overview", subtitle: "Monitor hostel revenue, pending dues, and overall financial health." };
-      case "users":
-        return { title: "Student", highlightText: "Directory", subtitle: "Manage student accounts, room allocations, and system access." };
-      case "attendance":
-        return { title: "Machine", highlightText: "Attendance", subtitle: "Upload and sync biometric attendance logs." };
-      case "bills":
-        return { title: "Invoice", highlightText: "Generation", subtitle: "Calculate and generate monthly mess bills for all active students." };
-      case "settings":
-        return { title: "System", highlightText: "Settings", subtitle: "Configure daily meal timings and system-wide operational rules." };
-      case "mealControl":
-        return { title: "Meal", highlightText: "Control", subtitle: "Manually adjust meal counts and apply fines for violations." };
-      case "weeklyMenu":
-        return { title: "Weekly", highlightText: "Menu", subtitle: "Plan and manage the weekly mess menu." };
-      default:
-        return { title: "Admin", highlightText: "Dashboard", subtitle: "Manage the mess system operations." };
-    }
-  };
-
-  const headerContent = getHeaderContent();
-
   const renderPlaceholder = (text) => (
     <div className="w-full h-64 glass-panel rounded-3xl flex items-center justify-center">
       <p className="text-[#737373] font-bold">{text} (Migration Pending)</p>
@@ -88,14 +55,6 @@ export default function AdminDashboard() {
       activeTab={activeTab}
       setActiveTab={setActiveTab}
     >
-      <PageHeader 
-        title={headerContent.title}
-        highlightText={headerContent.highlightText}
-        subtitle={headerContent.subtitle}
-        badgeText="Administrator Portal"
-        icon={ShieldCheck}
-      />
-
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}

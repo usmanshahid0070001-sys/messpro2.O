@@ -3,6 +3,9 @@ import { create } from 'zustand';
 const useUIStore = create((set) => ({
   theme: localStorage.getItem('theme') || 'dark', // Default to dark as requested for premium look
   isMobileMenuOpen: false,
+  activeSectionLabel: '',
+
+  setActiveSectionLabel: (label) => set({ activeSectionLabel: label }),
 
   toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
   setMobileMenuOpen: (isOpen) => set({ isMobileMenuOpen: isOpen }),

@@ -1,18 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Building2, MapPin, Globe, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCreateHostel } from '../../hooks/mutations/useSuperadminMutations';
+import { usePlans } from '../../hooks/queries/usePlanQueries';
 
 export default function CreateHostelModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
     name: '',
     subdomain: '',
     location: '',
-    plan: 'Basic'
+    plan: ''
   });
   
+  const { data: plansData, isLoading: loadingPlans } = usePlans();
+  const plans = plansData?.data || [];
+
   const { mutateAsync: createHostel, isPending: loading } = useCreateHostel();
+
+  // Set default plan once loaded
+  useEffect(() => {
+    if (plans.length > 0 && !formData.plan) {
+      setFormData(prev => ({ ...prev, plan: plans[0]._id }));
+    }
+  }, [plans, formData.plan]);
 
   if (!isOpen) return null;
 
@@ -33,7 +44,7 @@ export default function CreateHostelModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -107,11 +118,18 @@ export default function CreateHostelModal({ isOpen, onClose }) {
                 name="plan"
                 value={formData.plan}
                 onChange={handleChange}
-                className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                disabled={loadingPlans}
+                className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none disabled:opacity-50"
               >
-                <option value="Basic">Basic</option>
-                <option value="Premium">Premium</option>
-                <option value="Enterprise">Enterprise</option>
+                {loadingPlans ? (
+                  <option value="">Loading plans...</option>
+                ) : plans.length === 0 ? (
+                  <option value="">No plans available</option>
+                ) : (
+                  plans.map(p => (
+                    <option key={p._id} value={p._id}>{p.name} (${p.price})</option>
+                  ))
+                )}
               </select>
             </div>
           </div>

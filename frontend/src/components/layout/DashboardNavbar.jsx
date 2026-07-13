@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import useUIStore from "../../store/useUIStore";
 
 export default function DashboardNavbar() {
-  const { theme, toggleTheme, toggleMobileMenu } = useUIStore();
+  const { theme, toggleTheme, toggleMobileMenu, activeSectionLabel } = useUIStore();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -27,7 +27,8 @@ export default function DashboardNavbar() {
           className="glass-panel rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)]"
         >
           <div className="flex items-center justify-between px-4 py-2.5 md:px-6">
-            {/* Left: Mobile Menu Toggle + Logo */}
+            
+            {/* Left: Mobile Menu Toggle + Logo + Active Tab */}
             <div className="flex items-center gap-3 md:gap-4">
               <button
                 onClick={toggleMobileMenu}
@@ -36,13 +37,36 @@ export default function DashboardNavbar() {
                 <Menu className="w-5 h-5 text-[#737373] dark:text-[#888888]" />
               </button>
 
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-                <div className="relative flex items-center justify-center w-9 h-9 md:flex">
-                  <img src="/pwa-192x192.png" alt="MessPro Logo" className="w-8 h-8 rounded-lg object-contain" />
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
+                  <div className="relative flex items-center justify-center w-9 h-9 md:flex">
+                    <img src="/pwa-192x192.png" alt="MessPro Logo" className="w-8 h-8 rounded-lg object-contain" />
+                  </div>
+                  <span className="text-xl md:text-2xl font-black tracking-tight text-[#111111] dark:text-white">
+                    MessPro<span className="text-[#a3a3a3] dark:text-[#555555]">.</span>
+                  </span>
                 </div>
-                <span className="text-xl md:text-2xl font-black tracking-tight text-[#111111] dark:text-white">
-                  MessPro<span className="text-[#a3a3a3] dark:text-[#555555]">.</span>
-                </span>
+                
+                {/* Active Section Label — hidden on mobile, aligns seamlessly next to logo */}
+                <AnimatePresence mode="wait">
+                  {activeSectionLabel && (
+                    <motion.div
+                      key={activeSectionLabel}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -8 }}
+                      transition={{ duration: 0.15 }}
+                      className="hidden lg:flex items-center gap-3"
+                    >
+                      <span className="text-2xl font-light text-[#e5e5e5] dark:text-[#2a2a2a] leading-none mb-1 select-none pointer-events-none">
+                        /
+                      </span>
+                      <span className="text-sm font-bold text-[#737373] dark:text-[#888888] tracking-tight">
+                        {activeSectionLabel}
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -59,9 +83,8 @@ export default function DashboardNavbar() {
                 <motion.div
                   layout
                   transition={{ type: "spring", stiffness: 600, damping: 32 }}
-                  className={`relative z-10 w-[22px] h-[22px] rounded-full shadow-sm flex items-center justify-center bg-white dark:bg-[#222222] ${
-                    theme === "dark" ? "ml-auto" : "mr-auto"
-                  }`}
+                  className={`relative z-10 w-[22px] h-[22px] rounded-full shadow-sm flex items-center justify-center bg-white dark:bg-[#222222] ${theme === "dark" ? "ml-auto" : "mr-auto"
+                    }`}
                 >
                   {theme === "dark" ? (
                     <Moon className="w-3 h-3 text-white" />

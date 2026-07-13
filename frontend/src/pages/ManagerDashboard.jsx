@@ -1,16 +1,12 @@
-import { useState } from "react";
 import { Utensils, LayoutDashboard, CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
-// Feature Components (to be migrated in Phase 3)
+// Feature Components
 import LiveCounts from "../features/manager/LiveCounts";
-// import WeeklyMenu from "../features/manager/WeeklyMenu";
-// import ManageBills from "../features/manager/ManageBills";
 
-// Shared UI Components (V1 Layout + Premium Theme)
+// Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
-import PageHeader from "../components/shared/PageHeader";
 
 // Auth & API
 import { useAuth } from "../context/AuthContext";
@@ -37,37 +33,6 @@ export default function ManagerDashboard() {
     { id: "bills", label: "Bill Management", icon: CreditCard },
   ];
 
-  const getHeaderContent = () => {
-    switch (activeTab) {
-      case "menu":
-        return {
-          title: "Weekly",
-          highlightText: "Menu",
-          subtitle: "Curate and manage the dining schedule for the week.",
-          badgeText: "Menu Management",
-          icon: Utensils,
-        };
-      case "bills":
-        return {
-          title: "Bill",
-          highlightText: "Clearance Desk",
-          subtitle: "Search, filter, and process partial or full bill payments.",
-          badgeText: "Financial Operations",
-          icon: CreditCard,
-        };
-      default:
-        return {
-          title: "Hello,",
-          highlightText: user?.name || "Manager",
-          subtitle: "Monitor real-time meal counts and session active bookings.",
-          badgeText: "Kitchen Command Center",
-          icon: LayoutDashboard,
-        };
-    }
-  };
-
-  const headerContent = getHeaderContent();
-
   return (
     <DashboardLayout
       userRole="manager"
@@ -75,14 +40,6 @@ export default function ManagerDashboard() {
       activeTab={activeTab}
       setActiveTab={setActiveTab}
     >
-      <PageHeader
-        title={headerContent.title}
-        highlightText={headerContent.highlightText}
-        subtitle={headerContent.subtitle}
-        badgeText={headerContent.badgeText}
-        icon={headerContent.icon}
-      />
-
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
