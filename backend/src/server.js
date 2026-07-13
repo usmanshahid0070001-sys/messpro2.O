@@ -9,6 +9,7 @@ import {connectDB} from './config/db.js'
 
 import hostelRoutes from './modules/hostel/hostel.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
+import planRoutes from './modules/plan/plan.routes.js';
 import { globalErrorHandler } from './middlewares/error.middleware.js';
 
 dotenv.config();//this will load the environment variables first 
