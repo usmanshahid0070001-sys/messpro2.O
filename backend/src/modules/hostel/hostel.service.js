@@ -88,6 +88,15 @@ class HostelService {
     return await hostelRepository.findAll();
   }
 
+
+  async getHostelById(hostelId) {
+    const hostel = await hostelRepository.findById(hostelId);
+    if (!hostel) {
+      throw new Error('Hostel not found.');
+    }
+    return hostel;
+  }
+
   async updateHostelSettings(hostelId, newSettingsData) {
     const hostel = await hostelRepository.findById(hostelId);
     if (!hostel) {

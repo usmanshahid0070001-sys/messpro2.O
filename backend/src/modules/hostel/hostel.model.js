@@ -19,6 +19,17 @@ const hostelSchema = new mongoose.Schema({
     },
 
 
+    customRegistrationFields: {
+        type: [{
+          name: String,        // e.g., "CNIC", "Phone Number", "Blood Group"
+          isRequired: Boolean  // e.g., true or false
+        }],
+        validate: [
+          (array) => array.length <= 5, 
+          'You can only add a maximum of 5 custom fields.'
+        ]
+      }
+,
     //each hostel status and plan (tenant)
     // plan: {
     //     type: String,

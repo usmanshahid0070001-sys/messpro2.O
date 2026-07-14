@@ -12,6 +12,7 @@ import authRoutes from './modules/auth/auth.routes.js';
 import planRoutes from './modules/plan/plan.routes.js';
 import userRoutes from './modules/user/user.routes.js'
 import { globalErrorHandler } from './middlewares/error.middleware.js';
+import residenceRoutes from './modules/residence/residence.routes.js'
 
 dotenv.config();//this will load the environment variables first 
 
@@ -50,7 +51,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/hostels', hostelRoutes);
 app.use('/api/plans', planRoutes);
 app.use('/api/users', userRoutes);
-
+app.use('/api/residence', residenceRoutes);
 
 
 app.get('/', (req, res) => {
