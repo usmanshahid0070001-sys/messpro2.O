@@ -124,7 +124,7 @@ class HostelService {
     );
 
     const lineItems = [
-      `Hostel: ${hostelId}`,
+      `Hostel: ${hostel.name}`,
       `Role: ${userData.role}`,
       `Email: ${userData.email}`,
       `Temporary password: ${password}`,
