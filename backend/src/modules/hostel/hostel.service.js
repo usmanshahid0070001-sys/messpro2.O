@@ -14,10 +14,10 @@ class HostelService {
       throw new Error('A hostel with this name is already registered.');
     }
 
-    const existingSubdomain = await hostelRepository.findBySubdomain(data.subdomain);
-    if (existingSubdomain) {
-      throw new Error('This subdomain is already in use. Please choose another.');
-    }
+    // const existingSubdomain = await hostelRepository.findBySubdomain(data.subdomain);
+    // if (existingSubdomain) {
+    //   throw new Error('This subdomain is already in use. Please choose another.');
+    // }
 
     const adminExists = await User.findOne({ email: data.adminEmail.toLowerCase().trim() });
     if (adminExists) {

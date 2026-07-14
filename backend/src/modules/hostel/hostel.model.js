@@ -9,7 +9,7 @@ const hostelSchema = new mongoose.Schema({
     subdomain: {
         type: String,
         required: true,
-        unique: true,
+        // unique: true,
         lowercase: true,
     },
 
