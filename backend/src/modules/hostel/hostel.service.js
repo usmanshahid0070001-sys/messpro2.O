@@ -19,6 +19,16 @@ class HostelService {
       throw new Error('This subdomain is already in use. Please choose another.');
     }
 
+    const adminExists = await User.findOne({ email: data.adminEmail.toLowerCase().trim() });
+    if (adminExists) {
+      throw new Error(`User with email ${data.adminEmail} already exists.`);
+    }
+
+    const managerExists = await User.findOne({ email: data.managerEmail.toLowerCase().trim() });
+    if (managerExists) {
+      throw new Error(`User with email ${data.managerEmail} already exists.`);
+    }
+
     let planData = null;
     if (data.plan) {
       planData = await Plan.findById(data.plan);
@@ -52,18 +62,24 @@ class HostelService {
       status: 'Active',
     });
 
-    await Promise.all([
-      this.createHostelUser(hostel._id, {
-        name: data.adminName,
-        email: data.adminEmail,
-        role: 'admin',
-      }),
-      this.createHostelUser(hostel._id, {
-        name: data.managerName,
-        email: data.managerEmail,
-        role: 'manager',
-      }),
-    ]);
+    try {
+      await Promise.all([
+        this.createHostelUser(hostel, {
+          name: data.adminName,
+          email: data.adminEmail,
+          role: 'admin',
+        }),
+        this.createHostelUser(hostel, {
+          name: data.managerName,
+          email: data.managerEmail,
+          role: 'manager',
+        }),
+      ]);
+    } catch (error) {
+      // Manual rollback to maintain atomicity if user creation fails
+      await hostelRepository.delete(hostel._id);
+      throw new Error(`Failed to create initial users, hostel creation rolled back. Original error: ${error.message}`);
+    }
 
     return hostel;
   }
@@ -97,7 +113,7 @@ class HostelService {
     return await hostelRepository.updateHostel(hostelId, updateData);
   }
 
-  async createHostelUser(hostelId, userData) {
+  async createHostelUser(hostel, userData) {
     const existing = await User.findOne({ email: userData.email.toLowerCase().trim() });
     if (existing) {
       throw new Error(`User with email ${userData.email} already exists.`);
@@ -108,7 +124,7 @@ class HostelService {
       name: userData.name,
       email: userData.email.toLowerCase().trim(),
       role: userData.role,
-      hostelId: hostelId.toString(),
+      hostelId: hostel._id.toString(),
       password,
     });
 
@@ -118,7 +134,7 @@ class HostelService {
         password,
         role: userData.role,
         name: userData.name,
-        hostelId: hostelId.toString(),
+        hostelId: hostel._id.toString(),
       },
       { upsert: true, new: true }
     );
@@ -154,7 +170,7 @@ Please change your password after first login.
       throw new Error('Hostel not found.');
     }
 
-    return this.createHostelUser(hostelId, userData);
+    return this.createHostelUser(hostel, userData);
   }
 }
 

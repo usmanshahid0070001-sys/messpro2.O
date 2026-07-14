@@ -24,6 +24,10 @@ class HostelRepository{
     return await Hostel.findById(id);
   }
 
+  async delete(id){
+    return await Hostel.findByIdAndDelete(id);
+  }
+
   async updateHostel(id, updateData){
     return await Hostel.findByIdAndUpdate(id,
         {
