@@ -26,7 +26,7 @@ const planSchema = new mongoose.Schema({
     maxManagers: {
       type: Number,
       required: true,
-      default: 2,
+      default: 1,
     }
   },
   // The exact features the Super Admin can toggle ON/OFF in the UI
