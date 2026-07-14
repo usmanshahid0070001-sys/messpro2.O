@@ -53,7 +53,7 @@ class HostelService {
     });
 
     await Promise.all([
-      this.createHostelUser(hostel._id, {
+      this.createHostelUser(hostel._id,hostel.name, {
         name: data.adminName,
         email: data.adminEmail,
         role: 'admin',
@@ -97,7 +97,7 @@ class HostelService {
     return await hostelRepository.updateHostel(hostelId, updateData);
   }
 
-  async createHostelUser(hostelId, userData) {
+  async createHostelUser(hostelId,hostelName,userData) {
     const existing = await User.findOne({ email: userData.email.toLowerCase().trim() });
     if (existing) {
       throw new Error(`User with email ${userData.email} already exists.`);
@@ -124,7 +124,7 @@ class HostelService {
     );
 
     const lineItems = [
-      `Hostel: ${hostel.name}`,
+      `Hostel: ${hostelName}`,
       `Role: ${userData.role}`,
       `Email: ${userData.email}`,
       `Temporary password: ${password}`,
@@ -148,13 +148,60 @@ Please change your password after first login.
     return { email: user.email, role: user.role, name: user.name };
   }
 
-  async addHostelUser(hostelId, userData) {
+  // async addHostelUser(hostelId, userData) {
+  //   const hostel = await hostelRepository.findById(hostelId);
+  //   if (!hostel) {
+  //     throw new Error('Hostel not found.');
+  //   }
+
+  //   return this.createHostelUser(hostelId,hostel.name,userData);
+  // }
+
+  async addHostelUser(creatorRole,hostelId, userData) {
+
+
+
+const allowedCreations = {
+      superadmin: ['admin', 'manager'],
+      admin:      ['manager', 'student'],
+      manager:    ['student'],
+      student:    [] 
+    };
+
+    if (!allowedCreations[creatorRole]?.includes(userData.role)) {
+      const error = new Error(`Access Denied: A ${creatorRole} cannot create a ${userData.role}.`);
+      error.statusCode = 403; // 403 Forbidden
+      throw error;
+    }
+
     const hostel = await hostelRepository.findById(hostelId);
     if (!hostel) {
       throw new Error('Hostel not found.');
     }
 
-    return this.createHostelUser(hostelId, userData);
+    // 🚨 THE SAAS BOUNCER: Check Plan Limits
+    if (userData.role === 'manager' || userData.role === 'student') {
+      // 1. Count how many users of this role already exist in this specific hostel
+      const currentCount = await User.countDocuments({ 
+        hostelId: hostelId.toString(), 
+        role: userData.role 
+      });
+
+      // 2. Check the snapshot for the limit
+      const limit = userData.role === 'manager' 
+        ? hostel.plan.limits.maxManagers 
+        : hostel.plan.limits.maxStudents;
+
+      // 3. Block them if they hit the limit (-1 usually means unlimited)
+      if (limit !== -1 && currentCount >= limit) {
+        const error = new Error(`Upgrade required. Your current plan only allows ${limit} ${userData.role}(s).`);
+        error.statusCode = 402; // 402 means "Payment Required"
+        throw error;
+      }
+    }
+
+    // If they pass the bouncer, create the user!
+    return this.createHostelUser(hostelId, hostel.name, userData);
   }
 }
 

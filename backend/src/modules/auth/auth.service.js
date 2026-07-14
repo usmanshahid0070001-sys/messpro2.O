@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from './auth.model.js';
 import PlainUser from './plainUser.model.js';
+import Hostel from '../hostel/hostel.model.js';
 
 const createToken = (userId) => {
   return jwt.sign({ sub: userId }, process.env.JWT_SECRET || 'messpro-dev-secret', {

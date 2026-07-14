@@ -71,6 +71,7 @@ import { catchAsync } from "../../utils/catchAsync.js";
 
 export const createHostel = catchAsync(async (req, res) => {
   const validatedData = createHostelSchema.parse(req.body);
+  
   const newHostel = await hostelService.registerHostel(validatedData);
   res.status(201).json({ success: true, data: newHostel });
 });
@@ -82,8 +83,9 @@ export const getHostels = catchAsync(async (req, res) => {
 
 export const addHostelUser = catchAsync(async (req, res) => {
   const hostelId = req.params.id;
+  const creatorRole = req.user.role;
   const validatedData = addHostelUserSchema.parse(req.body);
-  const newUser = await hostelService.addHostelUser(hostelId, validatedData);
+  const newUser = await hostelService.addHostelUser(creatorRole,hostelId, validatedData);
   res.status(201).json({ success: true, data: newUser });
 });
 
