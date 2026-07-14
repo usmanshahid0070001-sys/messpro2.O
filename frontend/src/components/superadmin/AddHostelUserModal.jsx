@@ -109,7 +109,7 @@ export default function AddHostelUserModal({ isOpen, onClose, hostel }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ type: "spring", damping: 26, stiffness: 320 }}
-            className="relative w-full max-w-md bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-2xl ring-1 ring-black/5 flex flex-col border border-[#e5e5e5] dark:border-[#222222]"
+            className="relative w-full max-w-md bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-2xl ring-1 ring-black/5 flex flex-col border border-[#e5e5e5] dark:border-[#222222] overflow-hidden"
           >
             {/* Header */}
             <div className="shrink-0 flex items-start justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 border-b border-[#f0f0f0] dark:border-[#1a1a1a]">

@@ -120,12 +120,12 @@ a:focus-visible {
 
 /* ─── SELECTION COLOR ─────────────────────────────────────────────────── */
 ::selection {
-  background-color: #334155; 
-  color: #ffffff;
+  background-color: #e5e5e5;
+  color: #111111;
 }
 .dark ::selection {
-  background-color: #e2e8f0; 
-  color: #0f172a;
+  background-color: #333333;
+  color: #ffffff;
 }
 
 /* ─── SUPERADMIN PANEL STYLES (Sleek updates) ─────────────────────────── */

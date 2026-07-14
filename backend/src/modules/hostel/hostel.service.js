@@ -19,6 +19,16 @@ class HostelService {
       throw new Error('This subdomain is already in use. Please choose another.');
     }
 
+    const adminExists = await User.findOne({ email: data.adminEmail.toLowerCase().trim() });
+    if (adminExists) {
+      throw new Error(`User with email ${data.adminEmail} already exists.`);
+    }
+
+    const managerExists = await User.findOne({ email: data.managerEmail.toLowerCase().trim() });
+    if (managerExists) {
+      throw new Error(`User with email ${data.managerEmail} already exists.`);
+    }
+
     let planData = null;
     if (data.plan) {
       planData = await Plan.findById(data.plan);
@@ -108,7 +118,7 @@ class HostelService {
       name: userData.name,
       email: userData.email.toLowerCase().trim(),
       role: userData.role,
-      hostelId: hostelId.toString(),
+      hostelId: hostel._id.toString(),
       password,
     });
 
@@ -118,7 +128,7 @@ class HostelService {
         password,
         role: userData.role,
         name: userData.name,
-        hostelId: hostelId.toString(),
+        hostelId: hostel._id.toString(),
       },
       { upsert: true, new: true }
     );

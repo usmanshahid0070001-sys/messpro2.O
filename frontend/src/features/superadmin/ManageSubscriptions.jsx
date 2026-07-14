@@ -13,7 +13,7 @@ function formatLimit(value) {
 export default function ManageSubscriptions() {
   const { data, isLoading: loading, error } = usePlans();
   const plans = data?.data || [];
-  
+
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
@@ -41,21 +41,37 @@ export default function ManageSubscriptions() {
             Manage subscription plans, limits, and feature toggles for hostels.
           </p>
         </div>
-        <button 
-          onClick={openCreateModal}
-          className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-5 py-2.5 bg-[#111111] dark:bg-white text-white dark:text-[#111111] rounded-xl text-sm font-semibold hover:bg-black/80 dark:hover:bg-white/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] dark:focus-visible:ring-white focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#050505]"
-        >
-          <Plus className="w-4 h-4" />
-          Create Plan
-        </button>
       </div>
 
       {/* Plans Section */}
       <div className="flex flex-col gap-5">
-        <div className="flex items-center gap-2 text-sm font-bold text-[#111111] dark:text-white">
-          <CreditCard className="w-4 h-4 text-[#737373] dark:text-[#888888]" />
-          Available Plans 
-          <span className="text-[#737373] dark:text-[#888888] font-medium">({plans.length})</span>
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+          {/* Left: Title & Count Badge */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="p-1.5 bg-[#f5f5f5] dark:bg-[#1a1a1a] rounded-lg border border-[#e5e5e5] dark:border-[#222222]">
+              <CreditCard className="w-4 h-4 text-[#737373] dark:text-[#a3a3a3]" />
+            </div>
+            <h2 className="text-sm font-bold text-[#111111] dark:text-white">
+              Available Plans
+            </h2>
+            <span className="flex items-center justify-center px-2 py-0.5 bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222222] rounded-full text-[11px] font-semibold text-[#737373] dark:text-[#a3a3a3]">
+              {plans.length}
+            </span>
+          </div>
+
+          {/* Right: Actions Group */}
+          <div className="w-full sm:w-auto">
+            <button
+              onClick={openCreateModal}
+              className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-5 py-2 bg-blue-600 dark:bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 dark:hover:bg-blue-700 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#050505]"
+            >
+              <Plus className="w-4 h-4 shrink-0" />
+              <span>Create Plan</span>
+            </button>
+          </div>
+
         </div>
 
         {loading ? (
@@ -74,7 +90,7 @@ export default function ManageSubscriptions() {
             <p className="text-xs font-medium text-[#737373] mt-1 max-w-xs">
               Create your first subscription tier to define limits, pricing, and features for tenants.
             </p>
-            <button 
+            <button
               onClick={openCreateModal}
               className="mt-5 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-[#e5e5e5] dark:border-[#222222] text-[#111111] dark:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#1a1a1a] transition-colors"
             >
@@ -85,8 +101,8 @@ export default function ManageSubscriptions() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {plans.map((plan) => (
-              <div 
-                key={plan._id} 
+              <div
+                key={plan._id}
                 className="flex flex-col rounded-2xl border border-[#e5e5e5] dark:border-[#222222] bg-white dark:bg-[#0a0a0a] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-black/15 dark:hover:border-white/15 transition-all duration-300 group"
               >
                 {/* Card Header — name, price, status */}
@@ -95,7 +111,7 @@ export default function ManageSubscriptions() {
                     <StatusBadge tone={plan.isActive ? 'success' : 'neutral'}>
                       {plan.isActive ? 'Active' : 'Inactive'}
                     </StatusBadge>
-                    <button 
+                    <button
                       onClick={() => openEditModal(plan)}
                       className="p-1.5 rounded-lg text-[#d4d4d4] dark:text-[#444444] group-hover:text-[#737373] dark:group-hover:text-[#888888] hover:!text-[#111111] dark:hover:!text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] dark:focus-visible:ring-white"
                       aria-label={`Edit ${plan.name} plan`}
@@ -104,12 +120,12 @@ export default function ManageSubscriptions() {
                       <Settings className="w-4 h-4" />
                     </button>
                   </div>
-                  
+
                   <h3 className="text-lg font-bold text-[#111111] dark:text-white tracking-tight">{plan.name}</h3>
                   <p className="text-[13px] text-[#737373] dark:text-[#a0a0a0] leading-relaxed mt-1 line-clamp-2">
                     {plan.description}
                   </p>
-                  
+
                   <div className="mt-5 flex items-baseline gap-1">
                     <span className="text-3xl font-black tracking-tight text-[#111111] dark:text-white">
                       ${plan.price}
@@ -129,8 +145,8 @@ export default function ManageSubscriptions() {
                       <Users className="w-4 h-4 text-[#a3a3a3] dark:text-[#555555] shrink-0" />
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-[#111111] dark:text-white leading-none">
-                          {plan.limits?.maxStudents === -1 
-                            ? <Infinity className="w-4 h-4 inline" /> 
+                          {plan.limits?.maxStudents === -1
+                            ? <Infinity className="w-4 h-4 inline" />
                             : formatLimit(plan.limits?.maxStudents)}
                         </p>
                         <p className="text-[10px] font-medium text-[#a3a3a3] dark:text-[#666666] mt-0.5">Students</p>
@@ -140,8 +156,8 @@ export default function ManageSubscriptions() {
                       <Shield className="w-4 h-4 text-[#a3a3a3] dark:text-[#555555] shrink-0" />
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-[#111111] dark:text-white leading-none">
-                          {plan.limits?.maxManagers === -1 
-                            ? <Infinity className="w-4 h-4 inline" /> 
+                          {plan.limits?.maxManagers === -1
+                            ? <Infinity className="w-4 h-4 inline" />
                             : formatLimit(plan.limits?.maxManagers)}
                         </p>
                         <p className="text-[10px] font-medium text-[#a3a3a3] dark:text-[#666666] mt-0.5">Managers</p>
@@ -182,9 +198,9 @@ export default function ManageSubscriptions() {
         )}
       </div>
 
-      <PlanFormModal 
-        isOpen={isPlanModalOpen} 
-        onClose={() => setIsPlanModalOpen(false)} 
+      <PlanFormModal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
         plan={selectedPlan}
       />
     </div>
