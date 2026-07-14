@@ -87,11 +87,12 @@ export default function CreateHostelModal({ isOpen, onClose }) {
   // Handlers
   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   const handleBlur = (e) => setTouched(prev => ({ ...prev, [e.target.name]: true }));
+  const SUBDOMAIN_REGEX = /^[@.a-z0-9-]+$/;
 
   // Validation Logic broken down by step
   const errors = {
     name: touched.name && !formData.name.trim() ? 'Hostel name required' : null,
-    subdomain: touched.subdomain && !formData.subdomain.trim() ? 'Subdomain required' : null,
+    subdomain: touched.subdomain && (!formData.subdomain.trim() || !SUBDOMAIN_REGEX.test(formData.subdomain)) ? 'Invalid domain format' : null,
     location: touched.location && !formData.location.trim() ? 'Location required' : null,
     adminName: touched.adminName && !formData.adminName.trim() ? 'Admin name required' : null,
     adminEmail: touched.adminEmail && (!formData.adminEmail.trim() || !EMAIL_REGEX.test(formData.adminEmail)) ? 'Valid email required' : null,
@@ -103,7 +104,7 @@ export default function CreateHostelModal({ isOpen, onClose }) {
   const validateStep = (currentStep) => {
     if (currentStep === 1) {
       setTouched(p => ({ ...p, name: true, subdomain: true, location: true }));
-      return formData.name.trim() && formData.subdomain.trim() && formData.location.trim();
+      return formData.name.trim() && SUBDOMAIN_REGEX.test(formData.subdomain) && formData.location.trim();
     }
     if (currentStep === 2) {
       setTouched(p => ({ ...p, adminName: true, adminEmail: true, managerName: true, managerEmail: true }));
@@ -210,7 +211,7 @@ export default function CreateHostelModal({ isOpen, onClose }) {
                       <div className="space-y-4">
                         <FormInput ref={nameInputRef} id="hostel-name" name="name" label="Hostel Name" required value={formData.name} onChange={handleChange} onBlur={handleBlur} error={errors.name} placeholder="e.g. Green Valley Residency" />
                         <div className="grid grid-cols-2 gap-4">
-                          <FormInput id="hostel-subdomain" name="subdomain" label="Subdomain" required value={formData.subdomain} onChange={handleChange} onBlur={handleBlur} error={errors.subdomain} placeholder="e.g. green-valley" />
+                          <FormInput id="hostel-subdomain" name="subdomain" label="Domain" required value={formData.subdomain} onChange={handleChange} onBlur={handleBlur} error={errors.subdomain} placeholder="e.g. @gmail.com" />
                           <FormInput id="hostel-location" name="location" label="City / Location" required value={formData.location} onChange={handleChange} onBlur={handleBlur} error={errors.location} placeholder="e.g. Islamabad" />
                         </div>
                       </div>
