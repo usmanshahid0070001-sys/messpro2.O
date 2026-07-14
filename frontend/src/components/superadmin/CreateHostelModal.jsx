@@ -275,7 +275,15 @@ export default function CreateHostelModal({ isOpen, onClose }) {
                   <ChevronLeft className="w-4 h-4" /> Back
                 </button>
               ) : (
-                <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold text-[#a3a3a3] hover:text-[#111111] dark:hover:text-white transition-colors">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    clearDraft();
+                    onClose();
+                  }} 
+                  disabled={loading}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-[#a3a3a3] hover:text-[#111111] dark:hover:text-white transition-colors"
+                >
                   Cancel
                 </button>
               )}
@@ -284,7 +292,7 @@ export default function CreateHostelModal({ isOpen, onClose }) {
                 form={formId}
                 type="submit"
                 disabled={loading}
-                className="min-w-[132px] px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#111111] dark:bg-white text-white dark:text-[#111111] hover:bg-black/80 transition-colors flex items-center justify-center gap-2"
+                className="min-w-[132px] px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#111111] dark:bg-white text-white dark:text-[#111111] hover:bg-black/80 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {step < 3 ? (
                   <>Continue <ChevronRight className="w-4 h-4" /></>

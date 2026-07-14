@@ -62,18 +62,24 @@ class HostelService {
       status: 'Active',
     });
 
-    await Promise.all([
-      this.createHostelUser(hostel._id,hostel.name, {
-        name: data.adminName,
-        email: data.adminEmail,
-        role: 'admin',
-      }),
-      this.createHostelUser(hostel._id, {
-        name: data.managerName,
-        email: data.managerEmail,
-        role: 'manager',
-      }),
-    ]);
+    try {
+      await Promise.all([
+        this.createHostelUser(hostel._id, hostel.name, {
+          name: data.adminName,
+          email: data.adminEmail,
+          role: 'admin',
+        }),
+        this.createHostelUser(hostel._id, hostel.name, {
+          name: data.managerName,
+          email: data.managerEmail,
+          role: 'manager',
+        }),
+      ]);
+    } catch (error) {
+      // Manual rollback to maintain atomicity if user creation fails
+      await hostelRepository.delete(hostel._id);
+      throw new Error(`Failed to create initial users, hostel creation rolled back. Original error: ${error.message}`);
+    }
 
     return hostel;
   }
