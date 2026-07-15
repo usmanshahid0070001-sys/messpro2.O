@@ -123,10 +123,10 @@ export const updateSettings = catchAsync(async (req, res) => {
 });
 
 
-export const getMyHostel = catchAsync(async (req, res) => {
-  res.status(200).json({ success: true, message: "getMyHostel route is alive!" });
-});
+// export const getMyHostel = catchAsync(async (req, res) => {
+//   res.status(200).json({ success: true, message: "getMyHostel route is alive!" });
+// });
 
-export const updateMyHostelSettings = catchAsync(async (req, res) => {
-  res.status(200).json({ success: true, message: "updateMyHostelSettings route is alive!" });
-});
+// export const updateMyHostelSettings = catchAsync(async (req, res) => {
+//   res.status(200).json({ success: true, message: "updateMyHostelSettings route is alive!" });
+// });

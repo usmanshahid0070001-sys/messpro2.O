@@ -5,9 +5,13 @@ export const createHostelSchema = z.object({
   name: z.string().min(3, "Hostel name must be at least 3 characters"),
 
   // Syntactical & Semantic: Must be valid URL format for subdomains
+  // subdomain: z.string()
+  //   .min(3, "Subdomain is required")
+  //   .regex(/^[a-z0-9-]+$/, "Subdomain can only contain lowercase letters, numbers, and hyphens"),
   subdomain: z.string()
-    .min(3, "Subdomain is required")
-    .regex(/^[a-z0-9-]+$/, "Subdomain can only contain lowercase letters, numbers, and hyphens"),
+    .min(3, "Domain suffix is required")
+    // 👇 The new regex allows an optional '@' at the start, plus dots!
+    .regex(/^@?[a-zA-Z0-9.-]+$/, "Must be a valid email domain (e.g., @student.uet.edu.pk)"),
 
   location: z.string().min(2, "Location is required"),
 
