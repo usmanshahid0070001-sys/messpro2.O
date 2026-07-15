@@ -101,9 +101,19 @@ export const getMyHostel = catchAsync(async (req, res) => {
   // We use the logged-in user's ID badge, NOT the URL parameters!
   const hostel = await hostelService.getHostelById(req.user.hostelId);
 
+  let hostelData = hostel;
+  if (req.user.role === 'student') {
+    // Convert to plain object if it's a Mongoose document to allow deletion
+    const data = typeof hostel.toObject === 'function' ? hostel.toObject() : { ...hostel };
+    delete data.plan;
+    delete data.isTrial;
+    delete data.trialExpiresAt;
+    hostelData = data;
+  }
+
   res.status(200).json({ 
     success: true, 
-    data: hostel 
+    data: hostelData 
   });
 });
 
