@@ -5,12 +5,14 @@ import {
   CreditCard,
   Calculator,
   FileText,
+  LayoutDashboard,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
+import DashboardOverview from "../components/shared/DashboardOverview";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -22,9 +24,9 @@ export default function AdminDashboard() {
   const pathParts = location.pathname.split("/");
   const currentTab = pathParts[pathParts.length - 1];
 
-  // 2. Set "billSummary" as the default
+  // 2. Set "dashboard" as the default
   const activeTab = (currentTab === "admin-dashboard" || !currentTab) 
-                    ? "billSummary" 
+                    ? "dashboard" 
                     : currentTab;
 
   const setActiveTab = (tabId) => {
@@ -33,6 +35,7 @@ export default function AdminDashboard() {
   const { user } = useAuth();
 
   const navItems = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "billSummary", label: "Bill Summary", icon: FileText },
     { id: "users", label: "Manage Students", icon: Users },
     { id: "attendance", label: "Machine Attendance", icon: CreditCard },
@@ -64,6 +67,9 @@ export default function AdminDashboard() {
           transition={{ duration: 0.2 }}
           className="w-full"
         >
+          {activeTab === "dashboard" && (
+            <DashboardOverview userRole="admin" user={user} setActiveTab={setActiveTab} />
+          )}
           {activeTab === "billSummary" && renderPlaceholder("Bill Summary")}
           {activeTab === "users" && renderPlaceholder("Manage Users")}
           {activeTab === "attendance" && renderPlaceholder("Attendance Upload")}

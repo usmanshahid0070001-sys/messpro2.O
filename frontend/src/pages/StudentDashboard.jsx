@@ -3,6 +3,7 @@ import {
   Utensils,
   LayoutDashboard,
   Clock,
+  Home
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -13,6 +14,7 @@ import StudentMealHistory from "../features/student/StudentMealHistory";
 
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
+import DashboardOverview from "../components/shared/DashboardOverview";
 
 // Auth
 import { useAuth } from "../context/AuthContext";
@@ -26,9 +28,9 @@ export default function StudentDashboard() {
   const pathParts = location.pathname.split("/");
   const currentTab = pathParts[pathParts.length - 1];
 
-  // 2. Default to "meals" if the student just lands on /student-dashboard
+  // 2. Default to "dashboard" if the student just lands on /student-dashboard
   const activeTab = (currentTab === "student-dashboard" || !currentTab) 
-                    ? "meals" 
+                    ? "dashboard" 
                     : currentTab;
 
   const setActiveTab = (tabId) => {
@@ -36,6 +38,7 @@ export default function StudentDashboard() {
   };
 
   const navItems = [
+    { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "meals", label: "Meal Selection", icon: Utensils },
     { id: "history", label: "Meal History", icon: Clock },
   ];
@@ -56,6 +59,11 @@ export default function StudentDashboard() {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
         >
+          {/* TAB 0: DASHBOARD */}
+          {activeTab === "dashboard" && (
+            <DashboardOverview userRole="student" user={user} setActiveTab={setActiveTab} />
+          )}
+
           {/* TAB 1: MEAL SELECTION */}
           {activeTab === "meals" && (
             <div className="flex flex-col xl:flex-row gap-6 items-start">

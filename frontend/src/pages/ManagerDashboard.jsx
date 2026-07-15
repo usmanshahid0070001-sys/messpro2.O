@@ -1,4 +1,4 @@
-import { Utensils, LayoutDashboard, CreditCard } from "lucide-react";
+import { Utensils, LayoutDashboard, CreditCard, Home } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -7,6 +7,7 @@ import LiveCounts from "../features/manager/LiveCounts";
 
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
+import DashboardOverview from "../components/shared/DashboardOverview";
 
 // Auth & API
 import { useAuth } from "../context/AuthContext";
@@ -20,7 +21,7 @@ export default function ManagerDashboard() {
   const currentTab = pathParts[pathParts.length - 1];
 
   const activeTab = (currentTab === "manager-dashboard" || !currentTab) 
-                    ? "overview" 
+                    ? "dashboard" 
                     : currentTab;
 
   const setActiveTab = (tabId) => {
@@ -28,7 +29,8 @@ export default function ManagerDashboard() {
   };
 
   const navItems = [
-    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "dashboard", label: "Dashboard", icon: Home },
+    { id: "overview", label: "Live Counts", icon: LayoutDashboard },
     { id: "menu", label: "Weekly Menu", icon: Utensils },
     { id: "bills", label: "Bill Management", icon: CreditCard },
   ];
@@ -48,6 +50,10 @@ export default function ManagerDashboard() {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
         >
+          {activeTab === "dashboard" && (
+            <DashboardOverview userRole="manager" user={user} setActiveTab={setActiveTab} />
+          )}
+
           {activeTab === "overview" && (
             <div className="max-w-4xl mx-auto">
               <LiveCounts />
