@@ -1,6 +1,6 @@
 import api from '../client';
 
-export const superadminApi = {
+export const hostelApi = {
   getHostels: async () => {
     const response = await api.get('/api/hostels');
     return response.data;
@@ -18,6 +18,16 @@ export const superadminApi = {
 
   addHostelUser: async (id, userData) => {
     const response = await api.post(`/api/hostels/${id}/users`, userData);
+    return response.data;
+  },
+
+  getMyHostel: async () => {
+    const response = await api.get('/api/hostels/my-hostel');
+    return response.data;
+  },
+
+  updateMyHostelSettings: async (settingsData) => {
+    const response = await api.patch('/api/hostels/my-hostel/settings', settingsData);
     return response.data;
   }
 };

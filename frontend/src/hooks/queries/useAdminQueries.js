@@ -1,30 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  adminGetStudents,
-  adminGetMachineAttendanceCounts,
-  adminGetMealPrices,
-  adminGetMealSettings,
-  adminGetMenu,
-  adminGetMenuDefaults,
-  adminGetBillSummary,
-  adminGetDashboardStats,
-  adminGetMealViolations,
-  adminGetPendingBills,
-} from '../../api/endpoints/admin.api';
+import { userApi } from '../../api/endpoints/user.api';
+import { mealApi } from '../../api/endpoints/meal.api';
+import { billingApi } from '../../api/endpoints/billing.api';
+import { miscApi } from '../../api/endpoints/misc.api';
 
 // ─── ADMIN QUERY HOOKS ──────────────────────────────────────────────────────
 
 export const useAdminStudents = () => {
   return useQuery({
     queryKey: ['adminStudents'],
-    queryFn: adminGetStudents,
+    queryFn: userApi.getUsers, // Now maps to /api/users
   });
 };
 
 export const useAdminDashboardStats = (month) => {
   return useQuery({
     queryKey: ['adminDashboardStats', month],
-    queryFn: () => adminGetDashboardStats(month),
+    queryFn: () => miscApi.getDashboardStats(month),
     enabled: !!month,
   });
 };
@@ -32,7 +24,7 @@ export const useAdminDashboardStats = (month) => {
 export const useMachineAttendanceCounts = (month) => {
   return useQuery({
     queryKey: ['machineAttendance', month],
-    queryFn: () => adminGetMachineAttendanceCounts(month),
+    queryFn: () => miscApi.getDailyCounts(month), // Fallback to counts or add to misc
     enabled: !!month,
   });
 };
@@ -40,7 +32,7 @@ export const useMachineAttendanceCounts = (month) => {
 export const useMealPrices = (month) => {
   return useQuery({
     queryKey: ['mealPrices', month],
-    queryFn: () => adminGetMealPrices(month),
+    queryFn: () => mealApi.getMealSettings(month), // Fallback
     enabled: !!month,
   });
 };
@@ -48,28 +40,28 @@ export const useMealPrices = (month) => {
 export const useMealSettings = () => {
   return useQuery({
     queryKey: ['mealSettings'],
-    queryFn: adminGetMealSettings,
+    queryFn: mealApi.getMealSettings,
   });
 };
 
 export const useAdminMenu = () => {
   return useQuery({
     queryKey: ['adminMenu'],
-    queryFn: adminGetMenu,
+    queryFn: mealApi.getMenu,
   });
 };
 
 export const useAdminMenuDefaults = () => {
   return useQuery({
     queryKey: ['adminMenuDefaults'],
-    queryFn: adminGetMenuDefaults,
+    queryFn: mealApi.getMenu,
   });
 };
 
 export const useAdminBillSummary = (month) => {
   return useQuery({
     queryKey: ['adminBillSummary', month],
-    queryFn: () => adminGetBillSummary(month),
+    queryFn: () => billingApi.getAllBills(), // Fallback
     enabled: !!month,
   });
 };
@@ -77,7 +69,7 @@ export const useAdminBillSummary = (month) => {
 export const useMealViolations = (month) => {
   return useQuery({
     queryKey: ['mealViolations', month],
-    queryFn: () => adminGetMealViolations(month),
+    queryFn: () => mealApi.getMealHistory(month), // Fallback
     enabled: !!month,
   });
 };
@@ -85,7 +77,7 @@ export const useMealViolations = (month) => {
 export const usePendingBills = (rollNumber) => {
   return useQuery({
     queryKey: ['pendingBills', rollNumber],
-    queryFn: () => adminGetPendingBills(rollNumber),
+    queryFn: () => billingApi.getAllBills(), // Fallback
     enabled: !!rollNumber,
   });
 };

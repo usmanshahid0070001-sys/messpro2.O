@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { studentApi } from '../../api/endpoints/student.api';
+import { mealApi } from '../../api/endpoints/meal.api';
 import toast from 'react-hot-toast';
 
 export const useUpdateMealSelections = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (selections) => studentApi.updateMealSelections(selections),
+    mutationFn: (selections) => mealApi.updateMealSelections(selections),
     onSuccess: () => {
       // Invalidate all weekly selections to fetch fresh data
       queryClient.invalidateQueries({ queryKey: ['weeklySelections'] });

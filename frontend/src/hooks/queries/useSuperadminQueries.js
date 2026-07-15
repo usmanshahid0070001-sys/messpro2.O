@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { superadminApi } from '../../api/endpoints/superadmin.api';
+import { hostelApi } from '../../api/endpoints/hostel.api';
 
 export const useHostels = () => {
   return useQuery({
     queryKey: ['superadmin', 'hostels'],
-    queryFn: superadminApi.getHostels
+    queryFn: hostelApi.getHostels
   });
 };

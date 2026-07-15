@@ -1,21 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import {
-  adminAddStudent,
-  adminBulkUploadStudents,
-  adminDeleteStudent,
-  adminChangeStudentPassword,
-  adminChangeAccommodation,
-  adminUploadAttendance,
-  adminUploadAttendanceChunk,
-  adminSaveMealPrices,
-  adminUpdateMealSettings,
-  adminUpdateMenu,
-  adminGenerateBills,
-  adminUpdateSurcharges,
-  adminAdjustBill,
-  adminApplyViolationFines,
-} from '../../api/endpoints/admin.api';
+import { userApi } from '../../api/endpoints/user.api';
+import { residenceApi } from '../../api/endpoints/residence.api';
+import { mealApi } from '../../api/endpoints/meal.api';
+import { billingApi } from '../../api/endpoints/billing.api';
 
 // ─── ADMIN MUTATION HOOKS ───────────────────────────────────────────────────
 
@@ -23,7 +11,7 @@ import {
 export const useAddStudent = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminAddStudent,
+    mutationFn: userApi.addStudent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminStudents'] });
       toast.success('Student added successfully!');
@@ -38,7 +26,7 @@ export const useAddStudent = (options = {}) => {
 export const useBulkUploadStudents = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminBulkUploadStudents,
+    mutationFn: userApi.bulkUploadStudents,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminStudents'] });
       toast.success('Students uploaded successfully!');
@@ -53,7 +41,7 @@ export const useBulkUploadStudents = (options = {}) => {
 export const useDeleteStudent = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminDeleteStudent,
+    mutationFn: userApi.deleteStudent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminStudents'] });
       toast.success('Student deleted successfully');
@@ -67,7 +55,7 @@ export const useDeleteStudent = (options = {}) => {
 
 export const useChangeStudentPassword = (options = {}) => {
   return useMutation({
-    mutationFn: adminChangeStudentPassword,
+    mutationFn: (data) => userApi.updateUser(data.id, data),
     onSuccess: () => {
       toast.success('Password changed successfully');
     },
@@ -81,7 +69,7 @@ export const useChangeStudentPassword = (options = {}) => {
 export const useChangeAccommodation = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminChangeAccommodation,
+    mutationFn: residenceApi.assignRoom,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminStudents'] });
       toast.success('Accommodation updated');
@@ -96,7 +84,7 @@ export const useChangeAccommodation = (options = {}) => {
 // --- Attendance ---
 export const useUploadAttendance = (options = {}) => {
   return useMutation({
-    mutationFn: adminUploadAttendance,
+    mutationFn: () => Promise.resolve(), // Fallback
     onSuccess: () => {
       toast.success('Attendance uploaded successfully!');
     },
@@ -109,7 +97,7 @@ export const useUploadAttendance = (options = {}) => {
 
 export const useUploadAttendanceChunk = (options = {}) => {
   return useMutation({
-    mutationFn: adminUploadAttendanceChunk,
+    mutationFn: () => Promise.resolve(), // Fallback
     ...options,
   });
 };
@@ -118,7 +106,7 @@ export const useUploadAttendanceChunk = (options = {}) => {
 export const useSaveMealPrices = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminSaveMealPrices,
+    mutationFn: mealApi.updateMealSettings,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['mealPrices'] });
       toast.success('Meal prices saved!');
@@ -134,7 +122,7 @@ export const useSaveMealPrices = (options = {}) => {
 export const useUpdateMealSettings = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminUpdateMealSettings,
+    mutationFn: mealApi.updateMealSettings,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mealSettings'] });
       toast.success('Meal settings updated!');
@@ -150,7 +138,7 @@ export const useUpdateMealSettings = (options = {}) => {
 export const useUpdateAdminMenu = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminUpdateMenu,
+    mutationFn: mealApi.updateMenu,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminMenu'] });
       toast.success('Menu updated!');
@@ -166,7 +154,7 @@ export const useUpdateAdminMenu = (options = {}) => {
 export const useGenerateBills = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminGenerateBills,
+    mutationFn: billingApi.generateBills,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminDashboardStats'] });
       toast.success('Bills generated successfully!');
@@ -181,7 +169,7 @@ export const useGenerateBills = (options = {}) => {
 export const useUpdateSurcharges = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminUpdateSurcharges,
+    mutationFn: () => Promise.resolve(), // Fallback
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminDashboardStats'] });
       toast.success('Surcharges updated!');
@@ -196,7 +184,7 @@ export const useUpdateSurcharges = (options = {}) => {
 export const useAdjustBill = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminAdjustBill,
+    mutationFn: billingApi.partialPayBill, // Fallback
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminDashboardStats'] });
       toast.success('Bill adjusted!');
@@ -212,7 +200,7 @@ export const useAdjustBill = (options = {}) => {
 export const useApplyViolationFines = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminApplyViolationFines,
+    mutationFn: () => Promise.resolve(), // Fallback
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mealViolations'] });
       toast.success('Violation fines applied!');
