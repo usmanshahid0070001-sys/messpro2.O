@@ -23,7 +23,7 @@ export const getUsersByHierarchy = async (requesterRole, requesterHostelId) => {
   }
 
   // Execute the query, but hide the passwords from the frontend!
-  return await User.find(query).select('-password').sort({ createdAt: -1 });
+  return await User.find(query).populate('room', 'roomName capacity status').select('-password').sort({ createdAt: -1 });
 };
 
 export const updateUser = async (requesterRole, requesterHostelId, targetUserId, updateData) => {

@@ -34,10 +34,16 @@ class ResidenceService {
       throw error;
     }
 
-    const student = await User.findOne({ _id: studentId, hostelId, role: 'student' });
-    if (!student) throw new Error('Student not found.');
+    if (room.status === 'Maintenance') {
+      const error = new Error('Cannot assign to a room under maintenance.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const student = await User.findOne({ _id: studentId, hostelId, role: { $in: ['student', 'manager'] } });
+    if (!student) throw new Error('User not found.');
     if (student.room) {
-      const error = new Error('This student already has a room. Use the "Change Room" feature instead.');
+      const error = new Error('This user already has a room. Use the "Change Room" feature instead.');
       error.statusCode = 400;
       throw error;
     }
@@ -58,16 +64,18 @@ class ResidenceService {
 
   // 4. DISALLOTEMENT (Remove student from room)
   async disalloteRoom(hostelId, studentId) {
-    const student = await User.findOne({ _id: studentId, hostelId, role: 'student' });
-    if (!student) throw new Error('Student not found.');
-    if (!student.room) throw new Error('This student is not currently assigned to any room.');
+    const student = await User.findOne({ _id: studentId, hostelId, role: { $in: ['student', 'manager'] } });
+    if (!student) throw new Error('User not found.');
+    if (!student.room) throw new Error('This user is not currently assigned to any room.');
 
     const room = await Room.findById(student.room);
     
     if (room) {
       // Step A: Remove 1 from the room count (Math.max prevents it from ever going below 0)
       room.occupants = Math.max(0, room.occupants - 1);
-      room.status = 'Available'; // Automatically reopen the room
+      if (room.status === 'Full' && room.occupants < room.capacity) {
+        room.status = 'Available'; // Automatically reopen the room only if it was full
+      }
       await room.save();
     }
 
@@ -80,13 +88,18 @@ class ResidenceService {
 
   // 5. CHANGE ROOM (Move student from one room to another)
   async changeRoom(hostelId, studentId, newRoomId) {
-    const student = await User.findOne({ _id: studentId, hostelId, role: 'student' });
-    if (!student) throw new Error('Student not found.');
-    if (!student.room) throw new Error('Student has no room. Use the "Allote Room" feature instead.');
-    if (student.room.toString() === newRoomId) throw new Error('Student is already assigned to this room.');
+    const student = await User.findOne({ _id: studentId, hostelId, role: { $in: ['student', 'manager'] } });
+    if (!student) throw new Error('User not found.');
+    if (!student.room) throw new Error('User has no room. Use the "Allote Room" feature instead.');
+    if (student.room.toString() === newRoomId) throw new Error('User is already assigned to this room.');
 
     const newRoom = await Room.findOne({ _id: newRoomId, hostelId });
     if (!newRoom) throw new Error('New room not found.');
+    if (newRoom.status === 'Maintenance') {
+      const error = new Error('Cannot assign to a room under maintenance.');
+      error.statusCode = 400;
+      throw error;
+    }
     if (newRoom.occupants >= newRoom.capacity) {
       const error = new Error('The new room is already at maximum capacity.');
       error.statusCode = 400;
@@ -98,7 +111,9 @@ class ResidenceService {
     // Step A: Remove from old room
     if (oldRoom) {
       oldRoom.occupants = Math.max(0, oldRoom.occupants - 1);
-      oldRoom.status = 'Available';
+      if (oldRoom.status === 'Full' && oldRoom.occupants < oldRoom.capacity) {
+        oldRoom.status = 'Available';
+      }
       await oldRoom.save();
     }
 
@@ -119,15 +134,16 @@ class ResidenceService {
     const room = await Room.findOne({ _id: roomId, hostelId });
     if (!room) throw new Error('Room not found.');
 
-    // The SaaS Bouncer: Prevent corrupting data
+    // If there are occupants, we must automatically disallote them
     if (room.occupants > 0) {
-      const error = new Error('Cannot delete this room. You must disallote all students inside it first.');
-      error.statusCode = 400;
-      throw error;
+      await User.updateMany(
+        { room: roomId, hostelId },
+        { $set: { room: null } }
+      );
     }
 
     await Room.deleteOne({ _id: roomId });
-    return { message: 'Room deleted successfully.' };
+    return { message: 'Room deleted and users disalloted successfully.' };
   }
 }
 

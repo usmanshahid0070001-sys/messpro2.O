@@ -6,6 +6,7 @@ import {
   Calculator,
   FileText,
   LayoutDashboard,
+  Home,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -14,6 +15,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import DashboardOverview from "../components/shared/DashboardOverview";
 import ManageUsers from "../features/users/ManageUsers";  
+import ManageRooms from "../features/residence/ManageRooms";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -39,6 +41,7 @@ export default function AdminDashboard() {
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "billSummary", label: "Bill Summary", icon: FileText },
     { id: "users", label: "Manage Users", icon: Users },
+    { id: "rooms", label: "Manage Rooms", icon: Home },
     { id: "attendance", label: "Machine Attendance", icon: CreditCard },
     { id: "bills", label: "Generate Bills", icon: Calculator },
     { id: "settings", label: "Meal Timings", icon: Clock },
@@ -73,6 +76,7 @@ export default function AdminDashboard() {
           )}
           {activeTab === "billSummary" && renderPlaceholder("Bill Summary")}
           {activeTab === "users" && <ManageUsers />}
+          {activeTab === "rooms" && <ManageRooms />}
           {activeTab === "attendance" && renderPlaceholder("Attendance Upload")}
           {activeTab === "bills" && renderPlaceholder("Generate Bills")}
           {activeTab === "settings" && renderPlaceholder("Meal Settings")}

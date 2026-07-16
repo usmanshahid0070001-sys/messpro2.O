@@ -77,6 +77,7 @@ const UsersTable = ({ users }) => {
             <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">User</th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Email</th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Role</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Room</th>
             <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
@@ -107,6 +108,9 @@ const UsersTable = ({ users }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <RoleBadge role={user.role} />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#111111] dark:text-white">
+                  {user.room?.roomName || <span className="text-[#a3a3a3] dark:text-[#666666] italic">Unassigned</span>}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                   {hasExtraInfo && (
