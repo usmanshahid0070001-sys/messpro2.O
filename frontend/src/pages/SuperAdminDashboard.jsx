@@ -5,6 +5,7 @@ import {
   Settings,
   Link,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -19,6 +20,7 @@ import SecurityAudit from "../features/superadmin/SecurityAudit";
 
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
+import ManageUsers from "../features/users/ManageUsers";
 
 export default function SuperAdminDashboard() {
   const navigate = useNavigate();
@@ -38,6 +40,7 @@ export default function SuperAdminDashboard() {
   const navItems = [
     { id: "overview", label: "Global Overview", icon: Globe },
     { id: "hostels", label: "Manage Hostels", icon: Building2 },
+    { id: "users", label: "Manage Users", icon: Users },
     { id: "subscriptions", label: "Subscriptions", icon: CreditCard },
     { id: "customization", label: "Platform Customization", icon: Settings },
     { id: "integrations", label: "Integrations", icon: Link },
@@ -62,6 +65,7 @@ export default function SuperAdminDashboard() {
         >
           {activeTab === "overview" && <GlobalOverview />}
           {activeTab === "hostels" && <ManageTenants />}
+          {activeTab === "users" && <ManageUsers />}
           {activeTab === "subscriptions" && <ManageSubscriptions />}
           {activeTab === "customization" && <PlatformCustomization />}
           {activeTab === "integrations" && <Integrations />}

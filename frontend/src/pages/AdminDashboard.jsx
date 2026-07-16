@@ -13,6 +13,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
 import DashboardOverview from "../components/shared/DashboardOverview";
+import ManageUsers from "../features/users/ManageUsers";  
 
 import { useAuth } from "../context/AuthContext";
 
@@ -37,7 +38,7 @@ export default function AdminDashboard() {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "billSummary", label: "Bill Summary", icon: FileText },
-    { id: "users", label: "Manage Students", icon: Users },
+    { id: "users", label: "Manage Users", icon: Users },
     { id: "attendance", label: "Machine Attendance", icon: CreditCard },
     { id: "bills", label: "Generate Bills", icon: Calculator },
     { id: "settings", label: "Meal Timings", icon: Clock },
@@ -71,7 +72,7 @@ export default function AdminDashboard() {
             <DashboardOverview userRole="admin" user={user} setActiveTab={setActiveTab} />
           )}
           {activeTab === "billSummary" && renderPlaceholder("Bill Summary")}
-          {activeTab === "users" && renderPlaceholder("Manage Users")}
+          {activeTab === "users" && <ManageUsers />}
           {activeTab === "attendance" && renderPlaceholder("Attendance Upload")}
           {activeTab === "bills" && renderPlaceholder("Generate Bills")}
           {activeTab === "settings" && renderPlaceholder("Meal Settings")}

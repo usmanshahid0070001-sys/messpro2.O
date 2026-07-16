@@ -1,4 +1,4 @@
-import { Utensils, LayoutDashboard, CreditCard, Home } from "lucide-react";
+import { Utensils, LayoutDashboard, CreditCard, Home, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -8,6 +8,7 @@ import LiveCounts from "../features/manager/LiveCounts";
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
 import DashboardOverview from "../components/shared/DashboardOverview";
+import ManageUsers from "../features/users/ManageUsers";
 
 // Auth & API
 import { useAuth } from "../context/AuthContext";
@@ -31,6 +32,7 @@ export default function ManagerDashboard() {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "overview", label: "Live Counts", icon: LayoutDashboard },
+    { id: "users", label: "Manage Users", icon: Users },
     { id: "menu", label: "Weekly Menu", icon: Utensils },
     { id: "bills", label: "Bill Management", icon: CreditCard },
   ];
@@ -59,6 +61,8 @@ export default function ManagerDashboard() {
               <LiveCounts />
             </div>
           )}
+          
+          {activeTab === "users" && <ManageUsers />}
 
           {activeTab === "menu" && (
             <div className="w-full max-w-5xl mx-auto flex items-center justify-center h-64 glass-panel rounded-3xl">

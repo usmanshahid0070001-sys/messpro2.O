@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import api from "../api/client";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AuthContext = createContext();
 
@@ -10,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const verifySession = async () => {
@@ -28,6 +30,7 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem("userInfo");
           setUser(null);
           setIsAuthenticated(false);
+          queryClient.clear();
         } else {
           // Network error, Vercel cold start, 500, timeout, etc.
           // Don't log the user out — trust the localStorage cache
@@ -50,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [queryClient]);
 
   const login = (userData) => {
     localStorage.setItem("userInfo", JSON.stringify(userData));
@@ -69,6 +72,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("userInfo");
       setUser(null);
       setIsAuthenticated(false);
+      queryClient.clear(); // Ensure all cached data is wiped for security
     }
   };
 
