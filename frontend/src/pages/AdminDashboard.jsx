@@ -41,7 +41,7 @@ export default function AdminDashboard() {
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "billSummary", label: "Bill Summary", icon: FileText },
     { id: "users", label: "Manage Users", icon: Users },
-    { id: "rooms", label: "Manage Rooms", icon: Home },
+    { id: "rooms", label: "Residence Management", icon: Home },
     { id: "attendance", label: "Machine Attendance", icon: CreditCard },
     { id: "bills", label: "Generate Bills", icon: Calculator },
     { id: "settings", label: "Meal Timings", icon: Clock },

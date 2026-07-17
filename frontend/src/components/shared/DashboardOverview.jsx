@@ -31,6 +31,7 @@ export default function DashboardOverview({ userRole, user, setActiveTab }) {
       case 'admin':
         return [
           { id: 'users', label: 'Manage Students', desc: 'Add, edit, or remove student records', icon: Users, color: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' },
+          { id: 'rooms', label: 'Residence Management', desc: 'Manage hostel rooms and allocations', icon: Building2, color: 'bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' },
           { id: 'bills', label: 'Generate Bills', desc: 'Process and issue monthly mess bills', icon: Calculator, color: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' },
           { id: 'billSummary', label: 'Bill Summary', desc: 'View overarching financial reports', icon: FileText, color: 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' },
           { id: 'settings', label: 'Meal Timings', desc: 'Configure global meal parameters', icon: Clock, color: 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400' },
