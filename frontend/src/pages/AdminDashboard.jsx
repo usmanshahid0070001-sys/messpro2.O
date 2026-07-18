@@ -16,6 +16,7 @@ import DashboardLayout from "../components/layout/DashboardLayout";
 import DashboardOverview from "../components/shared/DashboardOverview";
 import ManageUsers from "../features/users/ManageUsers";  
 import ManageRooms from "../features/residence/ManageRooms";
+import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -44,7 +45,7 @@ export default function AdminDashboard() {
     { id: "rooms", label: "Residence Management", icon: Home },
     { id: "attendance", label: "Machine Attendance", icon: CreditCard },
     { id: "bills", label: "Generate Bills", icon: Calculator },
-    { id: "settings", label: "Meal Timings", icon: Clock },
+    { id: "meal", label: "Meal settings", icon: Clock },
     { id: "mealControl", label: "Meal Control", icon: ShieldCheck },
     { id: "weeklyMenu", label: "Weekly Menu", icon: FileText },
   ];
@@ -79,7 +80,7 @@ export default function AdminDashboard() {
           {activeTab === "rooms" && <ManageRooms />}
           {activeTab === "attendance" && renderPlaceholder("Attendance Upload")}
           {activeTab === "bills" && renderPlaceholder("Generate Bills")}
-          {activeTab === "settings" && renderPlaceholder("Meal Settings")}
+          {activeTab === "meal" && <ManageMealSettings />}
           {activeTab === "mealControl" && renderPlaceholder("Meal Control")}
           {activeTab === "weeklyMenu" && renderPlaceholder("Weekly Menu")}
         </motion.div>
