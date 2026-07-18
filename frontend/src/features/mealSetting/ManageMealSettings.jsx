@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react';
 import { Plus, Save, Info, AlertTriangle } from 'lucide-react';
 import MealCard from './MealCard';
 import WeeklyMenuGrid from './WeeklyMenuGrid';
+import { useAuth } from '../../context/AuthContext';
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function ManageMealSettings() {
+  const { user } = useAuth();
+  const isManager = user?.role === 'manager';
+
   const [status, setStatus] = useState("Active");
   const [meals, setMeals] = useState([]); 
   const [menu, setMenu] = useState({});
@@ -150,9 +154,10 @@ export default function ManageMealSettings() {
             <span className="text-sm font-semibold text-[#111111] dark:text-white">Module Status</span>
             <button
               onClick={handleToggleStatus}
+              disabled={isManager}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
                 status === 'Active' ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#333]'
-              }`}
+              } ${isManager ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -200,18 +205,22 @@ export default function ManageMealSettings() {
       <div className={`space-y-4 ${status === 'Inactive' ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-[#111111] dark:text-white">Daily Meals</h2>
-          <button
-            onClick={handleAddMeal}
-            className="flex items-center gap-2 bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-400 rounded-lg px-4 py-2 text-sm font-bold hover:bg-blue-600/20 dark:hover:bg-blue-600/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-          >
-            <Plus className="w-4 h-4" />
-            Add Meal
-          </button>
+          {!isManager && (
+            <button
+              onClick={handleAddMeal}
+              className="flex items-center gap-2 bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-400 rounded-lg px-4 py-2 text-sm font-bold hover:bg-blue-600/20 dark:hover:bg-blue-600/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            >
+              <Plus className="w-4 h-4" />
+              Add Meal
+            </button>
+          )}
         </div>
 
         {meals.length === 0 ? (
           <div className="p-8 text-center border border-dashed border-[#e5e5e5] dark:border-[#333333] rounded-2xl bg-[#fafafa] dark:bg-[#111111]">
-            <p className="text-sm font-medium text-[#737373]">No meals configured. Click "Add Meal" to get started.</p>
+            <p className="text-sm font-medium text-[#737373]">
+              {isManager ? "No meals have been configured by the admin yet." : "No meals configured. Click \"Add Meal\" to get started."}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -221,6 +230,7 @@ export default function ManageMealSettings() {
                 meal={meal} 
                 onUpdate={updateMeal} 
                 onRemove={setMealToRemove} 
+                isManager={isManager}
               />
             ))}
           </div>

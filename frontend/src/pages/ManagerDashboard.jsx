@@ -10,6 +10,8 @@ import DashboardLayout from "../components/layout/DashboardLayout";
 import DashboardOverview from "../components/shared/DashboardOverview";
 import ManageUsers from "../features/users/ManageUsers";
 
+import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
+
 // Auth & API
 import { useAuth } from "../context/AuthContext";
 
@@ -64,11 +66,7 @@ export default function ManagerDashboard() {
           
           {activeTab === "users" && <ManageUsers />}
 
-          {activeTab === "menu" && (
-            <div className="w-full max-w-5xl mx-auto flex items-center justify-center h-64 glass-panel rounded-3xl">
-              <p className="text-[#737373] font-bold">Weekly Menu (Migration Pending)</p>
-            </div>
-          )}
+          {activeTab === "menu" && <ManageMealSettings />}
 
           {activeTab === "bills" && (
             <div className="w-full flex items-center justify-center h-64 glass-panel rounded-3xl">
