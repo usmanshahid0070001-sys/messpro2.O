@@ -20,6 +20,10 @@ export default function ManageMealSettings() {
   const [menu, setMenu] = useState({});
   const [mealToRemove, setMealToRemove] = useState(null);
 
+  // Swap State
+  const [isSwapMode, setIsSwapMode] = useState(false);
+  const [swapSelection, setSwapSelection] = useState([]);
+
   // Track if there are unsaved changes
   const [isDirty, setIsDirty] = useState(false);
 
@@ -180,9 +184,55 @@ export default function ManageMealSettings() {
     }));
   };
 
+  const handleToggleSwapMode = () => {
+    setIsSwapMode(!isSwapMode);
+    setSwapSelection([]);
+  };
+
+  const handleSelectForSwap = (day, mealId) => {
+    if (!isSwapMode) return;
+    
+    // Check if already selected
+    const alreadySelectedIdx = swapSelection.findIndex(s => s.day === day && s.mealId === mealId);
+    
+    if (alreadySelectedIdx >= 0) {
+      // Deselect
+      setSwapSelection(prev => prev.filter((_, idx) => idx !== alreadySelectedIdx));
+      return;
+    }
+
+    const newSelection = [...swapSelection, { day, mealId }];
+    
+    if (newSelection.length === 2) {
+      // Execute swap
+      const [first, second] = newSelection;
+      
+      const firstCell = menu[first.day]?.[first.mealId] || { foodName: '', price: '' };
+      const secondCell = menu[second.day]?.[second.mealId] || { foodName: '', price: '' };
+
+      setMenu(prev => ({
+        ...prev,
+        [first.day]: {
+          ...prev[first.day],
+          [first.mealId]: { foodName: secondCell.foodName, price: secondCell.price }
+        },
+        [second.day]: {
+          ...prev[second.day],
+          [second.mealId]: { foodName: firstCell.foodName, price: firstCell.price }
+        }
+      }));
+      
+      setIsDirty(true);
+      setIsSwapMode(false);
+      setSwapSelection([]);
+    } else {
+      setSwapSelection(newSelection);
+    }
+  };
+
   if (isLoading && !isDirty) {
     return (
-      <div className="p-8 space-y-8 animate-pulse">
+      <div className="lg:p-8 space-y-8 animate-pulse">
         <div className="h-8 bg-gray-200 dark:bg-[#222] rounded w-48 mb-2"></div>
         <div className="h-4 bg-gray-200 dark:bg-[#222] rounded w-96"></div>
         <div className="h-40 bg-gray-100 dark:bg-[#1a1a1a] rounded-xl w-full mt-8"></div>
@@ -192,7 +242,7 @@ export default function ManageMealSettings() {
 
   if (isError && !isDirty) {
     return (
-      <div className="p-8">
+      <div className="lg:p-8">
         <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 rounded-lg flex items-center justify-between gap-4">
           <span>Failed to load meal schedule. Please try again.</span>
           <button
@@ -207,7 +257,7 @@ export default function ManageMealSettings() {
   }
 
   return (
-    <div className="space-y-8 p-8">
+    <div className="space-y-8 lg:p-8">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -216,31 +266,33 @@ export default function ManageMealSettings() {
             Configure global meal timings, pricing, and weekly schedule.
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-xl shadow-sm">
+        <div className="flex flex-col sm:items-end lg:flex-row lg:items-center gap-4 w-full sm:w-auto">
+          <div className="flex items-center justify-between lg:justify-start gap-3 px-4 py-2 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-xl shadow-sm w-full lg:w-auto">
             <span className="text-sm font-semibold text-[#111111] dark:text-white">Module Status</span>
-            <button
-              onClick={handleToggleStatus}
-              disabled={isManager || updateScheduleMutation.isPending}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${status === 'Active' ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#333]'
-                } ${(isManager || updateScheduleMutation.isPending) ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${status === 'Active' ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-              />
-            </button>
-            <span className={`text-xs font-bold ${status === 'Active' ? 'text-blue-600' : 'text-[#737373]'}`}>
-              {status}
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleToggleStatus}
+                disabled={isManager || updateScheduleMutation.isPending}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${status === 'Active' ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#333]'
+                  } ${(isManager || updateScheduleMutation.isPending) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${status === 'Active' ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                />
+              </button>
+              <span className={`text-xs font-bold ${status === 'Active' ? 'text-blue-600' : 'text-[#737373]'}`}>
+                {status}
+              </span>
+            </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col items-start sm:items-end gap-1 w-full lg:w-auto">
+            <div className="flex items-center gap-2 w-full">
               <button
                 onClick={handleSaveMenu}
                 disabled={updateScheduleMutation.isPending || !isDirty}
-                className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 bg-black dark:bg-white text-white dark:text-black rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black disabled:opacity-50 disabled:cursor-not-allowed w-full lg:w-auto"
               >
                 {updateScheduleMutation.isPending ? (
                   <div className="w-4 h-4 border-2 border-white/20 dark:border-black/20 border-t-white dark:border-t-black rounded-full animate-spin" />
@@ -306,13 +358,26 @@ export default function ManageMealSettings() {
 
       {/* Weekly Menu Schedule */}
       <div className={`space-y-4 ${status === 'Inactive' || meals.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
-        <h2 className="text-lg font-bold text-[#111111] dark:text-white">Weekly Menu Configuration</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-[#111111] dark:text-white">Weekly Menu Configuration</h2>
+          {!isManager && meals.length > 0 && (
+            <button
+              onClick={handleToggleSwapMode}
+              className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 ${isSwapMode ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-gray-100 text-[#404040] dark:bg-[#1a1a1a] dark:text-[#cccccc] hover:bg-gray-200 dark:hover:bg-[#333]'}`}
+            >
+              {isSwapMode ? "Cancel Swap" : "Swap Meals"}
+            </button>
+          )}
+        </div>
 
         {meals.length > 0 && (
           <WeeklyMenuGrid
             meals={meals}
             menu={menu}
             onUpdateCell={updateMenuCell}
+            isSwapMode={isSwapMode}
+            swapSelection={swapSelection}
+            onSelectForSwap={handleSelectForSwap}
           />
         )}
       </div>
