@@ -12,7 +12,7 @@ export const userApi = {
   },
 
   addStudent: async (studentData) => {
-    const response = await api.post('/api/users', studentData);
+    const response = await api.post('/api/users/add', studentData);
     return response.data;
   },
   

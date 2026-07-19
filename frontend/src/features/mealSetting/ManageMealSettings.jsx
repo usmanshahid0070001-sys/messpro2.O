@@ -3,6 +3,8 @@ import { Plus, Save, Info, AlertTriangle } from 'lucide-react';
 import MealCard from './MealCard';
 import WeeklyMenuGrid from './WeeklyMenuGrid';
 import { useAuth } from '../../context/AuthContext';
+import { useMealSchedule } from '../../hooks/queries/useMealQueries';
+import { useUpdateMealSchedule } from '../../hooks/mutations/useMealMutations';
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -10,39 +12,74 @@ export default function ManageMealSettings() {
   const { user } = useAuth();
   const isManager = user?.role === 'manager';
 
+  const { data: scheduleData, isLoading, isError, refetch } = useMealSchedule();
+  const updateScheduleMutation = useUpdateMealSchedule();
+
   const [status, setStatus] = useState("Active");
-  const [meals, setMeals] = useState([]); 
+  const [meals, setMeals] = useState([]);
   const [menu, setMenu] = useState({});
   const [mealToRemove, setMealToRemove] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
-  
+
   // Track if there are unsaved changes
   const [isDirty, setIsDirty] = useState(false);
 
-  // Load from sessionStorage on mount
+  // Load from sessionStorage OR backend data
   useEffect(() => {
-    const savedData = sessionStorage.getItem('mealSettings');
-    if (savedData) {
+    const draftData = sessionStorage.getItem('mealSettingsDraft');
+
+    if (draftData) {
+      // If we have a draft, load it and skip the backend data for now
       try {
-        const parsed = JSON.parse(savedData);
+        const parsed = JSON.parse(draftData);
         setStatus(parsed.status || "Active");
         setMeals(parsed.meals || []);
-        
-        // Ensure menu has all days
-        const loadedMenu = parsed.menu || {};
-        const safeMenu = {};
-        DAYS_OF_WEEK.forEach(day => {
-          safeMenu[day] = loadedMenu[day] || {};
-        });
-        setMenu(safeMenu);
+        setMenu(parsed.menu || {});
+        setIsDirty(true);
+        return; // Skip loading from backend
       } catch (e) {
-        console.error("Failed to parse session storage data", e);
-        initializeEmptyMenu();
+        console.error("Failed to parse draft data", e);
+        sessionStorage.removeItem('mealSettingsDraft');
       }
-    } else {
+    }
+
+    if (scheduleData && scheduleData.data) {
+      const parsed = scheduleData.data;
+
+      setStatus(parsed.status === 'inactive' ? 'Inactive' : 'Active');
+
+      const loadedMeals = (parsed.mealNames || []).map((name, idx) => ({
+        id: idx.toString(),
+        name: name,
+        endTime: (parsed.selectionTiming || [])[idx] || ''
+      }));
+      setMeals(loadedMeals);
+
+      const loadedMenu = parsed.menu || {};
+      const safeMenu = {};
+      DAYS_OF_WEEK.forEach(day => {
+        const dayArray = loadedMenu[day] || [];
+        const dayObj = {};
+        loadedMeals.forEach((meal, idx) => {
+          const item = dayArray[idx];
+          dayObj[meal.id] = {
+            foodName: item?.meal === 'none' ? '' : (item?.meal || ''),
+            price: item?.price || 0
+          };
+        });
+        safeMenu[day] = dayObj;
+      });
+      setMenu(safeMenu);
+    } else if (!isLoading) {
       initializeEmptyMenu();
     }
-  }, []);
+  }, [scheduleData, isLoading]);
+
+  // Save to draft whenever state changes and it's dirty
+  useEffect(() => {
+    if (isDirty) {
+      sessionStorage.setItem('mealSettingsDraft', JSON.stringify({ status, meals, menu }));
+    }
+  }, [status, meals, menu, isDirty]);
 
   const initializeEmptyMenu = () => {
     const defaultMenu = {};
@@ -54,40 +91,44 @@ export default function ManageMealSettings() {
 
   const handleSaveData = (customData = null) => {
     const dataToSave = customData || { status, meals, menu };
-    
-    // As per requirement, empty foodName inputs will be saved as "none"
-    // Wait, the requirement says "if the input is empty just save none in the data that will be send via api"
-    // We can do this transformation during the API mock save.
+
+    // Transform frontend format to backend format
     const transformedMenu = {};
     Object.keys(dataToSave.menu).forEach(day => {
-      transformedMenu[day] = {};
-      Object.keys(dataToSave.menu[day]).forEach(mealId => {
-        const cell = dataToSave.menu[day][mealId];
-        transformedMenu[day][mealId] = {
-          foodName: cell.foodName ? cell.foodName.trim() : "none",
-          price: cell.price || 0
-        };
+      transformedMenu[day] = [];
+      dataToSave.meals.forEach((meal) => {
+        const cell = dataToSave.menu[day][meal.id];
+        transformedMenu[day].push({
+          meal: cell && cell.foodName ? cell.foodName.trim() : "none",
+          price: cell && cell.price ? Number(cell.price) : 0
+        });
       });
     });
 
-    const finalData = { ...dataToSave, menu: transformedMenu };
-    sessionStorage.setItem('mealSettings', JSON.stringify(finalData));
-    setIsDirty(false);
+    const finalData = {
+      status: dataToSave.status.toLowerCase(),
+      numberOfMeals: dataToSave.meals.length,
+      mealNames: dataToSave.meals.map(m => m.name),
+      selectionTiming: dataToSave.meals.map(m => m.endTime),
+      menu: transformedMenu
+    };
+
+    updateScheduleMutation.mutate(finalData, {
+      onSuccess: () => {
+        setIsDirty(false);
+        sessionStorage.removeItem('mealSettingsDraft');
+      }
+    });
   };
 
   const handleSaveMenu = () => {
-    setIsSaving(true);
     handleSaveData();
-    setTimeout(() => {
-      setIsSaving(false);
-    }, 600);
   };
 
   const handleToggleStatus = () => {
     const newStatus = status === 'Active' ? 'Inactive' : 'Active';
     setStatus(newStatus);
-    // Requirement: toggle triggers save automatically
-    handleSaveData({ status: newStatus, meals, menu });
+    setIsDirty(true);
   };
 
   const handleAddMeal = () => {
@@ -95,7 +136,7 @@ export default function ManageMealSettings() {
     const newMealId = Date.now().toString();
     const newMeals = [...meals, { id: newMealId, name: '', endTime: '' }];
     setMeals(newMeals);
-    
+
     const updatedMenu = { ...menu };
     DAYS_OF_WEEK.forEach(day => {
       if (!updatedMenu[day]) updatedMenu[day] = {};
@@ -109,7 +150,7 @@ export default function ManageMealSettings() {
     setIsDirty(true);
     const updatedMeals = meals.filter(m => m.id !== mealToRemove);
     setMeals(updatedMeals);
-    
+
     const updatedMenu = { ...menu };
     DAYS_OF_WEEK.forEach(day => {
       if (updatedMenu[day] && updatedMenu[day][mealToRemove]) {
@@ -139,6 +180,32 @@ export default function ManageMealSettings() {
     }));
   };
 
+  if (isLoading && !isDirty) {
+    return (
+      <div className="p-8 space-y-8 animate-pulse">
+        <div className="h-8 bg-gray-200 dark:bg-[#222] rounded w-48 mb-2"></div>
+        <div className="h-4 bg-gray-200 dark:bg-[#222] rounded w-96"></div>
+        <div className="h-40 bg-gray-100 dark:bg-[#1a1a1a] rounded-xl w-full mt-8"></div>
+      </div>
+    );
+  }
+
+  if (isError && !isDirty) {
+    return (
+      <div className="p-8">
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 rounded-lg flex items-center justify-between gap-4">
+          <span>Failed to load meal schedule. Please try again.</span>
+          <button
+            onClick={() => refetch()}
+            className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-md border border-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 p-8">
       {/* Header */}
@@ -154,38 +221,38 @@ export default function ManageMealSettings() {
             <span className="text-sm font-semibold text-[#111111] dark:text-white">Module Status</span>
             <button
               onClick={handleToggleStatus}
-              disabled={isManager}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-                status === 'Active' ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#333]'
-              } ${isManager ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={isManager || updateScheduleMutation.isPending}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${status === 'Active' ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#333]'
+                } ${(isManager || updateScheduleMutation.isPending) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  status === 'Active' ? 'translate-x-6' : 'translate-x-1'
-                }`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${status === 'Active' ? 'translate-x-6' : 'translate-x-1'
+                  }`}
               />
             </button>
             <span className={`text-xs font-bold ${status === 'Active' ? 'text-blue-600' : 'text-[#737373]'}`}>
               {status}
             </span>
           </div>
-          
+
           <div className="flex flex-col items-end gap-1">
-            <button
-              onClick={handleSaveMenu}
-              disabled={isSaving || !isDirty}
-              className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? (
-                <div className="w-4 h-4 border-2 border-white/20 dark:border-black/20 border-t-white dark:border-t-black rounded-full animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              Save Configuration
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSaveMenu}
+                disabled={updateScheduleMutation.isPending || !isDirty}
+                className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updateScheduleMutation.isPending ? (
+                  <div className="w-4 h-4 border-2 border-white/20 dark:border-black/20 border-t-white dark:border-t-black rounded-full animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                Save Configuration
+              </button>
+            </div>
             {isDirty && (
               <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                Unsaved Changes
+                Unsaved Draft Present
               </span>
             )}
           </div>
@@ -225,11 +292,11 @@ export default function ManageMealSettings() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {meals.map((meal) => (
-              <MealCard 
-                key={meal.id} 
-                meal={meal} 
-                onUpdate={updateMeal} 
-                onRemove={setMealToRemove} 
+              <MealCard
+                key={meal.id}
+                meal={meal}
+                onUpdate={updateMeal}
+                onRemove={setMealToRemove}
                 isManager={isManager}
               />
             ))}
@@ -240,12 +307,12 @@ export default function ManageMealSettings() {
       {/* Weekly Menu Schedule */}
       <div className={`space-y-4 ${status === 'Inactive' || meals.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
         <h2 className="text-lg font-bold text-[#111111] dark:text-white">Weekly Menu Configuration</h2>
-        
+
         {meals.length > 0 && (
-          <WeeklyMenuGrid 
-            meals={meals} 
-            menu={menu} 
-            onUpdateCell={updateMenuCell} 
+          <WeeklyMenuGrid
+            meals={meals}
+            menu={menu}
+            onUpdateCell={updateMenuCell}
           />
         )}
       </div>
