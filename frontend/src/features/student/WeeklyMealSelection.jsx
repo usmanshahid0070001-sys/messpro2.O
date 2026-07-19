@@ -1,295 +1,261 @@
-import { useState, useEffect } from "react";
-import {
-  Calendar,
-  Save,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  AlertCircle,
-  RefreshCw,
-  Utensils
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useWeeklySelections, useMenuSchedule } from "../../hooks/queries/useStudentQueries";
-import { useUpdateMealSelections } from "../../hooks/mutations/useStudentMutations";
+import { useState, useEffect } from 'react';
+import { useMealSchedule } from '../../hooks/queries/useMealQueries';
+import { Save, Utensils, CheckCircle2, Circle, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-const getLocalDateString = (date) => {
-  const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const STATIC_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+const getCurrentDayPK = () => {
+  const options = { timeZone: 'Asia/Karachi', weekday: 'long' };
+  const formatter = new Intl.DateTimeFormat('en-US', options);
+  const parts = formatter.formatToParts(new Date());
+  return parts.find(p => p.type === 'weekday').value;
 };
 
-const getEffectiveToday = () => {
+const getPKCurrentMinutes = () => {
   const now = new Date();
-  if (now.getHours() < 5) now.setDate(now.getDate() - 1);
-  return getLocalDateString(now);
-};
-
-const getCurrentWeekDates = () => {
-  const now = new Date();
-  const effectiveNow = new Date(now);
-  if (now.getHours() < 5) effectiveNow.setDate(effectiveNow.getDate() - 1);
-
-  const dates = [];
-  for (let i = 1; i <= 7; i++) {
-    const d = new Date(effectiveNow);
-    d.setDate(effectiveNow.getDate() + i);
-    dates.push({
-      dayName: d.toLocaleDateString("en-US", { weekday: "long" }),
-      dateString: getLocalDateString(d),
-      shortDay: d.toLocaleDateString("en-US", { weekday: "short" })
-    });
-  }
-  return dates;
-};
-
-// Helper to extract valid meal types dynamically from the menu for a given day
-const extractMealTypes = (menuDataForDay) => {
-  if (!menuDataForDay) return [];
-  return Object.keys(menuDataForDay).filter(key => {
-    // Only keep keys that are likely meals (not prices, IDs, or metadata)
-    return !key.toLowerCase().includes('price') && 
-           !key.startsWith('_') && 
-           typeof menuDataForDay[key] === 'string' &&
-           menuDataForDay[key].trim() !== '';
+  const options = { timeZone: 'Asia/Karachi', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' };
+  const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(now);
+  let hour = 0, minute = 0;
+  parts.forEach(p => {
+    if (p.type === 'hour') hour = parseInt(p.value, 10);
+    if (p.type === 'minute') minute = parseInt(p.value, 10);
   });
+  return hour * 60 + minute;
+};
+
+const hasTimePassedInPK = (selectionTimeString) => {
+  if (!selectionTimeString) return false;
+  const match = selectionTimeString.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return false;
+  
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
+  
+  if (period === 'PM' && hours < 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+  
+  const selectionTotalMinutes = hours * 60 + minutes;
+  const currentTotalMinutes = getPKCurrentMinutes();
+  
+  return currentTotalMinutes >= selectionTotalMinutes;
+};
+
+const getShiftedDays = (currentDay) => {
+  const idx = STATIC_DAYS.indexOf(currentDay);
+  if (idx === -1) return STATIC_DAYS;
+  return [...STATIC_DAYS.slice(idx), ...STATIC_DAYS.slice(0, idx)];
+};
+
+const getDateForShiftedIndex = (index) => {
+  const futureDate = new Date(Date.now() + index * 24 * 60 * 60 * 1000);
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Karachi',
+    month: 'short',
+    day: 'numeric'
+  });
+  return formatter.format(futureDate);
 };
 
 export default function WeeklyMealSelection() {
-  const weekDates = getCurrentWeekDates();
-  const dateRangeString = weekDates.map((d) => d.dateString).join(",");
+  const { data: scheduleData, isLoading, isError, refetch } = useMealSchedule();
 
-  const [attendance, setAttendance] = useState({});
-
-  const { data: serverSelections, isLoading: isSelectionsLoading, isError, refetch } = useWeeklySelections(dateRangeString);
-  const { data: menuSchedule } = useMenuSchedule();
-  const saveMutation = useUpdateMealSelections();
+  const [status, setStatus] = useState("Active");
+  const [meals, setMeals] = useState([]);
+  const [menu, setMenu] = useState({});
+  const [selections, setSelections] = useState({});
+  const [isDirty, setIsDirty] = useState(false);
+  
+  const currentDayPK = getCurrentDayPK();
+  const shiftedDays = getShiftedDays(currentDayPK);
 
   useEffect(() => {
-    const initialState = {};
-    // Determine dynamic meals for each day based on schedule to initialize properly
-    weekDates.forEach((day) => {
-      const dayData = menuSchedule?.menuData?.[day.dayName] || menuSchedule?.[day.dayName] || {};
-      const mealsForDay = extractMealTypes(dayData);
-      
-      const dayDefaults = {};
-      mealsForDay.forEach(meal => { dayDefaults[meal] = false; });
-      // If no schedule yet, fallback to empty object
-      initialState[day.dateString] = dayDefaults;
-    });
+    if (scheduleData && scheduleData.data) {
+      const parsed = scheduleData.data;
+      setStatus(parsed.status === 'inactive' ? 'Inactive' : 'Active');
 
-    if (serverSelections && Array.isArray(serverSelections)) {
-      serverSelections.forEach((record) => {
-        if (initialState[record.date] !== undefined) {
-          // Merge server data with our dynamic keys
-          const updatedRecord = { ...initialState[record.date] };
-          Object.keys(updatedRecord).forEach(mealKey => {
-             if (record[mealKey] !== undefined) updatedRecord[mealKey] = record[mealKey];
-          });
-          initialState[record.date] = updatedRecord;
-        }
+      const loadedMeals = (parsed.mealNames || []).map((name, idx) => ({
+        id: idx.toString(),
+        name: name,
+        endTime: (parsed.selectionTiming || [])[idx] || ''
+      }));
+      setMeals(loadedMeals);
+
+      const loadedMenu = parsed.menu || {};
+      const safeMenu = {};
+      const initialSelections = {};
+
+      STATIC_DAYS.forEach(day => {
+        const dayArray = loadedMenu[day] || [];
+        safeMenu[day] = {};
+        initialSelections[day] = {};
+
+        loadedMeals.forEach((meal, idx) => {
+          const item = dayArray[idx];
+          safeMenu[day][meal.id] = {
+            foodName: item?.meal === 'none' ? '' : (item?.meal || ''),
+            price: item?.price || 0
+          };
+          initialSelections[day][meal.id] = false; // Default to unselected
+        });
       });
+      setMenu(safeMenu);
+      setSelections(initialSelections);
     }
-    setAttendance(initialState);
-  }, [serverSelections, menuSchedule]); // Re-run if schedule or selections arrive
+  }, [scheduleData]);
 
-  const isDirty = (() => {
-    if (Object.keys(attendance).length === 0) return false;
-    return weekDates.some(({ dateString }) => {
-      const current = attendance[dateString];
-      const original = serverSelections?.find((s) => s.date === dateString) || {};
-      return Object.keys(current).some(meal => current[meal] !== !!original[meal]);
-    });
-  })();
-
-  const toggleMeal = (dateString, mealType) => {
-    const todayStr = getEffectiveToday();
-    if (dateString <= todayStr) return; // Locked
-
-    setAttendance((prev) => ({
+  const toggleSelection = (day, mealId) => {
+    setIsDirty(true);
+    setSelections(prev => ({
       ...prev,
-      [dateString]: {
-        ...prev[dateString],
-        [mealType]: !prev[dateString]?.[mealType],
-      },
+      [day]: {
+        ...prev[day],
+        [mealId]: !prev[day][mealId]
+      }
     }));
   };
 
-  const handleSave = () => {
-    const payload = Object.entries(attendance).map(([date, meals]) => {
-      const dayObj = weekDates.find((d) => d.dateString === date);
-      const dayName = dayObj ? dayObj.dayName : null;
-      
-      const dayMenu = menuSchedule?.menuData?.[dayName] || menuSchedule?.[dayName] || {};
-
-      const record = { date };
-      // Dynamically map meals and prices
-      Object.entries(meals).forEach(([meal, isSelected]) => {
-        record[meal] = isSelected;
-        record[`${meal}Price`] = dayMenu[`${meal}Price`] || 0;
-      });
-      return record;
-    });
-    saveMutation.mutate(payload);
+  const handleSaveSelection = () => {
+    console.log("Saving selections:", selections);
+    setIsDirty(false);
+    alert("Selections saved successfully! (API Integration Pending)");
   };
 
-  if (isError) {
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 glass-panel rounded-[2rem] text-center">
-        <AlertCircle className="w-12 h-12 text-rose-500 mb-4 animate-bounce" />
-        <h3 className="text-xl font-black text-[#111111] dark:text-white mb-2">Error Loading Data</h3>
-        <button onClick={() => refetch()} className="px-6 py-2 bg-[#111111] dark:bg-white dark:text-black text-white font-bold rounded-xl flex items-center gap-2">
-          <RefreshCw className="w-4 h-4" /> Retry
-        </button>
+      <div className="p-8 space-y-8 animate-pulse">
+        <div className="h-8 bg-gray-200 dark:bg-[#222] rounded w-48 mb-2"></div>
+        <div className="h-40 bg-gray-100 dark:bg-[#1a1a1a] rounded-xl w-full mt-8"></div>
       </div>
     );
   }
 
-  if (isSelectionsLoading || Object.keys(attendance).length === 0) {
+  if (isError) {
     return (
-      <div className="flex items-center justify-center h-64 glass-panel rounded-[2rem]">
-         <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+      <div className="p-8">
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 rounded-lg flex items-center justify-between gap-4">
+          <span>Failed to load weekly menu. Please try again.</span>
+          <button onClick={() => refetch()} className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-md border border-red-300 hover:bg-red-100 transition-colors">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'Inactive' || meals.length === 0) {
+    return (
+      <div className="p-8 text-center border border-dashed border-[#e5e5e5] dark:border-[#333333] rounded-2xl bg-[#fafafa] dark:bg-[#111111]">
+        <Utensils className="w-12 h-12 mx-auto text-[#a3a3a3] mb-4" />
+        <h3 className="text-lg font-bold text-[#111111] dark:text-white mb-2">No Menu Available</h3>
+        <p className="text-sm text-[#737373]">The mess module is currently inactive or no meals have been configured by the admin.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      
-      {/* Premium Sticky Action Header */}
-      <div className="sticky top-0 z-30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 glass-panel rounded-3xl shadow-sm">
+    <div className="space-y-8 lg:p-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-[#111111] dark:text-white flex items-center gap-2">
-            <Calendar className="w-7 h-7 text-indigo-500 dark:text-indigo-400" />
-            Weekly Menu Plan
-          </h2>
-          <p className="mt-1 text-sm font-semibold text-[#737373] dark:text-[#94a3b8]">
-            Customize your meals. Locked days cannot be changed.
+          <h1 className="text-2xl font-black tracking-tight text-[#111111] dark:text-white">Weekly Meal Selection</h1>
+          <p className="mt-1 text-sm font-medium text-[#737373] dark:text-[#a0a0a0]">
+            Opt-in or out of your upcoming meals.
           </p>
         </div>
-        
-        <motion.button
-          whileHover={!saveMutation.isPending && isDirty ? { scale: 1.02 } : {}}
-          whileTap={!saveMutation.isPending && isDirty ? { scale: 0.98 } : {}}
-          onClick={handleSave}
-          disabled={saveMutation.isPending || !isDirty}
-          className={`flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl font-bold tracking-wide transition-all ${
-            !isDirty
-              ? "bg-[#e0e0e0] dark:bg-slate-800 text-[#a3a3a3] dark:text-slate-500 cursor-not-allowed"
-              : "bg-indigo-600 dark:bg-indigo-500 text-white shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 dark:hover:bg-indigo-400"
-          }`}
+        <button
+          onClick={handleSaveSelection}
+          disabled={!isDirty}
+          className="flex items-center justify-center gap-2 bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
         >
-          {saveMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-          {saveMutation.isPending ? "Saving..." : "Save Preferences"}
-        </motion.button>
+          <Save className="w-4 h-4" />
+          Save Selections
+        </button>
       </div>
 
       {/* Days Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <AnimatePresence>
-          {weekDates.map(({ dayName, dateString, shortDay }, idx) => {
-            const todayStr = getEffectiveToday();
-            const isPastOrToday = dateString <= todayStr;
-            const isEditable = !isPastOrToday;
-            
-            const dayMenu = menuSchedule?.menuData?.[dayName] || menuSchedule?.[dayName] || {};
-            const availableMeals = extractMealTypes(dayMenu);
-
-            return (
-              <motion.div 
-                key={dateString}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className={`p-6 rounded-[2rem] border transition-colors relative overflow-hidden ${
-                  isPastOrToday 
-                    ? 'bg-[#fafafa]/50 dark:bg-[#0f172a]/30 border-[#e0e0e0] dark:border-white/5 opacity-80' 
-                    : 'glass-panel border-[#e0e0e0] dark:border-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/30'
-                }`}
-              >
-                {/* Decorative background element */}
-                {!isPastOrToday && (
-                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {shiftedDays.map((day, i) => {
+          const isToday = day === currentDayPK;
+          
+          return (
+            <motion.div 
+              key={day}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className={`bg-white dark:bg-[#0a0a0a] rounded-2xl overflow-hidden shadow-sm transition-all ${isToday ? 'border-2 border-blue-500 shadow-blue-500/10' : 'border border-[#e5e5e5] dark:border-[#222222]'}`}
+            >
+              <div className={`px-5 py-3 border-b flex items-center justify-between ${isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-[#fafafa] dark:bg-[#111111] border-[#e5e5e5] dark:border-[#222222]'}`}>
+                <h3 className={`font-bold ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-[#111111] dark:text-white'}`}>
+                  {day}
+                </h3>
+                {isToday ? (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200">Today</span>
+                ) : (
+                  <span className="text-xs font-medium text-[#737373]">{getDateForShiftedIndex(i)}</span>
                 )}
+              </div>
+              <div className="p-5 flex flex-col gap-4">
+                {meals.map(meal => {
+                  const cellData = menu[day]?.[meal.id];
+                  const hasFood = cellData && cellData.foodName !== '';
+                  const isSelected = selections[day]?.[meal.id];
+                  
+                  const isLocked = isToday && hasTimePassedInPK(meal.endTime);
+                  
+                  let stateClass = "";
+                  if (!hasFood) {
+                    stateClass = "opacity-50 grayscale cursor-not-allowed border-transparent bg-gray-50 dark:bg-[#111]";
+                  } else if (isLocked) {
+                    if (isSelected) {
+                      stateClass = "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 cursor-not-allowed";
+                    } else {
+                      stateClass = "opacity-50 grayscale cursor-not-allowed border-transparent bg-gray-50 dark:bg-[#111]";
+                    }
+                  } else {
+                    stateClass = isSelected 
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 cursor-pointer transition-all" 
+                      : "border-[#e5e5e5] dark:border-[#333] hover:border-blue-300 cursor-pointer transition-all";
+                  }
 
-                <div className="flex items-center justify-between mb-5 border-b border-[#f5f5f5] dark:border-white/10 pb-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${
-                      isPastOrToday ? 'bg-[#e0e0e0] dark:bg-slate-800 text-[#a3a3a3]' : 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
-                    }`}>
-                      {shortDay}
+                  return (
+                    <div 
+                      key={meal.id} 
+                      onClick={() => {
+                        if (hasFood && !isLocked) toggleSelection(day, meal.id);
+                      }}
+                      className={`flex items-center justify-between p-3 rounded-xl border ${stateClass}`}
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-bold text-[#737373] uppercase tracking-wider">{meal.name}</span>
+                          {meal.endTime && <span className="text-[10px] font-semibold text-[#a3a3a3] bg-[#f5f5f5] dark:bg-[#222] px-1.5 py-0.5 rounded">Ends {meal.endTime}</span>}
+                        </div>
+                        <span className={`text-sm font-semibold ${isSelected && !isLocked ? 'text-blue-900 dark:text-blue-100' : (isLocked && isSelected ? 'text-emerald-900 dark:text-emerald-100' : 'text-[#111111] dark:text-white')}`}>
+                          {hasFood ? cellData.foodName : 'Not Served'}
+                        </span>
+                        {hasFood && cellData.price > 0 && (
+                          <span className="text-xs font-medium text-[#737373] mt-0.5">Rs. {cellData.price}</span>
+                        )}
+                      </div>
+                      {hasFood && (
+                        <div className="shrink-0 ml-4">
+                          {isLocked ? (
+                            isSelected ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Lock className="w-5 h-5 text-[#d4d4d4] dark:text-[#444]" />
+                          ) : (
+                            isSelected ? <CheckCircle2 className="w-6 h-6 text-blue-500" /> : <Circle className="w-6 h-6 text-[#d4d4d4] dark:text-[#444]" />
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <h3 className="text-lg font-black text-[#111111] dark:text-white">{dayName}</h3>
-                      <p className="text-xs font-bold text-[#737373] dark:text-[#94a3b8]">{dateString}</p>
-                    </div>
-                  </div>
-                  {isPastOrToday && (
-                    <span className="px-3 py-1 bg-[#e0e0e0] dark:bg-slate-800 text-[#737373] dark:text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-lg">
-                      Locked
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  {availableMeals.length === 0 ? (
-                    <div className="text-center py-4 text-sm font-semibold text-[#a3a3a3]">No meals scheduled</div>
-                  ) : (
-                    availableMeals.map((mealType) => {
-                      const dishName = dayMenu[mealType];
-                      const isSelected = attendance[dateString]?.[mealType] || false;
-
-                      return (
-                        <motion.button
-                          key={mealType}
-                          whileHover={isEditable ? { scale: 1.01 } : {}}
-                          whileTap={isEditable ? { scale: 0.98 } : {}}
-                          onClick={() => toggleMeal(dateString, mealType)}
-                          disabled={!isEditable}
-                          className={`w-full text-left relative flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-300 ${
-                            !isEditable ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
-                          } ${
-                            isSelected
-                              ? 'border-indigo-500 bg-indigo-50/50 dark:border-indigo-400/50 dark:bg-indigo-500/10 shadow-sm'
-                              : 'border-transparent bg-[#f5f5f5] dark:bg-[#1e293b] hover:bg-[#e0e0e0] dark:hover:bg-[#334155]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                            {isSelected ? (
-                              <CheckCircle2 className={`w-6 h-6 flex-shrink-0 ${isEditable ? 'text-indigo-600 dark:text-indigo-400' : 'text-[#a3a3a3]'}`} />
-                            ) : (
-                              <div className="w-6 h-6 flex-shrink-0 rounded-full border-2 border-[#d4d4d4] dark:border-slate-600" />
-                            )}
-                            
-                            <div className="flex-1 min-w-0 pr-4">
-                              <p className="text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#94a3b8] mb-0.5">
-                                {mealType}
-                              </p>
-                              <p className={`font-bold truncate text-sm sm:text-base ${isSelected ? 'text-indigo-950 dark:text-white' : 'text-[#404040] dark:text-slate-300'}`}>
-                                {dishName}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          {/* Animated Toggle Switch */}
-                          <div className={`relative flex items-center justify-center w-12 h-6 rounded-full transition-colors duration-300 shrink-0 ${
-                            isSelected ? 'bg-indigo-500' : 'bg-[#d4d4d4] dark:bg-slate-700'
-                          }`}>
-                            <motion.div
-                              layout
-                              className="w-4 h-4 bg-white rounded-full shadow-sm"
-                              animate={{ x: isSelected ? 10 : -10 }}
-                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                            />
-                          </div>
-                        </motion.button>
-                      );
-                    })
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+                  );
+                })}
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );

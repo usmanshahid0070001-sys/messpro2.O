@@ -2,14 +2,11 @@ import { Utensils, LayoutDashboard, CreditCard, Home, Users } from "lucide-react
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
-// Feature Components
-import LiveCounts from "../features/manager/LiveCounts";
-
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
 import DashboardOverview from "../components/shared/DashboardOverview";
 import ManageUsers from "../features/users/ManageUsers";
-
+import ManageRooms from "../features/residence/ManageRooms";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 
 // Auth & API
@@ -35,6 +32,7 @@ export default function ManagerDashboard() {
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "overview", label: "Live Counts", icon: LayoutDashboard },
     { id: "users", label: "Manage Users", icon: Users },
+    { id: "rooms", label: "Residence Management", icon: Home },
     { id: "menu", label: "Weekly Menu", icon: Utensils },
     { id: "bills", label: "Bill Management", icon: CreditCard },
   ];
@@ -57,14 +55,10 @@ export default function ManagerDashboard() {
           {activeTab === "dashboard" && (
             <DashboardOverview userRole="manager" user={user} setActiveTab={setActiveTab} />
           )}
-
-          {activeTab === "overview" && (
-            <div className="max-w-4xl mx-auto">
-              <LiveCounts />
-            </div>
-          )}
           
           {activeTab === "users" && <ManageUsers />}
+
+          {activeTab === "rooms" && <ManageRooms />}
 
           {activeTab === "menu" && <ManageMealSettings />}
 
