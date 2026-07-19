@@ -48,3 +48,29 @@ export const restrictTo = (...roles) => {
     next();
   };
 };
+
+
+
+export const requirePermission = (requiredPermission) => {
+  return (req, res, next) => {
+    const user = req.user; // Assuming your protect/auth middleware sets req.user
+
+    // 1. Superadmins, Admins, and Managers bypass the check completely
+    if (['superadmin', 'admin', 'manager'].includes(user.role)) {
+      return next();
+    }
+
+    // 2. If it is a student, check if the Admin toggled this specific feature ON for them
+    if (user.role === 'student' && user.permissions && user.permissions.includes(requiredPermission)) {
+      return next();
+    }
+
+    // 3. If they don't have the permission, block the request
+    return res.status(403).json({ 
+      success: false, 
+      message: `Access Denied: You do not have the '${requiredPermission}' permission.` 
+    });
+  };
+};
+
+

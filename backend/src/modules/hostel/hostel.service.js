@@ -233,7 +233,6 @@
 // export default new HostelService();
 
 
-
 import crypto from 'crypto';
 import hostelRepository from './hostel.repository.js';
 import User from '../auth/auth.model.js';
@@ -244,31 +243,16 @@ import { sendEmail } from '../../utils/email.js';
 class HostelService {
   async registerHostel(data) {
     const existingName = await hostelRepository.findByName(data.name);
-    if (existingName) {
-      throw new Error('A hostel with this name is already registered.');
-    }
+    if (existingName) throw new Error('A hostel with this name is already registered.');
 
     const adminExists = await User.findOne({ email: data.adminEmail.toLowerCase().trim() });
-    if (adminExists) {
-      throw new Error(`User with email ${data.adminEmail} already exists.`);
-    }
+    if (adminExists) throw new Error(`User with email ${data.adminEmail} already exists.`);
 
     const managerExists = await User.findOne({ email: data.managerEmail.toLowerCase().trim() });
-    if (managerExists) {
-      throw new Error(`User with email ${data.managerEmail} already exists.`);
-    }
+    if (managerExists) throw new Error(`User with email ${data.managerEmail} already exists.`);
 
-    let planData = null;
-    if (data.plan) {
-      planData = await Plan.findById(data.plan);
-    }
-    if (!planData) {
-      planData = await Plan.findOne(); // fallback to any existing plan
-    }
-    
-    if (!planData) {
-      throw new Error('No subscription plans found in the database. Please create a plan first.');
-    }
+    let planData = await (data.plan ? Plan.findById(data.plan) : Plan.findOne());
+    if (!planData) throw new Error('No subscription plans found. Create a plan first.');
 
     const planSnapshot = {
       planId: planData._id,
@@ -277,7 +261,10 @@ class HostelService {
       features: planData.features,
     };
 
-    // WE LABEL THE BOX "hostel" HERE
+    // Give them an initial 30 days of access
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000)); 
+
     const hostel = await hostelRepository.create({
       name: data.name,
       subdomain: data.subdomain,
@@ -290,24 +277,19 @@ class HostelService {
         autoMealVerification: data.settings?.autoMealVerification ?? true,
       },
       status: 'Active',
+      subscriptionExpiresAt: expiresAt, // 👈 New Tracking Field
     });
 
     try {
       await Promise.all([
-        // WE CALL THE EXACT LABEL "hostel" HERE
         this.createHostelUser(hostel._id, hostel.name, {
-          name: data.adminName,
-          email: data.adminEmail,
-          role: 'admin',
+          name: data.adminName, email: data.adminEmail, role: 'admin',
         }),
         this.createHostelUser(hostel._id, hostel.name, {
-          name: data.managerName,
-          email: data.managerEmail,
-          role: 'manager',
+          name: data.managerName, email: data.managerEmail, role: 'manager',
         }),
       ]);
     } catch (error) {
-      // Manual rollback to maintain atomicity if user creation fails
       await hostelRepository.delete(hostel._id);
       throw new Error(`Failed to create initial users, hostel creation rolled back. Original error: ${error.message}`);
     }
@@ -315,32 +297,41 @@ class HostelService {
     return hostel;
   }
 
-  async getAllHostels() {
-    return await hostelRepository.findAll();
+  // 👇 PHASE 1 FEATURE: The Auto-Expiring Status Checker
+  async getAndSyncHostelStatus(hostelId) {
+    const hostel = await hostelRepository.findById(hostelId);
+    if (!hostel) return 'Inactive';
+
+    const now = new Date();
+    const expires = hostel.subscriptionExpiresAt ? new Date(hostel.subscriptionExpiresAt) : new Date(0);
+
+    // If they are past their expiry date and currently active, downgrade them
+    if (expires < now && hostel.status === 'Active') {
+      await hostelRepository.updateHostel(hostelId, { status: 'Expired' });
+      return 'Expired';
+    }
+
+    return hostel.status;
   }
 
-  async getHostelById(hostelId) {
+  // 👇 PHASE 1 FEATURE: Bulletproof Subscription Math
+  async extendOrUpgradeSubscription(hostelId, planId, additionalDays) {
     const hostel = await hostelRepository.findById(hostelId);
-    if (!hostel) {
-      throw new Error('Hostel not found.');
-    }
-    return hostel;
-  }
-
-  async updateHostelSettings(hostelId, newSettingsData) {
-    const hostel = await hostelRepository.findById(hostelId);
-    if (!hostel) {
-      throw new Error('Hostel not found.');
-    }
+    if (!hostel) throw new Error('Hostel not found.');
 
     const updateData = {};
+    const now = new Date();
+    const currentExpiry = hostel.subscriptionExpiresAt ? new Date(hostel.subscriptionExpiresAt) : now;
 
-    if (newSettingsData.plan) {
-      const planData = await Plan.findById(newSettingsData.plan);
-      if (!planData) {
-        throw new Error('Selected plan not found.');
-      }
-      
+    // THE GOLDEN RULE: Max(Current Date, Old Expiration Date) + Added Days
+    // This guarantees no duplicate days and no cheating!
+    const baseDate = currentExpiry > now ? currentExpiry : now;
+    updateData.subscriptionExpiresAt = new Date(baseDate.getTime() + (additionalDays * 24 * 60 * 60 * 1000));
+    updateData.status = 'Active'; // Immediately unlock them if they were expired
+
+    if (planId && planId !== hostel.plan?.planId?.toString()) {
+      const planData = await Plan.findById(planId);
+      if (!planData) throw new Error('Selected plan not found.');
       updateData.plan = {
         planId: planData._id,
         name: planData.name,
@@ -352,38 +343,41 @@ class HostelService {
     return await hostelRepository.updateHostel(hostelId, updateData);
   }
 
+  async getAllHostels() { return await hostelRepository.findAll(); }
+
+  async getHostelById(hostelId) {
+    const hostel = await hostelRepository.findById(hostelId);
+    if (!hostel) throw new Error('Hostel not found.');
+    return hostel;
+  }
+
+  async updateHostelSettings(hostelId, newSettingsData) {
+    // Basic settings updater remains the same
+    return await hostelRepository.updateHostel(hostelId, newSettingsData);
+  }
+
   async createHostelUser(hostelId, hostelName, userData) {
     const existing = await User.findOne({ email: userData.email.toLowerCase().trim() });
-    if (existing) {
-      throw new Error(`User with email ${userData.email} already exists.`);
-    }
+    if (existing) throw new Error(`User with email ${userData.email} already exists.`);
 
     const password = crypto.randomBytes(8).toString('base64url');
     const user = await User.create({
       name: userData.name,
       email: userData.email.toLowerCase().trim(),
       role: userData.role,
-      hostelId: hostelId.toString(), // FIX APPLIED HERE
+      hostelId: hostelId.toString(),
       password,
     });
 
     await PlainUser.findOneAndUpdate(
       { email: userData.email.toLowerCase().trim() },
-      {
-        password,
-        role: userData.role,
-        name: userData.name,
-        hostelId: hostelId.toString(), // FIX APPLIED HERE
-      },
+      { password, role: userData.role, name: userData.name, hostelId: hostelId.toString() },
       { upsert: true, new: true }
     );
 
     const lineItems = [
-      `Hostel: ${hostelName}`,
-      `Role: ${userData.role}`,
-      `Email: ${userData.email}`,
-      `Temporary password: ${password}`,
-      `Login here: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`,
+      `Hostel: ${hostelName}`, `Role: ${userData.role}`, `Email: ${userData.email}`,
+      `Temporary password: ${password}`, `Login here: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`,
     ];
 
     await sendEmail({
@@ -397,38 +391,21 @@ class HostelService {
   }
 
   async addHostelUser(creatorRole, hostelId, userData) {
-    const allowedCreations = {
-      superadmin: ['admin', 'manager'],
-      admin:      ['manager', 'student'],
-      manager:    ['student'],
-      student:    [] 
-    };
-
+    const allowedCreations = { superadmin: ['admin', 'manager'], admin: ['manager', 'student'], manager: ['student'], student: [] };
     if (!allowedCreations[creatorRole]?.includes(userData.role)) {
       const error = new Error(`Access Denied: A ${creatorRole} cannot create a ${userData.role}.`);
-      error.statusCode = 403;
-      throw error;
+      error.statusCode = 403; throw error;
     }
 
     const hostel = await hostelRepository.findById(hostelId);
-    if (!hostel) {
-      throw new Error('Hostel not found.');
-    }
+    if (!hostel) throw new Error('Hostel not found.');
 
     if (userData.role === 'manager' || userData.role === 'student') {
-      const currentCount = await User.countDocuments({ 
-        hostelId: hostelId.toString(), 
-        role: userData.role 
-      });
-
-      const limit = userData.role === 'manager' 
-        ? hostel.plan.limits.maxManagers 
-        : hostel.plan.limits.maxStudents;
-
+      const currentCount = await User.countDocuments({ hostelId: hostelId.toString(), role: userData.role });
+      const limit = userData.role === 'manager' ? hostel.plan.limits.maxManagers : hostel.plan.limits.maxStudents;
       if (limit !== -1 && currentCount >= limit) {
         const error = new Error(`Upgrade required. Your current plan only allows ${limit} ${userData.role}(s).`);
-        error.statusCode = 402; 
-        throw error;
+        error.statusCode = 402; throw error;
       }
     }
 

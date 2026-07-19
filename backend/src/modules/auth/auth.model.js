@@ -1,3 +1,6 @@
+
+
+
 // import mongoose from 'mongoose';
 // import bcrypt from 'bcryptjs';
 // import crypto from 'crypto';
@@ -42,6 +45,16 @@
 //       required: true,
 //       select: false,
 //     },
+    
+//     // 👇 NEW RESIDENCE ARCHITECTURE 👇
+//     // This creates a fast, relational link to the new Room collection
+//     room: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: 'Room',
+//       default: null, // Starts as null until a room is allotted
+//     },
+//     // 👆 END NEW ARCHITECTURE 👆
+
 //     additionalInfo: [
 //       {
 //         key: {
@@ -94,6 +107,8 @@
 // export default mongoose.model('User', userSchema);
 
 
+
+
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -126,6 +141,22 @@ const userSchema = new mongoose.Schema(
       required: true,
       default: 'student',
     },
+    
+    // 👇 THE NEW SPARSE ARRAY PERMISSIONS 👇
+    permissions: {
+      type: [String],
+      // Define every toggleable feature your SaaS has right here
+      enum: [
+        'add_student', 
+        'edit_menu', 
+        'manage_complaints', 
+        'take_attendance', 
+        'view_reports'
+      ],
+      default: [], // Starts empty so it uses zero extra memory!
+    },
+    // 👆 END NEW PERMISSIONS 👆
+
     email: {
       type: String,
       required: true,
@@ -162,10 +193,6 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
-    additionalFunctionality: {
-      type: String,
-      default: 'none',
-    },
   },
   { timestamps: true }
 );
