@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }) => {
           // Server explicitly rejected the session — log out
           console.error("Auth verification failed: Session expired or invalid");
           localStorage.removeItem("userInfo");
+          localStorage.removeItem("authToken");
           setUser(null);
           setIsAuthenticated(false);
           queryClient.clear();
@@ -55,8 +56,11 @@ export const AuthProvider = ({ children }) => {
     }
   }, [queryClient]);
 
-  const login = (userData) => {
+  const login = (userData, token) => {
     localStorage.setItem("userInfo", JSON.stringify(userData));
+    if (token) {
+      localStorage.setItem("authToken", token);
+    }
     setUser(userData);
     setIsAuthenticated(true);
   };
@@ -70,6 +74,7 @@ export const AuthProvider = ({ children }) => {
       toast.error("Session ended offline");
     } finally {
       localStorage.removeItem("userInfo");
+      localStorage.removeItem("authToken");
       setUser(null);
       setIsAuthenticated(false);
       queryClient.clear(); // Ensure all cached data is wiped for security

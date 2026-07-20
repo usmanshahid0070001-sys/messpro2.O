@@ -2,7 +2,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 // ─── BASE URL CONFIGURATION ─────────────────────────────────────────────────
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "" : "http://localhost:5000");
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "" : `http://${window.location.hostname}:5000`);
 
 // ─── AXIOS INSTANCE ──────────────────────────────────────────────────────────
 const api = axios.create({
@@ -11,8 +11,17 @@ const api = axios.create({
 });
 
 // ─── REQUEST INTERCEPTOR ────────────────────────────────────────────────────
+// Attach the saved JWT token as a Bearer header on every request.
+// This is the primary auth transport — it works even when the browser
+// blocks cross-site cookies (Edge, iOS Safari, Android Chrome).
 api.interceptors.request.use(
-  (config) => config,
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
   (error) => Promise.reject(error)
 );
 
@@ -30,6 +39,7 @@ api.interceptors.response.use(
 
     if (status === 401 && !isVerifyCall) {
       localStorage.removeItem("userInfo");
+      localStorage.removeItem("authToken");
 
       if (window.location.pathname !== '/' && !isNavigating) {
         isNavigating = true;

@@ -39,8 +39,8 @@ export default function LoginForm() {
       },
       {
         onSuccess: (responseData) => {
-          const { user } = responseData;
-          login(user);
+          const { user, token } = responseData;
+          login(user, token);
           toast.success(`Welcome back, ${user.name}!`);
           navigate(getDashboardPath(user.role));
         },
