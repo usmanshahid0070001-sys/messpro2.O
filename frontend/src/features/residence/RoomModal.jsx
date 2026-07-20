@@ -42,10 +42,10 @@ const UserSearchSelect = ({ users, value, onChange, placeholder = "Search for a 
         role="combobox"
         aria-expanded={isOpen}
         aria-autocomplete="list"
-        className="mt-1 block w-full px-3.5 py-2.5 border border-slate-300 dark:border-white/10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/50 focus:border-slate-500 dark:bg-[#222] dark:text-white sm:text-sm truncate transition-colors"
+        className="mt-1 block w-full px-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 dark:bg-[#111] dark:text-white sm:text-sm truncate transition-all duration-200"
       />
       {isOpen && (
-        <div className="absolute z-[100] w-full mt-1 bg-white dark:bg-[#222] border border-gray-300 dark:border-[#333] rounded-md shadow-xl max-h-48 overflow-y-auto">
+        <div className="absolute z-[100] w-full mt-1.5 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#333] rounded-xl shadow-xl max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-200">
           {!filteredUsers || filteredUsers.length === 0 ? (
             <div className="px-3 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
               {users && users.length === 0 ? 'No eligible users available.' : 'No users found.'}
@@ -175,10 +175,10 @@ const RoomModal = ({ isOpen, onClose, mode, room, rooms, users, setModalMode }) 
       {/* Backdrop overlay */}
       <div className="fixed inset-0 transition-opacity bg-gray-500/75 dark:bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
 
-      {/* Modal Card - Removed overflow-hidden to allow dropdown to escape bounds */}
+      {/* Modal Card */}
       <div
         ref={dialogRef}
-        className="relative flex flex-col w-full max-w-md bg-white dark:bg-[#0a0a0a] shadow-2xl rounded-2xl border border-black/5 dark:border-white/5"
+        className="relative flex flex-col w-full max-w-md bg-white dark:bg-[#0a0a0a] shadow-2xl rounded-2xl border border-black/5 dark:border-white/5 animate-in fade-in zoom-in-95 duration-200 ease-out"
       >
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-100 dark:border-[#222]">
@@ -202,7 +202,7 @@ const RoomModal = ({ isOpen, onClose, mode, room, rooms, users, setModalMode }) 
                     maxLength={40}
                     value={roomName}
                     onChange={(e) => setRoomName(e.target.value)}
-                    className="block w-full px-3.5 py-2.5 border border-slate-300 dark:border-white/10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/50 focus:border-slate-500 dark:bg-[#222] dark:text-white sm:text-sm transition-colors"
+                    className="block w-full px-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 dark:bg-[#111] dark:text-white sm:text-sm transition-all duration-200"
                     placeholder="e.g., A-101"
                   />
                 </div>
@@ -217,7 +217,7 @@ const RoomModal = ({ isOpen, onClose, mode, room, rooms, users, setModalMode }) 
                     step="1"
                     value={capacity}
                     onChange={(e) => setCapacity(e.target.value)}
-                    className="block w-full px-3.5 py-2.5 border border-slate-300 dark:border-white/10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/50 focus:border-slate-500 dark:bg-[#222] dark:text-white sm:text-sm transition-colors"
+                    className="block w-full px-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 dark:bg-[#111] dark:text-white sm:text-sm transition-all duration-200"
                   />
                 </div>
               </>
@@ -256,7 +256,7 @@ const RoomModal = ({ isOpen, onClose, mode, room, rooms, users, setModalMode }) 
                     value={newRoomId}
                     onChange={(e) => setNewRoomId(e.target.value)}
                     disabled={eligibleRoomsForSwap.length === 0}
-                    className="block w-full px-3.5 py-2.5 border border-slate-300 dark:border-white/10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/50 focus:border-slate-500 dark:bg-[#222] dark:text-white sm:text-sm disabled:opacity-50 transition-colors cursor-pointer"
+                    className="block w-full px-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 dark:bg-[#111] dark:text-white sm:text-sm disabled:opacity-50 transition-all duration-200 cursor-pointer"
                   >
                     <option value="">
                       {eligibleRoomsForSwap.length === 0 ? 'No available rooms to swap into' : 'Select a new room'}
@@ -300,12 +300,12 @@ const RoomModal = ({ isOpen, onClose, mode, room, rooms, users, setModalMode }) 
             )}
           </div>
 
-          {/* Footer - Cleaned up flex layout, completely replacing the messy grid logic */}
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-[#222] flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-2xl">
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-[#222] flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-2xl bg-gray-50 dark:bg-[#111]">
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all active:scale-[0.98]"
+              className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-200 ease-out active:scale-[0.98]"
             >
               {mode === 'allotments' ? 'Close' : 'Cancel'}
             </button>
@@ -314,7 +314,7 @@ const RoomModal = ({ isOpen, onClose, mode, room, rooms, users, setModalMode }) 
               <button
                 type="submit"
                 disabled={isPending || (mode === 'swap' && eligibleRoomsForSwap.length === 0)}
-                className="w-full sm:w-auto px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-black rounded-lg shadow-sm text-sm font-medium hover:bg-slate-800 dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                className="w-full sm:w-auto px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-black rounded-lg shadow-sm text-sm font-medium hover:bg-slate-800 dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-out active:scale-[0.98]"
               >
                 {isPending ? 'Processing...' : 'Confirm'}
               </button>

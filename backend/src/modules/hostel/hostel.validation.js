@@ -42,4 +42,17 @@ export const addHostelUserSchema = z.object({
 export const updateSettingsSchema = z.object({
   plan: z.string().optional(),
   additionalDays: z.number().int().min(0).optional(),
+  
+  // New fields for Hostel Configuration
+  subdomain: z.string()
+    .min(3, "Domain suffix is required")
+    .regex(/^@?[a-zA-Z0-9.-]+$/, "Must be a valid email domain (e.g., @student.uet.edu.pk)")
+    .optional(),
+  
+  location: z.string().min(2, "Location is required").optional(),
+
+  customRegistrationFields: z.array(z.object({
+    name: z.string().min(1, "Field name is required"),
+    isRequired: z.boolean().default(false)
+  })).max(5, "Maximum 5 custom fields allowed").optional(),
 });

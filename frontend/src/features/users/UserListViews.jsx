@@ -4,19 +4,37 @@ import { useGetHostelDetails } from '../../hooks/queries/useUsers';
 import { Search } from 'lucide-react'; // Ensure you import Search
 
 // --- Custom Hook for DRY Search Logic ---
-const useFilteredUsers = (users, searchQuery) => {
+const useFilteredUsers = (users, searchQuery, sortOption = 'alphabetical') => {
   return useMemo(() => {
     if (!users) return [];
-    if (!searchQuery.trim()) return users;
     
-    const query = searchQuery.toLowerCase();
-    return users.filter(user => 
-      user.name?.toLowerCase().includes(query) ||
-      user.email?.toLowerCase().includes(query) ||
-      user.id?.toLowerCase().includes(query) ||
-      user.role?.toLowerCase().includes(query)
-    );
-  }, [users, searchQuery]);
+    // 1. Filter
+    let result = users;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = users.filter(user => 
+        user.name?.toLowerCase().includes(query) ||
+        user.email?.toLowerCase().includes(query) ||
+        user.id?.toLowerCase().includes(query) ||
+        user.role?.toLowerCase().includes(query)
+      );
+    }
+    
+    // 2. Sort
+    return [...result].sort((a, b) => {
+      if (sortOption === 'alphabetical') {
+        return (a.name || '').localeCompare(b.name || '');
+      } else if (sortOption === 'room') {
+        const roomA = a.room?.roomName || 'ZZZ';
+        const roomB = b.room?.roomName || 'ZZZ';
+        if (roomA !== roomB) return roomA.localeCompare(roomB);
+        return (a.name || '').localeCompare(b.name || '');
+      } else if (sortOption === 'newest') {
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      }
+      return 0;
+    });
+  }, [users, searchQuery, sortOption]);
 };
 
 // --- Reusable UI Primitives ---
@@ -153,12 +171,12 @@ const UsersTable = ({ users }) => {
 };
 
 // --- Superadmin View ---
-export const SuperadminView = ({ users }) => {
+export const SuperadminView = ({ users, sortOption }) => {
   const { data: hostelData, isLoading } = useGetHostelDetails('superadmin');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // 1. Filter global users FIRST based on search query
-  const filteredUsers = useFilteredUsers(users, searchQuery);
+  // 1. Filter and sort global users
+  const filteredUsers = useFilteredUsers(users, searchQuery, sortOption);
 
   // 2. Group the FILTERED users
   const groupedUsers = useMemo(() => {
@@ -211,12 +229,12 @@ export const SuperadminView = ({ users }) => {
 };
 
 // --- Admin View ---
-export const AdminView = ({ users }) => {
-  const [activeTab, setActiveTab] = useState('managers');
+export const AdminView = ({ users, sortOption }) => {
+  const [activeTab, setActiveTab] = useState('students');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // 1. Filter global users based on search
-  const filteredUsers = useFilteredUsers(users, searchQuery);
+  // 1. Filter and sort global users
+  const filteredUsers = useFilteredUsers(users, searchQuery, sortOption);
 
   // 2. Separate into tabs using the filtered list
   const { managers, students } = useMemo(() => {
@@ -272,9 +290,9 @@ export const AdminView = ({ users }) => {
 };
 
 // --- Manager / Student View ---
-export const FlatListView = ({ users }) => {
+export const FlatListView = ({ users, sortOption }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const filteredUsers = useFilteredUsers(users, searchQuery);
+  const filteredUsers = useFilteredUsers(users, searchQuery, sortOption);
 
   return (
     <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm border border-[#e5e5e5] dark:border-[#222222] overflow-hidden flex flex-col">

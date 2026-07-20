@@ -1,14 +1,17 @@
-import React, { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useGetTargettedUsers } from '../../hooks/queries/useUsers';
 import { useUserUIStore } from '../../store/useUserUIStore';
 import { SuperadminView, AdminView, FlatListView } from './UserListViews';
 import UserModal from './UserModal';
+import { ChevronDown } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const ManageUsers = () => {
   const { role, user, isAuthenticated } = useAuth();
   const { data: users, isLoading, error } = useGetTargettedUsers();
   const { openCreateModal } = useUserUIStore();
+  const [sortOption, setSortOption] = useState('alphabetical');
 
   // Check conditional access for Student
   const hasAccess = useMemo(() => {
@@ -71,20 +74,33 @@ const ManageUsers = () => {
   const handleExport = () => {
     if (!users || users.length === 0) return;
 
-    const csvRows = [];
-    const headers = ['Name', 'Email', 'Role', 'Roll Number'];
+    const sortedUsers = [...users].sort((a, b) => {
+      if (sortOption === 'alphabetical') {
+        return (a.name || '').localeCompare(b.name || '');
+      } else if (sortOption === 'room') {
+        const roomA = a.room?.roomName || 'ZZZ';
+        const roomB = b.room?.roomName || 'ZZZ';
+        if (roomA !== roomB) return roomA.localeCompare(roomB);
+        return (a.name || '').localeCompare(b.name || '');
+      } else if (sortOption === 'newest') {
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      }
+      return 0;
+    });
+
+    const excelData = [];
+    const headers = ['Name', 'Email', 'Role', 'Roll Number', 'Room'];
 
     const additionalKeys = new Set();
-    users.forEach(u => {
+    sortedUsers.forEach(u => {
       if (Array.isArray(u.additionalInfo)) {
         u.additionalInfo.forEach(info => additionalKeys.add(info.key));
       }
     });
     
     const dynamicHeaders = Array.from(additionalKeys);
-    csvRows.push([...headers, ...dynamicHeaders].join(','));
 
-    users.forEach(user => {
+    sortedUsers.forEach(user => {
       const dynamicMap = {};
       if (Array.isArray(user.additionalInfo)) {
         user.additionalInfo.forEach(info => {
@@ -92,36 +108,36 @@ const ManageUsers = () => {
         });
       }
 
-      const baseData = [
-        `"${(user.name || '').replace(/"/g, '""')}"`,
-        `"${(user.email || '').replace(/"/g, '""')}"`,
-        `"${(user.role || '').replace(/"/g, '""')}"`,
-        `"${(user.id || '').replace(/"/g, '""')}"`
-      ];
+      const row = {
+        'Name': user.name || '',
+        'Email': user.email || '',
+        'Role': user.role || '',
+        'Roll Number': user.id || '',
+        'Room': user.room?.roomName || 'Unassigned'
+      };
 
-      const dynamicData = dynamicHeaders.map(key => `"${(dynamicMap[key] || '').replace(/"/g, '""')}"`);
+      dynamicHeaders.forEach(key => {
+        row[key] = dynamicMap[key] || '';
+      });
       
-      csvRows.push([...baseData, ...dynamicData].join(','));
+      excelData.push(row);
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csvRows.join("\n"));
-    const link = document.createElement("a");
-    link.setAttribute("href", csvContent);
-    link.setAttribute("download", `Users_Export_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+    XLSX.writeFile(workbook, `Users_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   // Render view based on role
   const renderView = () => {
     if (role === 'superadmin') {
-      return <SuperadminView users={users} />;
+      return <SuperadminView users={users} sortOption={sortOption} />;
     } else if (role === 'admin') {
-      return <AdminView users={users} />;
+      return <AdminView users={users} sortOption={sortOption} />;
     } else {
       // Manager or Student (with access)
-      return <FlatListView users={users} />;
+      return <FlatListView users={users} sortOption={sortOption} />;
     }
   };
 
@@ -134,7 +150,19 @@ const ManageUsers = () => {
             View and manage {role === 'superadmin' ? 'admins and managers' : role === 'admin' ? 'managers and students' : 'students'} across the platform.
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+        <div className="mt-4 sm:mt-0 flex flex-wrap items-center gap-3">
+          <div className="relative">
+             <select 
+               value={sortOption}
+               onChange={(e) => setSortOption(e.target.value)}
+               className="block w-full pl-3 pr-8 py-2 bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-lg text-sm text-[#111] dark:text-white focus:outline-none focus:ring-1 focus:border-[#111] focus:ring-[#111] dark:focus:border-white dark:focus:ring-white appearance-none shadow-sm cursor-pointer font-semibold transition-all"
+             >
+               <option value="alphabetical">Alphabetical</option>
+               <option value="room">By Room Number</option>
+               <option value="newest">Recently Added</option>
+             </select>
+             <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-[#a3a3a3] pointer-events-none" />
+          </div>
           <button
             onClick={handleExport}
             disabled={!users || users.length === 0}
@@ -143,7 +171,7 @@ const ManageUsers = () => {
             <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Export CSV
+            Export Excel
           </button>
           <button
             onClick={openCreateModal}

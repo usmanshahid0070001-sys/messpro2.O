@@ -17,7 +17,8 @@ import {
   MapPin,
   CheckCircle2,
   Crown,
-  Activity
+  Activity,
+  Settings
 } from "lucide-react";
 import { useMyHostel } from "../../hooks/queries/useHostelQueries";
 
@@ -226,9 +227,20 @@ export default function DashboardOverview({ userRole, user, setActiveTab }) {
             {/* Hostel Info Card */}
             {hostelData && (
               <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-5 md:p-6 shadow-sm flex flex-col gap-4">
-                <div className="flex items-center gap-2 text-[#111] dark:text-white">
-                  <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  <h3 className="font-semibold text-lg">Hostel Details</h3>
+                <div className="flex items-center justify-between text-[#111] dark:text-white">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <h3 className="font-semibold text-lg">Hostel Details</h3>
+                  </div>
+                  {userRole === 'admin' && (
+                    <button
+                      onClick={() => setActiveTab('weeklyMenu')}
+                      className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                      title="Configure Hostel"
+                    >
+                      <Settings className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 bg-black/5 dark:bg-white/5 p-4 rounded-xl">

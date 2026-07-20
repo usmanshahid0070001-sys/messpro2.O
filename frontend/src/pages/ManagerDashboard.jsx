@@ -5,7 +5,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
 import DashboardOverview from "../components/shared/DashboardOverview";
-import ManageUsers from "../features/users/ManageUsers";
 import ManageRooms from "../features/residence/ManageRooms";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 
@@ -31,7 +30,6 @@ export default function ManagerDashboard() {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "overview", label: "Live Counts", icon: LayoutDashboard },
-    { id: "users", label: "Manage Users", icon: Users },
     { id: "rooms", label: "Residence Management", icon: Home },
     { id: "menu", label: "Weekly Menu", icon: Utensils },
     { id: "bills", label: "Bill Management", icon: CreditCard },
@@ -55,8 +53,6 @@ export default function ManagerDashboard() {
           {activeTab === "dashboard" && (
             <DashboardOverview userRole="manager" user={user} setActiveTab={setActiveTab} />
           )}
-          
-          {activeTab === "users" && <ManageUsers />}
 
           {activeTab === "rooms" && <ManageRooms />}
 

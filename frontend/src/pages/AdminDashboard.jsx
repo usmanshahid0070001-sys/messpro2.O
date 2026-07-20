@@ -7,6 +7,7 @@ import {
   FileText,
   LayoutDashboard,
   Home,
+  Settings,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -16,6 +17,7 @@ import DashboardLayout from "../components/layout/DashboardLayout";
 import DashboardOverview from "../components/shared/DashboardOverview";
 import ManageUsers from "../features/users/ManageUsers";  
 import ManageRooms from "../features/residence/ManageRooms";
+import HostelConfiguration from "../features/hostel/HostelConfiguration";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 
 import { useAuth } from "../context/AuthContext";
@@ -47,7 +49,7 @@ export default function AdminDashboard() {
     { id: "bills", label: "Generate Bills", icon: Calculator },
     { id: "meal", label: "Meal settings", icon: Clock },
     { id: "mealControl", label: "Meal Control", icon: ShieldCheck },
-    { id: "weeklyMenu", label: "Weekly Menu", icon: FileText },
+    { id: "weeklyMenu", label: "Hostel Configuration", icon: Settings },
   ];
 
   const renderPlaceholder = (text) => (
@@ -82,7 +84,7 @@ export default function AdminDashboard() {
           {activeTab === "bills" && renderPlaceholder("Generate Bills")}
           {activeTab === "meal" && <ManageMealSettings />}
           {activeTab === "mealControl" && renderPlaceholder("Meal Control")}
-          {activeTab === "weeklyMenu" && renderPlaceholder("Weekly Menu")}
+          {activeTab === "weeklyMenu" && <HostelConfiguration />}
         </motion.div>
       </AnimatePresence>
     </DashboardLayout>

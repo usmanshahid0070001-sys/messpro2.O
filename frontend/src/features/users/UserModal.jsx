@@ -173,7 +173,9 @@ const UserModal = () => {
     if (modalType === 'create') {
       createMutation.mutate(payload, mutationOpts);
     } else {
-      updateMutation.mutate({ id: selectedUser._id, data: payload }, mutationOpts);
+      const updatePayload = { name: payload.name };
+      if (payload.role === 'student') updatePayload.additionalInfo = additionalInfoArray;
+      updateMutation.mutate({ id: selectedUser._id, data: updatePayload }, mutationOpts);
     }
   };
 
