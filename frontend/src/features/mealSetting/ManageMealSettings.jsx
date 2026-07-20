@@ -93,8 +93,15 @@ export default function ManageMealSettings() {
     setMenu(defaultMenu);
   };
 
+  const sortedMeals = [...meals].sort((a, b) => {
+    if (!a.endTime && !b.endTime) return 0;
+    if (!a.endTime) return 1;
+    if (!b.endTime) return -1;
+    return a.endTime.localeCompare(b.endTime);
+  });
+
   const handleSaveData = (customData = null) => {
-    const dataToSave = customData || { status, meals, menu };
+    const dataToSave = customData || { status, meals: sortedMeals, menu };
 
     // Transform frontend format to backend format
     const transformedMenu = {};
@@ -343,7 +350,7 @@ export default function ManageMealSettings() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {meals.map((meal) => (
+            {sortedMeals.map((meal) => (
               <MealCard
                 key={meal.id}
                 meal={meal}
@@ -372,7 +379,7 @@ export default function ManageMealSettings() {
 
         {meals.length > 0 && (
           <WeeklyMenuGrid
-            meals={meals}
+            meals={sortedMeals}
             menu={menu}
             onUpdateCell={updateMenuCell}
             isSwapMode={isSwapMode}

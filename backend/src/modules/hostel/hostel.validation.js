@@ -41,4 +41,5 @@ export const addHostelUserSchema = z.object({
 //for the setting of each hostel toggle buttons
 export const updateSettingsSchema = z.object({
   plan: z.string().optional(),
+  additionalDays: z.number().int().min(0).optional(),
 });

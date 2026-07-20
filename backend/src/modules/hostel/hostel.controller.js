@@ -128,6 +128,16 @@ export const addHostelUser = catchAsync(async (req, res) => {
 export const updateSettings = catchAsync(async (req, res) => {
   const hostelId = req.params.id;
   const validatedData = updateSettingsSchema.parse(req.body);
+  
+  if (validatedData.plan || validatedData.additionalDays !== undefined) {
+    const updatedHostel = await hostelService.extendOrUpgradeSubscription(
+      hostelId,
+      validatedData.plan,
+      validatedData.additionalDays || 0
+    );
+    return res.status(200).json({ success: true, data: updatedHostel });
+  }
+
   const updatedHostel = await hostelService.updateHostelSettings(hostelId, validatedData);
   res.status(200).json({ success: true, data: updatedHostel });
 });

@@ -328,6 +328,9 @@ class HostelService {
     const baseDate = currentExpiry > now ? currentExpiry : now;
     updateData.subscriptionExpiresAt = new Date(baseDate.getTime() + (additionalDays * 24 * 60 * 60 * 1000));
     updateData.status = 'Active'; // Immediately unlock them if they were expired
+    if (additionalDays > 0) {
+      updateData.isTrial = false; // Ends trial if days are added
+    }
 
     if (planId && planId !== hostel.plan?.planId?.toString()) {
       const planData = await Plan.findById(planId);

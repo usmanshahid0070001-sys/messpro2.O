@@ -73,6 +73,35 @@ export default function DashboardOverview({ userRole, user, setActiveTab }) {
     return Math.max(0, Math.ceil(diff / (1000 * 3600 * 24)));
   };
 
+  const getPlanStyle = (planName) => {
+    const name = planName?.toLowerCase() || '';
+    if (name.includes('premium') || name.includes('enterprise') || name.includes('gold')) {
+      return {
+        bg: 'from-amber-500 to-orange-600',
+        icon: 'text-amber-200'
+      };
+    }
+    if (name.includes('pro') || name.includes('standard') || name.includes('silver')) {
+      return {
+        bg: 'from-purple-600 to-fuchsia-700',
+        icon: 'text-purple-200'
+      };
+    }
+    if (name.includes('basic') || name.includes('starter')) {
+      return {
+        bg: 'from-emerald-600 to-teal-700',
+        icon: 'text-emerald-200'
+      };
+    }
+    // Default
+    return {
+      bg: 'from-blue-600 to-indigo-700',
+      icon: 'text-blue-200'
+    };
+  };
+
+  const planStyle = hostelData?.plan ? getPlanStyle(hostelData.plan.name) : getPlanStyle('');
+
   return (
     <div className="w-full h-full flex flex-col gap-6 lg:gap-8 lg:p-8 pb-8">
       {/* Header */}
@@ -226,13 +255,13 @@ export default function DashboardOverview({ userRole, user, setActiveTab }) {
 
             {/* Plan Info Card (Admins / Managers only) */}
             {hostelData?.plan && (userRole === 'admin' || userRole === 'manager') && (
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 md:p-6 shadow-md flex flex-col gap-4 text-white relative overflow-hidden">
+              <div className={`bg-gradient-to-br ${planStyle.bg} rounded-2xl p-5 md:p-6 shadow-md flex flex-col gap-4 text-white relative overflow-hidden`}>
                 {/* Decorative background element */}
                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
 
                 <div className="flex items-center justify-between relative z-10">
                   <div className="flex items-center gap-2">
-                    <Crown className="w-5 h-5 text-blue-200" />
+                    <Crown className={`w-5 h-5 ${planStyle.icon}`} />
                     <h3 className="font-semibold text-lg text-white">Plan & Subscription</h3>
                   </div>
                   {hostelData.isTrial && (
@@ -257,12 +286,16 @@ export default function DashboardOverview({ userRole, user, setActiveTab }) {
 
                 <div className="bg-black/20 rounded-xl p-3 flex justify-between items-center relative z-10 mt-2 backdrop-blur-sm">
                   <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-blue-200" />
-                    {hostelData.isTrial ? 'Trial ends in' : 'Subscription Active'}
+                    <Calendar className={`w-4 h-4 ${planStyle.icon}`} />
+                    {hostelData.isTrial ? 'Trial ends in' : 'Subscription ends in'}
                   </div>
-                  {hostelData.isTrial && (
+                  {hostelData.isTrial ? (
                     <div className="text-sm font-bold">
                       {calculateDaysLeft(hostelData.trialExpiresAt)} days
+                    </div>
+                  ) : (
+                    <div className="text-sm font-bold">
+                      {calculateDaysLeft(hostelData.subscriptionExpiresAt)} days
                     </div>
                   )}
                 </div>

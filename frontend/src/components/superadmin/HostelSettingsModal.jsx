@@ -7,7 +7,8 @@ import { usePlans } from '../../hooks/queries/usePlanQueries';
 
 export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   const [formData, setFormData] = useState({
-    plan: ''
+    plan: '',
+    additionalDays: 0
   });
   
   const { mutateAsync: updateHostelSettings, isPending: loading } = useUpdateHostelSettings();
@@ -17,7 +18,8 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   useEffect(() => {
     if (hostel && hostel.plan) {
       setFormData({
-        plan: hostel.plan.planId || ''
+        plan: hostel.plan.planId || '',
+        additionalDays: 0
       });
     }
   }, [hostel]);
@@ -28,7 +30,7 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'additionalDays' ? Number(value) : value
     }));
   };
 
@@ -85,6 +87,23 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
               </select>
             </div>
             <p className="mt-2 text-xs font-medium text-[#737373] dark:text-[#888888]">Changing the plan updates limits and allowed features for this hostel.</p>
+          </div>
+
+          <div className="pt-2">
+            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Duration (Days)</label>
+            <div className="relative">
+              <input
+                type="number"
+                name="additionalDays"
+                min="0"
+                value={formData.additionalDays}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full px-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                placeholder="e.g. 30"
+              />
+            </div>
+            <p className="mt-2 text-xs font-medium text-[#737373] dark:text-[#888888]">Number of days to extend the subscription.</p>
           </div>
 
           <div className="pt-4 flex gap-3">
