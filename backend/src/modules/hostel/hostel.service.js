@@ -258,7 +258,7 @@ class HostelService {
       planId: planData._id,
       name: planData.name,
       limits: planData.limits,
-      features: planData.features,
+      features: planData.features.map(f => ({ name: f, isEnabled: true })),
     };
 
     // Give them an initial 30 days of access
@@ -339,7 +339,7 @@ class HostelService {
         planId: planData._id,
         name: planData.name,
         limits: planData.limits,
-        features: planData.features,
+        features: planData.features.map(f => ({ name: f, isEnabled: true })),
       };
     }
 

@@ -3,6 +3,7 @@ import { Save, Plus, Trash2, Globe, MapPin } from 'lucide-react';
 import { useMyHostel } from '../../hooks/queries/useHostelQueries';
 import { useUpdateMyHostelSettings } from '../../hooks/mutations/useHostelMutations';
 import toast from 'react-hot-toast';
+import ToggleSwitch from '../../components/ui/ToggleSwitch';
 
 export default function HostelConfiguration() {
   const { data: hostelResponse, isLoading } = useMyHostel();
@@ -11,12 +12,14 @@ export default function HostelConfiguration() {
   const [subdomain, setSubdomain] = useState('');
   const [location, setLocation] = useState('');
   const [customFields, setCustomFields] = useState([]);
+  const [features, setFeatures] = useState([]);
   
   useEffect(() => {
     if (hostelResponse?.data) {
       setSubdomain(hostelResponse.data.subdomain || '');
       setLocation(hostelResponse.data.location || '');
       setCustomFields(hostelResponse.data.customRegistrationFields || []);
+      setFeatures(hostelResponse.data.plan?.features || []);
     }
   }, [hostelResponse]);
 
@@ -38,6 +41,12 @@ export default function HostelConfiguration() {
     setCustomFields(newFields);
   };
 
+  const handleFeatureToggle = (featureName) => {
+    setFeatures(prev => 
+      prev.map(f => f.name === featureName ? { ...f, isEnabled: !f.isEnabled } : f)
+    );
+  };
+
   const handleSave = () => {
     // Validate empty names
     if (customFields.some(f => !f.name.trim())) {
@@ -48,7 +57,8 @@ export default function HostelConfiguration() {
     updateSettingsMutation.mutate({
       subdomain,
       location,
-      customRegistrationFields: customFields
+      customRegistrationFields: customFields,
+      "plan.features": features, // We send the updated features array back
     });
   };
 
@@ -156,6 +166,29 @@ export default function HostelConfiguration() {
             )}
           </div>
         </div>
+
+        {/* Features Configuration Section */}
+        {features.length > 0 && (
+          <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-[#111] dark:text-white">Plan Features</h2>
+              <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Toggle features that are available in your current plan.</p>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {features.map((feature, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
+                  <div>
+                    <span className="text-sm font-semibold block text-[#111111] dark:text-white">{feature.name}</span>
+                  </div>
+                  <ToggleSwitch 
+                    checked={feature.isEnabled} 
+                    onChange={() => handleFeatureToggle(feature.name)} 
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end">
           <button

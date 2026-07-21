@@ -8,11 +8,7 @@ export const createPlanSchema = z.object({
     maxStudents: z.number(),
     maxManagers: z.number(),
   }),
-  features: z.object({
-    allowedAttendanceMethods: z.array(z.enum(['Manual', 'QR', 'Biometric'])).default(['Manual']),
-    allowedBillingModels: z.array(z.enum(['Prepaid', 'Postpaid', 'FlatRate'])).default(['Prepaid']),
-    allowAutoMealVerification: z.boolean().default(false),
-  }),
+  features: z.array(z.string()).default([]),
   isActive: z.boolean().optional().default(true),
 });
 

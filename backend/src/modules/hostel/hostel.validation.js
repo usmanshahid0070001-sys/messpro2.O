@@ -55,4 +55,9 @@ export const updateSettingsSchema = z.object({
     name: z.string().min(1, "Field name is required"),
     isRequired: z.boolean().default(false)
   })).max(5, "Maximum 5 custom fields allowed").optional(),
+
+  "plan.features": z.array(z.object({
+    name: z.string(),
+    isEnabled: z.boolean()
+  })).optional(),
 });

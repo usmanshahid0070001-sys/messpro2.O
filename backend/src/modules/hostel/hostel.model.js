@@ -40,11 +40,10 @@ const hostelSchema = new mongoose.Schema({
       maxStudents: { type: Number, required: true },
       maxManagers: { type: Number, required: true }
     },
-    features: {
-      allowedAttendanceMethods: [String],
-      allowedBillingModels: [String],
-      allowAutoMealVerification: Boolean
-    }
+    features: [{
+      name: { type: String, required: true },
+      isEnabled: { type: Boolean, default: true }
+    }]
   },
     trialExpiresAt: {
         type: Date,

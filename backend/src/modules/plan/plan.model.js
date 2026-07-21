@@ -29,22 +29,10 @@ const planSchema = new mongoose.Schema({
       default: 1,
     }
   },
-  // The exact features the Super Admin can toggle ON/OFF in the UI
+  // The exact features the Super Admin can provide in the UI
   features: {
-    allowedAttendanceMethods: [{
-      type: String,
-      enum: ['Manual', 'QR', 'Biometric'],
-      default: ['Manual']
-    }],
-    allowedBillingModels: [{
-      type: String,
-      enum: ['Prepaid', 'Postpaid', 'FlatRate'],
-      default: ['Prepaid']
-    }],
-    allowAutoMealVerification: {
-      type: Boolean,
-      default: false
-    }
+    type: [String],
+    default: [],
   },
   isActive: {
     type: Boolean,

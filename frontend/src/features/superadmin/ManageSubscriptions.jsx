@@ -170,25 +170,17 @@ export default function ManageSubscriptions() {
                 <div className="px-6 pb-6 pt-1 flex-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#a3a3a3] dark:text-[#555555] mb-3">Features</p>
                   <div className="space-y-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <ScanLine className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span className="text-[13px] font-medium text-[#404040] dark:text-[#cccccc]">
-                        {plan.features?.allowedAttendanceMethods?.join(', ') || 'Manual'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
-                      <Receipt className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-                      <span className="text-[13px] font-medium text-[#404040] dark:text-[#cccccc]">
-                        {plan.features?.allowedBillingModels?.join(', ') || 'Prepaid'}
-                      </span>
-                    </div>
-
-                    {plan.features?.allowAutoMealVerification && (
-                      <div className="flex items-center gap-2.5">
-                        <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span className="text-[13px] font-medium text-[#404040] dark:text-[#cccccc]">Auto Meal Verification</span>
+                    {plan.features?.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {plan.features.map(feature => (
+                          <span key={feature} className="inline-flex items-center px-2 py-1 rounded-md bg-[#fafafa] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#333333] text-[12px] font-medium text-[#404040] dark:text-[#cccccc]">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500 mr-1.5 shrink-0" />
+                            {feature}
+                          </span>
+                        ))}
                       </div>
+                    ) : (
+                      <span className="text-[13px] text-[#a3a3a3] italic">No features specified</span>
                     )}
                   </div>
                 </div>

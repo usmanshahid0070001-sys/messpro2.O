@@ -13,12 +13,21 @@ const INITIAL_FORM = {
   price: '', // Use empty string for empty state to prevent 0 snapping
   isActive: true,
   limits: { maxStudents: 100, maxManagers: 2 },
-  features: {
-    allowedAttendanceMethods: ['Manual'],
-    allowedBillingModels: ['Prepaid'],
-    allowAutoMealVerification: false,
-  }
+  features: [],
 };
+
+const AVAILABLE_FEATURES = [
+  "User Management",
+  "Meal settings",
+  "Hostel Configuration",
+  "Bill Generation",
+  "Bill Summary",
+  "Room Service",
+  "Meal control",
+  "Manual Attendance",
+  "QR Attendance",
+  "Biometric Attendance"
+];
 
 // --- Sub-Components (Extract these to separate files in a real app) ---
 
@@ -86,11 +95,7 @@ export default function PlanFormModal({ isOpen, onClose, plan }) {
           maxStudents: plan.limits?.maxStudents ?? 100,
           maxManagers: plan.limits?.maxManagers ?? 2,
         },
-        features: {
-          allowedAttendanceMethods: plan.features?.allowedAttendanceMethods || ['Manual'],
-          allowedBillingModels: plan.features?.allowedBillingModels || ['Prepaid'],
-          allowAutoMealVerification: plan.features?.allowAutoMealVerification ?? false,
-        }
+        features: plan.features || []
       });
     } else if (!isOpen) {
       // Reset after exit animation completes
@@ -120,8 +125,7 @@ export default function PlanFormModal({ isOpen, onClose, plan }) {
     name: touched.name && !formData.name.trim() ? 'Plan name is required' : null,
     description: touched.description && !formData.description.trim() ? 'Description is required' : null,
     price: touched.price && (formData.price === '' || formData.price < 0) ? 'Valid price required' : null,
-    attendance: formData.features.allowedAttendanceMethods.length === 0 ? 'Pick at least one' : null,
-    billing: formData.features.allowedBillingModels.length === 0 ? 'Pick at least one' : null,
+    features: formData.features.length === 0 ? 'Pick at least one feature' : null,
   };
 
   const isFormValid = !Object.values(errors).some(Boolean) && formData.name.trim() && formData.description.trim();
@@ -139,15 +143,12 @@ export default function PlanFormModal({ isOpen, onClose, plan }) {
     setFormData(prev => ({ ...prev, limits: { ...prev.limits, [name]: parsedValue } }));
   };
 
-  const handleArrayToggle = (category, value) => {
+  const handleFeatureToggle = (feature) => {
     setFormData(prev => {
-      const arr = prev.features[category];
+      const arr = prev.features;
       return {
         ...prev,
-        features: {
-          ...prev.features,
-          [category]: arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value]
-        }
+        features: arr.includes(feature) ? arr.filter(f => f !== feature) : [...arr, feature]
       };
     });
   };
@@ -276,39 +277,17 @@ export default function PlanFormModal({ isOpen, onClose, plan }) {
                 <fieldset className="px-6 py-2">
                   <legend className="text-[10px] font-bold uppercase tracking-widest text-[#a3a3a3] pt-4">Features</legend>
                   
-                  <div className="flex items-center justify-between mb-5 pb-5 border-b border-[#f5f5f5] dark:border-[#1a1a1a]">
-                    <div>
-                      <span className="text-sm font-semibold block text-[#111111] dark:text-white">Auto Meal Verification</span>
-                      <span className="text-[11px] text-[#a3a3a3]">Automatically verify meal attendance</span>
-                    </div>
-                    <ToggleSwitch 
-                      checked={formData.features.allowAutoMealVerification} 
-                      onChange={() => setFormData(p => ({ ...p, features: { ...p.features, allowAutoMealVerification: !p.features.allowAutoMealVerification }}))} 
-                    />
-                  </div>
-
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    {[
-                      { title: 'Attendance Methods', key: 'allowedAttendanceMethods', options: ATTENDANCE_METHODS, error: errors.attendance },
-                      { title: 'Billing Models', key: 'allowedBillingModels', options: BILLING_MODELS, error: errors.billing }
-                    ].map(group => (
-                      <div key={group.title}>
-                        <div className="flex justify-between mb-3">
-                          <p className="text-sm font-semibold text-[#111111] dark:text-white">{group.title}</p>
-                          {group.error && <span className="text-[11px] text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Pick one</span>}
-                        </div>
-                        <div className="space-y-1">
-                          {group.options.map(opt => (
-                            <FeatureCard 
-                              key={opt} label={opt} 
-                              isChecked={formData.features[group.key].includes(opt)}
-                              onChange={() => handleArrayToggle(group.key, opt)}
-                            />
-                          ))}
-                        </div>
-                      </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {AVAILABLE_FEATURES.map(feature => (
+                      <FeatureCard 
+                        key={feature} 
+                        label={feature} 
+                        isChecked={formData.features.includes(feature)}
+                        onChange={() => handleFeatureToggle(feature)}
+                      />
                     ))}
                   </div>
+                  {errors.features && <p className="text-[11px] text-red-500 mt-2">{errors.features}</p>}
                 </fieldset>
 
                 {mutationError && (
