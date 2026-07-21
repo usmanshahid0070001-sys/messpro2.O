@@ -155,7 +155,7 @@ export default function WeeklyMealSelection() {
   }
 
   return (
-    <div className="space-y-8 lg:p-8">
+    <div className="space-y-8 lg:p-8 p-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>

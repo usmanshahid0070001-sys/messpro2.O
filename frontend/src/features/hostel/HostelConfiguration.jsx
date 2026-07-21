@@ -57,7 +57,7 @@ export default function HostelConfiguration() {
   }
 
   return (
-    <div className="space-y-6 lg:p-8">
+    <div className="space-y-6 lg:p-8 p-4">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between px-4 lg:px-0">
         <div>

@@ -11,7 +11,7 @@ const auditLogs = [
 
 export default function SecurityAudit() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 lg:p-8">
       <SectionCard 
         title="Instant Suspension Kill Switch" 
         subtitle="Emergency controls for critical tenant actions." 

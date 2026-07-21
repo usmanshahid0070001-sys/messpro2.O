@@ -32,7 +32,7 @@ export default function ManageSubscriptions() {
   };
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6 p-4 lg:p-8">
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">

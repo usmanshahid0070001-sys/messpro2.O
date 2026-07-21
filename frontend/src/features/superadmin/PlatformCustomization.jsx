@@ -11,7 +11,7 @@ const settings = [
 
 export default function PlatformCustomization() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 lg:p-8">
       <SectionCard 
         title="Feature Controls" 
         subtitle="Platform configuration toggles for the Super Admin." 
