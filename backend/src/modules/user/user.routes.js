@@ -7,15 +7,15 @@ const router = express.Router();
 // 1. Ensure all these routes require the user to be logged in
 router.use(protect);
 
-// 2. We allow superadmins, admins, and managers to hit this route. 
-router.get('/', restrictTo('superadmin', 'admin', 'manager'), getTargetedUsers);
+// 2. We allow superadmins, admins, and anyone with user_management permission
+router.get('/', requirePermission('user_management'), getTargetedUsers);
 
-router.patch('/:id', restrictTo('superadmin', 'admin', 'manager'), updateExistingUser);
+router.patch('/:id', requirePermission('user_management'), updateExistingUser);
 
 // 👇 FIX: Use 'createUser' directly instead of 'userController.createUser'
 router.post(
   '/add', 
-  requirePermission('add_student'), 
+  requirePermission('user_management'), 
   createUser 
 );
 

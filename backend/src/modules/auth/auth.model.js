@@ -151,7 +151,11 @@ const userSchema = new mongoose.Schema(
         'edit_menu', 
         'manage_complaints', 
         'take_attendance', 
-        'view_reports'
+        'view_reports',
+        'meal_settings',
+        'user_management',
+        'residence_management',
+        'service_management'
       ],
       default: [], // Starts empty so it uses zero extra memory!
     },

@@ -91,8 +91,8 @@ export const getUsersByHierarchy = async (requesterRole, requesterHostelId) => {
   else if (requesterRole === 'admin') {
     query = { hostelId: requesterHostelId, role: { $in: ['manager', 'student'] } };
   } 
-  // 3. Manager: Sees Students ONLY in their specific hostel
-  else if (requesterRole === 'manager') {
+  // 3. Manager & Permitted Student: Sees Students ONLY in their specific hostel
+  else if (requesterRole === 'manager' || requesterRole === 'student') {
     query = { hostelId: requesterHostelId, role: 'student' };
   } 
   else {
@@ -118,7 +118,8 @@ export const updateUser = async (requesterRole, requesterHostelId, targetUserId,
   const allowedUpdates = {
     superadmin: ['admin', 'manager'],
     admin:      ['manager', 'student'],
-    manager:    ['student']
+    manager:    ['student'],
+    student:    ['student']
   };
 
   // Rule A: Can this role edit that role?

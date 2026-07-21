@@ -7,7 +7,7 @@ import {
   swapRoom, 
   removeRoom 
 } from './residence.controller.js';
-import { protect, restrictTo } from '../../middlewares/auth.middleware.js';
+import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -15,13 +15,13 @@ const router = express.Router();
 router.use(protect);
 
 // 2. ADMIN ONLY ROUTES (Building and Destroying)
-router.post('/', restrictTo('admin'), buildNewRoom);
-router.delete('/:id', restrictTo('admin'), removeRoom);
+router.post('/', requirePermission('residence_management'), buildNewRoom);
+router.delete('/:id', requirePermission('residence_management'), removeRoom);
 
 // 3. ADMIN & MANAGER ROUTES (Day-to-day operations)
-router.get('/', restrictTo('admin', 'manager'), fetchAllRooms);
-router.post('/allote', restrictTo('admin', 'manager'), assignRoom);
-router.post('/disallote', restrictTo('admin', 'manager'), removeStudentFromRoom);
-router.post('/change', restrictTo('admin', 'manager'), swapRoom);
+router.get('/', requirePermission('residence_management'), fetchAllRooms);
+router.post('/allote', requirePermission('residence_management'), assignRoom);
+router.post('/disallote', requirePermission('residence_management'), removeStudentFromRoom);
+router.post('/change', requirePermission('residence_management'), swapRoom);
 
 export default router;

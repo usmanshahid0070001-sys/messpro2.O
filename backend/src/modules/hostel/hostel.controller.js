@@ -105,7 +105,12 @@ export const getMyHostel = catchAsync(async (req, res) => {
   if (req.user.role === 'student') {
     // Convert to plain object if it's a Mongoose document to allow deletion
     const data = typeof hostel.toObject === 'function' ? hostel.toObject() : { ...hostel };
-    delete data.plan;
+    if (data.plan) {
+      delete data.plan.limits;
+      delete data.plan.price;
+      delete data.plan.planId;
+      delete data.plan.name;
+    }
     delete data.isTrial;
     delete data.trialExpiresAt;
     hostelData = data;

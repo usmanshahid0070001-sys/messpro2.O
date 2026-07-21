@@ -53,15 +53,15 @@ export const restrictTo = (...roles) => {
 
 export const requirePermission = (requiredPermission) => {
   return (req, res, next) => {
-    const user = req.user; // Assuming your protect/auth middleware sets req.user
+    const user = req.user;
 
-    // 1. Superadmins, Admins, and Managers bypass the check completely
-    if (['superadmin', 'admin', 'manager'].includes(user.role)) {
+    // 1. Superadmins and Admins bypass the check completely
+    if (['superadmin', 'admin'].includes(user.role)) {
       return next();
     }
 
-    // 2. If it is a student, check if the Admin toggled this specific feature ON for them
-    if (user.role === 'student' && user.permissions && user.permissions.includes(requiredPermission)) {
+    // 2. If it is a manager or student, check if they have the specific permission
+    if (['manager', 'student'].includes(user.role) && user.permissions && user.permissions.includes(requiredPermission)) {
       return next();
     }
 

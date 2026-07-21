@@ -394,7 +394,7 @@ class HostelService {
   }
 
   async addHostelUser(creatorRole, hostelId, userData) {
-    const allowedCreations = { superadmin: ['admin', 'manager'], admin: ['manager', 'student'], manager: ['student'], student: [] };
+    const allowedCreations = { superadmin: ['admin', 'manager'], admin: ['manager', 'student'], manager: ['student'], student: ['student'] };
     if (!allowedCreations[creatorRole]?.includes(userData.role)) {
       const error = new Error(`Access Denied: A ${creatorRole} cannot create a ${userData.role}.`);
       error.statusCode = 403; throw error;
