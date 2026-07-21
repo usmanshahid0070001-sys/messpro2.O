@@ -22,35 +22,42 @@ import {
 } from "lucide-react";
 import { useMyHostel } from "../../hooks/queries/useHostelQueries";
 
-export default function DashboardOverview({ userRole, user, setActiveTab }) {
+export default function DashboardOverview({ userRole, user, navItems = [], setActiveTab }) {
   const { data: hostelResponse, isLoading, isError } = useMyHostel();
   const hostelData = hostelResponse?.data;
 
-  // Define quick links based on role
+  // Metadata mapping to enrich the dynamic links with descriptions and colors
+  const FEATURE_METADATA = {
+    users: { desc: 'Add, edit, or remove user records', color: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' },
+    rooms: { desc: 'Manage hostel rooms and allocations', color: 'bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' },
+    services: { desc: 'Manage and track facility services', color: 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400' },
+    bills: { desc: 'Process and issue monthly mess bills', color: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' },
+    billSummary: { desc: 'View overarching financial reports', color: 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' },
+    meal: { desc: 'Configure global meal parameters', color: 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400' },
+    weeklyMenu: { desc: 'Update the upcoming meal schedule', color: 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400' },
+    menu: { desc: 'Update the upcoming meal schedule', color: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' },
+    meals: { desc: 'Choose your meals for the upcoming week', color: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' },
+    history: { desc: 'Review your past consumption and bills', color: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' },
+    info: { desc: 'View and update your personal CV & Info', color: 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' },
+    attendance: { desc: 'Monitor and log student attendance', color: 'bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400' },
+    mealControl: { desc: 'Manage meal access and restrictions', color: 'bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400' },
+    live: { desc: 'Real-time counts of today\'s meals', color: 'bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' },
+  };
+
   const getQuickLinks = () => {
-    switch (userRole) {
-      case 'admin':
-        return [
-          { id: 'users', label: 'Manage Students', desc: 'Add, edit, or remove student records', icon: Users, color: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' },
-          { id: 'rooms', label: 'Residence Management', desc: 'Manage hostel rooms and allocations', icon: Building2, color: 'bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' },
-          { id: 'bills', label: 'Generate Bills', desc: 'Process and issue monthly mess bills', icon: Calculator, color: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' },
-          { id: 'billSummary', label: 'Bill Summary', desc: 'View overarching financial reports', icon: FileText, color: 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' },
-          { id: 'settings', label: 'Meal Timings', desc: 'Configure global meal parameters', icon: Clock, color: 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400' },
-        ];
-      case 'manager':
-        return [
-          { id: 'overview', label: 'Live Counts', desc: 'Monitor real-time meal attendance', icon: LayoutDashboard, color: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' },
-          { id: 'menu', label: 'Weekly Menu', desc: 'Update the upcoming meal schedule', icon: Utensils, color: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' },
-          { id: 'bills', label: 'Bill Management', desc: 'Handle student payments and dues', icon: CreditCard, color: 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' },
-        ];
-      case 'student':
-        return [
-          { id: 'meals', label: 'Meal Selection', desc: 'Choose your meals for the upcoming week', icon: Utensils, color: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' },
-          { id: 'history', label: 'Meal History', desc: 'Review your past consumption and bills', icon: Clock, color: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' },
-        ];
-      default:
-        return [];
-    }
+    // 1. Filter out the dashboard itself
+    const featureLinks = navItems.filter(item => item.id !== 'dashboard');
+    
+    // 2. Map metadata to the items
+    const enrichedLinks = featureLinks.map(item => ({
+      ...item,
+      desc: FEATURE_METADATA[item.id]?.desc || `Access the ${item.label} module`,
+      color: FEATURE_METADATA[item.id]?.color || 'bg-slate-500/10 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400'
+    }));
+
+    // 3. Slice to max limits (6 for admin/manager, 4 for student)
+    const maxLinks = userRole === 'student' ? 4 : 6;
+    return enrichedLinks.slice(0, maxLinks);
   };
 
   const quickLinks = getQuickLinks();

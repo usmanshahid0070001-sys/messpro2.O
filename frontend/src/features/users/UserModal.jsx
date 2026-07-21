@@ -6,6 +6,14 @@ import { useGetHostelDetails } from '../../hooks/queries/useUsers';
 import { useCreateUserMutation, useUpdateUserMutation } from '../../hooks/mutations/useUserMutations';
 import DynamicFields from './DynamicFields';
 import { useAuth } from '../../context/AuthContext';
+import { Shield, Check } from 'lucide-react';
+
+const AVAILABLE_PERMISSIONS = [
+  { slug: 'meal_settings', label: 'Meal Management / Meal setting', requiredPlanFeature: 'Meal settings' },
+  { slug: 'user_management', label: 'User Management', requiredPlanFeature: 'User Management' },
+  { slug: 'residence_management', label: 'Residence Management', requiredPlanFeature: 'Residence Management' },
+  { slug: 'service_management', label: 'Service Management', requiredPlanFeature: 'Service Management' }
+];
 
 // --- Shared UI Primitives (Extract to separate file in a real app) ---
 export const FormInput = React.forwardRef(({ label, error, required, helperText, ...props }, ref) => (
@@ -69,7 +77,7 @@ const UserModal = () => {
   const updateMutation = useUpdateUserMutation();
   const nameInputRef = useRef(null);
 
-  const [formData, setFormData] = useState({ name: '', email: '', role: '', password: '', id: '', hostelId: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', role: '', password: '', id: '', hostelId: '', permissions: [] });
   const [dynamicFormData, setDynamicFormData] = useState({});
   const [errors, setErrors] = useState({});
 
@@ -88,6 +96,7 @@ const UserModal = () => {
           password: '', 
           id: selectedUser.id || '',
           hostelId: selectedUser.hostelId || '',
+          permissions: selectedUser.permissions || [],
         });
 
         const dynamicValues = {};
@@ -98,7 +107,7 @@ const UserModal = () => {
       } else {
         let defaultRole = currentUserRole === 'superadmin' ? 'admin' : currentUserRole === 'admin' ? 'student' : 'student';
         setFormData({
-          name: '', email: '', role: defaultRole, password: '', id: '',
+          name: '', email: '', role: defaultRole, password: '', id: '', permissions: [],
           hostelId: currentUserRole !== 'superadmin' && currentUser ? currentUser.hostelId : '',
         });
         setDynamicFormData({});
@@ -135,6 +144,33 @@ const UserModal = () => {
 
   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   const handleDynamicChange = (key, value) => setDynamicFormData(prev => ({ ...prev, [key]: value }));
+
+  const handlePermissionToggle = (slug) => {
+    setFormData(prev => {
+      const perms = prev.permissions || [];
+      const newPerms = perms.includes(slug) ? perms.filter(p => p !== slug) : [...perms, slug];
+      return { ...prev, permissions: newPerms };
+    });
+  };
+
+  const allowedPermissions = useMemo(() => {
+    let targetHostel = null;
+    if (currentUserRole === 'superadmin') {
+      targetHostel = hostelData?.find(h => h._id === formData.hostelId);
+    } else {
+      // For admin, hostelData is the single hostel object
+      targetHostel = Array.isArray(hostelData) ? hostelData[0] : hostelData;
+    }
+    
+    const enabledPlanFeatures = targetHostel?.plan?.features || [];
+    
+    return AVAILABLE_PERMISSIONS.filter(perm => {
+      if (perm.requiredPlanFeature === "Service Management" || perm.requiredPlanFeature === "Residence Management") {
+        return enabledPlanFeatures.some(f => (f.name === perm.requiredPlanFeature || f.name === "Room Service") && f.isEnabled);
+      }
+      return enabledPlanFeatures.some(f => f.name === perm.requiredPlanFeature && f.isEnabled);
+    });
+  }, [hostelData, formData.hostelId, currentUserRole]);
 
   const validate = () => {
     const newErrors = {};
@@ -173,7 +209,7 @@ const UserModal = () => {
     if (modalType === 'create') {
       createMutation.mutate(payload, mutationOpts);
     } else {
-      const updatePayload = { name: payload.name };
+      const updatePayload = { name: payload.name, permissions: payload.permissions };
       if (payload.role === 'student') updatePayload.additionalInfo = additionalInfoArray;
       updateMutation.mutate({ id: selectedUser._id, data: updatePayload }, mutationOpts);
     }
@@ -301,6 +337,35 @@ const UserModal = () => {
                        handleDynamicChange={handleDynamicChange}
                        errors={errors}
                      />
+                  )}
+
+                  {(formData.role === 'manager' || formData.role === 'student') && allowedPermissions.length > 0 && (
+                    <div className="pt-4 border-t border-[#e5e5e5] dark:border-[#222]">
+                      <h4 className="text-sm font-bold flex items-center gap-2 mb-3 text-[#111] dark:text-white">
+                        <Shield className="w-4 h-4 text-emerald-500" />
+                        Additional Permissions
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {allowedPermissions.map((perm) => {
+                          const isChecked = formData.permissions.includes(perm.slug);
+                          return (
+                            <label key={perm.slug} className={`relative flex items-center gap-3 cursor-pointer rounded-xl px-4 py-3 border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#111111] dark:has-[:focus-visible]:ring-white ${
+                              isChecked ? 'bg-[#f5f5f5] dark:bg-[#1a1a1a] border-[#d4d4d4] dark:border-[#333]' : 'bg-white dark:bg-[#111] border-[#e5e5e5] dark:border-[#222] hover:bg-[#fafafa] dark:hover:bg-[#151515]'
+                            }`}>
+                              <div className={`w-5 h-5 shrink-0 rounded flex items-center justify-center transition-all duration-150 ${
+                                isChecked ? 'bg-[#111111] dark:bg-white border border-[#111111] dark:border-white' : 'bg-white dark:bg-[#111111] border border-[#d4d4d4] dark:border-[#333333]'
+                              }`}>
+                                {isChecked && <Check className="w-3.5 h-3.5 text-white dark:text-[#111111]" />}
+                              </div>
+                              <input type="checkbox" className="sr-only" checked={isChecked} onChange={() => handlePermissionToggle(perm.slug)} />
+                              <span className={`text-sm font-medium transition-colors ${isChecked ? 'text-[#111111] dark:text-white' : 'text-[#737373] dark:text-[#888888]'}`}>
+                                {perm.label}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </form>
               )}

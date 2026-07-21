@@ -4,23 +4,23 @@ import { useGetTargettedUsers } from '../../hooks/queries/useUsers';
 import { useUserUIStore } from '../../store/useUserUIStore';
 import { SuperadminView, AdminView, FlatListView } from './UserListViews';
 import UserModal from './UserModal';
+import UserPermissionsModal from './UserPermissionsModal';
 import { ChevronDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const ManageUsers = () => {
   const { role, user, isAuthenticated } = useAuth();
   const { data: users, isLoading, error } = useGetTargettedUsers();
-  const { openCreateModal } = useUserUIStore();
+  const { openCreateModal, isPermissionsModalOpen, closePermissionsModal, permissionsUser } = useUserUIStore();
   const [sortOption, setSortOption] = useState('alphabetical');
 
-  // Check conditional access for Student
+  // Check conditional access for Manager and Student
   const hasAccess = useMemo(() => {
     if (!isAuthenticated) return false;
-    if (role === 'superadmin' || role === 'admin' || role === 'manager') return true;
-    if (role === 'student') {
-      // Assuming additionalFunctionality is a string that might contain "user management"
-      const functionality = user?.additionalFunctionality || '';
-      return functionality.toLowerCase().includes('user management');
+    if (role === 'superadmin' || role === 'admin') return true;
+    if (role === 'manager' || role === 'student') {
+      const permissions = user?.permissions || [];
+      return permissions.includes('user_management');
     }
     return false;
   }, [role, user, isAuthenticated]);
@@ -30,7 +30,7 @@ const ManageUsers = () => {
       <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gray-50/50 rounded-3xl border border-gray-100 p-8 text-center">
         <div className="bg-red-50 text-red-600 p-4 rounded-full mb-4">
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
@@ -97,7 +97,7 @@ const ManageUsers = () => {
         u.additionalInfo.forEach(info => additionalKeys.add(info.key));
       }
     });
-    
+
     const dynamicHeaders = Array.from(additionalKeys);
 
     sortedUsers.forEach(user => {
@@ -119,7 +119,7 @@ const ManageUsers = () => {
       dynamicHeaders.forEach(key => {
         row[key] = dynamicMap[key] || '';
       });
-      
+
       excelData.push(row);
     });
 
@@ -152,16 +152,16 @@ const ManageUsers = () => {
         </div>
         <div className="mt-4 sm:mt-0 flex flex-wrap items-center gap-3">
           <div className="relative">
-             <select 
-               value={sortOption}
-               onChange={(e) => setSortOption(e.target.value)}
-               className="block w-full pl-3 pr-8 py-2 bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-lg text-sm text-[#111] dark:text-white focus:outline-none focus:ring-1 focus:border-[#111] focus:ring-[#111] dark:focus:border-white dark:focus:ring-white appearance-none shadow-sm cursor-pointer font-semibold transition-all"
-             >
-               <option value="alphabetical">Alphabetical</option>
-               <option value="room">By Room Number</option>
-               <option value="newest">Recently Added</option>
-             </select>
-             <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-[#a3a3a3] pointer-events-none" />
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="block w-full pl-3 pr-8 py-2 bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-lg text-sm text-[#111] dark:text-white focus:outline-none focus:ring-1 focus:border-[#111] focus:ring-[#111] dark:focus:border-white dark:focus:ring-white appearance-none shadow-sm cursor-pointer font-semibold transition-all"
+            >
+              <option value="alphabetical">Alphabetical</option>
+              <option value="room">By Room Number</option>
+              <option value="newest">Recently Added</option>
+            </select>
+            <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-[#a3a3a3] pointer-events-none" />
           </div>
           <button
             onClick={handleExport}
@@ -169,7 +169,7 @@ const ManageUsers = () => {
             className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-[#333] rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-[#111] hover:bg-gray-50 dark:hover:bg-[#222] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             Export Excel
           </button>
@@ -191,6 +191,11 @@ const ManageUsers = () => {
 
       {/* The Modal Component that reacts to Zustand state */}
       <UserModal />
+      <UserPermissionsModal
+        isOpen={isPermissionsModalOpen}
+        onClose={closePermissionsModal}
+        user={permissionsUser}
+      />
     </div>
   );
 };

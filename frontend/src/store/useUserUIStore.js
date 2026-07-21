@@ -12,6 +12,11 @@ export const useUserUIStore = create((set) => ({
   
   closeModal: () => set({ isModalOpen: false, selectedUser: null }),
 
+  isPermissionsModalOpen: false,
+  permissionsUser: null,
+  openPermissionsModal: (user) => set({ isPermissionsModalOpen: true, permissionsUser: user }),
+  closePermissionsModal: () => set({ isPermissionsModalOpen: false, permissionsUser: null }),
+
   setDraftUser: (data) => set({ draftUser: data }),
   clearDraft: () => set({ draftUser: null }),
 }));
