@@ -87,7 +87,7 @@ export default function AdminDashboard() {
     : navItems;
 
   const renderPlaceholder = (text) => (
-    <div className="w-full h-64 glass-panel rounded-3xl flex items-center justify-center">
+    <div className="w-full h-64 glass-panel rounded-2xl flex items-center justify-center">
       <p className="text-[#737373] font-bold">{text} (Migration Pending)</p>
     </div>
   );

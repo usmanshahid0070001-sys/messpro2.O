@@ -5,7 +5,7 @@ import { useUserUIStore } from '../../store/useUserUIStore';
 import { SuperadminView, AdminView, FlatListView } from './UserListViews';
 import UserModal from './UserModal';
 import UserPermissionsModal from './UserPermissionsModal';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Download, Plus, ShieldAlert } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const ManageUsers = () => {
@@ -27,44 +27,41 @@ const ManageUsers = () => {
 
   if (!hasAccess) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gray-50/50 rounded-3xl border border-gray-100 p-8 text-center">
-        <div className="bg-red-50 text-red-600 p-4 rounded-full mb-4">
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white dark:bg-[#0a0a0a] rounded-2xl border border-[#e5e5e5] dark:border-[#222] p-8 text-center shadow-sm">
+        <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-full mb-4">
+          <ShieldAlert className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-        <p className="text-gray-500 max-w-md">You do not have the required permissions to view the User Management module.</p>
+        <h2 className="text-xl font-bold text-[#111] dark:text-white mb-2">Access Restricted</h2>
+        <p className="text-sm text-[#737373] dark:text-[#a3a3a3] max-w-sm">You do not have the required permissions to view the User Management module.</p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 animate-pulse">
+      <div className="px-4 sm:px-6 lg:p-8 p-4 w-full animate-pulse">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5">
           <div>
-            <div className="h-8 bg-gray-200 dark:bg-[#222] rounded w-48 mb-2"></div>
-            <div className="h-4 bg-gray-200 dark:bg-[#222] rounded w-64"></div>
+            <div className="h-7 bg-gray-200 dark:bg-[#222] rounded-md w-48 mb-2"></div>
+            <div className="h-4 bg-gray-200 dark:bg-[#222] rounded-md w-72"></div>
           </div>
-          <div className="mt-4 sm:mt-0 h-10 bg-gray-200 dark:bg-[#222] rounded-lg w-32"></div>
-        </div>
-        <div className="card p-6">
-          <div className="space-y-4">
-            <div className="h-10 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg w-full"></div>
-            <div className="h-10 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg w-full"></div>
-            <div className="h-10 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg w-full"></div>
+          <div className="mt-4 sm:mt-0 flex flex-wrap gap-3">
+            <div className="h-10 bg-gray-200 dark:bg-[#222] rounded-lg w-40"></div>
+            <div className="h-10 bg-gray-200 dark:bg-[#222] rounded-lg w-32"></div>
+            <div className="h-10 bg-slate-900 dark:bg-gray-100 rounded-lg w-32"></div>
           </div>
         </div>
+        <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl border border-[#e5e5e5] dark:border-[#222] h-[60vh] w-full"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="p-4 bg-red-50 text-red-600 rounded-lg border border-red-100">
-          Error loading users. Please try again.
+      <div className="px-4 sm:px-6 lg:p-8 p-4">
+        <div className="p-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg border border-red-100 dark:border-red-900/30 flex items-center gap-3 text-sm font-medium">
+          <ShieldAlert className="w-5 h-5" />
+          Error loading users. Please check your connection and try again.
         </div>
       </div>
     );
@@ -166,20 +163,16 @@ const ManageUsers = () => {
           <button
             onClick={handleExport}
             disabled={!users || users.length === 0}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-[#333] rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-[#111] hover:bg-gray-50 dark:hover:bg-[#222] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-[#e5e5e5] dark:border-[#333] rounded-lg shadow-sm text-sm font-semibold text-[#111] dark:text-white bg-white dark:bg-[#111] hover:bg-[#f5f5f5] dark:hover:bg-[#222] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-offset-[#050505] transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Export Excel
+            <Download className="w-4 h-4" />
+            Export
           </button>
           <button
             onClick={openCreateModal}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors duration-150"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-offset-[#050505] transition-colors duration-150"
           >
-            <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus className="w-4 h-4" />
             Create User
           </button>
         </div>

@@ -1,6 +1,6 @@
 export default function SectionCard({ title, subtitle, children, action }) {
   return (
-    <section className="glass-panel rounded-3xl p-6 md:p-8 shadow-sm">
+    <section className="glass-panel rounded-2xl p-6 md:p-8 shadow-sm">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-[#111111] dark:text-white tracking-tight">{title}</h2>

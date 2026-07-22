@@ -1,7 +1,7 @@
 export default function StatCard({ label, value, note, change, icon: Icon, accent }) {
   // Use monochrome glass panel. Retain the subtle accent color purely for the icon background to preserve visual hierarchy.
   return (
-    <div className="glass-panel rounded-3xl p-6 shadow-sm border border-[#e0e0e0] dark:border-[#222222] transition-transform hover:scale-[1.02] duration-300">
+    <div className="glass-panel rounded-2xl p-6 shadow-sm border border-[#e0e0e0] dark:border-[#222222] transition-transform hover:scale-[1.02] duration-300">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#737373] dark:text-[#888888]">{label}</p>

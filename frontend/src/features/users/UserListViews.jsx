@@ -48,16 +48,16 @@ const SearchInput = ({ value, onChange, placeholder = "Search users by name, ema
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="block w-full pl-9 pr-4 py-2.5 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-xl text-sm placeholder:text-[#a3a3a3] dark:placeholder:text-[#666666] text-[#111111] dark:text-white focus:outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111] dark:focus:border-white dark:focus:ring-white transition-all shadow-sm"
+      className="block w-full pl-9 pr-4 py-2 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-lg text-sm placeholder:text-[#a3a3a3] dark:placeholder:text-[#666666] text-[#111111] dark:text-white focus:outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111] dark:focus:border-white dark:focus:ring-white transition-all shadow-sm"
     />
   </div>
 );
 
 const ROLE_STYLES = {
-  admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-  manager: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
-  student: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  default: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
+  admin: 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20 dark:bg-purple-900/20 dark:text-purple-300 dark:ring-purple-500/30',
+  manager: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-900/20 dark:text-emerald-300 dark:ring-emerald-500/30',
+  student: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-900/20 dark:text-blue-300 dark:ring-blue-500/30',
+  default: 'bg-gray-50 text-gray-700 ring-1 ring-inset ring-gray-600/20 dark:bg-gray-900/20 dark:text-gray-300 dark:ring-gray-500/30'
 };
 
 const RoleBadge = ({ role }) => {
@@ -66,7 +66,7 @@ const RoleBadge = ({ role }) => {
   const displayText = role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Unknown';
 
   return (
-    <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-bold tracking-wide rounded-full ${styles}`}>
+    <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${styles}`}>
       {displayText}
     </span>
   );
@@ -79,10 +79,12 @@ const UsersTable = ({ users }) => {
 
   if (!users || users.length === 0) {
     return (
-      <div className="p-12 flex flex-col items-center justify-center text-center border-t border-[#e5e5e5] dark:border-[#222222]">
-        <Search className="w-8 h-8 text-[#d4d4d4] dark:text-[#333333] mb-3" />
-        <p className="text-sm font-semibold text-[#111111] dark:text-white">No users found</p>
-        <p className="text-xs text-[#737373] dark:text-[#a3a3a3] mt-1">Try adjusting your search query.</p>
+      <div className="p-16 flex flex-col items-center justify-center text-center border-t border-[#e5e5e5] dark:border-[#222222]">
+        <div className="bg-[#f5f5f5] dark:bg-[#1a1a1a] p-4 rounded-full mb-4">
+          <Search className="w-6 h-6 text-[#737373] dark:text-[#a3a3a3]" />
+        </div>
+        <p className="text-sm font-semibold text-[#111111] dark:text-white mb-1">No users found</p>
+        <p className="text-sm text-[#737373] dark:text-[#a3a3a3]">We couldn't find any users matching your criteria.</p>
       </div>
     );
   }
@@ -134,14 +136,14 @@ const UsersTable = ({ users }) => {
                   {hasExtraInfo && (
                     <button
                       onClick={() => setExpandedUserId(isExpanded ? null : user._id)}
-                      className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-semibold text-[#737373] bg-[#f5f5f5] border border-transparent rounded-md hover:bg-[#e5e5e5] hover:text-[#111] dark:bg-[#1a1a1a] dark:text-[#a3a3a3] dark:hover:bg-[#222] dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      className="inline-flex items-center justify-center px-3 py-1.5 text-[13px] font-medium text-[#737373] bg-[#f5f5f5] border border-transparent rounded-md hover:bg-[#e5e5e5] hover:text-[#111] dark:bg-[#1a1a1a] dark:text-[#a3a3a3] dark:hover:bg-[#222] dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900"
                     >
                       {isExpanded ? 'Hide Details' : 'View Details'}
                     </button>
                   )}
                   <button
                     onClick={() => openUpdateModal(user)}
-                    className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-semibold text-[#111111] bg-white border border-[#d4d4d4] rounded-md hover:bg-[#f5f5f5] dark:bg-[#111111] dark:text-white dark:border-[#333333] dark:hover:bg-[#222222] transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className="inline-flex items-center justify-center px-3 py-1.5 text-[13px] font-medium text-[#111111] bg-white border border-[#d4d4d4] rounded-md shadow-sm hover:bg-[#f5f5f5] dark:bg-[#111111] dark:text-white dark:border-[#333333] dark:hover:bg-[#222222] transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900"
                   >
                     Edit
                   </button>
@@ -258,10 +260,10 @@ export const AdminView = ({ users, sortOption }) => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition-all duration-150 flex items-center gap-2 ${
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-[14px] transition-all duration-150 flex items-center gap-2 ${
                   isActive
                     ? 'border-[#111111] text-[#111111] dark:border-white dark:text-white'
-                    : 'border-transparent text-[#737373] hover:text-[#111111] dark:text-[#888888] dark:hover:text-[#dddddd]'
+                    : 'border-transparent text-[#737373] hover:text-[#111111] hover:border-[#e5e5e5] dark:text-[#a3a3a3] dark:hover:text-[#dddddd] dark:hover:border-[#333333]'
                 }`}
               >
                 {tab.label}

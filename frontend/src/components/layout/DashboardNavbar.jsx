@@ -24,7 +24,7 @@ export default function DashboardNavbar() {
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="glass-panel rounded-none md:rounded-3xl border-b border-black/5 dark:border-white/5 md:border-transparent md:shadow-[0_8px_30px_rgb(0,0,0,0.04)] md:dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)]"
+          className="glass-panel rounded-none md:rounded-2xl border-b border-black/5 dark:border-white/5 md:border-transparent md:shadow-sm md:dark:shadow-sm"
         >
           <div className="flex items-center justify-between px-4 py-2.5 md:px-6">
             
@@ -118,7 +118,7 @@ export default function DashboardNavbar() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.8)] border border-[#e0e0e0] dark:border-[#222222] z-50 overflow-hidden"
+                        className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm dark:shadow-sm border border-[#e0e0e0] dark:border-[#222222] z-50 overflow-hidden"
                       >
                         <div className="px-4 py-3 border-b border-[#f5f5f5] dark:border-[#222222]">
                           <p className="text-sm font-bold text-[#111111] dark:text-white truncate">

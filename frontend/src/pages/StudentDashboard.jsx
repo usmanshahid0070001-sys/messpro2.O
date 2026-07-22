@@ -133,7 +133,7 @@ export default function StudentDashboard() {
           {activeTab === "rooms" && <ManageRooms />}
 
           {activeTab === "services" && (
-            <div className="w-full flex items-center justify-center h-64 glass-panel rounded-3xl">
+            <div className="w-full flex items-center justify-center h-64 glass-panel rounded-2xl">
                <p className="text-[#737373] font-bold">Service Management (Migration Pending)</p>
             </div>
           )}

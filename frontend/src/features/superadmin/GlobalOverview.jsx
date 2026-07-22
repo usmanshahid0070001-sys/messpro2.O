@@ -110,7 +110,7 @@ export default function GlobalOverview() {
               ))}
             </div>
 
-            <div className="mt-8 rounded-3xl border border-[#e0e0e0] dark:border-[#222222] bg-[#fafafa]/50 dark:bg-[#0a0a0a] p-6 shadow-sm">
+            <div className="mt-8 rounded-2xl border border-[#e0e0e0] dark:border-[#222222] bg-[#fafafa]/50 dark:bg-[#0a0a0a] p-6 shadow-sm">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#737373] dark:text-[#555555]">Platform Health</p>
               <div className="mt-5 space-y-4 text-sm font-bold text-[#404040] dark:text-[#888888]">
                 <div className="flex items-center justify-between">

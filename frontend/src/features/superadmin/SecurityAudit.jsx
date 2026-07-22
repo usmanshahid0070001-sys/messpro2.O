@@ -26,7 +26,7 @@ export default function SecurityAudit() {
                 <span>Emergency action readiness</span>
               </div>
             </div>
-            <div className="rounded-3xl border border-[#e0e0e0] dark:border-[#222222] bg-white dark:bg-[#111111] px-5 py-4 shadow-sm flex flex-col items-center gap-2 shrink-0 min-w-[140px]">
+            <div className="rounded-2xl border border-[#e0e0e0] dark:border-[#222222] bg-white dark:bg-[#111111] px-5 py-4 shadow-sm flex flex-col items-center gap-2 shrink-0 min-w-[140px]">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#737373] dark:text-[#555555]">Current state</p>
               <p className="text-xl font-black text-[#111111] dark:text-white tracking-tight">Secure</p>
               <StatusBadge tone="success">Protected</StatusBadge>

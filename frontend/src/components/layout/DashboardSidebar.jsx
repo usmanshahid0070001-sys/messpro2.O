@@ -18,7 +18,7 @@ export default function DashboardSidebar({
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       className={`hidden lg:flex fixed left-4 md:left-6 top-[88px] bottom-6 flex-col z-30 transition-all duration-300 ease-in-out ${isHovered ? 'w-[280px]' : 'w-[88px]'
-        } glass-panel rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden`}
+        } glass-panel rounded-2xl shadow-sm dark:shadow-sm overflow-hidden`}
     >
       {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">

@@ -91,7 +91,7 @@ export default function DashboardOverview({ userRole, user, navItems = [], setAc
     }
     if (name.includes('pro') || name.includes('standard') || name.includes('silver')) {
       return {
-        bg: 'from-purple-600 to-fuchsia-700',
+        bg: 'from-slate-800 to-slate-900 dark:from-slate-800 dark:to-slate-900',
         icon: 'text-purple-200'
       };
     }
@@ -242,7 +242,7 @@ export default function DashboardOverview({ userRole, user, navItems = [], setAc
                   {userRole === 'admin' && (
                     <button
                       onClick={() => setActiveTab('weeklyMenu')}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                      className="p-1.5 text-blue-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                       title="Configure Hostel"
                     >
                       <Settings className="w-5 h-5" />

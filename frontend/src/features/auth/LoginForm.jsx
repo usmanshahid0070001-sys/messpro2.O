@@ -80,7 +80,7 @@ export default function LoginForm() {
             }}
             className="relative w-20 h-20 mx-auto mb-6 hover:scale-105 transition-transform"
           >
-            <div className="absolute inset-0 bg-[#e0e0e0] dark:bg-[#1a1a1a] rounded-3xl blur-lg opacity-50" />
+            <div className="absolute inset-0 bg-[#e0e0e0] dark:bg-[#1a1a1a] rounded-2xl blur-lg opacity-50" />
             <img
               src="/pwa-512x512.png"
               alt="MessPro Logo"
@@ -97,7 +97,7 @@ export default function LoginForm() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white dark:bg-[#0a0a0a] backdrop-blur-2xl rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] border border-[#f5f5f5] dark:border-[#222222] relative overflow-hidden">
+        <div className="bg-white dark:bg-[#0a0a0a] backdrop-blur-2xl rounded-2xl p-8 shadow-sm dark:shadow-sm border border-[#f5f5f5] dark:border-[#222222] relative overflow-hidden">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5 relative z-10"
