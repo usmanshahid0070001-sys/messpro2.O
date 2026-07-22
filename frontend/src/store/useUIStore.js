@@ -4,6 +4,11 @@ const useUIStore = create((set) => ({
   theme: localStorage.getItem('theme') || 'dark', // Default to dark as requested for premium look
   isMobileMenuOpen: false,
   activeSectionLabel: '',
+  hasUnsavedChanges: false,
+  pendingTabId: null,
+
+  setHasUnsavedChanges: (hasChanges) => set({ hasUnsavedChanges: hasChanges }),
+  setPendingTabId: (tabId) => set({ pendingTabId: tabId }),
 
   setActiveSectionLabel: (label) => set({ activeSectionLabel: label }),
 

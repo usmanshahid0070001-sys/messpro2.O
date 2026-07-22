@@ -4,6 +4,7 @@ import { useMyHostel } from '../../hooks/queries/useHostelQueries';
 import { useUpdateMyHostelSettings } from '../../hooks/mutations/useHostelMutations';
 import toast from 'react-hot-toast';
 import ToggleSwitch from '../../components/ui/ToggleSwitch';
+import useUIStore from '../../store/useUIStore';
 
 export default function HostelConfiguration() {
   const { data: hostelResponse, isLoading } = useMyHostel();
@@ -14,6 +15,8 @@ export default function HostelConfiguration() {
   const [customFields, setCustomFields] = useState([]);
   const [features, setFeatures] = useState([]);
   
+  const setHasUnsavedChanges = useUIStore((state) => state.setHasUnsavedChanges);
+  
   useEffect(() => {
     if (hostelResponse?.data) {
       setSubdomain(hostelResponse.data.subdomain || '');
@@ -22,6 +25,20 @@ export default function HostelConfiguration() {
       setFeatures(hostelResponse.data.plan?.features || []);
     }
   }, [hostelResponse]);
+
+  useEffect(() => {
+    if (!hostelResponse?.data) return;
+    const isDirty = 
+      subdomain !== (hostelResponse.data.subdomain || '') ||
+      location !== (hostelResponse.data.location || '') ||
+      JSON.stringify(customFields) !== JSON.stringify(hostelResponse.data.customRegistrationFields || []) ||
+      JSON.stringify(features) !== JSON.stringify(hostelResponse.data.plan?.features || []);
+    
+    setHasUnsavedChanges(isDirty);
+    
+    // Clean up when unmounting so we don't lock the app
+    return () => setHasUnsavedChanges(false);
+  }, [subdomain, location, customFields, features, hostelResponse, setHasUnsavedChanges]);
 
   const handleAddField = () => {
     if (customFields.length >= 5) {
@@ -69,17 +86,25 @@ export default function HostelConfiguration() {
   return (
     <div className="space-y-6 lg:p-8 p-4">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between px-4 lg:px-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 lg:px-0">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[#111111] dark:text-white">Hostel Configuration</h1>
           <p className="mt-1 text-sm font-medium text-[#737373] dark:text-[#a0a0a0]">
             Manage hostel settings, location, and custom registration fields.
           </p>
         </div>
+        <button
+          onClick={handleSave}
+          disabled={updateSettingsMutation.isPending}
+          className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-sm disabled:opacity-50 w-full sm:w-auto justify-center sm:justify-start"
+        >
+          {updateSettingsMutation.isPending ? 'Saving...' : <><Save className="w-4 h-4" /> Save Configuration</>}
+        </button>
       </div>
 
-      <div className="px-4 lg:px-0 space-y-6 max-w-4xl pb-10">
-        <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
+      <div className="px-4 lg:px-0 grid grid-cols-1 xl:grid-cols-2 gap-6 pb-10">
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
           <h2 className="text-lg font-bold text-[#111] dark:text-white mb-4">Hostel Details</h2>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -116,6 +141,32 @@ export default function HostelConfiguration() {
           </div>
         </div>
 
+        {/* Features Configuration Section (Moved to left column) */}
+        {features.length > 0 && (
+          <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-[#111] dark:text-white">Plan Features</h2>
+              <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Toggle features that are available in your current plan.</p>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {features.map((feature, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
+                  <div>
+                    <span className="text-sm font-semibold block text-[#111111] dark:text-white">{feature.name}</span>
+                  </div>
+                  <ToggleSwitch 
+                    checked={feature.isEnabled} 
+                    onChange={() => handleFeatureToggle(feature.name)} 
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Right Column */}
+      <div className="space-y-6">
         <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -166,40 +217,8 @@ export default function HostelConfiguration() {
             )}
           </div>
         </div>
-
-        {/* Features Configuration Section */}
-        {features.length > 0 && (
-          <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
-            <div className="mb-4">
-              <h2 className="text-lg font-bold text-[#111] dark:text-white">Plan Features</h2>
-              <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Toggle features that are available in your current plan.</p>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {features.map((feature, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
-                  <div>
-                    <span className="text-sm font-semibold block text-[#111111] dark:text-white">{feature.name}</span>
-                  </div>
-                  <ToggleSwitch 
-                    checked={feature.isEnabled} 
-                    onChange={() => handleFeatureToggle(feature.name)} 
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={updateSettingsMutation.isPending}
-            className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-sm disabled:opacity-50"
-          >
-            {updateSettingsMutation.isPending ? 'Saving...' : <><Save className="w-4 h-4" /> Save Configuration</>}
-          </button>
-        </div>
       </div>
+    </div>
     </div>
   );
 }

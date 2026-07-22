@@ -1,10 +1,60 @@
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react";
 import DashboardNavbar from "./DashboardNavbar";
 import DashboardSidebar from "./DashboardSidebar";
 import useUIStore from "../../store/useUIStore";
+
+function UnsavedChangesModal({ onDiscard, onKeepEditing }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm transition-opacity"
+        onClick={onKeepEditing}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        className="relative flex flex-col w-full max-w-md bg-white dark:bg-[#0a0a0a] shadow-2xl rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden"
+      >
+        <div className="p-6 pb-5 border-b border-gray-100 dark:border-[#222]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Unsaved Changes</h3>
+          </div>
+        </div>
+        <div className="p-6 py-5">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            You have unsaved edits on this page. If you leave now, you will lose these changes. What would you like to do?
+          </p>
+        </div>
+        <div className="px-6 py-4 bg-gray-50 dark:bg-[#111] border-t border-gray-100 dark:border-[#222] flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          <button
+            type="button"
+            onClick={onKeepEditing}
+            className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 focus:outline-none transition-all duration-200"
+          >
+            Let me Save it
+          </button>
+          <button
+            type="button"
+            onClick={onDiscard}
+            className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-sm text-sm font-medium focus:outline-none transition-all duration-200"
+          >
+            Lose the edits
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
 export default function DashboardLayout({
   userRole,
@@ -13,7 +63,7 @@ export default function DashboardLayout({
   setActiveTab,
   children,
 }) {
-  const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
+  const { isMobileMenuOpen, toggleMobileMenu, hasUnsavedChanges, setHasUnsavedChanges, pendingTabId, setPendingTabId } = useUIStore();
   const setActiveSectionLabel = useUIStore.getState().setActiveSectionLabel;
 
   // Sync the active section label to the store so the navbar can display it
@@ -24,6 +74,30 @@ export default function DashboardLayout({
     return () => setActiveSectionLabel('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  const handleMobileTabClick = (tabId) => {
+    if (activeTab === tabId) {
+      toggleMobileMenu();
+      return;
+    }
+    if (hasUnsavedChanges) {
+      setPendingTabId(tabId);
+      toggleMobileMenu(); // Close mobile menu but show warning modal
+    } else {
+      setActiveTab(tabId);
+      toggleMobileMenu();
+    }
+  };
+
+  const handleDiscardChanges = () => {
+    setHasUnsavedChanges(false);
+    setActiveTab(pendingTabId);
+    setPendingTabId(null);
+  };
+
+  const handleKeepEditing = () => {
+    setPendingTabId(null);
+  };
 
   return (
     <div className="min-h-screen bg-[#fafafa]/50 dark:bg-[#050505] font-sans text-[#111111] dark:text-slate-100 transition-colors duration-300 selection:bg-black/10 dark:selection:bg-white/10">
@@ -101,10 +175,7 @@ export default function DashboardLayout({
                     return (
                       <button
                         key={item.id}
-                        onClick={() => {
-                          setActiveTab(item.id);
-                          toggleMobileMenu();
-                        }}
+                        onClick={() => handleMobileTabClick(item.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 ${
                           isActive
                             ? "bg-black/5 dark:bg-white/10 text-[#111111] dark:text-white font-semibold shadow-sm"
@@ -123,6 +194,14 @@ export default function DashboardLayout({
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {pendingTabId && (
+          <UnsavedChangesModal 
+            onDiscard={handleDiscardChanges} 
+            onKeepEditing={handleKeepEditing} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

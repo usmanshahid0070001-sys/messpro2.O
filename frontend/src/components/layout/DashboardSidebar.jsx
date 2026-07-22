@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import useUIStore from "../../store/useUIStore";
 
 export default function DashboardSidebar({
   navItems,
@@ -9,6 +10,18 @@ export default function DashboardSidebar({
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
+  const { hasUnsavedChanges, setPendingTabId } = useUIStore();
+
+  const handleTabClick = (e, item) => {
+    e.preventDefault();
+    if (activeTab === item.id) return;
+    
+    if (hasUnsavedChanges) {
+      setPendingTabId(item.id);
+    } else {
+      setActiveTab(item.id);
+    }
+  };
 
   // Clean, monochrome glass panel based on login theme
   return (
@@ -30,10 +43,7 @@ export default function DashboardSidebar({
             <a
               key={item.id}
               href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveTab(item.id);
-              }}
+              onClick={(e) => handleTabClick(e, item)}
               className={`relative flex items-center rounded-xl transition-colors duration-300 group ${isActive
                   ? 'bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#111111] dark:text-white'
                   : 'text-[#737373] dark:text-[#888888] hover:bg-[#fafafa] dark:hover:bg-[#111111] hover:text-[#111111] dark:hover:text-[#dddddd]'

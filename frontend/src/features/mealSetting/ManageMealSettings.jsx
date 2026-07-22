@@ -5,6 +5,7 @@ import WeeklyMenuGrid from './WeeklyMenuGrid';
 import { useAuth } from '../../context/AuthContext';
 import { useMealSchedule } from '../../hooks/queries/useMealQueries';
 import { useUpdateMealSchedule } from '../../hooks/mutations/useMealMutations';
+import useUIStore from '../../store/useUIStore';
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -26,6 +27,13 @@ export default function ManageMealSettings() {
 
   // Track if there are unsaved changes
   const [isDirty, setIsDirty] = useState(false);
+  
+  const setHasUnsavedChanges = useUIStore((state) => state.setHasUnsavedChanges);
+
+  useEffect(() => {
+    setHasUnsavedChanges(isDirty);
+    return () => setHasUnsavedChanges(false);
+  }, [isDirty, setHasUnsavedChanges]);
 
   // Load from sessionStorage OR backend data
   useEffect(() => {

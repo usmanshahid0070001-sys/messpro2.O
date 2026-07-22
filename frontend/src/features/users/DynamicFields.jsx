@@ -1,4 +1,3 @@
-import React from 'react';
 import { FormInput } from './UserModal';
 
 const capitalizeName = (str) => {
