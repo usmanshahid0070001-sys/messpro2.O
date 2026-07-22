@@ -43,7 +43,7 @@ export default function DashboardNavbar() {
                     <img src="/pwa-192x192.png" alt="MessPro Logo" className="w-8 h-8 rounded-lg object-contain" />
                   </div>
                   <span className="text-xl md:text-2xl font-black tracking-tight text-[#111111] dark:text-white">
-                    MessPro<span className="text-[#a3a3a3] dark:text-[#555555]">.</span>
+                    MessPro<span className="text-[#3b82f6]">.</span>
                   </span>
                 </div>
                 

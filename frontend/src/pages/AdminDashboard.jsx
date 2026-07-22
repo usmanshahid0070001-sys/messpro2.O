@@ -71,12 +71,12 @@ export default function AdminDashboard() {
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     hasFeature("User Management") && { id: "users", label: "User Management", icon: Users },
     hasFeature("Residence Management") && { id: "rooms", label: "Residence Management", icon: Home },
-    hasFeature("Biometric Attendance") && { id: "attendance", label: "Machine Attendance", icon: CreditCard }, // Or manual/QR
+    hasFeature("Service Management") && { id: "services", label: "Service Management", icon: ConciergeBell },
+    hasFeature("Biometric Attendance") && { id: "attendance", label: "Machine Attendance", icon: CreditCard },
     hasFeature("Bill Generation") && { id: "bills", label: "Bill generate", icon: Calculator },
     hasFeature("Bill Summary") && { id: "billSummary", label: "Bill Summary", icon: FileText },
     hasFeature("Meal settings") && { id: "meal", label: "Meal settings", icon: Clock },
     hasFeature("Meal control") && { id: "mealControl", label: "Meal Control", icon: ShieldCheck },
-    hasFeature("Service Management") && { id: "services", label: "Service Management", icon: ConciergeBell },
     hasFeature("Hostel Configuration") && { id: "weeklyMenu", label: "Hostel Configurations", icon: Settings },
   ].filter(Boolean); // Remove false/undefined items
 
