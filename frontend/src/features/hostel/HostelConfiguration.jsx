@@ -80,7 +80,55 @@ export default function HostelConfiguration() {
   };
 
   if (isLoading) {
-    return <div className="animate-pulse p-8 bg-gray-100 dark:bg-[#1a1a1a] rounded-xl h-64 m-4 lg:m-8"></div>;
+    return (
+      <div className="space-y-6 lg:p-8 p-4 w-full max-w-[1600px] mx-auto animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 lg:px-0">
+          <div className="space-y-3">
+            <div className="h-8 bg-black/5 dark:bg-white/5 rounded-lg w-64"></div>
+            <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-96 max-w-full"></div>
+          </div>
+          <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full sm:w-40"></div>
+        </div>
+
+        {/* Grid Skeleton */}
+        <div className="px-4 lg:px-0 grid grid-cols-1 xl:grid-cols-2 gap-6 pb-10">
+          {/* Left Column */}
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="h-6 bg-black/5 dark:bg-white/5 rounded-lg w-32"></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-24"></div>
+                  <div className="h-11 bg-black/5 dark:bg-white/5 rounded-xl w-full"></div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-24"></div>
+                  <div className="h-11 bg-black/5 dark:bg-white/5 rounded-xl w-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Right Column */}
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="flex justify-between items-center">
+                <div className="space-y-2">
+                  <div className="h-6 bg-black/5 dark:bg-white/5 rounded-lg w-48"></div>
+                  <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-64 max-w-full"></div>
+                </div>
+                <div className="h-9 bg-black/5 dark:bg-white/5 rounded-lg w-24"></div>
+              </div>
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-[46px] bg-black/5 dark:bg-white/5 rounded-xl w-full"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -39,19 +39,33 @@ const ManageUsers = () => {
 
   if (isLoading) {
     return (
-      <div className="px-4 sm:px-6 lg:p-8 p-4 w-full animate-pulse">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5">
-          <div>
-            <div className="h-7 bg-gray-200 dark:bg-[#222] rounded-md w-48 mb-2"></div>
-            <div className="h-4 bg-gray-200 dark:bg-[#222] rounded-md w-72"></div>
+      <div className="space-y-6 lg:p-8 p-4 w-full max-w-[1600px] mx-auto animate-pulse">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 lg:px-0">
+          <div className="space-y-3">
+            <div className="h-8 bg-black/5 dark:bg-white/5 rounded-lg w-64"></div>
+            <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-96 max-w-full"></div>
           </div>
-          <div className="mt-4 sm:mt-0 flex flex-wrap gap-3">
-            <div className="h-10 bg-gray-200 dark:bg-[#222] rounded-lg w-40"></div>
-            <div className="h-10 bg-gray-200 dark:bg-[#222] rounded-lg w-32"></div>
-            <div className="h-10 bg-slate-900 dark:bg-gray-100 rounded-lg w-32"></div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-32"></div>
+            <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-32"></div>
           </div>
         </div>
-        <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl border border-[#e5e5e5] dark:border-[#222] h-[60vh] w-full"></div>
+
+        <div className="px-4 lg:px-0">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full sm:w-64"></div>
+              <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full sm:w-32"></div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="h-12 bg-black/5 dark:bg-white/5 rounded-xl w-full"></div>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-[68px] bg-black/5 dark:bg-white/5 rounded-xl w-full"></div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

@@ -16,6 +16,7 @@ import StudentMealHistory from "../features/student/StudentMealHistory";
 import ManageUsers from "../features/users/ManageUsers";
 import ManageRooms from "../features/residence/ManageRooms";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
+import LoadingScreen from "../components/ui/LoadingScreen";
 
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
@@ -48,9 +49,7 @@ export default function StudentDashboard() {
 
   // Wait for hostel data to prevent flashing unauthorized tabs
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center bg-[#fafafa]/50 dark:bg-[#050505]">
-      <div className="w-8 h-8 border-2 border-black/20 dark:border-white/20 border-t-black dark:border-t-white rounded-full animate-spin" />
-    </div>;
+    return <LoadingScreen />;
   }
 
   const isExpired = hostelData?.status === 'Expired';

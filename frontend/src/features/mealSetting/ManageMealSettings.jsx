@@ -256,10 +256,39 @@ export default function ManageMealSettings() {
 
   if (isLoading && !isDirty) {
     return (
-      <div className="lg:p-8 space-y-8 animate-pulse">
-        <div className="h-8 bg-gray-200 dark:bg-[#222] rounded w-48 mb-2"></div>
-        <div className="h-4 bg-gray-200 dark:bg-[#222] rounded w-96"></div>
-        <div className="h-40 bg-gray-100 dark:bg-[#1a1a1a] rounded-xl w-full mt-8"></div>
+      <div className="space-y-8 lg:p-8 p-4 w-full max-w-[1600px] mx-auto animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between px-4 lg:px-0">
+          <div className="space-y-3">
+            <div className="h-8 bg-black/5 dark:bg-white/5 rounded-lg w-64"></div>
+            <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-96 max-w-full"></div>
+          </div>
+          <div className="flex flex-col sm:items-end lg:flex-row lg:items-center gap-4 w-full sm:w-auto">
+            <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full lg:w-40"></div>
+            <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full lg:w-40"></div>
+          </div>
+        </div>
+
+        {/* Daily Meals Skeleton */}
+        <div className="px-4 lg:px-0 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="h-6 bg-black/5 dark:bg-white/5 rounded-lg w-32"></div>
+            <div className="h-9 bg-black/5 dark:bg-white/5 rounded-lg w-28"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-40 bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl shadow-sm"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Weekly Menu Skeleton */}
+        <div className="px-4 lg:px-0 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="h-6 bg-black/5 dark:bg-white/5 rounded-lg w-48"></div>
+          </div>
+          <div className="h-[400px] bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl shadow-sm"></div>
+        </div>
       </div>
     );
   }

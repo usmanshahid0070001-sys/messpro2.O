@@ -17,10 +17,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
 import DashboardOverview from "../components/shared/DashboardOverview";
-import ManageUsers from "../features/users/ManageUsers";  
+import ManageUsers from "../features/users/ManageUsers";
 import ManageRooms from "../features/residence/ManageRooms";
 import HostelConfiguration from "../features/hostel/HostelConfiguration";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
+import LoadingScreen from "../components/ui/LoadingScreen";
 
 import { useAuth } from "../context/AuthContext";
 import { useMyHostel } from "../hooks/queries/useHostelQueries";
@@ -34,9 +35,9 @@ export default function AdminDashboard() {
   const currentTab = pathParts[pathParts.length - 1];
 
   // 2. Set "dashboard" as the default
-  const activeTab = (currentTab === "admin-dashboard" || !currentTab) 
-                    ? "dashboard" 
-                    : currentTab;
+  const activeTab = (currentTab === "admin-dashboard" || !currentTab)
+    ? "dashboard"
+    : currentTab;
 
   const setActiveTab = (tabId) => {
     navigate(`/admin-dashboard/${tabId}`);
@@ -47,9 +48,7 @@ export default function AdminDashboard() {
 
   // Wait for hostel data to prevent flashing unauthorized tabs
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center bg-[#fafafa]/50 dark:bg-[#050505]">
-      <div className="w-8 h-8 border-2 border-black/20 dark:border-white/20 border-t-black dark:border-t-white rounded-full animate-spin" />
-    </div>;
+    return <LoadingScreen />;
   }
 
   const isExpired = hostelData?.status === 'Expired';
@@ -78,11 +77,11 @@ export default function AdminDashboard() {
     hasFeature("Meal settings") && { id: "meal", label: "Meal settings", icon: Clock },
     hasFeature("Meal control") && { id: "mealControl", label: "Meal Control", icon: ShieldCheck },
     hasFeature("Hostel Configuration") && { id: "weeklyMenu", label: "Hostel Configurations", icon: Settings },
-    hasFeature("Service Management") && { id: "services", label: "Service Management", icon: ConciergeBell }, 
+    hasFeature("Service Management") && { id: "services", label: "Service Management", icon: ConciergeBell },
   ].filter(Boolean); // Remove false/undefined items
 
   // Apply expiration lockout: Only keep dashboard if expired
-  const filteredNavItems = isExpired 
+  const filteredNavItems = isExpired
     ? navItems.filter(item => item.id === "dashboard")
     : navItems;
 
