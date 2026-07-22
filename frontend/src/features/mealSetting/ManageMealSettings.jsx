@@ -172,20 +172,29 @@ export default function ManageMealSettings() {
     setMealToRemove(null);
   };
 
+  const capitalizeText = (str) => {
+    if (!str) return str;
+    return str.split(' ').map(word => word ? word.charAt(0).toUpperCase() + word.slice(1) : '').join(' ');
+  };
+
   const updateMeal = (id, field, value) => {
     setIsDirty(true);
-    setMeals(meals.map(m => m.id === id ? { ...m, [field]: value } : m));
+    let finalValue = value;
+    if (field === 'name') finalValue = capitalizeText(value);
+    setMeals(meals.map(m => m.id === id ? { ...m, [field]: finalValue } : m));
   };
 
   const updateMenuCell = (day, mealId, field, value) => {
     setIsDirty(true);
+    let finalValue = value;
+    if (field === 'foodName') finalValue = capitalizeText(value);
     setMenu(prev => ({
       ...prev,
       [day]: {
         ...prev[day],
         [mealId]: {
           ...prev[day][mealId],
-          [field]: value
+          [field]: finalValue
         }
       }
     }));

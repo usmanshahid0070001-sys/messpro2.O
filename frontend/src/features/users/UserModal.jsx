@@ -142,7 +142,18 @@ const UserModal = () => {
     return [];
   }, [formData.role, formData.hostelId, currentUserRole, hostelData]);
 
-  const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const capitalizeName = (str) => {
+    if (!str) return str;
+    return str.split(' ').map(word => word ? word.charAt(0).toUpperCase() + word.slice(1) : '').join(' ');
+  };
+
+  const handleChange = (e) => {
+    let { name, value } = e.target;
+    if (name === 'name') {
+      value = capitalizeName(value);
+    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
   const handleDynamicChange = (key, value) => setDynamicFormData(prev => ({ ...prev, [key]: value }));
 
   const handlePermissionToggle = (slug) => {

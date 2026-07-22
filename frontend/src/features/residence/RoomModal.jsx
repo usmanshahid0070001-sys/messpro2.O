@@ -78,6 +78,11 @@ const RoomModal = ({ isOpen, onClose, mode, room, rooms, users, setModalMode }) 
   const swapRoomMutation = useSwapRoom();
   const removeStudentMutation = useRemoveStudentFromRoom();
 
+  const capitalizeText = (str) => {
+    if (!str) return str;
+    return str.split(' ').map(word => word ? word.charAt(0).toUpperCase() + word.slice(1) : '').join(' ');
+  };
+
   const [roomName, setRoomName] = useState('');
   const [capacity, setCapacity] = useState(1);
   const [studentId, setStudentId] = useState('');
@@ -201,7 +206,7 @@ const RoomModal = ({ isOpen, onClose, mode, room, rooms, users, setModalMode }) 
                     autoFocus
                     maxLength={40}
                     value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
+                    onChange={(e) => setRoomName(capitalizeText(e.target.value))}
                     className="block w-full px-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 dark:bg-[#111] dark:text-white sm:text-sm transition-all duration-200"
                     placeholder="e.g., A-101"
                   />

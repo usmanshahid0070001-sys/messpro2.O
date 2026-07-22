@@ -1,43 +1,59 @@
 import { useState, useEffect } from 'react';
 import { useMealSchedule } from '../../hooks/queries/useMealQueries';
+import { useMyHostel } from '../../hooks/queries/useHostelQueries';
 import { Save, Utensils, CheckCircle2, Circle, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const STATIC_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-const getCurrentDayPK = () => {
-  const options = { timeZone: 'Asia/Karachi', weekday: 'long' };
-  const formatter = new Intl.DateTimeFormat('en-US', options);
-  const parts = formatter.formatToParts(new Date());
-  return parts.find(p => p.type === 'weekday').value;
+const getCurrentDay = (timeZone) => {
+  try {
+    const options = { timeZone, weekday: 'long' };
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    const parts = formatter.formatToParts(new Date());
+    return parts.find(p => p.type === 'weekday').value;
+  } catch(e) {
+    return new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
+  }
 };
 
-const getPKCurrentMinutes = () => {
-  const now = new Date();
-  const options = { timeZone: 'Asia/Karachi', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' };
-  const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(now);
-  let hour = 0, minute = 0;
-  parts.forEach(p => {
-    if (p.type === 'hour') hour = parseInt(p.value, 10);
-    if (p.type === 'minute') minute = parseInt(p.value, 10);
-  });
-  return hour * 60 + minute;
+const getCurrentMinutes = (timeZone) => {
+  try {
+    const now = new Date();
+    const options = { timeZone, hour: 'numeric', minute: 'numeric', hourCycle: 'h23' };
+    const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(now);
+    let hour = 0, minute = 0;
+    parts.forEach(p => {
+      if (p.type === 'hour') hour = parseInt(p.value, 10);
+      if (p.type === 'minute') minute = parseInt(p.value, 10);
+    });
+    return hour * 60 + minute;
+  } catch(e) {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  }
 };
 
-const hasTimePassedInPK = (selectionTimeString) => {
+const hasTimePassed = (selectionTimeString, timeZone) => {
   if (!selectionTimeString) return false;
-  const match = selectionTimeString.match(/(\d+):(\d+)\s*(AM|PM)/i);
-  if (!match) return false;
   
-  let hours = parseInt(match[1], 10);
-  const minutes = parseInt(match[2], 10);
-  const period = match[3].toUpperCase();
-  
-  if (period === 'PM' && hours < 12) hours += 12;
-  if (period === 'AM' && hours === 12) hours = 0;
+  let hours, minutes;
+  const match24 = selectionTimeString.match(/^(\d{1,2}):(\d{2})$/);
+  if (match24) {
+    hours = parseInt(match24[1], 10);
+    minutes = parseInt(match24[2], 10);
+  } else {
+    const match12 = selectionTimeString.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!match12) return false;
+    hours = parseInt(match12[1], 10);
+    minutes = parseInt(match12[2], 10);
+    const period = match12[3].toUpperCase();
+    if (period === 'PM' && hours < 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+  }
   
   const selectionTotalMinutes = hours * 60 + minutes;
-  const currentTotalMinutes = getPKCurrentMinutes();
+  const currentTotalMinutes = getCurrentMinutes(timeZone);
   
   return currentTotalMinutes >= selectionTotalMinutes;
 };
@@ -48,18 +64,23 @@ const getShiftedDays = (currentDay) => {
   return [...STATIC_DAYS.slice(idx), ...STATIC_DAYS.slice(0, idx)];
 };
 
-const getDateForShiftedIndex = (index) => {
+const getDateForShiftedIndex = (index, timeZone) => {
   const futureDate = new Date(Date.now() + index * 24 * 60 * 60 * 1000);
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Karachi',
-    month: 'short',
-    day: 'numeric'
-  });
-  return formatter.format(futureDate);
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      month: 'short',
+      day: 'numeric'
+    });
+    return formatter.format(futureDate);
+  } catch(e) {
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(futureDate);
+  }
 };
 
 export default function WeeklyMealSelection() {
-  const { data: scheduleData, isLoading, isError, refetch } = useMealSchedule();
+  const { data: scheduleData, isLoading: isScheduleLoading, isError, refetch } = useMealSchedule();
+  const { data: hostelResponse, isLoading: isHostelLoading } = useMyHostel();
 
   const [status, setStatus] = useState("Active");
   const [meals, setMeals] = useState([]);
@@ -67,8 +88,10 @@ export default function WeeklyMealSelection() {
   const [selections, setSelections] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   
-  const currentDayPK = getCurrentDayPK();
-  const shiftedDays = getShiftedDays(currentDayPK);
+  const timeZone = hostelResponse?.data?.location || 'Asia/Karachi';
+  
+  const currentDay = getCurrentDay(timeZone);
+  const shiftedDays = getShiftedDays(currentDay);
 
   useEffect(() => {
     if (scheduleData && scheduleData.data) {
@@ -122,7 +145,7 @@ export default function WeeklyMealSelection() {
     alert("Selections saved successfully! (API Integration Pending)");
   };
 
-  if (isLoading) {
+  if (isScheduleLoading || isHostelLoading) {
     return (
       <div className="p-8 space-y-8 animate-pulse">
         <div className="h-8 bg-gray-200 dark:bg-[#222] rounded w-48 mb-2"></div>
@@ -177,7 +200,7 @@ export default function WeeklyMealSelection() {
       {/* Days Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {shiftedDays.map((day, i) => {
-          const isToday = day === currentDayPK;
+          const isToday = day === currentDay;
           
           return (
             <motion.div 
@@ -194,7 +217,7 @@ export default function WeeklyMealSelection() {
                 {isToday ? (
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200">Today</span>
                 ) : (
-                  <span className="text-xs font-medium text-[#737373]">{getDateForShiftedIndex(i)}</span>
+                  <span className="text-xs font-medium text-[#737373]">{getDateForShiftedIndex(i, timeZone)}</span>
                 )}
               </div>
               <div className="p-5 flex flex-col gap-4">
@@ -203,7 +226,7 @@ export default function WeeklyMealSelection() {
                   const hasFood = cellData && cellData.foodName !== '';
                   const isSelected = selections[day]?.[meal.id];
                   
-                  const isLocked = isToday && hasTimePassedInPK(meal.endTime);
+                  const isLocked = isToday && hasTimePassed(meal.endTime, timeZone);
                   
                   let stateClass = "";
                   if (!hasFood) {
