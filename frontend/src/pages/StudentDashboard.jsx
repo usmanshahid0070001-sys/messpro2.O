@@ -5,7 +5,8 @@ import {
   Clock,
   Home,
   Users,
-  ConciergeBell
+  ConciergeBell,
+  AlertTriangle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -18,6 +19,7 @@ import ManageRooms from "../features/residence/ManageRooms";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 import LoadingScreen from "../components/ui/LoadingScreen";
 import ServiceManagement from "../features/services/ServiceManagement";
+import StudentComplaintForm from "../features/services/StudentComplaintForm";
 
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
@@ -75,11 +77,16 @@ export default function StudentDashboard() {
   const hasService = hasFeatureAndPermission("Service Management", "service_management");
   const hasComplaint = hasFeatureAndPermission("Complaint Management", "complaint_management");
   const showServiceTab = hasService || hasComplaint;
+  
+  const canFileComplaint = enabledFeatures.some(f => f.name === "Complaint Management" && f.isEnabled);
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "meals", label: "Meal Selection", icon: Utensils }, // Default
     { id: "history", label: "Meal History", icon: Clock }, // Default (Dues/History)
+    
+    // Student can file complaints if hostel has the feature
+    canFileComplaint && { id: "file-complaint", label: "File Complaint", icon: AlertTriangle },
     
     // Conditionally added features based on permissions AND hostel plan
     hasFeatureAndPermission("Meal settings", "meal_settings") && { id: "menu", label: "Meal Management", icon: Utensils },
@@ -137,6 +144,8 @@ export default function StudentDashboard() {
           {activeTab === "rooms" && <ManageRooms />}
 
           {activeTab === "services" && <ServiceManagement />}
+
+          {activeTab === "file-complaint" && <StudentComplaintForm />}
         </motion.div>
       </AnimatePresence>
     </DashboardLayout>
