@@ -8,6 +8,7 @@ import DashboardOverview from "../components/shared/DashboardOverview";
 import ManageRooms from "../features/residence/ManageRooms";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 import ManageUsers from "../features/users/ManageUsers";
+import ServiceManagement from "../features/services/ServiceManagement";
 import LoadingScreen from "../components/ui/LoadingScreen";
 
 // Auth & API
@@ -46,9 +47,9 @@ export default function ManagerDashboard() {
   const hasFeatureAndPermission = (featureName, requiredPermissionName) => {
     let isFeatureEnabled = false;
     
-    // Fallbacks for older databases that still use 'Room Service'
-    if (featureName === "Service Management" || featureName === "Residence Management") {
-      isFeatureEnabled = enabledFeatures.some(f => (f.name === featureName || f.name === "Room Service") && f.isEnabled);
+    // Fallbacks for older databases that still use 'Room Service' mapped to Service Management (Cleaning)
+    if (featureName === "Service Management") {
+      isFeatureEnabled = enabledFeatures.some(f => (f.name === "Service Management" || f.name === "Room Service") && f.isEnabled);
     } else {
       isFeatureEnabled = enabledFeatures.some(f => f.name === featureName && f.isEnabled);
     }
@@ -56,6 +57,10 @@ export default function ManagerDashboard() {
     const hasPermission = userPermissions.includes(requiredPermissionName);
     return isFeatureEnabled && hasPermission;
   };
+
+  const hasService = hasFeatureAndPermission("Service Management", "service_management");
+  const hasComplaint = hasFeatureAndPermission("Complaint Management", "complaint_management");
+  const showServiceTab = hasService || hasComplaint;
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -66,7 +71,7 @@ export default function ManagerDashboard() {
     // Conditionally added features based on permissions AND hostel plan
     hasFeatureAndPermission("User Management", "user_management") && { id: "users", label: "User Management", icon: Users },
     hasFeatureAndPermission("Residence Management", "residence_management") && { id: "rooms", label: "Residence Management", icon: Home },
-    hasFeatureAndPermission("Service Management", "service_management") && { id: "services", label: "Service Management", icon: ConciergeBell },
+    showServiceTab && { id: "services", label: "Service Management", icon: ConciergeBell },
   ].filter(Boolean);
 
   const filteredNavItems = isExpired 
@@ -96,11 +101,7 @@ export default function ManagerDashboard() {
           
           {activeTab === "rooms" && <ManageRooms />}
           
-          {activeTab === "services" && (
-            <div className="w-full flex items-center justify-center h-64 glass-panel rounded-2xl">
-               <p className="text-[#737373] font-bold">Service Management (Migration Pending)</p>
-            </div>
-          )}
+          {activeTab === "services" && <ServiceManagement />}
 
           {activeTab === "menu" && <ManageMealSettings />}
 

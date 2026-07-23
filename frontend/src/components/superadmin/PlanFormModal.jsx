@@ -23,6 +23,7 @@ const AVAILABLE_FEATURES = [
   "Bill Generation",
   "Bill Summary",
   "Service Management",
+  "Complaint Management",
   "Residence Management",
   "Meal control",
   "Manual Attendance",

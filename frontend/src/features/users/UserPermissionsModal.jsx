@@ -10,7 +10,8 @@ const AVAILABLE_PERMISSIONS = [
   { slug: 'meal_settings', label: 'Meal Management / Meal setting', requiredPlanFeature: 'Meal settings' },
   { slug: 'user_management', label: 'User Management', requiredPlanFeature: 'User Management' },
   { slug: 'residence_management', label: 'Residence Management', requiredPlanFeature: 'Residence Management' },
-  { slug: 'service_management', label: 'Service Management', requiredPlanFeature: 'Service Management' }
+  { slug: 'service_management', label: 'Service Management', requiredPlanFeature: 'Service Management' },
+  { slug: 'complaint_management', label: 'Complaint Management', requiredPlanFeature: 'Complaint Management' }
 ];
 
 export default function UserPermissionsModal({ user, isOpen, onClose }) {
@@ -60,8 +61,8 @@ export default function UserPermissionsModal({ user, isOpen, onClose }) {
 
   // Filter which permissions can be shown based on active plan features
   const allowedPermissions = AVAILABLE_PERMISSIONS.filter(perm => {
-    if (perm.requiredPlanFeature === "Service Management" || perm.requiredPlanFeature === "Residence Management") {
-      return enabledPlanFeatures.some(f => (f.name === perm.requiredPlanFeature || f.name === "Room Service") && f.isEnabled);
+    if (perm.requiredPlanFeature === "Service Management") {
+      return enabledPlanFeatures.some(f => (f.name === "Service Management" || f.name === "Room Service") && f.isEnabled);
     }
     return enabledPlanFeatures.some(f => f.name === perm.requiredPlanFeature && f.isEnabled);
   });

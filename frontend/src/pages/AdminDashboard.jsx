@@ -22,6 +22,7 @@ import ManageRooms from "../features/residence/ManageRooms";
 import HostelConfiguration from "../features/hostel/HostelConfiguration";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 import LoadingScreen from "../components/ui/LoadingScreen";
+import ServiceManagement from "../features/services/ServiceManagement";
 
 import { useAuth } from "../context/AuthContext";
 import { useMyHostel } from "../hooks/queries/useHostelQueries";
@@ -56,22 +57,22 @@ export default function AdminDashboard() {
 
   // Helper to check if a feature is enabled
   const hasFeature = (featureName) => {
-    // Backward compatibility for existing databases that still have 'Room Service'
+    // Backward compatibility for existing databases that still have 'Room Service' mapped to Service Management (Cleaning)
     if (featureName === "Service Management") {
       return enabledFeatures.some(f => (f.name === "Service Management" || f.name === "Room Service") && f.isEnabled);
     }
-    // Since 'Room Service' used to render Residence Management, let's keep it visible for old plans
-    if (featureName === "Residence Management") {
-      return enabledFeatures.some(f => (f.name === "Residence Management" || f.name === "Room Service") && f.isEnabled);
-    }
     return enabledFeatures.some(f => f.name === featureName && f.isEnabled);
   };
+
+  const hasService = hasFeature("Service Management");
+  const hasComplaint = hasFeature("Complaint Management");
+  const showServiceTab = hasService || hasComplaint;
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     hasFeature("User Management") && { id: "users", label: "User Management", icon: Users },
     hasFeature("Residence Management") && { id: "rooms", label: "Residence Management", icon: Home },
-    hasFeature("Service Management") && { id: "services", label: "Service Management", icon: ConciergeBell },
+    showServiceTab && { id: "services", label: "Service Management", icon: ConciergeBell },
     hasFeature("Biometric Attendance") && { id: "attendance", label: "Machine Attendance", icon: CreditCard },
     hasFeature("Bill Generation") && { id: "bills", label: "Bill generate", icon: Calculator },
     hasFeature("Bill Summary") && { id: "billSummary", label: "Bill Summary", icon: FileText },
@@ -118,7 +119,7 @@ export default function AdminDashboard() {
           {activeTab === "meal" && <ManageMealSettings />}
           {activeTab === "mealControl" && renderPlaceholder("Meal Control")}
           {activeTab === "weeklyMenu" && <HostelConfiguration />}
-          {activeTab === "services" && renderPlaceholder("Service Management")}
+          {activeTab === "services" && <ServiceManagement />}
         </motion.div>
       </AnimatePresence>
     </DashboardLayout>
