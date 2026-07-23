@@ -20,15 +20,15 @@ export default function App() {
         {/* ─── Public Marketing & Auth Routes ─────────────────────── */}
         <Route
           path="/"
+          element={<Navigate to="/login" replace />}
+        />
+        <Route
+          path="/login"
           element={
             <PublicRoute>
               <LoginForm />
             </PublicRoute>
           }
-        />
-        <Route
-          path="/login"
-          element={<Navigate to="/" replace />}
         />
 
         {/* ─── Protected Tenant Dashboard Routes ─────────────────── */}
