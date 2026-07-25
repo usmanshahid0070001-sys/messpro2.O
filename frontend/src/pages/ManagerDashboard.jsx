@@ -9,6 +9,7 @@ import ManageRooms from "../features/residence/ManageRooms";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 import ManageUsers from "../features/users/ManageUsers";
 import ServiceManagement from "../features/services/ServiceManagement";
+import AttendanceManagement from "../features/attendance/AttendanceManagement";
 import LoadingScreen from "../components/ui/LoadingScreen";
 
 // Auth & API
@@ -72,6 +73,7 @@ export default function ManagerDashboard() {
     hasFeatureAndPermission("User Management", "user_management") && { id: "users", label: "User Management", icon: Users },
     hasFeatureAndPermission("Residence Management", "residence_management") && { id: "rooms", label: "Residence Management", icon: Home },
     showServiceTab && { id: "services", label: "Service Management", icon: ConciergeBell },
+    (enabledFeatures.some(f => (f.name === "Manual Attendance" || f.name === "QR Attendance" || f.name === "Biometric Attendance") && f.isEnabled)) && { id: "attendance", label: "Attendance", icon: CreditCard },
   ].filter(Boolean);
 
   const filteredNavItems = isExpired 
@@ -102,6 +104,8 @@ export default function ManagerDashboard() {
           {activeTab === "rooms" && <ManageRooms />}
           
           {activeTab === "services" && <ServiceManagement />}
+
+          {activeTab === "attendance" && <AttendanceManagement />}
 
           {activeTab === "menu" && <ManageMealSettings />}
 

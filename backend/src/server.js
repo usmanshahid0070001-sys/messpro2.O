@@ -100,6 +100,7 @@ import { globalErrorHandler } from './middlewares/error.middleware.js';
 
 // 👇 NEW: Import the Meal Routes
 import mealRoutes from './modules/meal/meal.routes.js'; 
+import attendanceRoutes from './modules/attendance/attendance.routes.js';
 
 dotenv.config(); // this will load the environment variables first 
 
@@ -137,6 +138,7 @@ app.use('/api/residence', residenceRoutes);
 
 // 👇 NEW: Mount the Meal Routes to the exact endpoint your teammate requested
 app.use('/api/meal-schedule', mealRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 
 app.get('/', (req, res) => {

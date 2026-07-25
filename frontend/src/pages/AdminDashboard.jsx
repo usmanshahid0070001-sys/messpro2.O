@@ -23,6 +23,7 @@ import HostelConfiguration from "../features/hostel/HostelConfiguration";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 import LoadingScreen from "../components/ui/LoadingScreen";
 import ServiceManagement from "../features/services/ServiceManagement";
+import AttendanceManagement from "../features/attendance/AttendanceManagement";
 
 import { useAuth } from "../context/AuthContext";
 import { useMyHostel } from "../hooks/queries/useHostelQueries";
@@ -73,7 +74,7 @@ export default function AdminDashboard() {
     hasFeature("User Management") && { id: "users", label: "User Management", icon: Users },
     hasFeature("Residence Management") && { id: "rooms", label: "Residence Management", icon: Home },
     showServiceTab && { id: "services", label: "Service Management", icon: ConciergeBell },
-    hasFeature("Biometric Attendance") && { id: "attendance", label: "Machine Attendance", icon: CreditCard },
+    (hasFeature("Manual Attendance") || hasFeature("QR Attendance") || hasFeature("Biometric Attendance")) && { id: "attendance", label: "Attendance", icon: CreditCard },
     hasFeature("Bill Generation") && { id: "bills", label: "Bill generate", icon: Calculator },
     hasFeature("Bill Summary") && { id: "billSummary", label: "Bill Summary", icon: FileText },
     hasFeature("Meal settings") && { id: "meal", label: "Meal settings", icon: Clock },
@@ -114,7 +115,7 @@ export default function AdminDashboard() {
           {activeTab === "billSummary" && renderPlaceholder("Bill Summary")}
           {activeTab === "users" && <ManageUsers />}
           {activeTab === "rooms" && <ManageRooms />}
-          {activeTab === "attendance" && renderPlaceholder("Attendance Upload")}
+          {activeTab === "attendance" && <AttendanceManagement />}
           {activeTab === "bills" && renderPlaceholder("Generate Bills")}
           {activeTab === "meal" && <ManageMealSettings />}
           {activeTab === "mealControl" && renderPlaceholder("Meal Control")}
