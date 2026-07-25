@@ -13,7 +13,7 @@ export const useSocket = (hostelId) => {
     // Connect to the socket server
     socketRef.current = io(SOCKET_URL, {
       withCredentials: true,
-      transports: ['websocket', 'polling']
+      transports: ['polling', 'websocket']
     });
 
     socketRef.current.on('connect', () => {

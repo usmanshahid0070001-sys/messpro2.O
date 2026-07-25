@@ -30,7 +30,8 @@ export default function AttendanceManagement() {
     hasBiometric && { id: 'biometric', label: 'Machine Sync', icon: Fingerprint, component: <BiometricAttendance /> },
   ].filter(Boolean);
 
-  const [activeTab, setActiveTab] = useState(availableTabs[0]?.id || 'manual');
+  const defaultTab = availableTabs.find(t => t.id === 'qr') ? 'qr' : availableTabs[0]?.id;
+  const [activeTab, setActiveTab] = useState(defaultTab || 'manual');
 
   // If features load dynamically, ensure a valid tab is selected
   useEffect(() => {
@@ -45,8 +46,8 @@ export default function AttendanceManagement() {
 
   if (availableTabs.length === 0) {
     return (
-      <div className="w-full h-64 glass-panel rounded-2xl flex items-center justify-center">
-        <p className="text-[#737373] font-bold">Attendance features are not enabled for your plan.</p>
+      <div className="w-full h-64 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-2xl flex items-center justify-center">
+        <p className="text-sm font-semibold text-[#737373] dark:text-[#a0a0a0]">Attendance features are not enabled for your plan.</p>
       </div>
     );
   }
@@ -54,20 +55,20 @@ export default function AttendanceManagement() {
   const activeComponent = availableTabs.find(t => t.id === activeTab)?.component;
 
   return (
-    <div className="space-y-6 p-2 lg:p-8">
+    <div className="space-y-6 p-4 lg:p-8 w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <CalendarCheck className="w-7 h-7 text-emerald-400" />
+          <h1 className="text-2xl font-black tracking-tight text-[#111111] dark:text-white flex items-center gap-3">
+            <CalendarCheck className="w-6 h-6 text-[#737373] dark:text-[#a3a3a3]" />
             Attendance Management
           </h1>
-          <p className="text-gray-400 mt-1">Manage and track student attendance effectively.</p>
+          <p className="mt-1 text-sm font-medium text-[#737373] dark:text-[#a0a0a0]">Manage and track student attendance effectively.</p>
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="glass-panel p-2 rounded-2xl border border-white/5 inline-flex flex-wrap gap-2">
+      {/* Tabs Navigation (Segmented Control) */}
+      <div className="inline-flex p-1 bg-[#f5f5f5] dark:bg-[#111111] rounded-xl border border-[#e5e5e5] dark:border-[#222222] overflow-x-auto w-full sm:w-auto snap-x">
         {availableTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -75,21 +76,21 @@ export default function AttendanceManagement() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all duration-300 relative ${
+              className={`relative flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 snap-start shrink-0 min-w-[120px] ${
                 isActive 
-                  ? 'text-white' 
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                  ? 'text-[#111111] dark:text-white' 
+                  : 'text-[#737373] dark:text-[#888888] hover:text-[#111111] dark:hover:text-[#dddddd]'
               }`}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeAttendanceTab"
-                  className="absolute inset-0 bg-white/10 border border-white/10 rounded-xl"
+                  className="absolute inset-0 bg-white dark:bg-[#1e1e1e] rounded-lg shadow-sm border border-[#e5e5e5] dark:border-[#333333]"
                   initial={false}
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                 />
               )}
-              <Icon className="w-5 h-5 relative z-10" />
+              <Icon className="w-4 h-4 relative z-10" />
               <span className="relative z-10">{tab.label}</span>
             </button>
           );

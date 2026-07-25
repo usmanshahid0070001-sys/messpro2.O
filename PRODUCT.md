@@ -33,3 +33,10 @@ Modern, accessible, trustworthy.
 
 ## Accessibility & Inclusion
 Standard web accessibility. Ensure keyboard navigation and maintain good contrast (WCAG standards) throughout the application.
+
+## Current Version & Updates
+**Version**: 2.0 (Attendance UI Polish)
+- Standardized UI color palette across modules to align with the "Tenant Management" monochrome/minimalist aesthetic.
+- Removed excessive glassmorphism and nested cards from the Attendance modules.
+- Refactored QR, Manual, and Biometric attendance features for optimal mobile responsiveness, structural alignment, and fluid performance (smooth Framer Motion transitions).
+- Addressed robust error handling and eliminated duplicate toasts in real-time scanning flows.

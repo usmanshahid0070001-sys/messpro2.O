@@ -181,12 +181,12 @@ export default function ManualAttendance() {
     <div className="space-y-6">
       
       {/* Top Configuration Bar */}
-      <div className="glass-panel p-4 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-end gap-4 shadow-lg shadow-black/5">
+      <div className="bg-white dark:bg-[#0a0a0a] p-5 rounded-2xl border border-[#e5e5e5] dark:border-[#222222] shadow-sm flex flex-col lg:flex-row items-end gap-4">
         
-        <div className="w-full sm:w-1/3">
-          <label className="block text-sm font-medium text-gray-400 mb-1.5 ml-1">Date</label>
+        <div className="w-full lg:w-1/3">
+          <label className="block text-[13px] font-bold text-[#737373] dark:text-[#a0a0a0] mb-1.5 ml-1">Date</label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a3a3a3] dark:text-[#666666] pointer-events-none" />
             <input
               type="date"
               value={selectedDate}
@@ -194,19 +194,19 @@ export default function ManualAttendance() {
                 setSelectedDate(e.target.value);
                 setSelectedMealId(''); // Reset meal when date changes
               }}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all [color-scheme:dark]"
+              className="w-full bg-white dark:bg-[#111111] border border-[#e5e5e5] dark:border-[#333333] rounded-xl py-2 pl-9 pr-4 text-[#111111] dark:text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all [color-scheme:dark]"
             />
           </div>
         </div>
 
-        <div className="w-full sm:w-1/3">
-          <label className="block text-sm font-medium text-gray-400 mb-1.5 ml-1">Meal Type</label>
+        <div className="w-full lg:w-1/3">
+          <label className="block text-[13px] font-bold text-[#737373] dark:text-[#a0a0a0] mb-1.5 ml-1">Meal Type</label>
           <div className="relative">
-            <Coffee className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+            <Coffee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a3a3a3] dark:text-[#666666] pointer-events-none" />
             <select
               value={selectedMealId}
               onChange={(e) => setSelectedMealId(e.target.value)}
-              className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all appearance-none"
+              className="w-full bg-white dark:bg-[#111111] border border-[#e5e5e5] dark:border-[#333333] rounded-xl py-2 pl-9 pr-4 text-[#111111] dark:text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none"
             >
               <option value="" disabled>Select a meal</option>
               {todaysMeals.map(meal => (
@@ -218,20 +218,20 @@ export default function ManualAttendance() {
           </div>
         </div>
 
-        <div className="w-full sm:w-1/3 flex justify-end">
+        <div className="w-full lg:w-1/3 flex justify-end">
           <button 
             onClick={handleSave}
             disabled={!isConfigured || isSaving || (!hasUnsavedChanges && (serverAttendance?.length > 0))}
-            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all ${
+            className={`w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold transition-all ${
               hasUnsavedChanges 
-                ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-500/20' 
-                : 'bg-white/5 border border-white/10 text-gray-400 cursor-not-allowed'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm ring-2 ring-blue-600/20' 
+                : 'bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222222] text-[#a3a3a3] dark:text-[#666666] cursor-not-allowed'
             }`}
           >
             {isSaving ? (
-              <span className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             ) : (
-              <Save className="w-5 h-5" />
+              <Save className="w-4 h-4" />
             )}
             <span>{isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}</span>
           </button>
@@ -243,13 +243,13 @@ export default function ManualAttendance() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="glass-panel h-[400px] flex flex-col items-center justify-center rounded-2xl border border-white/5 text-center px-4"
+          className="bg-[#fafafa] dark:bg-[#0a0a0a] h-[400px] flex flex-col items-center justify-center rounded-2xl border border-[#e5e5e5] dark:border-[#222222] text-center px-4"
         >
-          <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4 border border-emerald-500/20">
-            <Calendar className="w-10 h-10 text-emerald-400" />
+          <div className="w-16 h-16 bg-[#f5f5f5] dark:bg-[#1a1a1a] rounded-full flex items-center justify-center mb-4 border border-[#e5e5e5] dark:border-[#333333]">
+            <Calendar className="w-8 h-8 text-[#a3a3a3] dark:text-[#666666]" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">Select Date and Meal</h3>
-          <p className="text-gray-400 max-w-sm">
+          <h3 className="text-lg font-bold text-[#111111] dark:text-white mb-2">Select Date and Meal</h3>
+          <p className="text-[#737373] dark:text-[#a0a0a0] text-sm max-w-sm">
             Please choose a date and a specific meal from the menu above to load the student roster and mark attendance.
           </p>
         </motion.div>
@@ -259,18 +259,18 @@ export default function ManualAttendance() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {attendanceLoading && <div className="text-center text-gray-400 py-8">Loading records...</div>}
+          {attendanceLoading && <div className="text-center text-[#737373] dark:text-[#a0a0a0] text-sm py-8 font-medium">Loading records...</div>}
 
           {/* Filters & Warning */}
           <div className="flex flex-col sm:flex-row justify-between gap-4">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a3a3a3] dark:text-[#666666] w-4 h-4 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search roster..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+                className="w-full bg-white dark:bg-[#111111] border border-[#e5e5e5] dark:border-[#333333] rounded-xl py-2 pl-9 pr-4 text-[#111111] dark:text-white text-sm placeholder:text-[#a3a3a3] dark:placeholder:text-[#666666] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
               />
             </div>
             
@@ -280,69 +280,69 @@ export default function ManualAttendance() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex items-center gap-2 text-amber-400 bg-amber-400/10 border border-amber-400/20 px-4 py-2 rounded-xl text-sm font-medium"
+                  className="flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide shadow-sm"
                 >
                   <FileWarning className="w-4 h-4" />
-                  You have unsaved changes
+                  Unsaved changes
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
           {/* Roster Table */}
-          <div className="glass-panel rounded-2xl overflow-hidden border border-white/10 shadow-lg shadow-black/20">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-white/5 border-b border-white/10 text-gray-400 text-sm">
-                    <th className="px-6 py-4 font-medium w-1/3">Student</th>
-                    <th className="px-6 py-4 font-medium w-1/4">Roll Number</th>
-                    <th className="px-6 py-4 font-medium w-1/4">Room</th>
-                    <th className="px-6 py-4 font-medium text-center w-32">Meals Taken</th>
+                  <tr className="bg-[#fafafa] dark:bg-[#111111] border-b border-[#e5e5e5] dark:border-[#222222] text-[#737373] dark:text-[#888888] text-[11px] uppercase tracking-wider font-bold">
+                    <th className="px-6 py-4 w-1/3">Student</th>
+                    <th className="px-6 py-4 w-1/4">Roll Number</th>
+                    <th className="px-6 py-4 w-1/4">Room</th>
+                    <th className="px-6 py-4 text-center w-32">Meals Taken</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-[#f5f5f5] dark:divide-[#1a1a1a]">
                   {filteredStudents.map((student) => (
-                    <tr key={student.id} className={`transition-colors group ${student.count > 0 ? 'bg-emerald-500/5' : 'hover:bg-white/5'}`}>
+                    <tr key={student.id} className={`transition-colors group ${student.count > 0 ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-[#fafafa] dark:hover:bg-[#111111]'}`}>
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${
                             student.count > 0 
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-white/5 text-gray-400 border border-white/10 group-hover:bg-white/10'
+                              ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
+                              : 'bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#737373] dark:text-[#a0a0a0] border border-[#e5e5e5] dark:border-[#222222]'
                           }`}>
                             {student.name.charAt(0)}
                           </div>
-                          <span className={`font-medium transition-colors ${student.count > 0 ? 'text-emerald-50' : 'text-gray-200'}`}>
+                          <span className={`font-semibold text-sm transition-colors ${student.count > 0 ? 'text-[#111111] dark:text-white' : 'text-[#404040] dark:text-[#dddddd]'}`}>
                             {student.name}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-gray-400 text-sm font-mono uppercase tracking-wider">
+                      <td className="px-6 py-3 text-[#737373] dark:text-[#a0a0a0] text-xs font-mono uppercase tracking-wider">
                         {student.id}
                       </td>
-                      <td className="px-6 py-3 text-gray-400">
+                      <td className="px-6 py-3 text-[#737373] dark:text-[#a0a0a0] text-sm font-medium">
                         {student.room?.roomName ? `Room ${student.room.roomName}` : '-'}
                       </td>
                       <td className="px-6 py-3">
-                        <div className="flex items-center justify-center gap-3 bg-[#1A1A1A] rounded-lg p-1 border border-white/5 w-[104px] mx-auto">
+                        <div className="flex items-center justify-center gap-3 bg-white dark:bg-[#111111] rounded-lg p-1 border border-[#e5e5e5] dark:border-[#333333] w-[104px] mx-auto shadow-sm">
                           <button 
                             onClick={() => handleCountChange(student.id, -1)}
                             disabled={student.count === 0}
                             className={`w-7 h-7 flex items-center justify-center rounded-md font-bold transition-colors ${
                               student.count > 0 
-                                ? 'text-rose-400 hover:bg-rose-400/20' 
-                                : 'text-gray-600 cursor-not-allowed'
+                                ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30' 
+                                : 'text-[#a3a3a3] dark:text-[#666666] cursor-not-allowed'
                             }`}
                           >
                             -
                           </button>
-                          <span className={`font-mono font-bold text-lg min-w-[1.25rem] text-center ${student.count > 0 ? 'text-emerald-400' : 'text-gray-500'}`}>
+                          <span className={`font-mono font-bold text-base min-w-[1.25rem] text-center ${student.count > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-[#737373] dark:text-[#a0a0a0]'}`}>
                             {student.count}
                           </span>
                           <button 
                             onClick={() => handleCountChange(student.id, 1)}
-                            className="w-7 h-7 flex items-center justify-center rounded-md text-emerald-400 hover:bg-emerald-400/20 font-bold transition-colors"
+                            className="w-7 h-7 flex items-center justify-center rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold transition-colors"
                           >
                             +
                           </button>
@@ -353,49 +353,49 @@ export default function ManualAttendance() {
                   
                   {/* Guests Section in Table */}
                   {mergedGuestsList.length > 0 && (
-                    <tr className="bg-white/5">
-                      <td colSpan="4" className="px-6 py-2 text-xs font-semibold text-gray-400 uppercase tracking-widest border-y border-white/10 bg-black/20">
+                    <tr className="bg-[#fafafa] dark:bg-[#111111]">
+                      <td colSpan="4" className="px-6 py-2 text-[10px] font-bold text-[#737373] dark:text-[#888888] uppercase tracking-widest border-y border-[#e5e5e5] dark:border-[#222222]">
                         External Guests & Additions
                       </td>
                     </tr>
                   )}
                   {mergedGuestsList.map(guest => (
-                    <tr key={guest.rollNumber} className={`transition-colors group ${guest.count > 0 ? 'bg-emerald-500/5' : 'hover:bg-white/5'}`}>
+                    <tr key={guest.rollNumber} className={`transition-colors group ${guest.count > 0 ? 'bg-orange-50/50 dark:bg-orange-950/10' : 'hover:bg-[#fafafa] dark:hover:bg-[#111111]'}`}>
                        <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/20 flex items-center justify-center font-bold text-sm">
+                          <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 flex items-center justify-center font-bold text-xs">
                             G
                           </div>
-                          <span className="text-gray-200 font-medium">
+                          <span className="text-[#111111] dark:text-white font-semibold text-sm">
                             {guest.name}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-gray-400 text-sm font-mono uppercase tracking-wider">
+                      <td className="px-6 py-3 text-[#737373] dark:text-[#a0a0a0] text-xs font-mono uppercase tracking-wider">
                         {guest.rollNumber}
                       </td>
-                      <td className="px-6 py-3 text-gray-500 italic">
+                      <td className="px-6 py-3 text-[#737373] dark:text-[#666666] text-sm italic font-medium">
                         External
                       </td>
                       <td className="px-6 py-3">
-                        <div className="flex items-center justify-center gap-3 bg-[#1A1A1A] rounded-lg p-1 border border-white/5 w-[104px] mx-auto">
+                        <div className="flex items-center justify-center gap-3 bg-white dark:bg-[#111111] rounded-lg p-1 border border-[#e5e5e5] dark:border-[#333333] w-[104px] mx-auto shadow-sm">
                           <button 
                             onClick={() => handleCountChange(guest.rollNumber, -1)}
                             disabled={guest.count === 0}
                             className={`w-7 h-7 flex items-center justify-center rounded-md font-bold transition-colors ${
                               guest.count > 0 
-                                ? 'text-rose-400 hover:bg-rose-400/20' 
-                                : 'text-gray-600 cursor-not-allowed'
+                                ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30' 
+                                : 'text-[#a3a3a3] dark:text-[#666666] cursor-not-allowed'
                             }`}
                           >
                             -
                           </button>
-                          <span className={`font-mono font-bold text-lg min-w-[1.25rem] text-center ${guest.count > 0 ? 'text-emerald-400' : 'text-gray-500'}`}>
+                          <span className={`font-mono font-bold text-base min-w-[1.25rem] text-center ${guest.count > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-[#737373] dark:text-[#a0a0a0]'}`}>
                             {guest.count}
                           </span>
                           <button 
                             onClick={() => handleCountChange(guest.rollNumber, 1)}
-                            className="w-7 h-7 flex items-center justify-center rounded-md text-emerald-400 hover:bg-emerald-400/20 font-bold transition-colors"
+                            className="w-7 h-7 flex items-center justify-center rounded-md text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 font-bold transition-colors"
                           >
                             +
                           </button>
@@ -406,7 +406,7 @@ export default function ManualAttendance() {
 
                   {filteredStudents.length === 0 && mergedGuestsList.length === 0 && (
                     <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center text-gray-400">
+                      <td colSpan="4" className="px-6 py-12 text-center text-[#737373] dark:text-[#888888] text-sm font-medium">
                         No students found matching your search.
                       </td>
                     </tr>
@@ -416,33 +416,33 @@ export default function ManualAttendance() {
             </div>
 
             {/* Quick Guest Add Form */}
-            <div className="bg-black/20 border-t border-white/10 p-4">
+            <div className="bg-[#fafafa] dark:bg-[#111111] border-t border-[#e5e5e5] dark:border-[#222222] p-4 sm:p-5">
               <form onSubmit={handleAddGuest} className="flex flex-col sm:flex-row items-center gap-3">
-                <div className="flex items-center gap-2 text-gray-400 font-medium text-sm w-full sm:w-auto">
+                <div className="flex items-center gap-2 text-[#737373] dark:text-[#a0a0a0] font-bold text-xs uppercase tracking-wide w-full sm:w-auto">
                   <UserPlus className="w-4 h-4" />
-                  Add Guest:
+                  Add Guest
                 </div>
                 <input
                   type="text"
                   placeholder="Roll Number (e.g. FA21-BSE-000)"
                   value={guestRollNumber}
                   onChange={e => setGuestRollNumber(e.target.value)}
-                  className="w-full sm:w-64 bg-[#1A1A1A] border border-white/10 rounded-lg py-2 px-3 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all text-sm font-mono"
+                  className="w-full sm:w-64 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#333333] rounded-lg py-2 px-3 text-[#111111] dark:text-white placeholder:text-[#a3a3a3] dark:placeholder:text-[#666666] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm font-mono shadow-sm"
                 />
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <span className="text-sm text-gray-500">Count:</span>
+                  <span className="text-xs font-bold text-[#737373] dark:text-[#a0a0a0] uppercase">Count</span>
                   <input
                     type="number"
                     min="1"
                     value={guestCount}
                     onChange={e => setGuestCount(parseInt(e.target.value) || 1)}
-                    className="w-20 bg-[#1A1A1A] border border-white/10 rounded-lg py-2 px-3 text-white text-center focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all text-sm"
+                    className="w-20 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#333333] rounded-lg py-2 px-3 text-[#111111] dark:text-white text-center focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm shadow-sm"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={!guestRollNumber.trim()}
-                  className="w-full sm:w-auto px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-5 py-2 bg-[#111111] hover:bg-[#404040] dark:bg-white dark:hover:bg-[#e5e5e5] text-white dark:text-[#111111] rounded-lg transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   Add
                 </button>

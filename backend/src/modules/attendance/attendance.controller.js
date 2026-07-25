@@ -49,13 +49,12 @@ export const saveAttendance = catchAsync(async (req, res, next) => {
 // ==========================================
 
 import jwt from 'jsonwebtoken';
-import qrService from './qr.service.js';
 import { io } from '../../server.js';
 import User from '../auth/auth.model.js';
 
 export const generateManagerQR = catchAsync(async (req, res) => {
   const { hostelId } = req.user;
-  const qrData = qrService.generateManagerQRToken(hostelId);
+  const qrData = attendanceService.generateManagerQRToken(hostelId);
   
   res.status(200).json({
     status: 'success',
@@ -68,7 +67,7 @@ export const getLiveQRAttendance = catchAsync(async (req, res) => {
   const { hostelId } = req.user;
   
   // Calculate current meal to get the exact date and mealType
-  const mealData = await qrService.calculateCurrentMeal(hostelId);
+  const mealData = await attendanceService.calculateCurrentMeal(hostelId);
   
   // Fetch all attendees for this meal
   const attendances = await Attendance.find({
@@ -111,7 +110,7 @@ export const scanManagerQR = catchAsync(async (req, res) => {
   // Check if student belongs to the same hostel
   if (student.hostelId.toString() === managerHostelId) {
     // Mark attendance automatically
-    const mealData = await qrService.markAttendance(managerHostelId, student, false);
+    const mealData = await attendanceService.markAttendance(managerHostelId, student, false);
     return res.status(200).json({
       status: 'success',
       message: 'Attendance marked successfully',
@@ -157,7 +156,7 @@ export const respondGuestPermission = catchAsync(async (req, res) => {
   const student = await User.findById(studentId);
   if (!student) throw new Error('Student not found');
 
-  const mealData = await qrService.markAttendance(managerHostelId, student, true);
+  const mealData = await attendanceService.markAttendance(managerHostelId, student, true);
 
   res.status(200).json({
     status: 'success',
@@ -177,7 +176,7 @@ export const scanStudentQR = catchAsync(async (req, res) => {
 
   if (student.hostelId.toString() === managerHostelId.toString()) {
     // Same hostel, mark automatically
-    const mealData = await qrService.markAttendance(managerHostelId, student, false);
+    const mealData = await attendanceService.markAttendance(managerHostelId, student, false);
     return res.status(200).json({
       status: 'success',
       message: 'Attendance marked successfully.',

@@ -51,7 +51,7 @@ export default function QRAttendance() {
         }
         return [data, ...prev];
       });
-      toast.success(`${data.name} marked present! (Count: ${data.count || 1})`);
+      toast.success(`${data.name} marked present! (Count: ${data.count || 1})`, { id: `scan_${data.rollNumber}` });
     });
 
     socket.on('guest_permission_request', (requestData) => {
@@ -122,23 +122,25 @@ export default function QRAttendance() {
     const scannedText = result[0].rawValue;
     setScanResult(scannedText); // block further scans
 
+    let studentRollNumber = scannedText;
     try {
-      // Assuming Student QR just contains their rollNumber (or a JSON with { rollNumber, hostelId })
-      // For simplicity, let's say it's just the roll number string, or JSON.
-      let studentRollNumber = scannedText;
-      try {
-        const parsed = JSON.parse(scannedText);
-        studentRollNumber = parsed.rollNumber || scannedText;
-      } catch (e) {
-        // it's just a raw string
-      }
+      const parsed = JSON.parse(scannedText);
+      studentRollNumber = parsed.rollNumber || scannedText;
+    } catch (e) {
+      // it's just a raw string
+    }
 
+    const toastId = `scan_${studentRollNumber}`;
+    toast.loading('Verifying QR Code...', { id: toastId });
+
+    try {
       const res = await scanStudentQR({ studentRollNumber });
 
       if (res.status === 'requires_permission') {
+        toast.dismiss(toastId);
         setLocalGuestPrompt(res);
       } else if (res.status === 'success') {
-        toast.success(`Attendance Marked! (Count: ${res.data.count || 1})`);
+        toast.success(`Attendance Marked! (Count: ${res.data.count || 1})`, { id: toastId });
         
         setRecentAttendances(prev => {
           const exists = prev.find(p => p.rollNumber === studentRollNumber);
@@ -150,10 +152,28 @@ export default function QRAttendance() {
         
         setTimeout(() => setScanResult(null), 2000);
       } else {
+        toast.error('Invalid response from server.', { id: toastId });
         setTimeout(() => setScanResult(null), 2000);
       }
     } catch (error) {
+      toast.dismiss(toastId); // Mutation's onError handles the error toast
       setTimeout(() => setScanResult(null), 2000);
+    }
+  };
+
+  const handleStartScan = async () => {
+    try {
+      // Explicitly ask for camera permissions first to catch HTTP/HTTPS issues
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+      setIsScanning(true);
+    } catch (err) {
+      console.error('Camera permission error:', err);
+      toast.error(
+        err.name === 'NotAllowedError' 
+          ? 'Camera access denied. Please grant permissions.' 
+          : 'Camera unavailable. (Requires HTTPS or localhost on mobile)'
+      );
     }
   };
 
@@ -168,7 +188,7 @@ export default function QRAttendance() {
             initial={{ opacity: 0, y: -50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-full max-w-md bg-gray-900 border border-amber-500/30 shadow-2xl shadow-amber-500/20 rounded-2xl p-5 overflow-hidden"
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-full max-w-md bg-white dark:bg-[#111111] border border-[#e5e5e5] dark:border-[#333333] shadow-2xl rounded-2xl p-5 overflow-hidden"
           >
             {/* Countdown Bar */}
             <motion.div 
@@ -179,24 +199,24 @@ export default function QRAttendance() {
             />
             
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center shrink-0">
-                <AlertCircle className="w-6 h-6 text-amber-500" />
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-500/10 rounded-full flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500" />
               </div>
               <div className="flex-1 pt-1">
-                <h3 className="text-white font-bold text-lg leading-tight">Guest Request</h3>
-                <p className="text-gray-400 text-sm mt-1">
-                  <strong className="text-gray-200">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) from another hostel wants to eat here.
+                <h3 className="text-[#111111] dark:text-white font-bold text-base leading-tight">Guest Request</h3>
+                <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1">
+                  <strong className="text-[#111111] dark:text-[#dddddd]">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) from another hostel wants to eat here.
                 </p>
                 <div className="flex gap-3 mt-4">
                   <button 
                     onClick={() => handleRespondGuest(activeGuestRequest, true)}
-                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg font-medium transition-colors text-sm"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors text-sm"
                   >
                     Accept Guest
                   </button>
                   <button 
                     onClick={() => handleRespondGuest(activeGuestRequest, false)}
-                    className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg font-medium transition-colors text-sm"
+                    className="flex-1 bg-[#f5f5f5] dark:bg-[#1a1a1a] hover:bg-[#e5e5e5] dark:hover:bg-[#222222] text-[#111111] dark:text-white border border-[#e5e5e5] dark:border-[#222222] py-2 rounded-lg font-semibold transition-colors text-sm"
                   >
                     Reject
                   </button>
@@ -207,83 +227,87 @@ export default function QRAttendance() {
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: QR Code & Scanner Button */}
-        <div className="flex flex-col items-center space-y-6">
-          <div className="bg-white p-8 rounded-3xl shadow-xl shadow-black/20 flex flex-col items-center border-[8px] border-white/10 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-teal-500/10 opacity-50 pointer-events-none" />
-            <div className="relative z-10 p-4 bg-white rounded-2xl shadow-inner border border-gray-100 min-h-[256px] min-w-[256px] flex items-center justify-center">
+        <div className="lg:col-span-5 flex flex-col space-y-6">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] p-8 rounded-2xl flex flex-col items-center">
+            <div className="p-4 bg-white border border-[#e5e5e5] rounded-xl flex items-center justify-center min-w-[200px] min-h-[200px]">
               {qrLoading ? (
-                  <div className="w-8 h-8 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-4 border-[#f5f5f5] border-t-[#111111] rounded-full animate-spin" />
               ) : qrToken ? (
-                <QRCode value={qrToken} size={256} className="w-64 h-64" />
+                <QRCode value={qrToken} size={200} className="w-48 h-48" />
               ) : (
-                <p className="text-gray-500">Failed to load QR</p>
+                <p className="text-[#737373] text-sm font-medium">Failed to load QR</p>
               )}
             </div>
-            <p className="mt-6 text-gray-800 font-bold text-xl tracking-tight z-10">MessPro Attendance</p>
-            <p className="text-gray-500 text-sm mt-1 z-10 flex items-center gap-1">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-500'}`} />
-              {isConnected ? 'Live sync active' : 'Connecting...'}
-            </p>
+            <p className="mt-6 text-[#111111] dark:text-white font-bold text-lg tracking-tight">MessPro Attendance</p>
+            <div className="flex items-center gap-2 mt-2">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="text-[#737373] dark:text-[#a0a0a0] text-sm font-medium">
+                {isConnected ? 'Live sync active' : 'Connecting...'}
+              </span>
+            </div>
           </div>
           
           <button 
-            onClick={() => setIsScanning(true)}
-            className="flex items-center gap-2 px-8 py-4 mt-4 rounded-xl text-lg font-bold transition-all bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:scale-[1.02] w-full max-w-sm justify-center"
+            onClick={handleStartScan}
+            className="flex items-center justify-center gap-2 w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors"
           >
-            <Scan className="w-5 h-5" />
+            <Scan className="w-4 h-4" />
             Scan Student QR
           </button>
         </div>
 
         {/* Right: Live Feed */}
-        <div className="glass-panel border border-white/5 rounded-3xl p-6 h-full min-h-[400px]">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Timer className="w-5 h-5 text-emerald-500" />
+        <div className="lg:col-span-7 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-2xl overflow-hidden flex flex-col h-[500px]">
+          <div className="flex items-center justify-between p-5 border-b border-[#e5e5e5] dark:border-[#222222] bg-[#fafafa] dark:bg-[#111111]">
+            <h3 className="text-sm font-bold text-[#111111] dark:text-white flex items-center gap-2 uppercase tracking-wide">
+              <Timer className="w-4 h-4 text-[#737373] dark:text-[#a0a0a0]" />
               Live Attendances
             </h3>
-            <span className="bg-emerald-500/10 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-medium">
+            <span className="bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#737373] dark:text-[#a0a0a0] border border-[#e5e5e5] dark:border-[#333333] text-xs px-2.5 py-0.5 rounded-full font-semibold">
               {recentAttendances.length} total
             </span>
           </div>
           
-          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-[#f5f5f5] dark:divide-[#1a1a1a]">
             {liveLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="w-8 h-8 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+              <div className="flex justify-center items-center h-full">
+                <div className="w-6 h-6 border-2 border-[#e5e5e5] border-t-[#111111] dark:border-[#333333] dark:border-t-white rounded-full animate-spin" />
               </div>
             ) : recentAttendances.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 text-sm">
-                No attendances yet for this meal.
+              <div className="flex flex-col items-center justify-center h-full text-[#737373] dark:text-[#888888]">
+                <UserIcon className="w-8 h-8 mb-3 opacity-20" />
+                <p className="text-sm font-medium">No attendances yet for this meal.</p>
               </div>
             ) : (
               recentAttendances.map((att, idx) => (
                 <motion.div
                   key={idx + '-' + att.rollNumber}
-                  initial={{ opacity: 0, x: -20, height: 0 }}
-                  animate={{ opacity: 1, x: 0, height: 'auto' }}
-                  className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-between px-5 py-4 hover:bg-[#fafafa] dark:hover:bg-[#111111] transition-colors group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${att.isGuest ? 'bg-amber-500/20 text-amber-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
-                      <UserIcon className="w-5 h-5" />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222222] flex items-center justify-center shrink-0">
+                      <UserIcon className="w-4 h-4 text-[#a3a3a3] dark:text-[#666666]" />
                     </div>
-                    <div>
-                      <p className="text-white font-medium">{att.name}</p>
-                      <p className="text-gray-400 text-xs">{att.rollNumber}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#111111] dark:text-white truncate">{att.name}</p>
+                      <p className="text-xs font-medium text-[#737373] dark:text-[#888888] font-mono mt-0.5 truncate">{att.rollNumber}</p>
                     </div>
                   </div>
-                  <div className="text-right flex flex-col items-end gap-1">
-                    <span className={`text-xs px-2 py-1 rounded-md font-medium ${att.isGuest ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0 pl-4">
+                    <span className={`text-[11px] px-2 py-0.5 rounded font-bold uppercase tracking-wide border ${
+                      att.isGuest 
+                        ? 'bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900' 
+                        : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/50'
+                    }`}>
                       {att.isGuest ? 'Guest' : 'Present'}
                     </span>
-                    {att.count > 1 && (
-                      <span className="text-emerald-400 text-xs font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        Count: {att.count}
-                      </span>
-                    )}
+                    <span className="text-[10px] text-[#737373] dark:text-[#888888] font-medium uppercase">
+                      Count: <span className="font-bold text-[#111111] dark:text-[#dddddd]">{att.count || 1}</span>
+                    </span>
                   </div>
                 </motion.div>
               ))
@@ -299,23 +323,49 @@ export default function QRAttendance() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           >
-            <div className="w-full max-w-lg glass-panel p-6 rounded-3xl relative flex flex-col items-center border border-white/10 shadow-2xl">
+            <div className="w-full max-w-md bg-white dark:bg-[#111111] p-6 rounded-2xl relative flex flex-col items-center border border-[#e5e5e5] dark:border-[#333333] shadow-2xl">
               <button 
                 onClick={() => setIsScanning(false)}
-                className="absolute top-4 right-4 bg-white/10 p-2 rounded-full text-gray-400 hover:text-white hover:bg-red-500/20 transition-colors z-30"
+                className="absolute top-4 right-4 bg-[#f5f5f5] dark:bg-[#1a1a1a] w-8 h-8 rounded-full flex items-center justify-center text-[#737373] hover:text-[#111111] dark:hover:text-white transition-colors border border-[#e5e5e5] dark:border-[#222222]"
               >
-                <AlertCircle className="w-5 h-5 hidden" />
-                <span className="text-sm font-bold px-1">✕</span>
+                <span className="text-sm font-bold">✕</span>
               </button>
               
-              <h3 className="text-xl font-bold text-white mb-6">Scan Student QR</h3>
+              <h3 className="text-lg font-bold text-[#111111] dark:text-white mb-6">Scan QR</h3>
 
-              
-              <div className="text-center space-y-2 z-10">
-                <p className="text-gray-400 text-sm max-w-sm">
-                  Hold the student's QR code steady in front of the camera to mark their attendance.
+              <div className="w-full aspect-square bg-black rounded-xl overflow-hidden relative flex items-center justify-center mb-6">
+                {scanResult ? (
+                  <div className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-20">
+                    <div className="w-8 h-8 border-4 border-[#e5e5e5] dark:border-[#333333] border-t-blue-600 rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <div className="w-full h-full relative">
+                    <Scanner
+                      onScan={handleScan}
+                      onError={(err) => console.error(err)}
+                      styles={{
+                        container: { width: '100%', height: '100%', borderRadius: '0.75rem' },
+                        video: { objectFit: 'cover' }
+                      }}
+                      components={{
+                        tracker: true,
+                        audio: false,
+                        onOff: false
+                      }}
+                    />
+                    {/* Minimalist framing corners */}
+                    <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-white/50 pointer-events-none z-10" />
+                    <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-white/50 pointer-events-none z-10" />
+                    <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-white/50 pointer-events-none z-10" />
+                    <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-white/50 pointer-events-none z-10" />
+                  </div>
+                )}
+              </div>
+              <div className="text-center">
+                <p className="text-[#737373] dark:text-[#a0a0a0] text-sm font-medium">
+                  Align QR code within the frame
                 </p>
               </div>
             </div>
