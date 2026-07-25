@@ -89,6 +89,8 @@ import dotenv from 'dotenv'
 import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
+import http from 'http'
+import { Server as SocketIOServer } from 'socket.io'
 import { connectDB } from './config/db.js'
 
 import hostelRoutes from './modules/hostel/hostel.routes.js';
@@ -109,7 +111,7 @@ const app = express();
 // global middlewares
 app.use(helmet())
 
-const allowedOriginPattern = /^(http:\/\/localhost:\d+|http:\/\/127\.0\.0\.1:\d+)$/;
+const allowedOriginPattern = /^(https?:\/\/localhost:\d+|https?:\/\/127\.0\.0\.1:\d+|https?:\/\/192\.168\.\d+\.\d+:\d+)$/;
 
 app.use(cors({
     origin: (origin, callback) => {
@@ -149,8 +151,38 @@ app.use(globalErrorHandler);
 
 const PORT = Number(process.env.PORT || 5001);
 
+const server = http.createServer(app);
+
+// Setup Socket.IO
+export const io = new SocketIOServer(server, {
+  cors: {
+    origin: (origin, callback) => {
+        if (!origin || origin === process.env.FRONTEND_URL || allowedOriginPattern.test(origin)) {
+            callback(null, true);
+            return;
+        }
+        callback(null, false);
+    },
+    credentials: true,
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log(`🔌 New client connected: ${socket.id}`);
+  
+  // Clients will join a room based on their hostelId to receive targeted notifications
+  socket.on('join_hostel_room', (hostelId) => {
+    socket.join(hostelId);
+    console.log(`Client ${socket.id} joined room: ${hostelId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`🔌 Client disconnected: ${socket.id}`);
+  });
+});
+
 const startServer = () => {
-  const server = app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`🚀 Super Admin Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   });
 

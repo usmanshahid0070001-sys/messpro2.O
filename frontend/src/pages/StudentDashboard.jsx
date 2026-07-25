@@ -6,7 +6,8 @@ import {
   Home,
   Users,
   ConciergeBell,
-  AlertTriangle
+  AlertTriangle,
+  QrCode
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -20,6 +21,7 @@ import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 import LoadingScreen from "../components/ui/LoadingScreen";
 import ServiceManagement from "../features/services/ServiceManagement";
 import StudentComplaintForm from "../features/services/StudentComplaintForm";
+import StudentQRAttendance from "../features/attendance/StudentQRAttendance";
 
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
@@ -79,6 +81,7 @@ export default function StudentDashboard() {
   const showServiceTab = hasService || hasComplaint;
   
   const canFileComplaint = enabledFeatures.some(f => f.name === "Complaint Management" && f.isEnabled);
+  const hasQRAttendance = enabledFeatures.some(f => f.name === "QR Attendance" && f.isEnabled);
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -87,6 +90,9 @@ export default function StudentDashboard() {
     
     // Student can file complaints if hostel has the feature
     canFileComplaint && { id: "file-complaint", label: "File Complaint", icon: AlertTriangle },
+    
+    // QR Attendance if attendance feature is enabled
+    hasQRAttendance && { id: "qr-attendance", label: "QR Attendance", icon: QrCode },
     
     // Conditionally added features based on permissions AND hostel plan
     hasFeatureAndPermission("Meal settings", "meal_settings") && { id: "menu", label: "Meal Management", icon: Utensils },
@@ -146,6 +152,12 @@ export default function StudentDashboard() {
           {activeTab === "services" && <ServiceManagement />}
 
           {activeTab === "file-complaint" && <StudentComplaintForm />}
+
+          {activeTab === "qr-attendance" && (
+            <div className="w-full max-w-4xl mx-auto">
+              <StudentQRAttendance />
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
     </DashboardLayout>

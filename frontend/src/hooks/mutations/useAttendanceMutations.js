@@ -22,3 +22,51 @@ export const useSaveAttendance = () => {
     },
   });
 };
+
+export const useScanStudentQR = () => {
+  return useMutation({
+    mutationFn: async (data) => {
+      const response = await api.post('/api/attendance/qr/scan-student', data);
+      return response.data; // Can be success or requires_permission
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to scan QR code');
+    }
+  });
+};
+
+export const useScanManagerQR = () => {
+  return useMutation({
+    mutationFn: async (data) => {
+      const response = await api.post('/api/attendance/qr/scan-manager', data);
+      return response.data;
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to scan QR code');
+    }
+  });
+};
+
+export const useRequestGuestPermission = () => {
+  return useMutation({
+    mutationFn: async (data) => {
+      const response = await api.post('/api/attendance/qr/request-permission', data);
+      return response.data;
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to request permission');
+    }
+  });
+};
+
+export const useRespondGuestPermission = () => {
+  return useMutation({
+    mutationFn: async (data) => {
+      const response = await api.post('/api/attendance/qr/respond-permission', data);
+      return response.data;
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to respond to permission request');
+    }
+  });
+};
