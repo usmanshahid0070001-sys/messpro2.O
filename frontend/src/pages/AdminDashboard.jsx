@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   const currentTab = pathParts[pathParts.length - 1];
 
   // 2. Set "dashboard" as the default
-  const activeTab = (currentTab === "admin-dashboard" || !currentTab)
+  let activeTab = (currentTab === "admin-dashboard" || !currentTab)
     ? "dashboard"
     : currentTab;
 
@@ -55,6 +55,10 @@ export default function AdminDashboard() {
 
   const isExpired = hostelData?.status === 'Expired';
   const enabledFeatures = hostelData?.plan?.features || [];
+
+  if (isExpired && !["dashboard", "users", "weeklyMenu"].includes(activeTab)) {
+    activeTab = "dashboard";
+  }
 
   // Helper to check if a feature is enabled
   const hasFeature = (featureName) => {
@@ -82,9 +86,9 @@ export default function AdminDashboard() {
     hasFeature("Hostel Configuration") && { id: "weeklyMenu", label: "Hostel Configurations", icon: Settings },
   ].filter(Boolean); // Remove false/undefined items
 
-  // Apply expiration lockout: Only keep dashboard if expired
+  // Apply expiration lockout: Allow dashboard, user management, and hostel configuration if expired
   const filteredNavItems = isExpired
-    ? navItems.filter(item => item.id === "dashboard")
+    ? navItems.filter(item => ["dashboard", "users", "weeklyMenu"].includes(item.id))
     : navItems;
 
   const renderPlaceholder = (text) => (

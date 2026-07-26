@@ -24,7 +24,7 @@ export default function ManagerDashboard() {
   const pathParts = location.pathname.split("/");
   const currentTab = pathParts[pathParts.length - 1];
 
-  const activeTab = (currentTab === "manager-dashboard" || !currentTab) 
+  let activeTab = (currentTab === "manager-dashboard" || !currentTab) 
                     ? "dashboard" 
                     : currentTab;
 
@@ -43,6 +43,10 @@ export default function ManagerDashboard() {
   const isExpired = hostelData?.status === 'Expired';
   const enabledFeatures = hostelData?.plan?.features || [];
   const userPermissions = user?.permissions || [];
+
+  if (isExpired && activeTab !== "dashboard") {
+    activeTab = "dashboard";
+  }
 
   // Helper: true if feature is in hostel plan AND user has permission
   const hasFeatureAndPermission = (featureName, requiredPermissionName) => {

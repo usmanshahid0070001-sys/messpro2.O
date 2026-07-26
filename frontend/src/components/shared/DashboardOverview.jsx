@@ -18,13 +18,16 @@ import {
   CheckCircle2,
   Crown,
   Activity,
-  Settings
+  Settings,
+  AlertTriangle
 } from "lucide-react";
 import { useMyHostel } from "../../hooks/queries/useHostelQueries";
+import toast from "react-hot-toast";
 
 export default function DashboardOverview({ userRole, user, navItems = [], setActiveTab }) {
   const { data: hostelResponse, isLoading, isError } = useMyHostel();
   const hostelData = hostelResponse?.data;
+  const isExpired = hostelData?.status === 'Expired';
 
   // Metadata mapping to enrich the dynamic links with descriptions and colors
   const FEATURE_METADATA = {
@@ -112,6 +115,32 @@ export default function DashboardOverview({ userRole, user, navItems = [], setAc
 
   return (
     <div className="w-full h-full flex flex-col gap-6 lg:gap-8 lg:p-8 pb-8">
+      {isExpired && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <h3 className="font-bold text-red-800 dark:text-red-300">Subscription Expired</h3>
+              <p className="text-sm font-medium text-red-600 dark:text-red-400 mt-0.5">
+                {userRole === 'admin' 
+                  ? "Your subscription has expired. Please upgrade your plan to unlock all features."
+                  : "Your hostel's subscription has expired. Please ask your admin to upgrade the plan."}
+              </p>
+            </div>
+          </div>
+          {userRole === 'admin' && (
+            <button 
+              onClick={() => toast('Please contact the Superadmin to upgrade your plan.', { icon: '📧' })}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-colors shrink-0"
+            >
+              Upgrade Plan
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-1 px-4 lg:px-0">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111] dark:text-white">

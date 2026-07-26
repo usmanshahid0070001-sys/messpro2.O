@@ -41,7 +41,7 @@ export default function StudentDashboard() {
   const currentTab = pathParts[pathParts.length - 1];
 
   // 2. Default to "dashboard" if the student just lands on /student-dashboard
-  const activeTab = (currentTab === "student-dashboard" || !currentTab) 
+  let activeTab = (currentTab === "student-dashboard" || !currentTab) 
                     ? "dashboard" 
                     : currentTab;
 
@@ -60,6 +60,10 @@ export default function StudentDashboard() {
   const isExpired = hostelData?.status === 'Expired';
   const enabledFeatures = hostelData?.plan?.features || [];
   const userPermissions = user?.permissions || [];
+
+  if (isExpired && activeTab !== "dashboard") {
+    activeTab = "dashboard";
+  }
 
   // Helper: true if feature is in hostel plan AND user has permission (unless it's a default)
   const hasFeatureAndPermission = (featureName, requiredPermissionName) => {
