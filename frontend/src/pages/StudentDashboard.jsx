@@ -14,7 +14,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 // Feature Components
 import WeeklyMealSelection from "../features/student/WeeklyMealSelection";
-import StudentMealHistory from "../features/student/StudentMealHistory";
+import MealHistoryDashboard from "../features/mealHistory/MealHistoryDashboard";
 import ManageUsers from "../features/users/ManageUsers";
 import ManageRooms from "../features/residence/ManageRooms";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
@@ -141,8 +141,8 @@ export default function StudentDashboard() {
 
           {/* TAB 2: HISTORY */}
           {activeTab === "history" && (
-            <div className="w-full max-w-4xl mx-auto">
-              <StudentMealHistory />
+            <div className="w-full">
+              <MealHistoryDashboard />
             </div>
           )}
 
