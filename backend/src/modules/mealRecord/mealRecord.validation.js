@@ -4,19 +4,16 @@ import { z } from 'zod';
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
 // 👇 SCHEMA 1: For the Student selecting a meal in advance
-export const selectMealSchema = z.object({
-  date: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format"),
-  mealType: z.enum(['Breakfast', 'Lunch', 'Dinner']),
-  
-  // We force the frontend to send the exact meal and price for the snapshot
-  mealInfo: z.object({
-    name: z.string().min(1, "Meal name is required"),
-    price: z.number().min(0, "Price cannot be negative")
-  }),
-  
-  // Zod ensures they order at least 1. 
-  // (The Admin's Max Limit will be checked in the controller!)
-  count: z.number().int().min(1, "You must select at least 1 meal")
+export const bulkSelectMealsSchema = z.object({
+  selections: z.array(z.object({
+    date: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format"),
+    mealType: z.string().min(1, "Meal type is required"),
+    mealInfo: z.object({
+      name: z.string(),
+      price: z.number().min(0, "Price cannot be negative")
+    }),
+    count: z.number().int().min(0, "Count must be positive")
+  }))
 }).strict();
 
 // 👇 SCHEMA 2: For the Manager/Scanner logging attendance at the dining hall

@@ -6,7 +6,8 @@ import MealSchedule from '../meal/meal.model.js';
 
 // 👇 Imported our new Repository instead of the raw Model
 import mealRecordRepository from './mealRecord.repository.js';
-import { selectMealSchema } from './mealRecord.validation.js';
+import MealRecord from './mealRecord.model.js';
+import { bulkSelectMealsSchema } from './mealRecord.validation.js';
 
 // ==========================================
 // HELPER: Haversine Formula for GPS distance
@@ -27,40 +28,105 @@ class MealRecordService {
   // ==========================================
   // 1. STUDENT FEATURE: SELECT MEAL IN ADVANCE
   // ==========================================
-  async selectMeal(student, hostelId, payload) {
-    const validData = selectMealSchema.parse(payload);
-    const hostel = await Hostel.findById(hostelId);
-    const maxAllowed = hostel.settings?.maxMealSelection || 4;
-
-    if (validData.count > maxAllowed) {
-      const error = new Error(`Limit Exceeded: You can only select up to ${maxAllowed} meals.`);
-      error.statusCode = 400;
+  async bulkSelectMeals(student, hostelId, payload) {
+    const { selections } = bulkSelectMealsSchema.parse(payload);
+    
+    const schedule = await MealSchedule.findOne({ hostelId });
+    if (!schedule) {
+      const error = new Error('Meal schedule not found for this hostel.');
+      error.statusCode = 404;
       throw error;
     }
 
-    // Cleaned up using the Repository
-    const filter = { 
-      hostelId, 
-      date: validData.date, 
-      mealType: validData.mealType, 
-      rollNumber: student.id 
-    };
+    if (schedule.status !== 'active') {
+      const error = new Error('Meal selection is currently inactive. You can only view the menu.');
+      error.statusCode = 403;
+      throw error;
+    }
 
-    const update = {
-      $set: {
-        hostelId, 
-        date: validData.date, 
-        mealType: validData.mealType, 
-        mealInfo: validData.mealInfo,
-        rollNumber: student.id, 
-        studentId: student._id, 
-        isGuest: false,
-        'selection.hasSelected': true,
-        'selection.count': validData.count
+    const maxAllowed = schedule.maxMealSelection || 1;
+    const bulkOps = [];
+
+    for (const selection of selections) {
+      if (selection.count > maxAllowed) {
+        const error = new Error(`Limit Exceeded: You can only select up to ${maxAllowed} meals.`);
+        error.statusCode = 400;
+        throw error;
       }
-    };
 
-    return await mealRecordRepository.upsertRecord(filter, update);
+      if (selection.count === 0) {
+        bulkOps.push({
+          updateOne: {
+            filter: {
+              hostelId,
+              date: selection.date,
+              mealType: selection.mealType,
+              rollNumber: student.id
+            },
+            update: {
+              $set: {
+                'selection.hasSelected': false,
+                'selection.count': 0
+              }
+            }
+          }
+        });
+      } else {
+        bulkOps.push({
+          updateOne: {
+            filter: {
+              hostelId,
+              date: selection.date,
+              mealType: selection.mealType,
+              rollNumber: student.id
+            },
+            update: {
+              $set: {
+                hostelId,
+                date: selection.date,
+                mealType: selection.mealType,
+                mealInfo: selection.mealInfo,
+                rollNumber: student.id,
+                studentId: student._id,
+                isGuest: false,
+                'selection.hasSelected': true,
+                'selection.count': selection.count
+              },
+              $setOnInsert: {
+                'attendance.hasEaten': false,
+                'attendance.count': 0,
+                'attendance.method': 'QR'
+              }
+            },
+            upsert: true
+          }
+        });
+      }
+    }
+
+    if (bulkOps.length > 0) {
+      await mealRecordRepository.bulkWriteRecords(bulkOps);
+    }
+    
+    // Cleanup: Delete any records where both selection and attendance are 0
+    await MealRecord.deleteMany({
+      hostelId,
+      rollNumber: student.id,
+      'selection.count': 0,
+      'attendance.count': 0
+    });
+
+    return { count: bulkOps.length };
+  }
+
+  async getStudentSelections(rollNumber, hostelId, startDate, endDate) {
+    const records = await MealRecord.find({
+      rollNumber,
+      hostelId,
+      date: { $gte: startDate, $lte: endDate }
+    }).select('date mealType selection');
+
+    return records;
   }
 
   // ==========================================
@@ -88,9 +154,9 @@ class MealRecordService {
     // 3. Map the UI's exact counts to the Database
     uniqueRecords.forEach(record => {
       // This 'count' is the exact number from the Manager's +/- UI buttons
-      const { rollNumber, count: uiCount } = record; 
+      const { rollNumber, count: uiCount } = record;
       const user = userMap.get(rollNumber);
-      
+
       const isGuest = !user || user.hostelId.toString() !== hostelId.toString();
       const studentId = user ? user._id : null;
 
@@ -131,7 +197,7 @@ class MealRecordService {
     });
 
     if (bulkOps.length > 0) {
-      await mealRecordRepository.bulkWriteRecords(bulkOps); 
+      await mealRecordRepository.bulkWriteRecords(bulkOps);
     }
   }
 
@@ -155,7 +221,7 @@ class MealRecordService {
         hostel.locationCoords.lat, hostel.locationCoords.lng,
         studentLat, studentLng
       );
-      
+
       if (distance > 30) {
         const error = new Error(`Scan rejected. You are ${distance} meters away. You must be within 30 meters of the dining hall.`);
         error.statusCode = 403;
@@ -176,9 +242,9 @@ class MealRecordService {
 
     // 🛡️ SECURITY 4: Count Validation
     if (record) {
-      const allowedLimit = record.selection.hasSelected 
-        ? record.selection.count 
-        : (hostel.settings?.maxMealSelection || 4);
+      const allowedLimit = record.selection.hasSelected
+        ? record.selection.count
+        : mealData.maxMealSelection;
 
       if (record.attendance.count >= allowedLimit) {
         const error = new Error(`Meal limit reached. You have already claimed ${record.attendance.count} meals.`);
@@ -205,7 +271,7 @@ class MealRecordService {
         'selection.count': 0,
         'attendance.hasEaten': true,
         'attendance.method': 'QR',
-        'attendance.count': 1 
+        'attendance.count': 1
       });
     }
 
@@ -225,7 +291,7 @@ class MealRecordService {
   // ==========================================
   // 4. UTILITY FUNCTIONS
   // ==========================================
-  
+
   // (Optional fallback if still using JWTs for alternative Manager Auth elsewhere)
   generateManagerQRToken(hostelId) {
     const payload = { type: 'manager_qr', hostelId: hostelId.toString() };
@@ -237,14 +303,14 @@ class MealRecordService {
     const hostel = await Hostel.findById(hostelId);
     if (!hostel) throw new Error('Hostel not found');
 
-    const schedule = await MealSchedule.findOne({ hostelId, status: 'active' });
+    const schedule = await MealSchedule.findOne({ hostelId });
     if (!schedule || !schedule.selectionTiming || schedule.selectionTiming.length === 0) {
       throw new Error('Meal schedule timings not configured for this hostel');
     }
 
-    const timezone = hostel.location || 'Asia/Karachi'; 
+    const timezone = hostel.location || 'Asia/Karachi';
     const now = new Date();
-    
+
     const localDateStr = new Intl.DateTimeFormat('en-CA', {
       timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit'
     }).format(now);
@@ -256,20 +322,20 @@ class MealRecordService {
     const localTimeParts = new Intl.DateTimeFormat('en-GB', {
       timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false
     }).format(now).split(':');
-    
+
     const currentMinutes = parseInt(localTimeParts[0]) * 60 + parseInt(localTimeParts[1]);
 
-    let selectedMealIndex = schedule.selectionTiming.length - 1; 
+    let selectedMealIndex = schedule.selectionTiming.length - 1;
 
     for (let i = 0; i < schedule.selectionTiming.length; i++) {
-      const timingStr = schedule.selectionTiming[i]; 
+      const timingStr = schedule.selectionTiming[i];
       const [time, modifier] = timingStr.split(' ');
       let [hours, minutes] = time.split(':');
       hours = parseInt(hours, 10);
-      
+
       if (hours === 12 && modifier === 'AM') hours = 0;
       if (hours < 12 && modifier === 'PM') hours += 12;
-      
+
       const thresholdMinutes = hours * 60 + parseInt(minutes, 10);
 
       if (currentMinutes < thresholdMinutes) {
@@ -281,13 +347,18 @@ class MealRecordService {
     const mealType = schedule.mealNames[selectedMealIndex];
     const todaysMenu = schedule.menu[localDayName] || [];
     const menuItem = todaysMenu[selectedMealIndex];
-    
+
     const mealInfo = {
       name: menuItem?.meal && menuItem.meal !== 'none' ? menuItem.meal : 'Regular Meal',
       price: menuItem?.price || 0
     };
 
-    return { date: localDateStr, mealType, mealInfo };
+    return { 
+      date: localDateStr, 
+      mealType, 
+      mealInfo,
+      maxMealSelection: schedule.maxMealSelection || 1
+    };
   }
 }
 

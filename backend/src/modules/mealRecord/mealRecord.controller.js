@@ -4,23 +4,38 @@ import User from '../auth/auth.model.js';
 import Hostel from '../hostel/hostel.model.js';
 
 // 👇 Use the new Unified Models & Services
-import MealRecord from '../meal/mealRecord.model.js';
+import MealRecord from './mealRecord.model.js';
 import mealRecordService from './mealRecord.service.js';
-import { getAttendanceSchema, saveAttendanceSchema } from './attendance.validation.js';
+// import { getAttendanceSchema, saveAttendanceSchema } from './attendance.validation.js';
 
 // ==========================================
 // 1. STUDENT FEATURE: PRE-SELECTION
 // ==========================================
-export const selectMeal = catchAsync(async (req, res, next) => {
+export const bulkSelectMeals = catchAsync(async (req, res, next) => {
   const student = req.user;
   
-  // Service handles Zod validation + Admin Max Limit checks
-  const updatedDoc = await mealRecordService.selectMeal(student, student.hostelId, req.body);
+  const result = await mealRecordService.bulkSelectMeals(student, student.hostelId, req.body);
 
   res.status(200).json({
     status: 'success',
-    message: 'Meal selection saved successfully!',
-    data: updatedDoc
+    message: 'Meal selections saved successfully!',
+    data: result
+  });
+});
+
+export const getStudentSelections = catchAsync(async (req, res, next) => {
+  const { startDate, endDate } = req.query;
+  const student = req.user;
+  
+  if (!startDate || !endDate) {
+    return res.status(400).json({ status: 'error', message: 'startDate and endDate are required' });
+  }
+
+  const records = await mealRecordService.getStudentSelections(student.id, student.hostelId, startDate, endDate);
+
+  res.status(200).json({
+    status: 'success',
+    data: records
   });
 });
 
@@ -28,6 +43,7 @@ export const selectMeal = catchAsync(async (req, res, next) => {
 // ==========================================
 // 2. MANAGER FEATURES: FETCH & BULK SAVE
 // ==========================================
+/*
 export const getAttendance = catchAsync(async (req, res, next) => {
   const { hostelId, date, mealType } = getAttendanceSchema.parse(req.query);
 
@@ -63,6 +79,7 @@ export const saveAttendance = catchAsync(async (req, res, next) => {
     message: 'Attendance saved successfully',
   });
 });
+*/
 
 
 // ==========================================

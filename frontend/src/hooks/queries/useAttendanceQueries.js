@@ -37,3 +37,16 @@ export const useGetLiveQRAttendance = () => {
     }
   });
 };
+
+export const useGetStudentSelections = (startDate, endDate) => {
+  return useQuery({
+    queryKey: ['studentSelections', startDate, endDate],
+    queryFn: async () => {
+      const response = await api.get('/api/attendance/selections', {
+        params: { startDate, endDate }
+      });
+      return response.data;
+    },
+    enabled: !!startDate && !!endDate,
+  });
+};

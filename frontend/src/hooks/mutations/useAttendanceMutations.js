@@ -23,6 +23,24 @@ export const useSaveAttendance = () => {
   });
 };
 
+export const useSaveSelections = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data) => {
+      const response = await api.post('/api/attendance/selections', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['studentSelections'] });
+      toast.success('Meal selections saved successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to save meal selections');
+    }
+  });
+};
+
 export const useScanStudentQR = () => {
   return useMutation({
     mutationFn: async (data) => {

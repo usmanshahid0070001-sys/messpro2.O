@@ -47,10 +47,15 @@ const mealScheduleSchema = new mongoose.Schema(
       Sunday: { type: [menuItemSchema], default: [] },
     },
 
+    maxMealSelection: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
     status: {
       type: String,
       enum: ['active', 'inactive'],
-      default: 'active', // 'inactive' means this hostel doesn't offer a mess facility
+      default: 'active', // 'active' means students can select meals. 'inactive' means view menu only.
     },
   },
   { timestamps: true }

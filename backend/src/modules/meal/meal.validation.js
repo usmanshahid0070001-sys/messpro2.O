@@ -11,6 +11,7 @@ export const mealScheduleSchema = z.object({
   numberOfMeals: z.number().min(1).optional(),
   mealNames: z.array(z.string()).optional(),
   selectionTiming: z.array(z.string()).optional(),
+  maxMealSelection: z.number().int().min(1).optional(),
   menu: z.object({
     Monday: z.array(menuItemSchema).optional(),
     Tuesday: z.array(menuItemSchema).optional(),

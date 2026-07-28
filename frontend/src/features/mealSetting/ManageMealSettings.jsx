@@ -17,6 +17,7 @@ export default function ManageMealSettings() {
   const updateScheduleMutation = useUpdateMealSchedule();
 
   const [status, setStatus] = useState("Active");
+  const [maxMealSelection, setMaxMealSelection] = useState(1);
   const [meals, setMeals] = useState([]);
   const [menu, setMenu] = useState({});
   const [mealToRemove, setMealToRemove] = useState(null);
@@ -44,6 +45,7 @@ export default function ManageMealSettings() {
       try {
         const parsed = JSON.parse(draftData);
         setStatus(parsed.status || "Active");
+        setMaxMealSelection(parsed.maxMealSelection || 1);
         setMeals(parsed.meals || []);
         setMenu(parsed.menu || {});
         setIsDirty(true);
@@ -58,6 +60,7 @@ export default function ManageMealSettings() {
       const parsed = scheduleData.data;
 
       setStatus(parsed.status === 'inactive' ? 'Inactive' : 'Active');
+      setMaxMealSelection(parsed.maxMealSelection || 1);
 
       const loadedMeals = (parsed.mealNames || []).map((name, idx) => ({
         id: idx.toString(),
@@ -89,9 +92,9 @@ export default function ManageMealSettings() {
   // Save to draft whenever state changes and it's dirty
   useEffect(() => {
     if (isDirty) {
-      sessionStorage.setItem('mealSettingsDraft', JSON.stringify({ status, meals, menu }));
+      sessionStorage.setItem('mealSettingsDraft', JSON.stringify({ status, maxMealSelection, meals, menu }));
     }
-  }, [status, meals, menu, isDirty]);
+  }, [status, maxMealSelection, meals, menu, isDirty]);
 
   const initializeEmptyMenu = () => {
     const defaultMenu = {};
@@ -109,7 +112,7 @@ export default function ManageMealSettings() {
   });
 
   const handleSaveData = (customData = null) => {
-    const dataToSave = customData || { status, meals: sortedMeals, menu };
+    const dataToSave = customData || { status, maxMealSelection, meals: sortedMeals, menu };
 
     // Transform frontend format to backend format
     const transformedMenu = {};
@@ -126,6 +129,7 @@ export default function ManageMealSettings() {
 
     const finalData = {
       status: dataToSave.status.toLowerCase(),
+      maxMealSelection: dataToSave.maxMealSelection,
       numberOfMeals: dataToSave.meals.length,
       mealNames: dataToSave.meals.map(m => m.name),
       selectionTiming: dataToSave.meals.map(m => m.endTime),
@@ -338,6 +342,21 @@ export default function ManageMealSettings() {
                 {status}
               </span>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between lg:justify-start gap-3 px-4 py-2 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-xl shadow-sm w-full lg:w-auto">
+            <span className="text-sm font-semibold text-[#111111] dark:text-white">Max Selections</span>
+            <input
+              type="number"
+              min="1"
+              value={maxMealSelection}
+              onChange={(e) => {
+                setMaxMealSelection(parseInt(e.target.value) || 1);
+                setIsDirty(true);
+              }}
+              disabled={isManager || updateScheduleMutation.isPending}
+              className="w-16 h-7 text-center text-sm font-bold bg-gray-100 dark:bg-[#1a1a1a] text-[#111111] dark:text-white border-transparent rounded-md focus:border-blue-500 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
           </div>
 
           <div className="flex flex-col items-start sm:items-end gap-1 w-full lg:w-auto">

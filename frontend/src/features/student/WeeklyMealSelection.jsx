@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMealSchedule } from '../../hooks/queries/useMealQueries';
 import { useMyHostel } from '../../hooks/queries/useHostelQueries';
+import { useGetStudentSelections } from '../../hooks/queries/useAttendanceQueries';
+import { useSaveSelections } from '../../hooks/mutations/useAttendanceMutations';
 import { Save, Utensils, CheckCircle2, Circle, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -78,6 +80,21 @@ const getDateForShiftedIndex = (index, timeZone) => {
   }
 };
 
+const getIsoDateForShiftedIndex = (index, timeZone) => {
+  const d = new Date(Date.now() + index * 24 * 60 * 60 * 1000);
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone, year: 'numeric', month: '2-digit', day: '2-digit'
+    });
+    return formatter.format(d);
+  } catch(e) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+};
+
 export default function WeeklyMealSelection() {
   const { data: scheduleData, isLoading: isScheduleLoading, isError, refetch } = useMealSchedule();
   const { data: hostelResponse, isLoading: isHostelLoading } = useMyHostel();
@@ -86,17 +103,26 @@ export default function WeeklyMealSelection() {
   const [meals, setMeals] = useState([]);
   const [menu, setMenu] = useState({});
   const [selections, setSelections] = useState({});
+  const initialSelectionsRef = useRef({});
   const [isDirty, setIsDirty] = useState(false);
+  const [maxMealSelection, setMaxMealSelection] = useState(1);
   
   const timeZone = hostelResponse?.data?.location || 'Asia/Karachi';
   
   const currentDay = getCurrentDay(timeZone);
   const shiftedDays = getShiftedDays(currentDay);
 
+  const startDate = getIsoDateForShiftedIndex(0, timeZone);
+  const endDate = getIsoDateForShiftedIndex(6, timeZone);
+  
+  const { data: selectionsData, isLoading: isSelectionsLoading } = useGetStudentSelections(startDate, endDate);
+  const saveSelectionsMutation = useSaveSelections();
+
   useEffect(() => {
-    if (scheduleData && scheduleData.data) {
+    if (scheduleData?.data && selectionsData?.data) {
       const parsed = scheduleData.data;
       setStatus(parsed.status === 'inactive' ? 'Inactive' : 'Active');
+      setMaxMealSelection(parsed.maxMealSelection || 1);
 
       const loadedMeals = (parsed.mealNames || []).map((name, idx) => ({
         id: idx.toString(),
@@ -108,11 +134,20 @@ export default function WeeklyMealSelection() {
       const loadedMenu = parsed.menu || {};
       const safeMenu = {};
       const initialSelections = {};
+      
+      const existingMap = {};
+      selectionsData.data.forEach(record => {
+        existingMap[`${record.date}_${record.mealType}`] = record.selection?.count || 0;
+      });
 
-      STATIC_DAYS.forEach(day => {
+      const cDay = getCurrentDay(timeZone);
+      const sDays = getShiftedDays(cDay);
+
+      sDays.forEach((day, index) => {
         const dayArray = loadedMenu[day] || [];
         safeMenu[day] = {};
         initialSelections[day] = {};
+        const isoDate = getIsoDateForShiftedIndex(index, timeZone);
 
         loadedMeals.forEach((meal, idx) => {
           const item = dayArray[idx];
@@ -120,32 +155,85 @@ export default function WeeklyMealSelection() {
             foodName: item?.meal === 'none' ? '' : (item?.meal || ''),
             price: item?.price || 0
           };
-          initialSelections[day][meal.id] = false; // Default to unselected
+          const key = `${isoDate}_${meal.name}`;
+          initialSelections[day][meal.id] = existingMap[key] || 0;
         });
       });
       setMenu(safeMenu);
       setSelections(initialSelections);
+      initialSelectionsRef.current = initialSelections;
     }
-  }, [scheduleData]);
+  }, [scheduleData, selectionsData, timeZone]);
 
   const toggleSelection = (day, mealId) => {
     setIsDirty(true);
-    setSelections(prev => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        [mealId]: !prev[day][mealId]
-      }
-    }));
+    setSelections(prev => {
+      const current = prev[day][mealId] || 0;
+      return {
+        ...prev,
+        [day]: {
+          ...prev[day],
+          [mealId]: current > 0 ? 0 : 1
+        }
+      };
+    });
+  };
+
+  const updateSelectionCount = (day, mealId, delta) => {
+    setIsDirty(true);
+    setSelections(prev => {
+      const current = prev[day][mealId] || 0;
+      let next = current + delta;
+      if (next < 0) next = 0;
+      if (next > maxMealSelection) next = maxMealSelection;
+      
+      return {
+        ...prev,
+        [day]: {
+          ...prev[day],
+          [mealId]: next
+        }
+      };
+    });
   };
 
   const handleSaveSelection = () => {
-    console.log("Saving selections:", selections);
-    setIsDirty(false);
-    alert("Selections saved successfully! (API Integration Pending)");
+    const payload = {
+      selections: []
+    };
+
+    shiftedDays.forEach((day, index) => {
+      const isoDate = getIsoDateForShiftedIndex(index, timeZone);
+      
+      meals.forEach(meal => {
+        const count = selections[day]?.[meal.id] || 0;
+        const cellData = menu[day]?.[meal.id];
+        
+        if (cellData && cellData.foodName !== '') {
+          const initialCount = initialSelectionsRef.current[day]?.[meal.id] || 0;
+          if (count !== initialCount) {
+            payload.selections.push({
+              date: isoDate,
+              mealType: meal.name,
+              mealInfo: {
+                name: cellData.foodName,
+                price: cellData.price
+              },
+              count: count
+            });
+          }
+        }
+      });
+    });
+
+    saveSelectionsMutation.mutate(payload, {
+      onSuccess: () => {
+        setIsDirty(false);
+      }
+    });
   };
 
-  if (isScheduleLoading || isHostelLoading) {
+  if (isScheduleLoading || isHostelLoading || isSelectionsLoading) {
     return (
       <div className="space-y-8 lg:p-8 p-4 w-full max-w-[1600px] mx-auto animate-pulse">
         {/* Header Skeleton */}
@@ -190,7 +278,7 @@ export default function WeeklyMealSelection() {
     );
   }
 
-  if (status === 'Inactive' || meals.length === 0) {
+  if (meals.length === 0) {
     return (
       <div className="p-8 text-center border border-dashed border-[#e5e5e5] dark:border-[#333333] rounded-2xl bg-[#fafafa] dark:bg-[#111111]">
         <Utensils className="w-12 h-12 mx-auto text-[#a3a3a3] mb-4" />
@@ -212,13 +300,23 @@ export default function WeeklyMealSelection() {
         </div>
         <button
           onClick={handleSaveSelection}
-          disabled={!isDirty}
+          disabled={!isDirty || status === 'Inactive' || saveSelectionsMutation.isPending}
           className="flex items-center justify-center gap-2 bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
         >
-          <Save className="w-4 h-4" />
-          Save Selections
+          {saveSelectionsMutation.isPending ? 'Saving...' : (
+            <>
+              <Save className="w-4 h-4" />
+              Save Selections
+            </>
+          )}
         </button>
       </div>
+
+      {status === 'Inactive' && (
+        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 rounded-lg border border-amber-200 dark:border-amber-800/30 text-sm font-medium">
+          Meal selection is currently paused. You can view the menu, but cannot make any changes.
+        </div>
+      )}
 
       {/* Days Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -247,9 +345,10 @@ export default function WeeklyMealSelection() {
                 {meals.map(meal => {
                   const cellData = menu[day]?.[meal.id];
                   const hasFood = cellData && cellData.foodName !== '';
-                  const isSelected = selections[day]?.[meal.id];
+                  const selectionCount = selections[day]?.[meal.id] || 0;
+                  const isSelected = selectionCount > 0;
                   
-                  const isLocked = isToday && hasTimePassed(meal.endTime, timeZone);
+                  const isLocked = status === 'Inactive' || (isToday && hasTimePassed(meal.endTime, timeZone));
                   
                   let stateClass = "";
                   if (!hasFood) {
@@ -287,11 +386,33 @@ export default function WeeklyMealSelection() {
                         )}
                       </div>
                       {hasFood && (
-                        <div className="shrink-0 ml-4">
-                          {isLocked ? (
-                            isSelected ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Lock className="w-5 h-5 text-[#d4d4d4] dark:text-[#444]" />
+                        <div className="shrink-0 ml-4 flex items-center justify-end min-w-[80px]">
+                          {maxMealSelection > 1 && selectionCount > 0 ? (
+                            <div className="flex items-center gap-0.5 bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#333] rounded-lg overflow-hidden shadow-sm">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); if(!isLocked) updateSelectionCount(day, meal.id, -1); }}
+                                disabled={isLocked || selectionCount === 0}
+                                className="w-8 h-8 flex items-center justify-center text-[#737373] hover:bg-[#f5f5f5] dark:hover:bg-[#222] disabled:opacity-50 transition-colors text-lg"
+                              >
+                                -
+                              </button>
+                              <span className="w-5 text-center text-sm font-bold text-[#111111] dark:text-white">
+                                {selectionCount}
+                              </span>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); if(!isLocked) updateSelectionCount(day, meal.id, 1); }}
+                                disabled={isLocked || selectionCount >= maxMealSelection}
+                                className="w-8 h-8 flex items-center justify-center text-[#737373] hover:bg-[#f5f5f5] dark:hover:bg-[#222] disabled:opacity-50 transition-colors text-lg"
+                              >
+                                +
+                              </button>
+                            </div>
                           ) : (
-                            isSelected ? <CheckCircle2 className="w-6 h-6 text-blue-500" /> : <Circle className="w-6 h-6 text-[#d4d4d4] dark:text-[#444]" />
+                            isLocked ? (
+                              isSelected ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Lock className="w-5 h-5 text-[#d4d4d4] dark:text-[#444]" />
+                            ) : (
+                              isSelected ? <CheckCircle2 className="w-6 h-6 text-blue-500" /> : <Circle className="w-6 h-6 text-[#d4d4d4] dark:text-[#444]" />
+                            )
                           )}
                         </div>
                       )}
