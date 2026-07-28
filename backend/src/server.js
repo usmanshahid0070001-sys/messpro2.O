@@ -102,7 +102,7 @@ import { globalErrorHandler } from './middlewares/error.middleware.js';
 
 // 👇 NEW: Import the Meal Routes
 import mealRoutes from './modules/meal/meal.routes.js'; 
-import attendanceRoutes from './modules/attendance/attendance.routes.js';
+import attendanceRoutes from './modules/mealRecord/attendance.routes.js';
 
 dotenv.config(); // this will load the environment variables first 
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, CreditCard } from 'lucide-react';
+import { X, CreditCard, RefreshCw, MapPin, Utensils } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useUpdateHostelSettings } from '../../hooks/mutations/useSuperadminMutations';
 import { usePlans } from '../../hooks/queries/usePlanQueries';
@@ -8,7 +8,11 @@ import { usePlans } from '../../hooks/queries/usePlanQueries';
 export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   const [formData, setFormData] = useState({
     plan: '',
-    additionalDays: 0
+    additionalDays: 0,
+    maxMealSelection: 4,
+    lat: 0,
+    lng: 0,
+    regenerateQR: false
   });
   
   const { mutateAsync: updateHostelSettings, isPending: loading } = useUpdateHostelSettings();
@@ -16,10 +20,14 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   const plans = plansData?.data || [];
 
   useEffect(() => {
-    if (hostel && hostel.plan) {
+    if (hostel) {
       setFormData({
-        plan: hostel.plan.planId || '',
-        additionalDays: 0
+        plan: hostel.plan?.planId || '',
+        additionalDays: 0,
+        maxMealSelection: hostel.settings?.maxMealSelection || 4,
+        lat: hostel.locationCoords?.lat || 0,
+        lng: hostel.locationCoords?.lng || 0,
+        regenerateQR: false
       });
     }
   }, [hostel]);
@@ -27,17 +35,33 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   if (!isOpen || !hostel) return null;
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'additionalDays' ? Number(value) : value
+      [name]: type === 'checkbox' ? checked : (name === 'additionalDays' || name === 'maxMealSelection' || name === 'lat' || name === 'lng' ? Number(value) : value)
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await updateHostelSettings({ id: hostel._id, settingsData: formData });
+      const payload = {
+        plan: formData.plan,
+        additionalDays: formData.additionalDays,
+        settings: {
+          maxMealSelection: formData.maxMealSelection
+        },
+        locationCoords: {
+          lat: formData.lat,
+          lng: formData.lng
+        }
+      };
+
+      if (formData.regenerateQR) {
+        payload.qrSecret = Math.random().toString(36).substring(2, 10).toUpperCase();
+      }
+
+      await updateHostelSettings({ id: hostel._id, settingsData: payload });
       toast.success('Settings updated successfully!');
       onClose();
     } catch (error) {
@@ -51,9 +75,9 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-[2rem] border border-[#e0e0e0] dark:border-[#222222] shadow-xl overflow-hidden"
+        className="relative w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-[2rem] border border-[#e0e0e0] dark:border-[#222222] shadow-xl flex flex-col max-h-[90vh]"
       >
-        <div className="flex items-center justify-between p-6 border-b border-[#f5f5f5] dark:border-[#1a1a1a]">
+        <div className="flex items-center justify-between p-6 border-b border-[#f5f5f5] dark:border-[#1a1a1a] shrink-0">
           <div>
             <h2 className="text-xl font-black text-[#111111] dark:text-white">Hostel Settings</h2>
             <p className="text-sm font-bold text-[#737373] dark:text-[#888888]">{hostel.name}</p>
@@ -63,7 +87,7 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           <div>
             <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Hostel Subscription Plan</label>
             <div className="relative">
@@ -106,7 +130,77 @@ export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
             <p className="mt-2 text-xs font-medium text-[#737373] dark:text-[#888888]">Number of days to extend the subscription.</p>
           </div>
 
-          <div className="pt-4 flex gap-3">
+          <div className="pt-2">
+            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">Max Meal Selection</label>
+            <div className="relative">
+              <Utensils className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a3a3a3]" />
+              <input
+                type="number"
+                name="maxMealSelection"
+                min="1"
+                max="10"
+                value={formData.maxMealSelection}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              />
+            </div>
+            <p className="mt-2 text-xs font-medium text-[#737373] dark:text-[#888888]">Maximum number of plates a student can select per meal.</p>
+          </div>
+
+          <div className="pt-2">
+            <label className="block text-xs font-black uppercase tracking-widest text-[#737373] dark:text-[#555555] mb-2">GPS Coordinates (Geofencing)</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a3a3a3]" />
+                <input
+                  type="number"
+                  step="any"
+                  name="lat"
+                  value={formData.lat}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="Latitude"
+                  className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
+              </div>
+              <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a3a3a3]" />
+                <input
+                  type="number"
+                  step="any"
+                  name="lng"
+                  value={formData.lng}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="Longitude"
+                  className="w-full pl-12 pr-4 py-3 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl text-[#111111] dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <label className="flex items-center gap-3 p-4 bg-[#fafafa] dark:bg-[#111111] border border-[#e0e0e0] dark:border-[#222222] rounded-2xl cursor-pointer">
+              <input
+                type="checkbox"
+                name="regenerateQR"
+                checked={formData.regenerateQR}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-5 h-5 rounded border-[#c4c4c4] text-blue-600 focus:ring-blue-500"
+              />
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-5 h-5 text-[#737373]" />
+                <div>
+                  <p className="text-sm font-bold text-[#111111] dark:text-white">Regenerate QR Secret</p>
+                  <p className="text-xs font-medium text-[#737373]">Invalidates all previous printed QRs.</p>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <div className="pt-4 flex gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}

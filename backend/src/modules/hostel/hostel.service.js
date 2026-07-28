@@ -383,12 +383,16 @@ class HostelService {
       `Temporary password: ${password}`, `Login here: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`,
     ];
 
-    await sendEmail({
-      to: userData.email,
-      subject: `Welcome to MessPro — ${userData.role} access created`,
-      text: `Your ${userData.role} account has been created.\n\n${lineItems.join('\n')}\n\nPlease change your password after first login.`,
-      html: `<p>Your <strong>${userData.role}</strong> account has been created.</p><p>${lineItems.map((line) => line.replace(/\n/g, '<br/>')).join('<br/>')}</p><p>Please change your password after first login.</p>`,
-    });
+    try {
+      await sendEmail({
+        to: userData.email,
+        subject: `Welcome to MessPro — ${userData.role} access created`,
+        text: `Your ${userData.role} account has been created.\n\n${lineItems.join('\n')}\n\nPlease change your password after first login.`,
+        html: `<p>Your <strong>${userData.role}</strong> account has been created.</p><p>${lineItems.map((line) => line.replace(/\n/g, '<br/>')).join('<br/>')}</p><p>Please change your password after first login.</p>`,
+      });
+    } catch (emailError) {
+      console.warn(`Could not send welcome email to ${userData.email}. Check SMTP settings.`, emailError.message);
+    }
 
     return { email: user.email, role: user.role, name: user.name };
   }

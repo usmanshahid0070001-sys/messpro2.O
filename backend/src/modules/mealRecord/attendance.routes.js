@@ -8,7 +8,7 @@ import {
   respondGuestPermission,
   scanStudentQR,
   getLiveQRAttendance
-} from './attendance.controller.js';
+} from './mealRecord.controller.js';
 import { protect, requirePermission } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
