@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { QrCode, Scan, Download, AlertCircle, CheckCircle2, XCircle, Timer, User as UserIcon } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { QrCode, Scan, Download, AlertCircle, CheckCircle2, XCircle, Timer, User as UserIcon, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import * as XLSX from 'xlsx';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import QRCode from 'react-qr-code';
 import { useAuth } from '../../context/AuthContext';
@@ -18,6 +19,7 @@ export default function QRAttendance() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [recentAttendances, setRecentAttendances] = useState([]);
+  const [filterType, setFilterType] = useState('All'); // 'All' | 'Present' | 'Reserved'
   
   // Set initial live data
   useEffect(() => {
@@ -47,9 +49,9 @@ export default function QRAttendance() {
       setRecentAttendances(prev => {
         const exists = prev.find(p => p.rollNumber === data.rollNumber);
         if (exists) {
-          return prev.map(p => p.rollNumber === data.rollNumber ? { ...p, count: data.count } : p);
+          return prev.map(p => p.rollNumber === data.rollNumber ? { ...p, attendanceCount: data.count } : p);
         }
-        return [data, ...prev];
+        return [{...data, attendanceCount: data.count, selectionCount: data.selectionCount || 0}, ...prev];
       });
       toast.success(`${data.name} marked present! (Count: ${data.count || 1})`, { id: `scan_${data.rollNumber}` });
     });
@@ -82,9 +84,6 @@ export default function QRAttendance() {
         studentId: requestData.studentId,
         isApproved
       });
-      if (isApproved) {
-        setRecentAttendances(prev => [{ ...requestData, isGuest: true, count: 1 }, ...prev]);
-      }
     } catch (err) {
       console.error(err);
     }
@@ -108,8 +107,6 @@ export default function QRAttendance() {
       });
       if (res.status === 'success') {
         toast.success(`Guest ${student.name} approved!`);
-        const count = res.data?.count || 1;
-        setRecentAttendances(prev => [{ name: student.name, rollNumber: student.rollNumber, isGuest: true, count }, ...prev]);
       }
     } catch (err) {
       console.error(err);
@@ -140,15 +137,7 @@ export default function QRAttendance() {
         toast.dismiss(toastId);
         setLocalGuestPrompt(res);
       } else if (res.status === 'success') {
-        toast.success(`Attendance Marked! (Count: ${res.data.count || 1})`, { id: toastId });
-        
-        setRecentAttendances(prev => {
-          const exists = prev.find(p => p.rollNumber === studentRollNumber);
-          if (exists) {
-            return prev.map(p => p.rollNumber === studentRollNumber ? { ...p, count: res.data.count } : p);
-          }
-          return [{ name: res.data.mealInfo?.name || 'Student', rollNumber: studentRollNumber, isGuest: false, count: res.data.count || 1 }, ...prev];
-        });
+        toast.success(`Attendance Marked!`);
         
         setTimeout(() => setScanResult(null), 2000);
       } else {
@@ -179,6 +168,33 @@ export default function QRAttendance() {
 
   const qrToken = qrResponse?.data ? JSON.stringify({ h: qrResponse.data.h, s: qrResponse.data.s }) : null;
 
+  const filteredAttendances = useMemo(() => {
+    if (filterType === 'Present') {
+      return recentAttendances.filter(a => a.attendanceCount > 0);
+    }
+    if (filterType === 'Reserved') {
+      return recentAttendances.filter(a => a.selectionCount > 0);
+    }
+    return recentAttendances;
+  }, [recentAttendances, filterType]);
+
+  const exportToExcel = () => {
+    const dataToExport = filteredAttendances.map(a => ({
+      Name: a.name,
+      'Roll Number': a.rollNumber,
+      Status: a.isGuest ? 'Guest' : 'Student',
+      Reserved: a.selectionCount || 0,
+      'Meals Taken': a.attendanceCount || 0
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'QR_Attendance');
+    
+    const fileName = `QR_Live_Feed_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
   return (
     <div className="space-y-6 relative">
       {/* Global Guest Request Overlay */}
@@ -203,16 +219,28 @@ export default function QRAttendance() {
                 <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500" />
               </div>
               <div className="flex-1 pt-1">
-                <h3 className="text-[#111111] dark:text-white font-bold text-base leading-tight">Guest Request</h3>
-                <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1">
-                  <strong className="text-[#111111] dark:text-[#dddddd]">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) from another hostel wants to eat here.
-                </p>
+                <h3 className="text-[#111111] dark:text-white font-bold text-base leading-tight">
+                  {activeGuestRequest.reason === 'guest' ? 'Guest Request' : 'Permission Required'}
+                </h3>
+                {activeGuestRequest.reason === 'unselected' ? (
+                  <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1">
+                    <strong className="text-[#111111] dark:text-[#dddddd]">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) did not reserve this meal. Allow walk-in?
+                  </p>
+                ) : activeGuestRequest.reason === 'extra_meal' ? (
+                  <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1">
+                    <strong className="text-[#111111] dark:text-[#dddddd]">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) has reached their limit. Allow extra meal?
+                  </p>
+                ) : (
+                  <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1">
+                    <strong className="text-[#111111] dark:text-[#dddddd]">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) from another hostel wants to eat here.
+                  </p>
+                )}
                 <div className="flex gap-3 mt-4">
                   <button 
                     onClick={() => handleRespondGuest(activeGuestRequest, true)}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors text-sm"
                   >
-                    Accept Guest
+                    Accept
                   </button>
                   <button 
                     onClick={() => handleRespondGuest(activeGuestRequest, false)}
@@ -260,14 +288,40 @@ export default function QRAttendance() {
 
         {/* Right: Live Feed */}
         <div className="lg:col-span-7 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-2xl overflow-hidden flex flex-col h-[500px]">
-          <div className="flex items-center justify-between p-5 border-b border-[#e5e5e5] dark:border-[#222222] bg-[#fafafa] dark:bg-[#111111]">
-            <h3 className="text-sm font-bold text-[#111111] dark:text-white flex items-center gap-2 uppercase tracking-wide">
-              <Timer className="w-4 h-4 text-[#737373] dark:text-[#a0a0a0]" />
-              Live Attendances
-            </h3>
-            <span className="bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#737373] dark:text-[#a0a0a0] border border-[#e5e5e5] dark:border-[#333333] text-xs px-2.5 py-0.5 rounded-full font-semibold">
-              {recentAttendances.length} total
-            </span>
+          <div className="flex items-center justify-between p-4 border-b border-[#e5e5e5] dark:border-[#222222] bg-[#fafafa] dark:bg-[#111111]">
+            <div className="flex items-center gap-4">
+              <h3 className="text-sm font-bold text-[#111111] dark:text-white flex items-center gap-2 uppercase tracking-wide">
+                <Timer className="w-4 h-4 text-[#737373] dark:text-[#a0a0a0]" />
+                Live Feed
+              </h3>
+              <div className="flex bg-[#e5e5e5] dark:bg-[#222222] p-1 rounded-lg">
+                {['All', 'Present', 'Reserved'].map(ft => (
+                  <button
+                    key={ft}
+                    onClick={() => setFilterType(ft)}
+                    className={`px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${
+                      filterType === ft 
+                        ? 'bg-white dark:bg-[#111111] text-[#111111] dark:text-white shadow-sm' 
+                        : 'text-[#737373] dark:text-[#a0a0a0] hover:text-[#111111] dark:hover:text-white'
+                    }`}
+                  >
+                    {ft}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#737373] dark:text-[#a0a0a0] border border-[#e5e5e5] dark:border-[#333333] text-xs px-2.5 py-0.5 rounded-full font-semibold">
+                {filteredAttendances.length}
+              </span>
+              <button 
+                onClick={exportToExcel}
+                className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg text-xs font-bold uppercase transition-colors border border-emerald-200 dark:border-emerald-800/50"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export
+              </button>
+            </div>
           </div>
           
           <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-[#f5f5f5] dark:divide-[#1a1a1a]">
@@ -275,13 +329,13 @@ export default function QRAttendance() {
               <div className="flex justify-center items-center h-full">
                 <div className="w-6 h-6 border-2 border-[#e5e5e5] border-t-[#111111] dark:border-[#333333] dark:border-t-white rounded-full animate-spin" />
               </div>
-            ) : recentAttendances.length === 0 ? (
+            ) : filteredAttendances.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-[#737373] dark:text-[#888888]">
-                <UserIcon className="w-8 h-8 mb-3 opacity-20" />
-                <p className="text-sm font-medium">No attendances yet for this meal.</p>
+                <Filter className="w-8 h-8 mb-3 opacity-20" />
+                <p className="text-sm font-medium">No records match this filter.</p>
               </div>
             ) : (
-              recentAttendances.map((att, idx) => (
+              filteredAttendances.map((att, idx) => (
                 <motion.div
                   key={idx + '-' + att.rollNumber}
                   initial={{ opacity: 0, y: -10 }}
@@ -301,13 +355,18 @@ export default function QRAttendance() {
                     <span className={`text-[11px] px-2 py-0.5 rounded font-bold uppercase tracking-wide border ${
                       att.isGuest 
                         ? 'bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900' 
-                        : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/50'
+                        : (att.attendanceCount > 0 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/50' : 'bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#737373] dark:text-[#a0a0a0] border-[#e5e5e5] dark:border-[#333333]')
                     }`}>
-                      {att.isGuest ? 'Guest' : 'Present'}
+                      {att.isGuest ? 'Guest' : (att.attendanceCount > 0 ? 'Present' : 'Not Present')}
                     </span>
-                    <span className="text-[10px] text-[#737373] dark:text-[#888888] font-medium uppercase">
-                      Count: <span className="font-bold text-[#111111] dark:text-[#dddddd]">{att.count || 1}</span>
-                    </span>
+                    <div className="flex gap-2">
+                      <span className="text-[10px] text-[#737373] dark:text-[#888888] font-medium uppercase border-r border-[#e5e5e5] dark:border-[#333333] pr-2">
+                        Res: <span className={`font-bold ${att.selectionCount > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-[#111111] dark:text-[#dddddd]'}`}>{att.selectionCount || 0}</span>
+                      </span>
+                      <span className="text-[10px] text-[#737373] dark:text-[#888888] font-medium uppercase">
+                        Eat: <span className={`font-bold ${att.attendanceCount > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-[#111111] dark:text-[#dddddd]'}`}>{att.attendanceCount || 0}</span>
+                      </span>
+                    </div>
                   </div>
                 </motion.div>
               ))

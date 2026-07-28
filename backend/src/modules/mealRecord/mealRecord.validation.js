@@ -33,3 +33,23 @@ export const markAttendanceSchema = z.object({
     price: z.number().min(0, "Price cannot be negative")
   })
 }).strict();
+
+export const getAttendanceSchema = z.object({
+  hostelId: z.string().min(1, "hostelId is required"),
+  date: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format"),
+  mealType: z.string().min(1, "mealType is required")
+});
+
+export const saveAttendanceSchema = z.object({
+  hostelId: z.string().min(1, "hostelId is required"),
+  date: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format"),
+  mealType: z.string().min(1, "mealType is required"),
+  mealInfo: z.object({
+    name: z.string(),
+    price: z.number()
+  }),
+  records: z.array(z.object({
+    rollNumber: z.string().min(1),
+    count: z.number().int().min(0)
+  }))
+});

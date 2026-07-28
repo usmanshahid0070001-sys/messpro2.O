@@ -144,6 +144,13 @@ class MealRecordService {
     const uniqueRecords = Array.from(uniqueRecordsMap.values());
     const rollNumbers = uniqueRecords.map(r => r.rollNumber);
 
+    // Fetch existing records to check their selection counts
+    const existingRecords = await mealRecordRepository.model.find({
+      hostelId, date, mealType, rollNumber: { $in: rollNumbers }
+    });
+    const recordMap = new Map();
+    existingRecords.forEach(r => recordMap.set(r.rollNumber, r));
+
     // 2. Global User Lookup (to check if they are guests)
     const existingUsers = await User.find({ id: { $in: rollNumbers } }).select('_id id hostelId');
     const userMap = new Map();
@@ -162,20 +169,32 @@ class MealRecordService {
 
       if (uiCount === 0) {
         // Manager clicked '-' until it reached 0. 
-        // We reset the attendance side but keep their pre-selection alive!
-        bulkOps.push({
-          updateOne: {
-            filter: { hostelId, date, mealType, rollNumber },
-            update: {
-              $set: {
-                'attendance.hasEaten': false,
-                'attendance.count': 0, // Set exactly to 0
-                'attendance.recordedBy': recordedBy,
-                'attendance.method': 'Manual'
+        const existingRecord = recordMap.get(rollNumber);
+        const selCount = existingRecord?.selection?.count || 0;
+
+        if (selCount === 0) {
+          // Both selection and attendance are 0, completely delete the document
+          bulkOps.push({
+            deleteOne: {
+              filter: { hostelId, date, mealType, rollNumber }
+            }
+          });
+        } else {
+          // We reset the attendance side but keep their pre-selection alive!
+          bulkOps.push({
+            updateOne: {
+              filter: { hostelId, date, mealType, rollNumber },
+              update: {
+                $set: {
+                  'attendance.hasEaten': false,
+                  'attendance.count': 0, // Set exactly to 0
+                  'attendance.recordedBy': recordedBy,
+                  'attendance.method': 'Manual'
+                }
               }
             }
-          }
-        });
+          });
+        }
       } else {
         // Manager clicked '+' and hit save. We overwrite the count!
         bulkOps.push({
@@ -232,7 +251,27 @@ class MealRecordService {
     // 🛡️ SECURITY 3: Time Validation (Determine current meal)
     const mealData = await this.calculateCurrentMeal(hostelId);
 
-    // Cleaned up using the Repository
+    const isGuest = student.hostelId.toString() !== hostelId.toString();
+    const room = io.sockets.adapter.rooms.get(hostelId.toString());
+    const isManagerOnline = room && room.size > 0;
+    const autoVerification = hostel.settings?.autoVerification || false;
+
+    // GUEST LOGIC
+    if (isGuest) {
+      if (isManagerOnline) {
+        return {
+          status: 'requires_permission',
+          reason: 'guest',
+          managerHostelId: hostelId,
+          message: 'You are not registered in this hostel. Do you want to request guest permission?'
+        };
+      } else {
+        const error = new Error('Guest scan rejected: Manager is offline.');
+        error.statusCode = 403;
+        throw error;
+      }
+    }
+
     let record = await mealRecordRepository.findRecord({
       hostelId,
       date: mealData.date,
@@ -240,16 +279,28 @@ class MealRecordService {
       rollNumber: student.id
     });
 
-    // 🛡️ SECURITY 4: Count Validation
     if (record) {
-      const allowedLimit = record.selection.hasSelected
-        ? record.selection.count
-        : mealData.maxMealSelection;
-
-      if (record.attendance.count >= allowedLimit) {
-        const error = new Error(`Meal limit reached. You have already claimed ${record.attendance.count} meals.`);
-        error.statusCode = 400;
-        throw error;
+      // UNSELECTED (Walk-In)
+      if (!record.selection.hasSelected || record.selection.count === 0) {
+        if (!autoVerification) {
+          if (isManagerOnline) {
+            return { status: 'requires_permission', reason: 'unselected', managerHostelId: hostelId, message: 'You did not reserve this meal. Request permission?' };
+          } else {
+            const error = new Error('Unselected meal rejected: Manager is offline.');
+            error.statusCode = 403; throw error;
+          }
+        }
+      } 
+      // EXTRA MEAL (Attendance >= Selection)
+      else if (record.attendance.count >= record.selection.count) {
+        if (!autoVerification) {
+          if (isManagerOnline) {
+            return { status: 'requires_permission', reason: 'extra_meal', managerHostelId: hostelId, message: `You have reached your limit of ${record.selection.count} meals. Request extra meal?` };
+          } else {
+            const error = new Error(`Meal limit reached. Manager is offline to approve extra meals.`);
+            error.statusCode = 403; throw error;
+          }
+        }
       }
 
       record.attendance.hasEaten = true;
@@ -258,7 +309,16 @@ class MealRecordService {
       await record.save();
 
     } else {
-      // 🛡️ WALK-IN SCENARIO (Cleaned up using the Repository)
+      // 🛡️ WALK-IN SCENARIO (No Record Exists)
+      if (!autoVerification) {
+        if (isManagerOnline) {
+          return { status: 'requires_permission', reason: 'unselected', managerHostelId: hostelId, message: 'You did not reserve this meal. Request permission?' };
+        } else {
+          const error = new Error('Unselected meal rejected: Manager is offline.');
+          error.statusCode = 403; throw error;
+        }
+      }
+
       record = await mealRecordRepository.createRecord({
         hostelId,
         date: mealData.date,

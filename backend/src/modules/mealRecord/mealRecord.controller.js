@@ -6,7 +6,7 @@ import Hostel from '../hostel/hostel.model.js';
 // 👇 Use the new Unified Models & Services
 import MealRecord from './mealRecord.model.js';
 import mealRecordService from './mealRecord.service.js';
-// import { getAttendanceSchema, saveAttendanceSchema } from './attendance.validation.js';
+import { getAttendanceSchema, saveAttendanceSchema } from './mealRecord.validation.js';
 
 // ==========================================
 // 1. STUDENT FEATURE: PRE-SELECTION
@@ -43,7 +43,6 @@ export const getStudentSelections = catchAsync(async (req, res, next) => {
 // ==========================================
 // 2. MANAGER FEATURES: FETCH & BULK SAVE
 // ==========================================
-/*
 export const getAttendance = catchAsync(async (req, res, next) => {
   const { hostelId, date, mealType } = getAttendanceSchema.parse(req.query);
 
@@ -79,7 +78,6 @@ export const saveAttendance = catchAsync(async (req, res, next) => {
     message: 'Attendance saved successfully',
   });
 });
-*/
 
 
 // ==========================================
@@ -106,15 +104,15 @@ export const getLiveQRAttendance = catchAsync(async (req, res) => {
   const attendances = await MealRecord.find({
     hostelId: hostelId,
     date: mealData.date,
-    mealType: mealData.mealType,
-    'attendance.hasEaten': true // Only get those who actually showed up
+    mealType: mealData.mealType
   }).populate('studentId', 'name id');
 
   const formatted = attendances.map(att => ({
     name: att.studentId?.name || 'Unknown',
     rollNumber: att.studentId?.id || att.rollNumber,
     isGuest: att.isGuest,
-    count: att.attendance.count // Use the new nested count
+    attendanceCount: att.attendance?.count || 0,
+    selectionCount: att.selection?.count || 0
   }));
 
   res.status(200).json({
@@ -124,9 +122,7 @@ export const getLiveQRAttendance = catchAsync(async (req, res) => {
 });
 
 
-// 👇 THE BOUNCER: When a student scans the printed wall QR code
 export const scanManagerQR = catchAsync(async (req, res) => {
-  // Extract the Secure Pointer and GPS coordinates from the student's phone
   const { h: targetHostelId, s: scannedSecret, lat, lng } = req.body;
   const student = req.user;
 
@@ -134,25 +130,15 @@ export const scanManagerQR = catchAsync(async (req, res) => {
     throw Object.assign(new Error('Only students can scan this QR code.'), { statusCode: 403 });
   }
 
-  // Same Hostel: Run through the strict GPS Geofence + Count limit logic
-  if (student.hostelId.toString() === targetHostelId.toString()) {
-    const result = await mealRecordService.processStudentScan(
-      student, 
-      targetHostelId, 
-      scannedSecret, 
-      lat, 
-      lng
-    );
-    
-    return res.status(200).json(result);
-  } else {
-    // Cross-Hostel Guest: Pause and ask for permission
-    return res.status(200).json({
-      status: 'requires_permission',
-      managerHostelId: targetHostelId,
-      message: 'You are not registered in this hostel. Do you want to request guest permission?'
-    });
-  }
+  const result = await mealRecordService.processStudentScan(
+    student, 
+    targetHostelId, 
+    scannedSecret, 
+    lat, 
+    lng
+  );
+  
+  return res.status(200).json(result);
 });
 
 
@@ -161,7 +147,7 @@ export const scanManagerQR = catchAsync(async (req, res) => {
 // ==========================================
 
 export const requestGuestPermission = catchAsync(async (req, res) => {
-  const { managerHostelId } = req.body;
+  const { managerHostelId, reason } = req.body;
   const student = req.user;
 
   io.to(managerHostelId.toString()).emit('guest_permission_request', {
@@ -169,7 +155,8 @@ export const requestGuestPermission = catchAsync(async (req, res) => {
     rollNumber: student.id,
     name: student.name,
     studentId: student._id,
-    sourceHostelId: student.hostelId
+    sourceHostelId: student.hostelId,
+    reason: reason || 'guest'
   });
 
   res.status(200).json({
@@ -189,17 +176,26 @@ export const respondGuestPermission = catchAsync(async (req, res) => {
   const student = await User.findById(studentId);
   if (!student) throw new Error('Student not found');
 
-  // Because the Manager approved this, we bypass GPS checks and force an upsert
   const mealData = await mealRecordService.calculateCurrentMeal(managerHostelId);
+  const isGuest = student.hostelId.toString() !== managerHostelId.toString();
   
+  // Find existing record to preserve selection count if any
+  const existingRecord = await MealRecord.findOne({
+    hostelId: managerHostelId, date: mealData.date, mealType: mealData.mealType, rollNumber: student.id
+  });
+
   const record = await MealRecord.findOneAndUpdate(
     { hostelId: managerHostelId, date: mealData.date, mealType: mealData.mealType, rollNumber: student.id },
     {
       $set: {
         hostelId: managerHostelId, date: mealData.date, mealType: mealData.mealType, mealInfo: mealData.mealInfo,
-        rollNumber: student.id, studentId: student._id, isGuest: true,
+        rollNumber: student.id, studentId: student._id, isGuest,
         'attendance.hasEaten': true, 'attendance.method': 'Manual',
         'attendance.recordedBy': req.user._id
+      },
+      $setOnInsert: {
+        'selection.hasSelected': existingRecord?.selection?.hasSelected || false,
+        'selection.count': existingRecord?.selection?.count || 0
       },
       $inc: { 'attendance.count': 1 }
     },
@@ -207,8 +203,10 @@ export const respondGuestPermission = catchAsync(async (req, res) => {
   );
 
   io.to(managerHostelId.toString()).emit('attendance_success', {
-    rollNumber: student.id, name: student.name, isGuest: true,
-    mealType: mealData.mealType, date: mealData.date, count: record.attendance.count
+    rollNumber: student.id, name: student.name, isGuest,
+    mealType: mealData.mealType, date: mealData.date, 
+    count: record.attendance.count,
+    selectionCount: record.selection.count
   });
 
   res.status(200).json({ status: 'success', message: 'Guest approved and attendance marked.', data: mealData });

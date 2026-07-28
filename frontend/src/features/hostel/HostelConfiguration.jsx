@@ -14,6 +14,7 @@ export default function HostelConfiguration() {
   const [location, setLocation] = useState('');
   const [customFields, setCustomFields] = useState([]);
   const [features, setFeatures] = useState([]);
+  const [autoVerification, setAutoVerification] = useState(false);
   
   const setHasUnsavedChanges = useUIStore((state) => state.setHasUnsavedChanges);
   
@@ -23,6 +24,7 @@ export default function HostelConfiguration() {
       setLocation(hostelResponse.data.location || '');
       setCustomFields(hostelResponse.data.customRegistrationFields || []);
       setFeatures(hostelResponse.data.plan?.features || []);
+      setAutoVerification(hostelResponse.data.settings?.autoVerification || false);
     }
   }, [hostelResponse]);
 
@@ -32,13 +34,14 @@ export default function HostelConfiguration() {
       subdomain !== (hostelResponse.data.subdomain || '') ||
       location !== (hostelResponse.data.location || '') ||
       JSON.stringify(customFields) !== JSON.stringify(hostelResponse.data.customRegistrationFields || []) ||
-      JSON.stringify(features) !== JSON.stringify(hostelResponse.data.plan?.features || []);
+      JSON.stringify(features) !== JSON.stringify(hostelResponse.data.plan?.features || []) ||
+      autoVerification !== (hostelResponse.data.settings?.autoVerification || false);
     
     setHasUnsavedChanges(isDirty);
     
     // Clean up when unmounting so we don't lock the app
     return () => setHasUnsavedChanges(false);
-  }, [subdomain, location, customFields, features, hostelResponse, setHasUnsavedChanges]);
+  }, [subdomain, location, customFields, features, autoVerification, hostelResponse, setHasUnsavedChanges]);
 
   const handleAddField = () => {
     if (customFields.length >= 5) {
@@ -75,7 +78,8 @@ export default function HostelConfiguration() {
       subdomain,
       location,
       customRegistrationFields: customFields,
-      "plan.features": features, // We send the updated features array back
+      "plan.features": features,
+      "settings.autoVerification": autoVerification,
     });
   };
 
@@ -185,6 +189,26 @@ export default function HostelConfiguration() {
                 <option value="Europe/London">Europe/London (GMT)</option>
                 <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
               </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Global Settings Section */}
+        <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-[#111] dark:text-white">General Settings</h2>
+            <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Configure hostel-wide policies.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
+              <div>
+                <span className="text-sm font-semibold block text-[#111111] dark:text-white">Auto Verification (QR)</span>
+                <span className="text-xs text-[#737373] block mt-0.5">Bypass manager permission</span>
+              </div>
+              <ToggleSwitch 
+                checked={autoVerification} 
+                onChange={() => setAutoVerification(!autoVerification)} 
+              />
             </div>
           </div>
         </div>

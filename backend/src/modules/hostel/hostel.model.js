@@ -85,6 +85,10 @@ const hostelSchema = new mongoose.Schema({
       enum: ['Manual', 'QR', 'Biometric'],
       default: 'Manual'
     },
+    autoVerification: {
+      type: Boolean,
+      default: false
+    },
     billingModel: {
       type: String,
       enum: ['Prepaid', 'Postpaid', 'FlatRate'],

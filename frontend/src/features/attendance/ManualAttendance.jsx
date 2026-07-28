@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Save, Calendar, Coffee, UserPlus, FileWarning, Check } from 'lucide-react';
+import { Search, Save, Calendar, Coffee, UserPlus, FileWarning, Check, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
+import * as XLSX from 'xlsx';
 
 import { useAuth } from '../../context/AuthContext';
 import { useMealSchedule } from '../../hooks/queries/useMealQueries';
@@ -78,11 +78,11 @@ export default function ManualAttendance() {
       const newDraft = {};
       const newGuests = [];
       serverAttendance.forEach(att => {
-        newDraft[att.rollNumber] = att.count;
+        newDraft[att.rollNumber] = att.attendance?.count || 0;
         if (att.isGuest) {
           // If they aren't in the student list, they are a guest
           if (!students.find(s => s.id === att.rollNumber)) {
-            newGuests.push({ rollNumber: att.rollNumber, count: att.count, name: att.userRef?.name || 'Guest' });
+            newGuests.push({ rollNumber: att.rollNumber, count: att.attendance?.count || 0, name: att.studentId?.name || 'Guest' });
           }
         }
       });
@@ -96,12 +96,17 @@ export default function ManualAttendance() {
     // Only show students in the attendance roster
     const justStudents = students.filter(user => user.role === 'student');
     return justStudents.map(student => {
+      const serverAtt = serverAttendance?.find(a => a.rollNumber === student.id);
+      
       const count = draftAttendance[student.id] !== undefined 
         ? draftAttendance[student.id] 
-        : 0;
-      return { ...student, count };
+        : (serverAtt?.attendance?.count || 0);
+        
+      const reservedCount = serverAtt?.selection?.count || 0;
+
+      return { ...student, count, reservedCount };
     });
-  }, [students, draftAttendance]);
+  }, [students, draftAttendance, serverAttendance]);
 
   const filteredStudents = mergedStudentsList.filter(student => 
     student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -116,7 +121,35 @@ export default function ManualAttendance() {
     }));
   }, [guests, draftAttendance]);
 
+  const totalReserved = mergedStudentsList.reduce((acc, s) => acc + (s.reservedCount || 0), 0);
+  const totalEaten = mergedStudentsList.reduce((acc, s) => acc + (s.count || 0), 0) + mergedGuestsList.reduce((acc, g) => acc + (g.count || 0), 0);
+
   // -- Handlers --
+  const exportToExcel = () => {
+    const dataToExport = [
+      ...filteredStudents.map(s => ({
+        Name: s.name,
+        'Roll Number': s.id,
+        Room: s.room?.roomName || '-',
+        Reserved: s.reservedCount,
+        'Meals Taken': s.count
+      })),
+      ...mergedGuestsList.map(g => ({
+        Name: g.name,
+        'Roll Number': g.rollNumber,
+        Room: 'External',
+        Reserved: 0,
+        'Meals Taken': g.count
+      }))
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
+    
+    const fileName = `Attendance_${selectedDate}_${selectedMeal?.name || 'Meal'}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
   const handleCountChange = (rollNumber, delta) => {
     setDraftAttendance(prev => {
       const current = prev[rollNumber] !== undefined ? prev[rollNumber] : 0;
@@ -218,11 +251,20 @@ export default function ManualAttendance() {
           </div>
         </div>
 
-        <div className="w-full lg:w-1/3 flex justify-end">
+        <div className="w-full lg:w-1/3 flex justify-end gap-2">
+          {isConfigured && (
+            <button 
+              onClick={exportToExcel}
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors border border-emerald-200 dark:border-emerald-800/50"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export</span>
+            </button>
+          )}
           <button 
             onClick={handleSave}
             disabled={!isConfigured || isSaving || (!hasUnsavedChanges && (serverAttendance?.length > 0))}
-            className={`w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold transition-all ${
+            className={`flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold transition-all ${
               hasUnsavedChanges 
                 ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm ring-2 ring-blue-600/20' 
                 : 'bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222222] text-[#a3a3a3] dark:text-[#666666] cursor-not-allowed'
@@ -273,20 +315,30 @@ export default function ManualAttendance() {
                 className="w-full bg-white dark:bg-[#111111] border border-[#e5e5e5] dark:border-[#333333] rounded-xl py-2 pl-9 pr-4 text-[#111111] dark:text-white text-sm placeholder:text-[#a3a3a3] dark:placeholder:text-[#666666] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
               />
             </div>
-            
-            <AnimatePresence>
-              {hasUnsavedChanges && (
-                <motion.div 
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide shadow-sm"
-                >
-                  <FileWarning className="w-4 h-4" />
-                  Unsaved changes
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="flex items-center gap-3">
+              <div className="flex bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#333333] rounded-xl text-xs font-semibold overflow-hidden shadow-sm h-9">
+                <span className="px-3 flex items-center border-r border-[#e5e5e5] dark:border-[#333333] text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/10">
+                  Reserved: {totalReserved}
+                </span>
+                <span className="px-3 flex items-center text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10">
+                  Eaten: {totalEaten}
+                </span>
+              </div>
+
+              <AnimatePresence>
+                {hasUnsavedChanges && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 px-4 h-9 rounded-xl text-xs font-bold uppercase tracking-wide shadow-sm"
+                  >
+                    <FileWarning className="w-4 h-4" />
+                    Unsaved changes
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* Roster Table */}
@@ -295,10 +347,11 @@ export default function ManualAttendance() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-[#fafafa] dark:bg-[#111111] border-b border-[#e5e5e5] dark:border-[#222222] text-[#737373] dark:text-[#888888] text-[11px] uppercase tracking-wider font-bold">
-                    <th className="px-6 py-4 w-1/3">Student</th>
-                    <th className="px-6 py-4 w-1/4">Roll Number</th>
-                    <th className="px-6 py-4 w-1/4">Room</th>
-                    <th className="px-6 py-4 text-center w-32">Meals Taken</th>
+                    <th className="px-6 py-4 w-[30%]">Student</th>
+                    <th className="px-6 py-4 w-[20%]">Roll Number</th>
+                    <th className="px-6 py-4 w-[20%]">Room</th>
+                    <th className="px-6 py-4 text-center w-[15%]">Reserved</th>
+                    <th className="px-6 py-4 text-center w-[15%]">Meals Taken</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f5f5f5] dark:divide-[#1a1a1a]">
@@ -323,6 +376,13 @@ export default function ManualAttendance() {
                       </td>
                       <td className="px-6 py-3 text-[#737373] dark:text-[#a0a0a0] text-sm font-medium">
                         {student.room?.roomName ? `Room ${student.room.roomName}` : '-'}
+                      </td>
+                      <td className="px-6 py-3">
+                        <div className="flex justify-center items-center">
+                          <span className={`text-sm font-bold px-2.5 py-1 rounded-md ${student.reservedCount > 0 ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50' : 'text-[#a3a3a3] dark:text-[#666666]'}`}>
+                            {student.reservedCount}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-center gap-3 bg-white dark:bg-[#111111] rounded-lg p-1 border border-[#e5e5e5] dark:border-[#333333] w-[104px] mx-auto shadow-sm">
@@ -351,10 +411,9 @@ export default function ManualAttendance() {
                     </tr>
                   ))}
                   
-                  {/* Guests Section in Table */}
                   {mergedGuestsList.length > 0 && (
                     <tr className="bg-[#fafafa] dark:bg-[#111111]">
-                      <td colSpan="4" className="px-6 py-2 text-[10px] font-bold text-[#737373] dark:text-[#888888] uppercase tracking-widest border-y border-[#e5e5e5] dark:border-[#222222]">
+                      <td colSpan="5" className="px-6 py-2 text-[10px] font-bold text-[#737373] dark:text-[#888888] uppercase tracking-widest border-y border-[#e5e5e5] dark:border-[#222222]">
                         External Guests & Additions
                       </td>
                     </tr>
@@ -376,6 +435,11 @@ export default function ManualAttendance() {
                       </td>
                       <td className="px-6 py-3 text-[#737373] dark:text-[#666666] text-sm italic font-medium">
                         External
+                      </td>
+                      <td className="px-6 py-3">
+                        <div className="flex justify-center items-center">
+                          <span className="text-[#a3a3a3] dark:text-[#666666] text-sm font-bold">0</span>
+                        </div>
                       </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center justify-center gap-3 bg-white dark:bg-[#111111] rounded-lg p-1 border border-[#e5e5e5] dark:border-[#333333] w-[104px] mx-auto shadow-sm">
@@ -406,7 +470,7 @@ export default function ManualAttendance() {
 
                   {filteredStudents.length === 0 && mergedGuestsList.length === 0 && (
                     <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center text-[#737373] dark:text-[#888888] text-sm font-medium">
+                      <td colSpan="5" className="px-6 py-12 text-center text-[#737373] dark:text-[#888888] text-sm font-medium">
                         No students found matching your search.
                       </td>
                     </tr>

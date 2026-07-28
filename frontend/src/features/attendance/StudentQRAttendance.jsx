@@ -13,6 +13,7 @@ export default function StudentQRAttendance() {
   const [scanResult, setScanResult] = useState(null);
   const [crossHostelPrompt, setCrossHostelPrompt] = useState(null);
   const [waitingForManager, setWaitingForManager] = useState(false);
+  const [successRecord, setSuccessRecord] = useState(null);
 
   const { mutateAsync: scanManagerQR } = useScanManagerQR();
   const { mutateAsync: requestPermission } = useRequestGuestPermission();
@@ -53,9 +54,9 @@ export default function StudentQRAttendance() {
           if (res.status === 'requires_permission') {
             toast.dismiss(toastId);
             setCrossHostelPrompt(res);
-          } else if (res.status === 'success') {
-            toast.success(`Present for ${res.data?.mealType || 'Meal'}!`, { id: toastId });
-            setTimeout(() => setScanResult(null), 2000);
+          } else if (res.success || res.status === 'success') {
+            toast.success(`Present for ${res.record?.mealType || res.data?.mealType || 'Meal'}!`, { id: toastId });
+            setSuccessRecord(res.record || res.data);
           } else {
             toast.error('Invalid response from server.', { id: toastId });
             setTimeout(() => setScanResult(null), 2000);
@@ -72,12 +73,12 @@ export default function StudentQRAttendance() {
     );
   };
 
-  const handleRequestPermission = async (managerHostelId) => {
+  const handleRequestPermission = async (managerHostelId, reason) => {
     setCrossHostelPrompt(null);
     setWaitingForManager(true);
     
     try {
-      await requestPermission({ managerHostelId });
+      await requestPermission({ managerHostelId, reason });
       toast.success('Request sent! Manager will accept you from their device.', { duration: 5000 });
       // Close the scanner after request
       setTimeout(() => {
@@ -95,6 +96,12 @@ export default function StudentQRAttendance() {
   const handleCancelPermission = () => {
     setCrossHostelPrompt(null);
     setScanResult(null);
+  };
+
+  const handleCloseSuccess = () => {
+    setSuccessRecord(null);
+    setScanResult(null);
+    setIsScanning(false);
   };
 
   // Student's static QR payload (e.g. just their roll number, or a json payload)
@@ -177,11 +184,11 @@ export default function StudentQRAttendance() {
                 ) : crossHostelPrompt ? (
                   <div className="absolute inset-0 bg-white/95 dark:bg-[#111111]/95 flex flex-col items-center justify-center z-20 p-6 text-center">
                     <AlertCircle className="w-12 h-12 text-amber-500 mb-3" />
-                    <p className="text-[#111111] dark:text-white font-bold">Different Hostel Detected</p>
-                    <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1 mb-4">Ask manager for permission?</p>
+                    <p className="text-[#111111] dark:text-white font-bold">Permission Required</p>
+                    <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1 mb-4">{crossHostelPrompt.message}</p>
                     <div className="flex gap-2 w-full">
                       <button 
-                        onClick={() => handleRequestPermission(crossHostelPrompt.managerHostelId)} 
+                        onClick={() => handleRequestPermission(crossHostelPrompt.managerHostelId, crossHostelPrompt.reason)} 
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
                       >
                         Request
@@ -193,6 +200,37 @@ export default function StudentQRAttendance() {
                         Cancel
                       </button>
                     </div>
+                  </div>
+                ) : successRecord ? (
+                  <div className="absolute inset-0 bg-white/95 dark:bg-[#111111]/95 flex flex-col items-center justify-center z-20 p-6 text-center">
+                    <div className="w-16 h-16 bg-green-100 dark:bg-green-500/10 rounded-full flex items-center justify-center mb-4">
+                      <CheckCircle2 className="w-8 h-8 text-green-500" />
+                    </div>
+                    <p className="text-[#111111] dark:text-white font-bold text-xl mb-1">Attendance Marked!</p>
+                    <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mb-6">Show this screen to the manager if their device hasn't updated.</p>
+                    
+                    <div className="w-full bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#333333] rounded-xl p-4 mb-6 text-left">
+                      <p className="text-sm font-semibold text-[#111111] dark:text-white mb-2">Meal Details</p>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs text-[#737373] dark:text-[#a0a0a0]">Meal</span>
+                        <span className="text-xs font-bold text-[#111111] dark:text-white">{successRecord.mealType} - {successRecord.mealInfo?.name || 'Meal'}</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs text-[#737373] dark:text-[#a0a0a0]">Reserved</span>
+                        <span className="text-xs font-bold text-purple-600 dark:text-purple-400">{successRecord.selection?.count || 0}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-[#737373] dark:text-[#a0a0a0]">Eaten</span>
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{successRecord.attendance?.count || 1}</span>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={handleCloseSuccess} 
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      Done
+                    </button>
                   </div>
                 ) : scanResult ? (
                   <div className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-20">

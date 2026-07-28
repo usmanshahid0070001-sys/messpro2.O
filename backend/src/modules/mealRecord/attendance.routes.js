@@ -1,7 +1,7 @@
 import express from 'express';
 import { 
-  // getAttendance, 
-  // saveAttendance,
+  getAttendance, 
+  saveAttendance,
   getManagerQR, // Fixed from generateManagerQR
   scanManagerQR,
   requestGuestPermission,
@@ -30,11 +30,9 @@ router.post('/selections', bulkSelectMeals);
 router.get('/selections', getStudentSelections);
 
 // Main attendance endpoints
-/*
 router
   .route('/')
   .get(requirePermission('take_attendance'), getAttendance)
   .post(requirePermission('take_attendance'), saveAttendance);
-*/
 
 export default router;
