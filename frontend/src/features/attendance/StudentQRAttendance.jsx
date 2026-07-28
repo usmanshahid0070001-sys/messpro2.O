@@ -24,23 +24,52 @@ export default function StudentQRAttendance() {
     setScanResult(scannedText); // block multiple scans
     const toastId = toast.loading('Verifying QR Code...');
 
+    let qrData;
     try {
-      const res = await scanManagerQR({ token: scannedText });
+      qrData = JSON.parse(scannedText);
+      if (!qrData.h || !qrData.s) throw new Error('Invalid QR Data');
+    } catch (e) {
+      toast.error('Invalid QR code format.', { id: toastId });
+      setTimeout(() => setScanResult(null), 2000);
+      return;
+    }
 
-      if (res.status === 'requires_permission') {
-        toast.dismiss(toastId);
-        setCrossHostelPrompt(res);
-      } else if (res.status === 'success') {
-        toast.success(`Present for ${res.data.mealType}!`, { id: toastId });
-        setTimeout(() => setScanResult(null), 2000);
-      } else {
-        toast.error('Invalid response from server.', { id: toastId });
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser.', { id: toastId });
+      setTimeout(() => setScanResult(null), 2000);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const res = await scanManagerQR({ 
+            h: qrData.h, 
+            s: qrData.s, 
+            lat: position.coords.latitude, 
+            lng: position.coords.longitude 
+          });
+
+          if (res.status === 'requires_permission') {
+            toast.dismiss(toastId);
+            setCrossHostelPrompt(res);
+          } else if (res.status === 'success') {
+            toast.success(`Present for ${res.data?.mealType || 'Meal'}!`, { id: toastId });
+            setTimeout(() => setScanResult(null), 2000);
+          } else {
+            toast.error('Invalid response from server.', { id: toastId });
+            setTimeout(() => setScanResult(null), 2000);
+          }
+        } catch (error) {
+          toast.dismiss(toastId);
+          setTimeout(() => setScanResult(null), 2000);
+        }
+      },
+      (geoError) => {
+        toast.error('Location access is required for attendance.', { id: toastId });
         setTimeout(() => setScanResult(null), 2000);
       }
-    } catch (error) {
-      toast.dismiss(toastId); // Mutation's onError handles the error toast
-      setTimeout(() => setScanResult(null), 2000);
-    }
+    );
   };
 
   const handleRequestPermission = async (managerHostelId) => {

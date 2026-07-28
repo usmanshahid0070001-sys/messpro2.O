@@ -7,7 +7,7 @@ import { usePlans } from '../../hooks/queries/usePlanQueries';
 import { useFormDraft } from '../../hooks/useFormDraft';
 
 const INITIAL_FORM = {
-  name: '', subdomain: '', location: '', plan: '',
+  name: '', subdomain: '', location: '', plan: '', maxMealSelection: 4,
   adminName: '', adminEmail: '', managerName: '', managerEmail: ''
 };
 
@@ -94,6 +94,7 @@ export default function CreateHostelModal({ isOpen, onClose }) {
     name: touched.name && !formData.name.trim() ? 'Hostel name required' : null,
     subdomain: touched.subdomain && (!formData.subdomain.trim() || !SUBDOMAIN_REGEX.test(formData.subdomain)) ? 'Invalid domain format' : null,
     location: touched.location && !formData.location.trim() ? 'Location required' : null,
+    maxMealSelection: touched.maxMealSelection && (formData.maxMealSelection < 1 || formData.maxMealSelection > 10) ? 'Must be between 1 and 10' : null,
     adminName: touched.adminName && !formData.adminName.trim() ? 'Admin name required' : null,
     adminEmail: touched.adminEmail && (!formData.adminEmail.trim() || !EMAIL_REGEX.test(formData.adminEmail)) ? 'Valid email required' : null,
     managerName: touched.managerName && !formData.managerName.trim() ? 'Manager name required' : null,
@@ -103,8 +104,8 @@ export default function CreateHostelModal({ isOpen, onClose }) {
 
   const validateStep = (currentStep) => {
     if (currentStep === 1) {
-      setTouched(p => ({ ...p, name: true, subdomain: true, location: true }));
-      return formData.name.trim() && SUBDOMAIN_REGEX.test(formData.subdomain) && formData.location.trim();
+      setTouched(p => ({ ...p, name: true, subdomain: true, location: true, maxMealSelection: true }));
+      return formData.name.trim() && SUBDOMAIN_REGEX.test(formData.subdomain) && formData.location.trim() && formData.maxMealSelection >= 1 && formData.maxMealSelection <= 10;
     }
     if (currentStep === 2) {
       setTouched(p => ({ ...p, adminName: true, adminEmail: true, managerName: true, managerEmail: true }));
@@ -132,7 +133,13 @@ export default function CreateHostelModal({ isOpen, onClose }) {
     if (!validateStep(3)) return;
 
     try {
-      await createHostel(formData);
+      const payload = {
+        ...formData,
+        settings: {
+          maxMealSelection: Number(formData.maxMealSelection)
+        }
+      };
+      await createHostel(payload);
       toast.success('Hostel created successfully!');
       clearDraft();
       onClose();
@@ -214,6 +221,7 @@ export default function CreateHostelModal({ isOpen, onClose }) {
                           <FormInput id="hostel-subdomain" name="subdomain" label="Domain" required value={formData.subdomain} onChange={handleChange} onBlur={handleBlur} error={errors.subdomain} placeholder="e.g. @gmail.com" />
                           <FormInput id="hostel-location" name="location" label="City / Location" required value={formData.location} onChange={handleChange} onBlur={handleBlur} error={errors.location} placeholder="e.g. Islamabad" />
                         </div>
+                        <FormInput id="max-meal-selection" name="maxMealSelection" type="number" min="1" max="10" label="Max Meals Selection per Student" required value={formData.maxMealSelection} onChange={handleChange} onBlur={handleBlur} error={errors.maxMealSelection} placeholder="e.g. 4" />
                       </div>
                     )}
 

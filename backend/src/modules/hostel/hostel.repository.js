@@ -16,7 +16,12 @@ class HostelRepository{
 
 
   async findAll(){
-    return await Hostel.find({}).sort({ createdAt: -1 });
+    // Some hostels created with the original schema store `plan` as a string
+    // (for example, "Basic"). Hydrating those records with the current schema,
+    // where `plan` is an object, makes Mongoose throw before the API can return
+    // any hostels. A lean query returns the stored data without document
+    // hydration and keeps the endpoint compatible with both record formats.
+    return await Hostel.find({}).sort({ createdAt: -1 }).lean();
   }
 
 

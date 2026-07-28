@@ -177,7 +177,7 @@ export default function QRAttendance() {
     }
   };
 
-  const qrToken = qrResponse?.data?.token;
+  const qrToken = qrResponse?.data ? JSON.stringify({ h: qrResponse.data.h, s: qrResponse.data.s }) : null;
 
   return (
     <div className="space-y-6 relative">
