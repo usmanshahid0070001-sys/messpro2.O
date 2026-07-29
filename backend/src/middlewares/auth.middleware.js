@@ -61,34 +61,8 @@ export const requirePermission = (requiredPermission) => {
       return next();
     }
 
-    const normalize = (str) => (str || '').toLowerCase().replace(/_/g, ' ');
-    const normalizedReq = normalize(requiredPermission);
-
-    // Features where Managers are checked against the Hostel plan instead of individual permissions
-    const managerFeatureExemptions = ['meal settings', 'qr attendance', 'manual attendance', 'biometric attendance'];
-
-    // 2. For Admins, or Managers accessing exempt features, check the hostel features list
-    if (user.role === 'admin' || (user.role === 'manager' && managerFeatureExemptions.includes(normalizedReq))) {
-      const hostel = await Hostel.findById(user.hostelId);
-      
-      if (!hostel) {
-        return res.status(404).json({ success: false, message: 'Hostel not found.' });
-      }
-
-      const feature = hostel.plan?.features?.find(f => normalize(f.name) === normalizedReq);
-      
-      if (feature && feature.isEnabled) {
-        return next();
-      }
-      
-      return res.status(403).json({ 
-        success: false, 
-        message: `Access Denied: The '${requiredPermission}' feature is not enabled in your plan.` 
-      });
-    }
-
     // 3. For students, or Managers accessing non-exempt features, check individual permissions
-    if (['student', 'manager'].includes(user.role) && user.permissions && user.permissions.includes(requiredPermission)) {
+    if (['student', 'manager', 'admin'].includes(user.role) && user.permissions && user.permissions.includes(requiredPermission)) {
       return next();
     }
 

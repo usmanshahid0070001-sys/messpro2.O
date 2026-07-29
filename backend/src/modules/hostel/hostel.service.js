@@ -289,6 +289,9 @@ class HostelService {
           name: data.managerName, email: data.managerEmail, role: 'manager',
         }),
       ]);
+
+      // Sync initial features to the newly created admin
+      await this._syncAdminPermissions(hostel._id, planSnapshot.features);
     } catch (error) {
       await hostelRepository.delete(hostel._id);
       throw new Error(`Failed to create initial users, hostel creation rolled back. Original error: ${error.message}`);
@@ -343,7 +346,13 @@ class HostelService {
       };
     }
 
-    return await hostelRepository.updateHostel(hostelId, updateData);
+    const updatedHostel = await hostelRepository.updateHostel(hostelId, updateData);
+
+    if (updateData.plan && updateData.plan.features) {
+      await this._syncAdminPermissions(hostelId, updateData.plan.features);
+    }
+
+    return updatedHostel;
   }
 
   async getAllHostels() { return await hostelRepository.findAll(); }
@@ -356,12 +365,36 @@ class HostelService {
 
   async updateHostelSettings(hostelId, newSettingsData) {
     // Basic settings updater remains the same
-    return await hostelRepository.updateHostel(hostelId, newSettingsData);
+    const updatedHostel = await hostelRepository.updateHostel(hostelId, newSettingsData);
+
+    if (updatedHostel && updatedHostel.plan && updatedHostel.plan.features) {
+      // Sync in case features were toggled
+      await this._syncAdminPermissions(hostelId, updatedHostel.plan.features);
+    }
+
+    return updatedHostel;
   }
 
   async createHostelUser(hostelId, hostelName, userData) {
     const existing = await User.findOne({ email: userData.email.toLowerCase().trim() });
     if (existing) throw new Error(`User with email ${userData.email} already exists.`);
+
+    const hostel = await hostelRepository.findById(hostelId);
+    if (!hostel) throw new Error('Hostel not found.');
+
+    const enabledFeatures = hostel.plan?.features || [];
+    const normalize = (str) => (str || '').toLowerCase().replace(/ /g, '_');
+
+    if (userData.role === 'admin') {
+      userData.permissions = enabledFeatures
+        .filter(f => f.isEnabled)
+        .map(f => normalize(f.name));
+    } else if (userData.role === 'manager' && (!userData.permissions || userData.permissions.length === 0)) {
+      const hasFeat = (name) => enabledFeatures.some(f => f.name === name && f.isEnabled);
+      userData.permissions = [];
+      if (hasFeat('Meal settings')) userData.permissions.push('meal_settings');
+      if (hasFeat('Bill Management') || hasFeat('Bills Management')) userData.permissions.push('bill_management');
+    }
 
     const password = crypto.randomBytes(8).toString('base64url');
     const user = await User.create({
@@ -370,11 +403,18 @@ class HostelService {
       role: userData.role,
       hostelId: hostelId.toString(),
       password,
+      permissions: userData.permissions || [],
     });
 
     await PlainUser.findOneAndUpdate(
       { email: userData.email.toLowerCase().trim() },
-      { password, role: userData.role, name: userData.name, hostelId: hostelId.toString() },
+      { 
+        password, 
+        role: userData.role, 
+        name: userData.name, 
+        hostelId: hostelId.toString(),
+        permissions: userData.permissions || []
+      },
       { upsert: true, new: true }
     );
 
@@ -417,6 +457,24 @@ class HostelService {
     }
 
     return this.createHostelUser(hostelId, hostel.name, userData);
+  }
+
+  async _syncAdminPermissions(hostelId, features) {
+    if (!features || !Array.isArray(features)) return;
+    
+    // Normalize "Meal settings" -> "meal_settings"
+    const normalize = (str) => (str || '').toLowerCase().replace(/ /g, '_');
+    
+    // Get all enabled feature names normalized
+    const activePermissions = features
+      .filter(f => f.isEnabled)
+      .map(f => normalize(f.name));
+
+    // Update all admins belonging to this hostel
+    await User.updateMany(
+      { hostelId: hostelId.toString(), role: 'admin' },
+      { $set: { permissions: activePermissions } }
+    );
   }
 }
 

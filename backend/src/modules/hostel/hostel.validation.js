@@ -34,6 +34,7 @@ export const addHostelUserSchema = z.object({
   name: z.string().min(2, 'Name is required.'),
   email: z.string().email('A valid email is required.'),
   role: z.enum(['admin', 'manager']),
+  permissions: z.array(z.string()).optional(),
 });
 
 

@@ -8,7 +8,7 @@ import {
   updateMyHostelSettings,
  
 } from './hostel.controller.js';
-import { protect, restrictTo } from '../../middlewares/auth.middleware.js';
+import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -21,7 +21,7 @@ router.route('/')
   .get(protect, restrictTo('superadmin'), getHostels)
   .post(protect, restrictTo('superadmin'), createHostel);
 
-router.route('/:id/users').post(protect, restrictTo('superadmin', 'admin'), addHostelUser);
+router.route('/:id/users').post(protect, requirePermission('user_management'), addHostelUser);
 router.route('/:id/settings').patch(protect, restrictTo('superadmin'), updateSettings);
 
 export default router;

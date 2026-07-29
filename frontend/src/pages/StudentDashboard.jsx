@@ -65,23 +65,41 @@ export default function StudentDashboard() {
     activeTab = "dashboard";
   }
 
-  // Helper: true if feature is in hostel plan AND user has permission (unless it's a default)
-  const hasFeatureAndPermission = (featureName, requiredPermissionName) => {
-    let isFeatureEnabled = false;
-    
-    // Fallbacks for older databases that still use 'Room Service' mapped to Service Management (Cleaning)
-    if (featureName === "Service Management") {
-      isFeatureEnabled = enabledFeatures.some(f => (f.name === "Service Management" || f.name === "Room Service") && f.isEnabled);
-    } else {
-      isFeatureEnabled = enabledFeatures.some(f => f.name === featureName && f.isEnabled);
-    }
+  // Helper to check permissions dynamically
+  const hasPermission = (permName) => {
+      // 1. Check if the hostel actually has this feature enabled
+      const featureMap = {
+        'service_management': ['Service Management', 'Room Service'],
+        'complaint_management': ['Complaint Management'],
+        'user_management': ['User Management'],
+        'residence_management': ['Residence Management'],
+        'manual_attendance': ['Manual Attendance'],
+        'qr_attendance': ['QR Attendance'],
+        'biometric_attendance': ['Biometric Attendance'],
+        'bill_generation': ['Bill Generation'],
+        'bill_management': ['Bill Management', 'Bills Management'],
+        'meal_settings': ['Meal settings'],
+        'meal_control': ['Meal control']
+      };
+      
+      const matchingFeatures = featureMap[permName] || [];
+      const isFeatureEnabled = enabledFeatures.some(f => matchingFeatures.includes(f.name) && f.isEnabled);
+      
+      // If the hostel disabled it, nobody gets it!
+      if (!isFeatureEnabled) return false;
 
-    const hasPermission = userPermissions.includes(requiredPermissionName);
-    return isFeatureEnabled && hasPermission;
+      // 2. Fallback for old students with empty permissions
+      if (user?.role === 'student' && (!user.permissions || user.permissions.length === 0)) {
+         // Students historically never had any extra dashboard modules enabled by default.
+         return false;
+      }
+
+      // 3. Strictly check student's granted permissions
+      return user?.permissions?.includes(permName);
   };
 
-  const hasService = hasFeatureAndPermission("Service Management", "service_management");
-  const hasComplaint = hasFeatureAndPermission("Complaint Management", "complaint_management");
+  const hasService = hasPermission("service_management");
+  const hasComplaint = hasPermission("complaint_management");
   const showServiceTab = hasService || hasComplaint;
   
   const canFileComplaint = enabledFeatures.some(f => f.name === "Complaint Management" && f.isEnabled);
@@ -99,9 +117,9 @@ export default function StudentDashboard() {
     hasQRAttendance && { id: "qr-attendance", label: "QR Attendance", icon: QrCode },
     
     // Conditionally added features based on permissions AND hostel plan
-    hasFeatureAndPermission("Meal settings", "meal_settings") && { id: "menu", label: "Meal Management", icon: Utensils },
-    hasFeatureAndPermission("User Management", "user_management") && { id: "users", label: "User Management", icon: Users },
-    hasFeatureAndPermission("Residence Management", "residence_management") && { id: "rooms", label: "Residence Management", icon: Home },
+    hasPermission("meal_settings") && { id: "menu", label: "Meal Management", icon: Utensils },
+    hasPermission("user_management") && { id: "users", label: "User Management", icon: Users },
+    hasPermission("residence_management") && { id: "rooms", label: "Residence Management", icon: Home },
     showServiceTab && { id: "services", label: "Service Management", icon: ConciergeBell },
   ].filter(Boolean);
 

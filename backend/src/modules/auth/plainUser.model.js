@@ -53,17 +53,8 @@ const plainUserSchema = new mongoose.Schema(
       required: true,
     },
     
-    // 👇 SYNCHRONIZED SPARSE ARRAY PERMISSIONS 👇
     permissions: {
       type: [String],
-      // This enum must perfectly match auth.model.js
-      enum: [
-        'add_student', 
-        'edit_menu', 
-        'manage_complaints', 
-        'take_attendance', 
-        'view_reports'
-      ],
       default: [], // Starts empty, zero memory bloat
     },
     // 👆 END NEW PERMISSIONS 👆

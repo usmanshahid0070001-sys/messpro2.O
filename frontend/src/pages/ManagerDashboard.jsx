@@ -25,9 +25,9 @@ export default function ManagerDashboard() {
   const pathParts = location.pathname.split("/");
   const currentTab = pathParts[pathParts.length - 1];
 
-  let activeTab = (currentTab === "manager-dashboard" || !currentTab) 
-                    ? "dashboard" 
-                    : currentTab;
+  let activeTab = (currentTab === "manager-dashboard" || !currentTab)
+    ? "dashboard"
+    : currentTab;
 
   const setActiveTab = (tabId) => {
     navigate(`/manager-dashboard/${tabId}`);
@@ -50,38 +50,53 @@ export default function ManagerDashboard() {
   }
 
   // Helper: true if feature is in hostel plan AND user has permission
-  const hasFeatureAndPermission = (featureName, requiredPermissionName) => {
-    let isFeatureEnabled = false;
-    
-    // Fallbacks for older databases that still use 'Room Service' mapped to Service Management (Cleaning)
-    if (featureName === "Service Management") {
-      isFeatureEnabled = enabledFeatures.some(f => (f.name === "Service Management" || f.name === "Room Service") && f.isEnabled);
-    } else {
-      isFeatureEnabled = enabledFeatures.some(f => f.name === featureName && f.isEnabled);
+  const hasPermission = (permName) => {
+    // 1. Check if the hostel actually has this feature enabled
+    const featureMap = {
+      'service_management': ['Service Management'],
+      'complaint_management': ['Complaint Management'],
+      'user_management': ['User Management'],
+      'residence_management': ['Residence Management'],
+      'manual_attendance': ['Manual Attendance'],
+      'qr_attendance': ['QR Attendance'],
+      'biometric_attendance': ['Biometric Attendance'],
+      'bill_generation': ['Bill Generation'],
+      'bill_management': ['Bill Management', 'Bills Management'],
+      'meal_settings': ['Meal settings'],
+      'meal_control': ['Meal control']
+    };
+
+    const matchingFeatures = featureMap[permName] || [];
+    const isFeatureEnabled = enabledFeatures.some(f => matchingFeatures.includes(f.name) && f.isEnabled);
+
+    // If the hostel disabled it, nobody gets it!
+    if (!isFeatureEnabled) return false;
+
+    // 2. Fallback for old managers with empty permissions
+    if (user?.role === 'manager' && (!user.permissions || user.permissions.length === 0)) {
+      return permName === 'bill_management' || permName === 'meal_settings' || permName === 'meal_control';
     }
 
-    const hasPermission = userPermissions.includes(requiredPermissionName);
-    return isFeatureEnabled && hasPermission;
+    // 3. Strictly check manager's granted permissions
+    return user?.permissions?.includes(permName);
   };
 
-  const hasService = hasFeatureAndPermission("Service Management", "service_management");
-  const hasComplaint = hasFeatureAndPermission("Complaint Management", "complaint_management");
+  const hasService = hasPermission("service_management");
+  const hasComplaint = hasPermission("complaint_management");
   const showServiceTab = hasService || hasComplaint;
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    enabledFeatures.some(f => f.name === "Meal settings" && f.isEnabled) && { id: "live", label: "Live Overview", icon: Activity },
-    enabledFeatures.some(f => f.name === "Meal settings" && f.isEnabled) && { id: "menu", label: "Weekly Menu", icon: Utensils },
-    { id: "bills", label: "Bill Management", icon: FileText },
-
-    // Conditionally added features based on permissions AND hostel plan
-    hasFeatureAndPermission("User Management", "user_management") && { id: "users", label: "User Management", icon: Users },
-    hasFeatureAndPermission("Residence Management", "residence_management") && { id: "rooms", label: "Residence Management", icon: Home },
+    hasPermission("meal_settings") && { id: "live", label: "Live Overview", icon: Activity },
+    hasPermission("meal_settings") && { id: "menu", label: "Weekly Menu", icon: Utensils },
+    hasPermission("bill_management") && { id: "bills", label: "Bill Management", icon: FileText },
+    hasPermission("user_management") && { id: "users", label: "User Management", icon: Users },
+    hasPermission("residence_management") && { id: "rooms", label: "Residence Management", icon: Home },
     showServiceTab && { id: "services", label: "Service Management", icon: ConciergeBell },
-    (enabledFeatures.some(f => (f.name === "Manual Attendance" || f.name === "QR Attendance" || f.name === "Biometric Attendance") && f.isEnabled)) && { id: "attendance", label: "Attendance", icon: CreditCard },
+    (hasPermission("manual_attendance") || hasPermission("qr_attendance") || hasPermission("biometric_attendance")) && { id: "attendance", label: "Attendance", icon: CreditCard },
   ].filter(Boolean);
 
-  const filteredNavItems = isExpired 
+  const filteredNavItems = isExpired
     ? navItems.filter(item => item.id === "dashboard")
     : navItems;
 
@@ -105,9 +120,9 @@ export default function ManagerDashboard() {
           )}
 
           {activeTab === "users" && <ManageUsers />}
-          
+
           {activeTab === "rooms" && <ManageRooms />}
-          
+
           {activeTab === "services" && <ServiceManagement />}
 
           {activeTab === "attendance" && <AttendanceManagement />}
@@ -118,7 +133,7 @@ export default function ManagerDashboard() {
 
           {activeTab === "bills" && (
             <div className="w-full flex items-center justify-center h-64 glass-panel rounded-2xl">
-               <p className="text-[#737373] font-bold">Manage Bills (Migration Pending)</p>
+              <p className="text-[#737373] font-bold">Manage Bills (Migration Pending)</p>
             </div>
           )}
         </motion.div>

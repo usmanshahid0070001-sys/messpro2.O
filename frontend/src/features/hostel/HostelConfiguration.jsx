@@ -67,6 +67,13 @@ export default function HostelConfiguration() {
     );
   };
 
+  const coreFeatureNames = ["User Management", "Bill Management", "Residence Management", "Hostel Configuration", "Bill Generation"];
+  const attendanceFeatureNames = ["Manual Attendance", "QR Attendance", "Biometric Attendance"];
+  
+  const coreFeatures = features.filter(f => coreFeatureNames.includes(f.name));
+  const attendanceFeatures = features.filter(f => attendanceFeatureNames.includes(f.name));
+  const otherFeatures = features.filter(f => !coreFeatureNames.includes(f.name) && !attendanceFeatureNames.includes(f.name));
+
   const handleSave = () => {
     // Validate empty names
     if (customFields.some(f => !f.name.trim())) {
@@ -215,24 +222,62 @@ export default function HostelConfiguration() {
 
         {/* Features Configuration Section (Moved to left column) */}
         {features.length > 0 && (
-          <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
-            <div className="mb-4">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm space-y-6">
+            <div>
               <h2 className="text-lg font-bold text-[#111] dark:text-white">Plan Features</h2>
-              <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Toggle features that are available in your current plan.</p>
+              <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Configure the features available in your current plan.</p>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {features.map((feature, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
-                  <div>
-                    <span className="text-sm font-semibold block text-[#111111] dark:text-white">{feature.name}</span>
-                  </div>
-                  <ToggleSwitch 
-                    checked={feature.isEnabled} 
-                    onChange={() => handleFeatureToggle(feature.name)} 
-                  />
+
+            {/* Core Features */}
+            {coreFeatures.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#a3a3a3] mb-3">Core Features (Default)</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {coreFeatures.map((feature, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-[#111]/50 border border-gray-200 dark:border-[#222] rounded-xl opacity-80">
+                      <span className="text-sm font-semibold text-[#111111] dark:text-white">{feature.name}</span>
+                      <div className="text-[10px] font-bold text-[#111] dark:text-white bg-black/5 dark:bg-white/10 px-2 py-1 rounded tracking-wider">DEFAULT</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {/* Attendance Features */}
+            {attendanceFeatures.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#a3a3a3] mb-3">Attendance Methods</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {attendanceFeatures.map((feature, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
+                      <span className="text-sm font-semibold block text-[#111111] dark:text-white">{feature.name}</span>
+                      <ToggleSwitch 
+                        checked={feature.isEnabled} 
+                        onChange={() => handleFeatureToggle(feature.name)} 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Other Services */}
+            {otherFeatures.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#a3a3a3] mb-3">Other Services</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {otherFeatures.map((feature, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
+                      <span className="text-sm font-semibold block text-[#111111] dark:text-white">{feature.name}</span>
+                      <ToggleSwitch 
+                        checked={feature.isEnabled} 
+                        onChange={() => handleFeatureToggle(feature.name)} 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

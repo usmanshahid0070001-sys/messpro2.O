@@ -9,9 +9,15 @@ import { useAuth } from '../../context/AuthContext';
 import { Shield, Check } from 'lucide-react';
 
 const AVAILABLE_PERMISSIONS = [
-  { slug: 'meal_settings', label: 'Meal Management / Meal setting', requiredPlanFeature: 'Meal settings' },
   { slug: 'user_management', label: 'User Management', requiredPlanFeature: 'User Management' },
+  { slug: 'bill_management', label: 'Bill Management', requiredPlanFeature: 'Bill Management' },
   { slug: 'residence_management', label: 'Residence Management', requiredPlanFeature: 'Residence Management' },
+  { slug: 'manual_attendance', label: 'Manual Attendance', requiredPlanFeature: 'Manual Attendance' },
+  { slug: 'qr_attendance', label: 'QR Attendance', requiredPlanFeature: 'QR Attendance' },
+  { slug: 'biometric_attendance', label: 'Biometric Attendance', requiredPlanFeature: 'Biometric Attendance' },
+  { slug: 'meal_settings', label: 'Meal Settings', requiredPlanFeature: 'Meal settings' },
+  { slug: 'meal_control', label: 'Meal Control', requiredPlanFeature: 'Meal control' },
+  { slug: 'bill_generation', label: 'Bill Generation', requiredPlanFeature: 'Bill Generation' },
   { slug: 'service_management', label: 'Service Management', requiredPlanFeature: 'Service Management' },
   { slug: 'complaint_management', label: 'Complaint Management', requiredPlanFeature: 'Complaint Management' }
 ];
@@ -25,11 +31,10 @@ export const FormInput = React.forwardRef(({ label, error, required, helperText,
     <input
       ref={ref}
       {...props}
-      className={`w-full px-3.5 py-2.5 bg-white dark:bg-[#111111] border rounded-xl text-sm text-[#111111] dark:text-white placeholder:text-[#c4c4c4] dark:placeholder:text-[#444444] focus:outline-none focus:ring-1 transition-all ${
-        error
+      className={`w-full px-3.5 py-2.5 bg-white dark:bg-[#111111] border rounded-xl text-sm text-[#111111] dark:text-white placeholder:text-[#c4c4c4] dark:placeholder:text-[#444444] focus:outline-none focus:ring-1 transition-all ${error
           ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
           : 'border-[#e5e5e5] dark:border-[#222222] focus:border-[#111111] focus:ring-[#111111] dark:focus:border-white dark:focus:ring-white'
-      }`}
+        }`}
     />
     <div className="min-h-[16px] flex items-start justify-between gap-2 mt-0.5">
       <p className={`text-[11px] font-medium text-red-500 flex items-center gap-1 transition-opacity duration-200 ${error ? 'opacity-100' : 'opacity-0 select-none'}`}>
@@ -48,11 +53,10 @@ export const FormSelect = ({ label, options, error, required, ...props }) => (
     <div className="relative">
       <select
         {...props}
-        className={`w-full pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#111111] border rounded-xl text-sm text-[#111111] dark:text-white focus:outline-none focus:ring-1 transition-all appearance-none cursor-pointer disabled:opacity-50 ${
-          error
+        className={`w-full pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#111111] border rounded-xl text-sm text-[#111111] dark:text-white focus:outline-none focus:ring-1 transition-all appearance-none cursor-pointer disabled:opacity-50 ${error
             ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
             : 'border-[#e5e5e5] dark:border-[#222222] focus:border-[#111111] focus:ring-[#111111] dark:focus:border-white dark:focus:ring-white'
-        }`}
+          }`}
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -73,7 +77,7 @@ const UserModal = () => {
   const { isModalOpen, modalType, selectedUser, closeModal } = useUserUIStore();
   const { role: currentUserRole, user: currentUser } = useAuth();
   const { data: hostelData, isLoading: isHostelLoading } = useGetHostelDetails(currentUserRole);
-  
+
   const createMutation = useCreateUserMutation();
   const updateMutation = useUpdateUserMutation();
   const nameInputRef = useRef(null);
@@ -94,7 +98,7 @@ const UserModal = () => {
           name: selectedUser.name || '',
           email: selectedUser.email || '',
           role: selectedUser.role || '',
-          password: '', 
+          password: '',
           id: selectedUser.id || '',
           hostelId: selectedUser.hostelId || '',
           permissions: selectedUser.permissions || [],
@@ -114,7 +118,7 @@ const UserModal = () => {
         setDynamicFormData({});
       }
       setErrors({});
-      
+
       // Focus first input for accessibility
       setTimeout(() => nameInputRef.current?.focus(), 100);
 
@@ -153,7 +157,37 @@ const UserModal = () => {
     if (name === 'name') {
       value = capitalizeName(value);
     }
-    setFormData(prev => ({ ...prev, [name]: value }));
+
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value };
+
+      // Auto-assign default permissions for managers on creation if role or hostel changes
+      if (modalType === 'create' && (name === 'role' || name === 'hostelId')) {
+        const checkRole = name === 'role' ? value : updated.role;
+        const checkHostelId = name === 'hostelId' ? value : updated.hostelId;
+
+        if (checkRole === 'manager' || checkRole === 'admin') {
+          let targetHostel = null;
+          if (currentUserRole === 'superadmin') {
+            targetHostel = hostelData?.find(h => h._id === checkHostelId);
+          } else {
+            targetHostel = Array.isArray(hostelData) ? hostelData[0] : hostelData;
+          }
+
+          const enabledFeatures = targetHostel?.plan?.features || [];
+          const hasFeat = (featName) => enabledFeatures.some(f => f.name === featName && f.isEnabled);
+
+          const defaults = [];
+          if (hasFeat('Meal settings')) defaults.push('meal_settings');
+          if (hasFeat('Bill Management')) defaults.push('bill_management');
+
+          updated.permissions = defaults;
+        } else {
+          updated.permissions = [];
+        }
+      }
+      return updated;
+    });
   };
   const handleDynamicChange = (key, value) => setDynamicFormData(prev => ({ ...prev, [key]: value }));
 
@@ -173,9 +207,9 @@ const UserModal = () => {
       // For admin, hostelData is the single hostel object
       targetHostel = Array.isArray(hostelData) ? hostelData[0] : hostelData;
     }
-    
+
     const enabledPlanFeatures = targetHostel?.plan?.features || [];
-    
+
     return AVAILABLE_PERMISSIONS.filter(perm => {
       if (perm.requiredPlanFeature === "Service Management") {
         return enabledPlanFeatures.some(f => (f.name === "Service Management" || f.name === "Room Service") && f.isEnabled);
@@ -189,11 +223,11 @@ const UserModal = () => {
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (currentUserRole === 'superadmin' && !formData.hostelId) newErrors.hostelId = 'Hostel is required';
-    
+
     if (formData.role === 'student') {
       if (modalType === 'create' && !formData.password) newErrors.password = 'Password is required';
       if (!formData.id.trim()) newErrors.id = 'Roll Number is required';
-      
+
       currentCustomFields.forEach((field) => {
         if (field.isRequired && !dynamicFormData[field.name]) {
           newErrors[field.name] = 'Required field';
@@ -210,14 +244,14 @@ const UserModal = () => {
     if (!validate()) return;
 
     const additionalInfoArray = Object.entries(dynamicFormData).map(([key, value]) => ({ key, value: String(value) }));
-    
+
     const payload = { ...formData };
     if (formData.role === 'student') payload.additionalInfo = additionalInfoArray;
     // Don't send empty password on update
     if (modalType === 'update' && !payload.password) delete payload.password;
 
     const mutationOpts = { onSuccess: () => closeModal() };
-    
+
     if (modalType === 'create') {
       createMutation.mutate(payload, mutationOpts);
     } else {
@@ -232,7 +266,7 @@ const UserModal = () => {
   return (
     <AnimatePresence>
       {isModalOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
         >
@@ -240,7 +274,7 @@ const UserModal = () => {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} aria-hidden="true" />
 
           {/* Modal Container */}
-          <motion.div 
+          <motion.div
             role="dialog"
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -266,7 +300,7 @@ const UserModal = () => {
                 </div>
               ) : (
                 <form id="user-form" onSubmit={handleSubmit} className="space-y-2" noValidate>
-                  
+
                   {modalType === 'create' && (
                     <FormSelect
                       label="User Role"
@@ -328,30 +362,30 @@ const UserModal = () => {
                     )}
 
                     {(modalType === 'create' || formData.role === 'student') && (
-                       <FormInput
-                         label="Password"
-                         name="password"
-                         type="password"
-                         required={modalType === 'create'}
-                         value={formData.password}
-                         onChange={handleChange}
-                         error={errors.password}
-                         placeholder="••••••••"
-                         helperText={modalType === 'update' ? "Leave blank to keep unchanged" : ""}
-                       />
+                      <FormInput
+                        label="Password"
+                        name="password"
+                        type="password"
+                        required={modalType === 'create'}
+                        value={formData.password}
+                        onChange={handleChange}
+                        error={errors.password}
+                        placeholder="••••••••"
+                        helperText={modalType === 'update' ? "Leave blank to keep unchanged" : ""}
+                      />
                     )}
                   </div>
 
                   {formData.role === 'student' && currentCustomFields.length > 0 && (
-                     <DynamicFields
-                       customFields={currentCustomFields}
-                       formData={dynamicFormData}
-                       handleDynamicChange={handleDynamicChange}
-                       errors={errors}
-                     />
+                    <DynamicFields
+                      customFields={currentCustomFields}
+                      formData={dynamicFormData}
+                      handleDynamicChange={handleDynamicChange}
+                      errors={errors}
+                    />
                   )}
 
-                  {(formData.role === 'manager' || formData.role === 'student') && allowedPermissions.length > 0 && (
+                  {(formData.role === 'manager' || formData.role === 'student' || formData.role === 'admin') && allowedPermissions.length > 0 && (
                     <div className="pt-4 border-t border-[#e5e5e5] dark:border-[#222]">
                       <h4 className="text-sm font-bold flex items-center gap-2 mb-3 text-[#111] dark:text-white">
                         <Shield className="w-4 h-4 text-emerald-500" />
@@ -361,12 +395,10 @@ const UserModal = () => {
                         {allowedPermissions.map((perm) => {
                           const isChecked = formData.permissions.includes(perm.slug);
                           return (
-                            <label key={perm.slug} className={`relative flex items-center gap-3 cursor-pointer rounded-xl px-4 py-3 border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#111111] dark:has-[:focus-visible]:ring-white ${
-                              isChecked ? 'bg-[#f5f5f5] dark:bg-[#1a1a1a] border-[#d4d4d4] dark:border-[#333]' : 'bg-white dark:bg-[#111] border-[#e5e5e5] dark:border-[#222] hover:bg-[#fafafa] dark:hover:bg-[#151515]'
-                            }`}>
-                              <div className={`w-5 h-5 shrink-0 rounded flex items-center justify-center transition-all duration-150 ${
-                                isChecked ? 'bg-[#111111] dark:bg-white border border-[#111111] dark:border-white' : 'bg-white dark:bg-[#111111] border border-[#d4d4d4] dark:border-[#333333]'
+                            <label key={perm.slug} className={`relative flex items-center gap-3 cursor-pointer rounded-xl px-4 py-3 border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#111111] dark:has-[:focus-visible]:ring-white ${isChecked ? 'bg-[#f5f5f5] dark:bg-[#1a1a1a] border-[#d4d4d4] dark:border-[#333]' : 'bg-white dark:bg-[#111] border-[#e5e5e5] dark:border-[#222] hover:bg-[#fafafa] dark:hover:bg-[#151515]'
                               }`}>
+                              <div className={`w-5 h-5 shrink-0 rounded flex items-center justify-center transition-all duration-150 ${isChecked ? 'bg-[#111111] dark:bg-white border border-[#111111] dark:border-white' : 'bg-white dark:bg-[#111111] border border-[#d4d4d4] dark:border-[#333333]'
+                                }`}>
                                 {isChecked && <Check className="w-3.5 h-3.5 text-white dark:text-[#111111]" />}
                               </div>
                               <input type="checkbox" className="sr-only" checked={isChecked} onChange={() => handlePermissionToggle(perm.slug)} />

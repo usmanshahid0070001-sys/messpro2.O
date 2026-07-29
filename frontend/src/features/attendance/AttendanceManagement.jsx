@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserCheck, QrCode, Fingerprint, CalendarCheck } from 'lucide-react';
 import { useMyHostel } from '../../hooks/queries/useHostelQueries';
+import { useAuth } from '../../context/AuthContext';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 
 import ManualAttendance from './ManualAttendance';
@@ -14,15 +15,40 @@ export default function AttendanceManagement() {
   
   const enabledFeatures = hostelData?.plan?.features || [];
   
-  // Helper to check if a feature is enabled
-  const hasFeature = (featureName) => {
-    return enabledFeatures.some(f => f.name === featureName && f.isEnabled);
+  const { user } = useAuth();
+
+  // Helper to check if a feature is enabled and the user has permission
+  const hasPermission = (permName) => {
+    // 1. Check if the hostel actually has this feature enabled
+    const featureMap = {
+      'manual_attendance': ['Manual Attendance'],
+      'qr_attendance': ['QR Attendance'],
+      'biometric_attendance': ['Biometric Attendance'],
+    };
+    
+    const matchingFeatures = featureMap[permName] || [];
+    const isFeatureEnabled = enabledFeatures.some(f => matchingFeatures.includes(f.name) && f.isEnabled);
+    
+    // If the hostel disabled it, nobody gets it!
+    if (!isFeatureEnabled) return false;
+
+    // 2. Fallbacks for old accounts with empty permissions
+    if (user?.role === 'admin' && (!user.permissions || user.permissions.length === 0)) {
+       return true; // Admins get whatever is enabled
+    }
+    
+    if (user?.role === 'manager' && (!user.permissions || user.permissions.length === 0)) {
+       return false; // Managers historically didn't get attendance by default unless explicitly granted
+    }
+
+    // 3. Strictly check granted permissions
+    return user?.permissions?.includes(permName);
   };
 
-  // We check for these features based on plan assumption
-  const hasManual = hasFeature("Manual Attendance");
-  const hasQR = hasFeature("QR Attendance");
-  const hasBiometric = hasFeature("Biometric Attendance");
+  // Check BOTH hostel plan and user permission dynamically
+  const hasManual = hasPermission("manual_attendance");
+  const hasQR = hasPermission("qr_attendance");
+  const hasBiometric = hasPermission("biometric_attendance");
 
   const availableTabs = [
     hasManual && { id: 'manual', label: 'Manual', icon: UserCheck, component: <ManualAttendance /> },

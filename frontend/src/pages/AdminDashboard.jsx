@@ -60,31 +60,48 @@ export default function AdminDashboard() {
     activeTab = "dashboard";
   }
 
-  // Helper to check if a feature is enabled
-  const hasFeature = (featureName) => {
-    // Backward compatibility for existing databases that still have 'Room Service' mapped to Service Management (Cleaning)
-    if (featureName === "Service Management") {
-      return enabledFeatures.some(f => (f.name === "Service Management" || f.name === "Room Service") && f.isEnabled);
+  // Helper to check permissions dynamically
+  const hasPermission = (permName) => {
+    // If the user is an admin but has no permissions array (old database data fallback)
+    if (user?.role === 'admin' && (!user.permissions || user.permissions.length === 0)) {
+      // Reconstruct the original string to check against enabledFeatures
+      const featureMap = {
+        'service_management': ['Service Management'],
+        'complaint_management': ['Complaint Management'],
+        'user_management': ['User Management'],
+        'residence_management': ['Residence Management'],
+        'manual_attendance': ['Manual Attendance'],
+        'qr_attendance': ['QR Attendance'],
+        'biometric_attendance': ['Biometric Attendance'],
+        'bill_generation': ['Bill Generation'],
+        'bill_management': ['Bill Management', 'Bills Management'],
+        'meal_settings': ['Meal settings'],
+        'meal_control': ['Meal control'],
+        'hostel_configuration': ['Hostel Configuration']
+      };
+      const matchingFeatures = featureMap[permName] || [];
+      return enabledFeatures.some(f => matchingFeatures.includes(f.name) && f.isEnabled);
     }
-    return enabledFeatures.some(f => f.name === featureName && f.isEnabled);
+
+    return user?.permissions?.includes(permName);
   };
 
-  const hasService = hasFeature("Service Management");
-  const hasComplaint = hasFeature("Complaint Management");
+  const hasService = hasPermission("service_management");
+  const hasComplaint = hasPermission("complaint_management");
   const showServiceTab = hasService || hasComplaint;
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    hasFeature("User Management") && { id: "users", label: "User Management", icon: Users },
-    hasFeature("Residence Management") && { id: "rooms", label: "Residence Management", icon: Home },
+    hasPermission("user_management") && { id: "users", label: "User Management", icon: Users },
+    hasPermission("residence_management") && { id: "rooms", label: "Residence Management", icon: Home },
     showServiceTab && { id: "services", label: "Service Management", icon: ConciergeBell },
-    (hasFeature("Manual Attendance") || hasFeature("QR Attendance") || hasFeature("Biometric Attendance")) && { id: "attendance", label: "Attendance", icon: CreditCard },
-    hasFeature("Bill Generation") && { id: "bills", label: "Bill generate", icon: Calculator },
-    hasFeature("Bill Summary") && { id: "billSummary", label: "Bill Summary", icon: FileText },
-    hasFeature("Meal settings") && { id: "meal", label: "Meal settings", icon: Clock },
-    hasFeature("Meal control") && { id: "mealControl", label: "Meal Control", icon: ShieldCheck },
-    hasFeature("Hostel Configuration") && { id: "weeklyMenu", label: "Hostel Configurations", icon: Settings },
-  ].filter(Boolean); // Remove false/undefined items
+    (hasPermission("manual_attendance") || hasPermission("qr_attendance") || hasPermission("biometric_attendance")) && { id: "attendance", label: "Attendance", icon: CreditCard },
+    hasPermission("bill_generation") && { id: "bills", label: "Bill generate", icon: Calculator },
+    hasPermission("bill_management") && { id: "billManagement", label: "Bill Management", icon: FileText },
+    hasPermission("meal_settings") && { id: "meal", label: "Meal settings", icon: Clock },
+    hasPermission("meal_control") && { id: "mealControl", label: "Meal Control", icon: ShieldCheck },
+    hasPermission("hostel_configuration") && { id: "weeklyMenu", label: "Hostel Configurations", icon: Settings },
+  ].filter(Boolean);
 
   // Apply expiration lockout: Allow dashboard, user management, and hostel configuration if expired
   const filteredNavItems = isExpired
@@ -99,7 +116,7 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout
-      userRole="admin"
+      userRole={user?.role}
       navItems={filteredNavItems}
       activeTab={activeTab}
       setActiveTab={setActiveTab}
@@ -114,9 +131,9 @@ export default function AdminDashboard() {
           className="w-full"
         >
           {activeTab === "dashboard" && (
-            <DashboardOverview userRole="admin" user={user} navItems={filteredNavItems} setActiveTab={setActiveTab} />
+            <DashboardOverview userRole={user?.role} user={user} navItems={filteredNavItems} setActiveTab={setActiveTab} />
           )}
-          {activeTab === "billSummary" && renderPlaceholder("Bill Summary")}
+          {activeTab === "billManagement" && renderPlaceholder("Bill Management")}
           {activeTab === "users" && <ManageUsers />}
           {activeTab === "rooms" && <ManageRooms />}
           {activeTab === "attendance" && <AttendanceManagement />}

@@ -145,18 +145,7 @@ const userSchema = new mongoose.Schema(
     // 👇 THE NEW SPARSE ARRAY PERMISSIONS 👇
     permissions: {
       type: [String],
-      // Define every toggleable feature your SaaS has right here
-      enum: [
-        'add_student', 
-        'edit_menu', 
-        'manage_complaints', 
-        'take_attendance', 
-        'view_reports',
-        'meal_settings',
-        'user_management',
-        'residence_management',
-        'service_management'
-      ],
+      // Removed rigid enum to allow dynamic features from hostel plans
       default: [], // Starts empty so it uses zero extra memory!
     },
     // 👆 END NEW PERMISSIONS 👆

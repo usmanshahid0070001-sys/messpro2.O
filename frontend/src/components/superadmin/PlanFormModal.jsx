@@ -16,19 +16,26 @@ const INITIAL_FORM = {
   features: [],
 };
 
-const AVAILABLE_FEATURES = [
+const CORE_FEATURES = [
   "User Management",
-  "Meal settings",
-  "Hostel Configuration",
-  "Bill Generation",
-  "Bill Summary",
-  "Service Management",
-  "Complaint Management",
+  "Bill Management",
+  "Bills Management",
   "Residence Management",
-  "Meal control",
+  "Hostel Configuration",
+  "Bill Generation"
+];
+
+const ATTENDANCE_FEATURES = [
   "Manual Attendance",
   "QR Attendance",
   "Biometric Attendance"
+];
+
+const OTHER_FEATURES = [
+  "Meal settings",
+  "Meal control",
+  "Service Management",
+  "Complaint Management"
 ];
 
 // --- Sub-Components (Extract these to separate files in a real app) ---
@@ -42,11 +49,10 @@ const FormInput = ({ label, error, icon: Icon, required, ...props }) => (
       {Icon && <Icon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#a3a3a3] dark:text-[#666666]" />}
       <input
         {...props}
-        className={`w-full ${Icon ? 'pl-9' : 'px-3.5'} pr-3.5 py-2.5 bg-white dark:bg-[#111111] border rounded-xl text-sm text-[#111111] dark:text-white placeholder:text-[#c4c4c4] dark:placeholder:text-[#444444] focus:outline-none focus:ring-1 transition-all ${
-          error
+        className={`w-full ${Icon ? 'pl-9' : 'px-3.5'} pr-3.5 py-2.5 bg-white dark:bg-[#111111] border rounded-xl text-sm text-[#111111] dark:text-white placeholder:text-[#c4c4c4] dark:placeholder:text-[#444444] focus:outline-none focus:ring-1 transition-all ${error
             ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
             : 'border-[#e5e5e5] dark:border-[#222222] focus:border-[#111111] focus:ring-[#111111] dark:focus:border-white dark:focus:ring-white'
-        }`}
+          }`}
       />
     </div>
     <div className="h-[16px]">
@@ -57,16 +63,12 @@ const FormInput = ({ label, error, icon: Icon, required, ...props }) => (
   </div>
 );
 
-const FeatureCard = ({ label, isChecked, onChange }) => (
-  <label className={`relative flex items-center gap-3 cursor-pointer rounded-lg px-3 py-2.5 -mx-3 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#111111] dark:has-[:focus-visible]:ring-white ${
-    isChecked ? 'bg-[#f5f5f5] dark:bg-[#1a1a1a]' : 'hover:bg-[#fafafa] dark:hover:bg-[#111111]'
-  }`}>
-    <div className={`w-[18px] h-[18px] shrink-0 rounded flex items-center justify-center transition-all duration-150 ${
-      isChecked ? 'bg-[#111111] dark:bg-white border border-[#111111] dark:border-white' : 'bg-white dark:bg-[#111111] border border-[#d4d4d4] dark:border-[#333333]'
-    }`}>
+const FeatureCard = ({ label, isChecked, onChange, disabled }) => (
+  <label className={`relative flex items-center gap-3 cursor-pointer rounded-lg px-3 py-2.5 -mx-3 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#111111] dark:has-[:focus-visible]:ring-white ${isChecked ? 'bg-[#f5f5f5] dark:bg-[#1a1a1a]' : 'hover:bg-[#fafafa] dark:hover:bg-[#111111]'} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
+    <div className={`w-[18px] h-[18px] shrink-0 rounded flex items-center justify-center transition-all duration-150 ${isChecked ? 'bg-[#111111] dark:bg-white border border-[#111111] dark:border-white' : 'bg-white dark:bg-[#111111] border border-[#d4d4d4] dark:border-[#333333]'}`}>
       {isChecked && <Check className="w-3 h-3 text-white dark:text-[#111111]" />}
     </div>
-    <input type="checkbox" className="sr-only" checked={isChecked} onChange={onChange} />
+    <input type="checkbox" className="sr-only" checked={isChecked} onChange={onChange} disabled={disabled} />
     <span className={`text-sm font-medium transition-colors ${isChecked ? 'text-[#111111] dark:text-white' : 'text-[#737373] dark:text-[#888888]'}`}>
       {label}
     </span>
@@ -97,11 +99,11 @@ export default function PlanFormModal({ isOpen, onClose, plan }) {
           maxStudents: plan.limits?.maxStudents ?? 100,
           maxManagers: plan.limits?.maxManagers ?? 2,
         },
-        features: plan.features || []
+        features: plan.features ? [...new Set([...plan.features, ...CORE_FEATURES])] : [...CORE_FEATURES]
       });
     } else if (!isOpen) {
       // Reset after exit animation completes
-      setTimeout(() => setFormData(INITIAL_FORM), 200);
+      setTimeout(() => setFormData({ ...INITIAL_FORM, features: [...CORE_FEATURES] }), 200);
     }
     setTouched({});
   }, [plan, isOpen]);
@@ -112,7 +114,7 @@ export default function PlanFormModal({ isOpen, onClose, plan }) {
     const handleKeyDown = (e) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', handleKeyDown);
     document.body.style.overflow = 'hidden';
-    
+
     // Use requestAnimationFrame for smoother focus management over setTimeout
     requestAnimationFrame(() => nameInputRef.current?.focus());
 
@@ -158,7 +160,7 @@ export default function PlanFormModal({ isOpen, onClose, plan }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     setTouched({ name: true, description: true, price: true });
-    
+
     if (!isFormValid) return;
 
     // Sanitize before sending (convert empty strings back to safe numbers)
@@ -172,7 +174,7 @@ export default function PlanFormModal({ isOpen, onClose, plan }) {
     };
 
     const mutationOptions = { onSuccess: () => onClose() };
-    isEditing 
+    isEditing
       ? updateMutation.mutate({ id: plan._id, planData: payload }, mutationOptions)
       : createMutation.mutate(payload, mutationOptions);
   };
@@ -221,15 +223,15 @@ export default function PlanFormModal({ isOpen, onClose, plan }) {
               <form id={formId} onSubmit={handleSubmit} noValidate>
                 <fieldset className="px-6 py-2 border-b border-[#f0f0f0] dark:border-[#1a1a1a] space-y-1">
                   <legend className="text-[10px] font-bold uppercase tracking-widest text-[#a3a3a3] pt-4">Basic Info</legend>
-                  
+
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <FormInput 
+                    <FormInput
                       id="plan-name" name="name" label="Plan Name" required
                       ref={nameInputRef} value={formData.name}
                       onChange={handleChange} onBlur={() => setTouched(p => ({ ...p, name: true }))}
                       error={errors.name} placeholder="e.g. Basic, Premium"
                     />
-                    <FormInput 
+                    <FormInput
                       id="plan-price" name="price" type="number" label="Price / mo" icon={DollarSign} required
                       min="0" step="0.01" value={formData.price}
                       onChange={handleChange} onBlur={() => setTouched(p => ({ ...p, price: true }))}
@@ -276,14 +278,43 @@ export default function PlanFormModal({ isOpen, onClose, plan }) {
                   </div>
                 </fieldset>
 
-                <fieldset className="px-6 py-2">
-                  <legend className="text-[10px] font-bold uppercase tracking-widest text-[#a3a3a3] pt-4">Features</legend>
-                  
+                <fieldset className="px-6 py-2 border-b border-[#f0f0f0] dark:border-[#1a1a1a]">
+                  <legend className="text-[10px] font-bold uppercase tracking-widest text-[#a3a3a3] pt-4">Core Features (Included)</legend>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {AVAILABLE_FEATURES.map(feature => (
+                    {CORE_FEATURES.map(feature => (
                       <FeatureCard 
                         key={feature} 
                         label={feature} 
+                        isChecked={true}
+                        disabled={true}
+                        onChange={() => {}}
+                      />
+                    ))}
+                  </div>
+                </fieldset>
+
+                <fieldset className="px-6 py-2 border-b border-[#f0f0f0] dark:border-[#1a1a1a]">
+                  <legend className="text-[10px] font-bold uppercase tracking-widest text-[#a3a3a3] pt-4">Attendance Methods</legend>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {ATTENDANCE_FEATURES.map(feature => (
+                      <FeatureCard 
+                        key={feature} 
+                        label={feature} 
+                        isChecked={formData.features.includes(feature)}
+                        onChange={() => handleFeatureToggle(feature)}
+                      />
+                    ))}
+                  </div>
+                </fieldset>
+
+                <fieldset className="px-6 py-2">
+                  <legend className="text-[10px] font-bold uppercase tracking-widest text-[#a3a3a3] pt-4">Other Services</legend>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {OTHER_FEATURES.map(feature => (
+                      <FeatureCard
+                        key={feature}
+                        label={feature}
                         isChecked={formData.features.includes(feature)}
                         onChange={() => handleFeatureToggle(feature)}
                       />
