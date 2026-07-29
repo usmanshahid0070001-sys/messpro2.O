@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../modules/auth/auth.model.js';
+import Hostel from '../modules/hostel/hostel.model.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
 export const protect = catchAsync(async (req, res, next) => {
@@ -52,25 +53,49 @@ export const restrictTo = (...roles) => {
 
 
 export const requirePermission = (requiredPermission) => {
-  return (req, res, next) => {
+  return catchAsync(async (req, res, next) => {
     const user = req.user;
 
-    // 1. Superadmins and Admins bypass the check completely
-    if (['superadmin', 'admin'].includes(user.role)) {
+    // 1. Superadmins bypass the check completely
+    if (user.role === 'superadmin') {
       return next();
     }
 
-    // 2. If it is a manager or student, check if they have the specific permission
-    if (['manager', 'student'].includes(user.role) && user.permissions && user.permissions.includes(requiredPermission)) {
+    const normalize = (str) => (str || '').toLowerCase().replace(/_/g, ' ');
+    const normalizedReq = normalize(requiredPermission);
+
+    // Features where Managers are checked against the Hostel plan instead of individual permissions
+    const managerFeatureExemptions = ['meal settings', 'qr attendance', 'manual attendance', 'biometric attendance'];
+
+    // 2. For Admins, or Managers accessing exempt features, check the hostel features list
+    if (user.role === 'admin' || (user.role === 'manager' && managerFeatureExemptions.includes(normalizedReq))) {
+      const hostel = await Hostel.findById(user.hostelId);
+      
+      if (!hostel) {
+        return res.status(404).json({ success: false, message: 'Hostel not found.' });
+      }
+
+      const feature = hostel.plan?.features?.find(f => normalize(f.name) === normalizedReq);
+      
+      if (feature && feature.isEnabled) {
+        return next();
+      }
+      
+      return res.status(403).json({ 
+        success: false, 
+        message: `Access Denied: The '${requiredPermission}' feature is not enabled in your plan.` 
+      });
+    }
+
+    // 3. For students, or Managers accessing non-exempt features, check individual permissions
+    if (['student', 'manager'].includes(user.role) && user.permissions && user.permissions.includes(requiredPermission)) {
       return next();
     }
 
-    // 3. If they don't have the permission, block the request
+    // 4. If they don't have the permission, block the request
     return res.status(403).json({ 
       success: false, 
       message: `Access Denied: You do not have the '${requiredPermission}' permission.` 
     });
-  };
+  });
 };
-
-

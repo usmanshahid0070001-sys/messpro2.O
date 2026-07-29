@@ -70,9 +70,9 @@ export default function ManagerDashboard() {
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "live", label: "Live Overview", icon: Activity }, // Default
-    { id: "menu", label: "Weekly Menu", icon: Utensils }, // Default 
-    { id: "bills", label: "Bill Management", icon: FileText }, // Default
+    enabledFeatures.some(f => f.name === "Meal settings" && f.isEnabled) && { id: "live", label: "Live Overview", icon: Activity },
+    enabledFeatures.some(f => f.name === "Meal settings" && f.isEnabled) && { id: "menu", label: "Weekly Menu", icon: Utensils },
+    { id: "bills", label: "Bill Management", icon: FileText },
 
     // Conditionally added features based on permissions AND hostel plan
     hasFeatureAndPermission("User Management", "user_management") && { id: "users", label: "User Management", icon: Users },
