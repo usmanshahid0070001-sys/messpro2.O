@@ -56,3 +56,12 @@ This is a modern React/Vite web application using a feature-based folder archite
 - **Always Check Here First:** Use this document as the source of truth for architectural decisions.
 - **Honor the Stack:** Do not mix up the state management tools. If it's API data, use TanStack Query. If it's a simple toggle, use Zustand.
 - **Feature-First:** When adding new capabilities, default to placing them in the relevant `src/features/` folder rather than littering the global `src/components/` or `src/hooks/` directories.
+
+## 6. Backend Module Architecture
+
+From now on, whenever we create or edit a module in the backend, we must strictly follow this separation of concerns:
+- **Business Logic:** Must be placed in the <module>.service.js file.
+- **Database Calls:** Must be placed in the <module>.repository.js file.
+- **Validations:** Must be placed in the <module>.validation.js file (using Zod or equivalent).
+- **Controllers:** Should only handle request parsing, calling the service, and sending responses.
+- **Routes:** Should only handle endpoint definitions and middleware chaining.
