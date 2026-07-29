@@ -8,20 +8,22 @@ import {
   respondGuestPermission,
   scanStudentQR,
   getLiveQRAttendance,
+  getDailyOverview,
   bulkSelectMeals,
   getStudentSelections
 } from './mealRecord.controller.js';
-import { protect, requirePermission } from '../../middlewares/auth.middleware.js';
+import { protect, restrictTo } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
 router.use(protect);
 
 // Manager endpoints
-router.get('/qr/generate', requirePermission('take_attendance'), getManagerQR);
-router.get('/qr/live', requirePermission('take_attendance'), getLiveQRAttendance);
-router.post('/qr/scan-student', requirePermission('take_attendance'), scanStudentQR);
-router.post('/qr/respond-permission', requirePermission('take_attendance'), respondGuestPermission);
+router.get('/qr/generate', restrictTo('admin', 'manager'), getManagerQR);
+router.get('/qr/live', restrictTo('admin', 'manager'), getLiveQRAttendance);
+router.get('/daily-overview', restrictTo('admin', 'manager'), getDailyOverview);
+router.post('/qr/scan-student', restrictTo('admin', 'manager'), scanStudentQR);
+router.post('/qr/respond-permission', restrictTo('admin', 'manager'), respondGuestPermission);
 
 // Student endpoints (students do not need take_attendance permission to scan)
 router.post('/qr/scan-manager', scanManagerQR);
@@ -32,7 +34,7 @@ router.get('/selections', getStudentSelections);
 // Main attendance endpoints
 router
   .route('/')
-  .get(requirePermission('take_attendance'), getAttendance)
-  .post(requirePermission('take_attendance'), saveAttendance);
+  .get(restrictTo('admin', 'manager'), getAttendance)
+  .post(restrictTo('admin', 'manager'), saveAttendance);
 
 export default router;

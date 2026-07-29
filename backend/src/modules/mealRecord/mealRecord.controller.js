@@ -5,6 +5,7 @@ import Hostel from '../hostel/hostel.model.js';
 
 // 👇 Use the new Unified Models & Services
 import MealRecord from './mealRecord.model.js';
+import MealSchedule from '../meal/meal.model.js';
 import mealRecordService from './mealRecord.service.js';
 import { getAttendanceSchema, saveAttendanceSchema } from './mealRecord.validation.js';
 
@@ -99,25 +100,120 @@ export const getManagerQR = catchAsync(async (req, res) => {
 
 export const getLiveQRAttendance = catchAsync(async (req, res) => {
   const { hostelId } = req.user;
-  const mealData = await mealRecordService.calculateCurrentMeal(hostelId);
+  const targetDate = req.query.date;
+
+  const currentMealData = await mealRecordService.calculateCurrentMeal(hostelId);
+  const activeDate = targetDate || currentMealData.date;
   
+  const schedule = await MealSchedule.findOne({ hostelId });
+  const mealTypes = schedule ? schedule.mealNames : [];
+
   const attendances = await MealRecord.find({
     hostelId: hostelId,
-    date: mealData.date,
-    mealType: mealData.mealType
+    date: activeDate
   }).populate('studentId', 'name id');
 
-  const formatted = attendances.map(att => ({
-    name: att.studentId?.name || 'Unknown',
-    rollNumber: att.studentId?.id || att.rollNumber,
-    isGuest: att.isGuest,
-    attendanceCount: att.attendance?.count || 0,
-    selectionCount: att.selection?.count || 0
-  }));
+  const resultData = {};
+  mealTypes.forEach(mt => {
+    resultData[mt] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+  });
+
+  attendances.forEach(att => {
+    const mType = att.mealType;
+    if (!resultData[mType]) {
+      resultData[mType] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+    }
+    
+    const isAttended = att.attendance?.count > 0;
+    const selCount = att.selection?.count || 0;
+    
+    resultData[mType].summary.totalSelections += selCount;
+    if (isAttended) {
+      resultData[mType].summary.totalAttendance += 1;
+    }
+
+    resultData[mType].data.push({
+      name: att.studentId?.name || 'Unknown',
+      rollNumber: att.studentId?.id || att.rollNumber,
+      isGuest: att.isGuest,
+      attendanceCount: att.attendance?.count || 0,
+      selectionCount: selCount,
+      hasAttended: isAttended,
+      isSelected: selCount > 0
+    });
+  });
 
   res.status(200).json({
     status: 'success',
-    data: formatted
+    data: {
+      date: activeDate,
+      currentMeal: currentMealData.mealType,
+      mealTypes: mealTypes,
+      data: resultData
+    }
+  });
+});
+
+export const getDailyOverview = catchAsync(async (req, res) => {
+  const { hostelId } = req.user;
+  const targetDate = req.query.date || new Date().toISOString().split('T')[0];
+
+  const schedule = await MealSchedule.findOne({ hostelId });
+  const mealTypes = schedule ? schedule.mealNames : [];
+
+  if (!mealTypes.length) {
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        date: targetDate,
+        mealTypes: [],
+        data: {}
+      }
+    });
+  }
+
+  const attendances = await MealRecord.find({
+    hostelId: hostelId,
+    date: targetDate
+  }).populate('studentId', 'name id');
+
+  const resultData = {};
+  mealTypes.forEach(mt => {
+    resultData[mt] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+  });
+
+  attendances.forEach(att => {
+    const mType = att.mealType;
+    if (!resultData[mType]) {
+      resultData[mType] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+    }
+    
+    const isAttended = att.attendance?.count > 0;
+    const selCount = att.selection?.count || 0;
+    
+    resultData[mType].summary.totalSelections += selCount;
+    if (isAttended) {
+      resultData[mType].summary.totalAttendance += 1;
+    }
+
+    resultData[mType].data.push({
+      name: att.studentId?.name || 'Unknown',
+      rollNumber: att.studentId?.id || att.rollNumber,
+      isGuest: att.isGuest,
+      attendanceCount: att.attendance?.count || 0,
+      selectionCount: selCount,
+      hasAttended: isAttended,
+      isSelected: selCount > 0
+    });
+  });
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      date: targetDate,
+      mealTypes: mealTypes,
+      data: resultData
+    }
   });
 });
 

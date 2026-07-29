@@ -28,13 +28,29 @@ export const useGetManagerQR = () => {
   });
 };
 
-export const useGetLiveQRAttendance = () => {
+export const useGetLiveQRAttendance = (date) => {
   return useQuery({
-    queryKey: ['liveQRAttendance'],
+    queryKey: ['liveQRAttendance', date],
     queryFn: async () => {
-      const response = await api.get('/api/attendance/qr/live');
-      return response.data;
-    }
+      const response = await api.get('/api/attendance/qr/live', {
+        params: { date }
+      });
+      return response.data.data;
+    },
+    enabled: !!date,
+  });
+};
+
+export const useGetDailyOverview = (date) => {
+  return useQuery({
+    queryKey: ['dailyOverview', date],
+    queryFn: async () => {
+      const response = await api.get('/api/attendance/daily-overview', {
+        params: { date }
+      });
+      return response.data.data;
+    },
+    enabled: !!date,
   });
 };
 

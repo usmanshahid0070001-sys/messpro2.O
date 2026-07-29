@@ -10,6 +10,7 @@ import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 import ManageUsers from "../features/users/ManageUsers";
 import ServiceManagement from "../features/services/ServiceManagement";
 import AttendanceManagement from "../features/attendance/AttendanceManagement";
+import LiveOverview from "../features/attendance/ManagerLiveOverview";
 import LoadingScreen from "../components/ui/LoadingScreen";
 
 // Auth & API
@@ -113,11 +114,7 @@ export default function ManagerDashboard() {
 
           {activeTab === "menu" && <ManageMealSettings />}
 
-          {activeTab === "live" && (
-            <div className="w-full flex items-center justify-center h-64 glass-panel rounded-2xl">
-               <p className="text-[#737373] font-bold">Live Overview (Migration Pending)</p>
-            </div>
-          )}
+          {activeTab === "live" && <LiveOverview />}
 
           {activeTab === "bills" && (
             <div className="w-full flex items-center justify-center h-64 glass-panel rounded-2xl">
