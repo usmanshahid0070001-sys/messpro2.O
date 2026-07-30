@@ -19,12 +19,12 @@ export default function DashboardNavbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 md:px-6 md:py-3">
-      <div className="max-w-[1920px] mx-auto">
+    <header className="fixed top-0 left-0 right-0 z-50 md:px-6 md:py-3 pointer-events-none">
+      <div className="max-w-[1920px] mx-auto pointer-events-auto">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="glass-panel rounded-none md:rounded-2xl border-b border-black/5 dark:border-white/5 md:border-transparent md:shadow-sm md:dark:shadow-sm"
+          className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md rounded-none md:rounded-2xl border-b border-zinc-200 dark:border-zinc-800 md:border-zinc-200 md:dark:border-zinc-800"
         >
           <div className="flex items-center justify-between px-4 py-2.5 md:px-6">
             
@@ -32,9 +32,9 @@ export default function DashboardNavbar() {
             <div className="flex items-center gap-3 md:gap-4">
               <button
                 onClick={toggleMobileMenu}
-                className="lg:hidden p-2 hover:bg-[#f5f5f5] dark:hover:bg-[#1a1a1a] rounded-xl transition-all duration-300"
+                className="lg:hidden p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all duration-300"
               >
-                <Menu className="w-5 h-5 text-[#737373] dark:text-[#888888]" />
+                <Menu className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
               </button>
 
               <div className="flex items-center gap-3">
@@ -42,8 +42,8 @@ export default function DashboardNavbar() {
                   <div className="relative flex items-center justify-center w-9 h-9 md:flex">
                     <img src="/pwa-192x192.png" alt="MessPro Logo" className="w-8 h-8 rounded-lg object-contain" />
                   </div>
-                  <span className="text-xl md:text-2xl font-black tracking-tight text-[#111111] dark:text-white">
-                    MessPro<span className="text-[#3b82f6]">.</span>
+                  <span className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                    MessPro<span className="text-blue-500">.</span>
                   </span>
                 </div>
                 
@@ -58,10 +58,10 @@ export default function DashboardNavbar() {
                       transition={{ duration: 0.15 }}
                       className="hidden lg:flex items-center gap-3"
                     >
-                      <span className="text-2xl font-light text-[#e5e5e5] dark:text-[#2a2a2a] leading-none mb-1 select-none pointer-events-none">
+                      <span className="text-2xl font-light text-zinc-200 dark:text-zinc-800 leading-none mb-1 select-none pointer-events-none">
                         /
                       </span>
-                      <span className="text-sm font-bold text-[#737373] dark:text-[#888888] tracking-tight">
+                      <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 tracking-tight">
                         {activeSectionLabel}
                       </span>
                     </motion.div>
@@ -75,21 +75,21 @@ export default function DashboardNavbar() {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="relative flex items-center w-[52px] h-[28px] rounded-full p-[3px] transition-colors duration-300 focus:outline-none bg-[#e0e0e0] dark:bg-[#111111] border border-[#d4d4d4] dark:border-[#222222]"
+                className="relative flex items-center w-[52px] h-[28px] rounded-full p-[3px] transition-colors duration-300 focus:outline-none bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
                 aria-label="Toggle theme"
               >
-                <Sun weight="bold" className="absolute left-[5px] w-3 h-3 text-[#a3a3a3] dark:text-[#555555] transition-colors duration-300" />
-                <Moon weight="bold" className="absolute right-[5px] w-3 h-3 text-[#a3a3a3] dark:text-[#555555] transition-colors duration-300" />
+                <Sun strokeWidth={2.5} className="absolute left-[5px] w-3 h-3 text-zinc-400 dark:text-zinc-500 transition-colors duration-300" />
+                <Moon strokeWidth={2.5} className="absolute right-[5px] w-3 h-3 text-zinc-400 dark:text-zinc-500 transition-colors duration-300" />
                 <motion.div
                   layout
                   transition={{ type: "spring", stiffness: 600, damping: 32 }}
-                  className={`relative z-10 w-[22px] h-[22px] rounded-full shadow-sm flex items-center justify-center bg-white dark:bg-[#222222] ${theme === "dark" ? "ml-auto" : "mr-auto"
+                  className={`relative z-10 w-[22px] h-[22px] rounded-full shadow-sm flex items-center justify-center bg-white dark:bg-zinc-900 ${theme === "dark" ? "ml-auto" : "mr-auto"
                     }`}
                 >
                   {theme === "dark" ? (
-                    <Moon className="w-3 h-3 text-white" />
+                         <Moon strokeWidth={2.5} className="w-3 h-3 text-zinc-100" />
                   ) : (
-                    <Sun className="w-3 h-3 text-[#111111]" />
+                    <Sun strokeWidth={2.5} className="w-3 h-3 text-zinc-900" />
                   )}
                 </motion.div>
               </button>
@@ -97,15 +97,15 @@ export default function DashboardNavbar() {
               {/* User Avatar */}
               <div className="relative">
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 p-1.5 sm:pr-3 hover:bg-[#f5f5f5] dark:hover:bg-[#1a1a1a] rounded-xl transition-all duration-300"
+                  className="flex items-center gap-2 p-1.5 sm:pr-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all duration-300"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[#111111] dark:bg-[#222222] flex items-center justify-center text-white dark:text-[#888888] font-bold text-sm shrink-0 border border-transparent dark:border-[#333333]">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-zinc-800 flex items-center justify-center text-white dark:text-zinc-300 font-bold text-sm shrink-0 border border-transparent dark:border-zinc-700">
                     {user?.name?.charAt(0) || "U"}
                   </div>
-                  <span className="hidden sm:block text-sm font-bold text-[#404040] dark:text-white max-w-[120px] md:max-w-[180px] truncate text-left">
+                  <span className="hidden sm:block text-sm font-semibold text-zinc-700 dark:text-zinc-50 max-w-[120px] md:max-w-[180px] truncate text-left">
                     {user?.name || "User"}
                   </span>
                 </motion.button>
@@ -118,20 +118,20 @@ export default function DashboardNavbar() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm dark:shadow-sm border border-[#e0e0e0] dark:border-[#222222] z-50 overflow-hidden"
+                        className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-950 rounded-2xl shadow-sm dark:shadow-sm border border-zinc-200 dark:border-zinc-800 z-50 overflow-hidden"
                       >
-                        <div className="px-4 py-3 border-b border-[#f5f5f5] dark:border-[#222222]">
-                          <p className="text-sm font-bold text-[#111111] dark:text-white truncate">
+                        <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
+                          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
                             {user?.name || "User"}
                           </p>
-                          <p className="text-xs font-semibold text-[#737373] dark:text-[#888888] truncate">
+                          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">
                             {user?.email || "user@messpro.com"}
                           </p>
                         </div>
 
                         <button
                           onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-[#1a0a0a] transition-colors cursor-pointer"
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer focus:outline-none"
                         >
                           <LogOut className="w-4 h-4" />
                           Sign Out

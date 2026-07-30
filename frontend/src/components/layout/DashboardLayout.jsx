@@ -13,40 +13,40 @@ function UnsavedChangesModal({ onDiscard, onKeepEditing }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-zinc-900/40 dark:bg-zinc-900/60 backdrop-blur-sm transition-opacity"
         onClick={onKeepEditing}
       />
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="relative flex flex-col w-full max-w-md bg-white dark:bg-[#0a0a0a] shadow-2xl rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden"
+        className="relative flex flex-col w-full max-w-md bg-white dark:bg-zinc-950 shadow-xl rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden"
       >
-        <div className="p-6 pb-5 border-b border-gray-100 dark:border-[#222]">
+        <div className="p-6 pb-5 border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0">
               <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Unsaved Changes</h3>
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Unsaved Changes</h3>
           </div>
         </div>
         <div className="p-6 py-5">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
             You have unsaved edits on this page. If you leave now, you will lose these changes. What would you like to do?
           </p>
         </div>
-        <div className="px-6 py-4 bg-gray-50 dark:bg-[#111] border-t border-gray-100 dark:border-[#222] flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+        <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <button
             type="button"
             onClick={onKeepEditing}
-            className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 focus:outline-none transition-all duration-200"
+            className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-sm text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 transition-all duration-200"
           >
             Let me Save it
           </button>
           <button
             type="button"
             onClick={onDiscard}
-            className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-sm text-sm font-medium focus:outline-none transition-all duration-200"
+            className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-sm text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition-all duration-200"
           >
             Lose the edits
           </button>
@@ -100,7 +100,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa]/50 dark:bg-[#050505] font-sans text-[#111111] dark:text-slate-100 transition-colors duration-300 selection:bg-black/10 dark:selection:bg-white/10">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-100 transition-colors duration-300 selection:bg-zinc-900/10 dark:selection:bg-zinc-100/10">
 
       {/* Global Navbar */}
       <DashboardNavbar />
@@ -134,7 +134,7 @@ export default function DashboardLayout({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-zinc-900/40 dark:bg-zinc-900/60 backdrop-blur-sm z-40 lg:hidden"
               onClick={toggleMobileMenu}
               aria-hidden="true"
             />
@@ -145,22 +145,22 @@ export default function DashboardLayout({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} // ease-out-expo curve
-              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white dark:bg-[#0a0a0a] border-r border-black/5 dark:border-white/5 z-50 flex flex-col shadow-2xl lg:hidden"
+              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 z-50 flex flex-col shadow-2xl lg:hidden"
               role="dialog"
               aria-modal="true"
               aria-label="Mobile navigation menu"
             >
-              <div className="flex items-center justify-between p-6 pb-4 border-b border-black/5 dark:border-white/5">
+              <div className="flex items-center justify-between p-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg overflow-hidden bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 shrink-0 shadow-sm flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shrink-0 shadow-sm flex items-center justify-center">
                     <img src="/pwa-192x192.png" alt="MessPro Logo" className="w-full h-full object-contain" />
                   </div>
-                  <span className="text-xl font-bold tracking-tight text-[#111111] dark:text-white">MessPro</span>
+                  <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">MessPro</span>
                 </div>
                 <button
                   onClick={toggleMobileMenu}
                   aria-label="Close menu"
-                  className="p-2 -mr-2 rounded-lg text-[#737373] hover:text-[#111111] hover:bg-black/5 dark:text-[#888888] dark:hover:text-white dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white"
+                  className="p-2 -mr-2 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -176,10 +176,10 @@ export default function DashboardLayout({
                       <button
                         key={item.id}
                         onClick={() => handleMobileTabClick(item.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 ${
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/20 dark:focus-visible:ring-zinc-100/20 ${
                           isActive
-                            ? "bg-black/5 dark:bg-white/10 text-[#111111] dark:text-white font-semibold shadow-sm"
-                            : "text-[#737373] dark:text-[#a0a0a0] font-medium hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#111111] dark:hover:text-white"
+                            ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-semibold shadow-sm"
+                            : "text-zinc-500 dark:text-zinc-400 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50"
                         }`}
                       >
                         <Icon className={`w-[18px] h-[18px] ${isActive ? "opacity-100" : "opacity-70"}`} />
