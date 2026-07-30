@@ -10,11 +10,39 @@ import { useGetManagerQR, useGetLiveQRAttendance } from '../../hooks/queries/use
 import { useScanStudentQR, useRespondGuestPermission } from '../../hooks/mutations/useAttendanceMutations';
 import toast from 'react-hot-toast';
 
+const playSuccessSound = () => {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0, ctx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {
+    console.error("Audio play failed", e);
+  }
+};
+
 export default function QRAttendance() {
   const { user } = useAuth();
   const { socket, isConnected } = useSocket(user?.hostelId);
   const { data: qrResponse, isLoading: qrLoading } = useGetManagerQR();
-  const { data: liveResponse, isLoading: liveLoading } = useGetLiveQRAttendance();
+  
+  const todayDate = new Date().toLocaleDateString('en-CA');
+  const { data: liveResponse, isLoading: liveLoading } = useGetLiveQRAttendance(todayDate);
   
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
@@ -23,9 +51,10 @@ export default function QRAttendance() {
   
   // Set initial live data
   useEffect(() => {
-    if (liveResponse?.data) {
-      // Reverse to show newest at top if they are chronologically ordered, or just set it
-      setRecentAttendances(liveResponse.data.reverse());
+    if (liveResponse) {
+      const currentMeal = liveResponse.currentMeal;
+      const mealData = liveResponse.data?.[currentMeal]?.data || [];
+      setRecentAttendances([...mealData].reverse());
     }
   }, [liveResponse]);
   
@@ -45,6 +74,8 @@ export default function QRAttendance() {
     if (!socket) return;
 
     socket.on('attendance_success', (data) => {
+      playSuccessSound();
+      
       // Update count if exists, else add to top
       setRecentAttendances(prev => {
         const exists = prev.find(p => p.rollNumber === data.rollNumber);
@@ -178,6 +209,9 @@ export default function QRAttendance() {
     return recentAttendances;
   }, [recentAttendances, filterType]);
 
+  const totalReserved = recentAttendances.reduce((acc, curr) => acc + (curr.selectionCount || 0), 0);
+  const totalAttendance = recentAttendances.reduce((acc, curr) => acc + (curr.attendanceCount || 0), 0);
+
   const exportToExcel = () => {
     const dataToExport = filteredAttendances.map(a => ({
       Name: a.name,
@@ -195,71 +229,80 @@ export default function QRAttendance() {
     XLSX.writeFile(workbook, fileName);
   };
 
+  const displayRequest = activeGuestRequest || (localGuestPrompt ? {
+    requestId: 'local',
+    studentId: localGuestPrompt.student._id,
+    name: localGuestPrompt.student.name,
+    rollNumber: localGuestPrompt.student.id,
+    reason: localGuestPrompt.reason,
+    isLocal: true
+  } : null);
+
   return (
     <div className="space-y-6 relative">
-      {/* Global Guest Request Overlay */}
-      <AnimatePresence>
-        {activeGuestRequest && (
-          <motion.div 
-            initial={{ opacity: 0, y: -50, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-full max-w-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-2xl rounded-2xl p-5 overflow-hidden"
-          >
-            {/* Countdown Bar */}
-            <motion.div 
-              initial={{ width: '100%' }}
-              animate={{ width: '0%' }}
-              transition={{ duration: 10, ease: "linear" }}
-              className="absolute bottom-0 left-0 h-1 bg-amber-500"
-            />
-            
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-500/10 rounded-full flex items-center justify-center shrink-0">
-                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500" />
-              </div>
-              <div className="flex-1 pt-1">
-                <h3 className="text-zinc-900 dark:text-zinc-50 font-bold text-base leading-tight">
-                  {activeGuestRequest.reason === 'guest' ? 'Guest Request' : 'Permission Required'}
-                </h3>
-                {activeGuestRequest.reason === 'unselected' ? (
-                  <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
-                    <strong className="text-zinc-900 dark:text-zinc-200">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) did not reserve this meal. Allow walk-in?
-                  </p>
-                ) : activeGuestRequest.reason === 'extra_meal' ? (
-                  <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
-                    <strong className="text-zinc-900 dark:text-zinc-200">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) has reached their limit. Allow extra meal?
-                  </p>
-                ) : (
-                  <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
-                    <strong className="text-zinc-900 dark:text-zinc-200">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) from another hostel wants to eat here.
-                  </p>
-                )}
-                <div className="flex gap-3 mt-4">
-                  <button 
-                    onClick={() => handleRespondGuest(activeGuestRequest, true)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors text-sm"
-                  >
-                    Accept
-                  </button>
-                  <button 
-                    onClick={() => handleRespondGuest(activeGuestRequest, false)}
-                    className="flex-1 bg-zinc-100 dark:bg-zinc-900/50 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 py-2 rounded-lg font-semibold transition-colors text-sm"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: QR Code & Scanner Button */}
         <div className="lg:col-span-5 flex flex-col space-y-6">
-          <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-8 rounded-2xl flex flex-col items-center">
-            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-xl flex items-center justify-center min-w-[200px] min-h-[200px]">
+          <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-8 rounded-2xl flex flex-col items-center relative overflow-hidden">
+            
+            <AnimatePresence>
+              {displayRequest && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute inset-0 z-20 bg-zinc-50/90 dark:bg-zinc-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center"
+                >
+                  <div className="w-12 h-12 bg-amber-100 dark:bg-amber-500/10 rounded-full flex items-center justify-center mb-4">
+                    <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-500" />
+                  </div>
+                  <h3 className="text-zinc-900 dark:text-zinc-50 font-bold text-lg leading-tight mb-2">
+                    {displayRequest.reason === 'guest' ? 'Guest Request' : 'Permission Required'}
+                  </h3>
+                  
+                  {displayRequest.reason === 'unselected' ? (
+                    <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">
+                      <strong className="text-zinc-900 dark:text-zinc-200">{displayRequest.name}</strong> ({displayRequest.rollNumber}) did not reserve this meal. Allow walk-in?
+                    </p>
+                  ) : displayRequest.reason === 'extra_meal' ? (
+                    <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">
+                      <strong className="text-zinc-900 dark:text-zinc-200">{displayRequest.name}</strong> ({displayRequest.rollNumber}) has reached their limit. Allow extra meal?
+                    </p>
+                  ) : (
+                    <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">
+                      <strong className="text-zinc-900 dark:text-zinc-200">{displayRequest.name}</strong> ({displayRequest.rollNumber}) from another hostel wants to eat here.
+                    </p>
+                  )}
+                  
+                  <div className="flex gap-3 w-full">
+                    <button 
+                      onClick={() => displayRequest.isLocal ? handleManagerRespondLocalGuest(true) : handleRespondGuest(activeGuestRequest, true)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold transition-colors text-sm shadow-sm"
+                    >
+                      Accept
+                    </button>
+                    <button 
+                      onClick={() => displayRequest.isLocal ? handleManagerRespondLocalGuest(false) : handleRespondGuest(activeGuestRequest, false)}
+                      className="flex-1 bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 py-2.5 rounded-xl font-semibold transition-colors text-sm shadow-sm"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                  
+                  {!displayRequest.isLocal && (
+                    <motion.div 
+                      initial={{ width: '100%' }}
+                      animate={{ width: '0%' }}
+                      transition={{ duration: 10, ease: "linear" }}
+                      className="absolute bottom-0 left-0 h-1.5 bg-amber-500"
+                    />
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="p-4 bg-white border border-zinc-200 dark:border-zinc-700 rounded-xl flex items-center justify-center min-w-[200px] min-h-[200px]">
               {qrLoading ? (
                   <div className="w-8 h-8 border-4 border-zinc-100 border-t-zinc-900 dark:border-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin" />
               ) : qrToken ? (
@@ -292,9 +335,9 @@ export default function QRAttendance() {
             <div className="flex items-center gap-4">
               <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 uppercase tracking-wide">
                 <Timer className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-                Live Feed
+                Live Feed {liveResponse?.currentMeal ? `(${liveResponse.currentMeal})` : ''}
               </h3>
-              <div className="flex bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg">
+              <div className="flex bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg hidden sm:flex">
                 {['All', 'Present', 'Reserved'].map(ft => (
                   <button
                     key={ft}
@@ -310,13 +353,18 @@ export default function QRAttendance() {
                 ))}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">
-                {filteredAttendances.length}
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="flex bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-[10px] font-semibold overflow-hidden shadow-sm h-7">
+                <span className="px-2 flex items-center border-r border-zinc-200 dark:border-zinc-700 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/10">
+                  Res: {totalReserved}
+                </span>
+                <span className="px-2 flex items-center text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10">
+                  Eat: {totalAttendance}
+                </span>
+              </div>
               <button 
                 onClick={exportToExcel}
-                className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg text-xs font-bold uppercase transition-colors border border-emerald-200 dark:border-emerald-800/50"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg text-xs font-bold uppercase transition-colors border border-emerald-200 dark:border-emerald-800/50"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export

@@ -47,6 +47,15 @@ class MealRecordService {
     const maxAllowed = schedule.maxMealSelection || 1;
     const bulkOps = [];
 
+    // Fetch existing records for checking attendance before zeroing out selection
+    const existingRecords = await MealRecord.find({
+      hostelId,
+      rollNumber: student.id,
+      date: { $in: selections.map(s => s.date) }
+    });
+    const recordMap = new Map();
+    existingRecords.forEach(r => recordMap.set(`${r.date}_${r.mealType}`, r));
+
     for (const selection of selections) {
       if (selection.count > maxAllowed) {
         const error = new Error(`Limit Exceeded: You can only select up to ${maxAllowed} meals.`);
@@ -55,22 +64,40 @@ class MealRecordService {
       }
 
       if (selection.count === 0) {
-        bulkOps.push({
-          updateOne: {
-            filter: {
-              hostelId,
-              date: selection.date,
-              mealType: selection.mealType,
-              rollNumber: student.id
-            },
-            update: {
-              $set: {
-                'selection.hasSelected': false,
-                'selection.count': 0
+        const existing = recordMap.get(`${selection.date}_${selection.mealType}`);
+        const attCount = existing?.attendance?.count || 0;
+
+        if (attCount === 0) {
+          // Both selection and attendance are 0, completely delete the document
+          bulkOps.push({
+            deleteOne: {
+              filter: {
+                hostelId,
+                date: selection.date,
+                mealType: selection.mealType,
+                rollNumber: student.id
               }
             }
-          }
-        });
+          });
+        } else {
+          // Keep document for attendance history, but remove selection
+          bulkOps.push({
+            updateOne: {
+              filter: {
+                hostelId,
+                date: selection.date,
+                mealType: selection.mealType,
+                rollNumber: student.id
+              },
+              update: {
+                $set: {
+                  'selection.hasSelected': false,
+                  'selection.count': 0
+                }
+              }
+            }
+          });
+        }
       } else {
         bulkOps.push({
           updateOne: {
@@ -108,14 +135,6 @@ class MealRecordService {
       await mealRecordRepository.bulkWriteRecords(bulkOps);
     }
     
-    // Cleanup: Delete any records where both selection and attendance are 0
-    await MealRecord.deleteMany({
-      hostelId,
-      rollNumber: student.id,
-      'selection.count': 0,
-      'attendance.count': 0
-    });
-
     return { count: bulkOps.length };
   }
 
@@ -145,7 +164,7 @@ class MealRecordService {
     const rollNumbers = uniqueRecords.map(r => r.rollNumber);
 
     // Fetch existing records to check their selection counts
-    const existingRecords = await mealRecordRepository.model.find({
+    const existingRecords = await MealRecord.find({
       hostelId, date, mealType, rollNumber: { $in: rollNumbers }
     });
     const recordMap = new Map();
@@ -385,7 +404,7 @@ class MealRecordService {
 
     const currentMinutes = parseInt(localTimeParts[0]) * 60 + parseInt(localTimeParts[1]);
 
-    let selectedMealIndex = schedule.selectionTiming.length - 1;
+    let selectedMealIndex = -1;
 
     for (let i = 0; i < schedule.selectionTiming.length; i++) {
       const timingStr = schedule.selectionTiming[i];
@@ -398,10 +417,15 @@ class MealRecordService {
 
       const thresholdMinutes = hours * 60 + parseInt(minutes, 10);
 
-      if (currentMinutes < thresholdMinutes) {
+      if (currentMinutes >= thresholdMinutes) {
         selectedMealIndex = i;
-        break;
       }
+    }
+
+    if (selectedMealIndex === -1) {
+      const error = new Error('Invalid attendance time. No meal is currently active.');
+      error.statusCode = 400;
+      throw error;
     }
 
     const mealType = schedule.mealNames[selectedMealIndex];
