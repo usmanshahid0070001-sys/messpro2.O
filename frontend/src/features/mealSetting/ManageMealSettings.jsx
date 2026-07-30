@@ -293,12 +293,12 @@ export default function ManageMealSettings() {
         {/* Daily Meals Skeleton */}
         <div className="px-4 lg:px-0 space-y-4">
           <div className="flex items-center justify-between">
-            <div className="h-6 bg-black/5 dark:bg-white/5 rounded-lg w-32"></div>
-            <div className="h-9 bg-black/5 dark:bg-white/5 rounded-lg w-28"></div>
+            <div className="h-6 bg-black/5 dark:bg-zinc-50/5 rounded-lg w-32"></div>
+            <div className="h-9 bg-black/5 dark:bg-zinc-50/5 rounded-lg w-28"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-40 bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl shadow-sm"></div>
+              <div key={i} className="h-40 bg-zinc-50 dark:bg-zinc-950 border border-black/5 dark:border-zinc-50/5 rounded-2xl shadow-sm"></div>
             ))}
           </div>
         </div>
@@ -306,9 +306,9 @@ export default function ManageMealSettings() {
         {/* Weekly Menu Skeleton */}
         <div className="px-4 lg:px-0 space-y-4">
           <div className="flex items-center justify-between">
-            <div className="h-6 bg-black/5 dark:bg-white/5 rounded-lg w-48"></div>
+            <div className="h-6 bg-black/5 dark:bg-zinc-50/5 rounded-lg w-48"></div>
           </div>
-          <div className="h-[400px] bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl shadow-sm"></div>
+          <div className="h-[400px] bg-zinc-50 dark:bg-zinc-950 border border-black/5 dark:border-zinc-50/5 rounded-2xl shadow-sm"></div>
         </div>
       </div>
     );
@@ -335,34 +335,34 @@ export default function ManageMealSettings() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111111] dark:text-white">Meal Settings</h1>
-          <p className="mt-1 text-sm font-medium text-[#737373] dark:text-[#a0a0a0]">
+          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">Meal Settings</h1>
+          <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
             Configure global meal timings, pricing, and weekly schedule.
           </p>
         </div>
         <div className="flex flex-col sm:items-end lg:flex-row lg:items-center gap-4 w-full sm:w-auto">
-          <div className="flex items-center justify-between lg:justify-start gap-3 px-4 py-2 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-xl shadow-sm w-full lg:w-auto">
-            <span className="text-sm font-semibold text-[#111111] dark:text-white">Module Status</span>
+          <div className="flex items-center justify-between lg:justify-start gap-3 px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm w-full lg:w-auto">
+            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Module Status</span>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleToggleStatus}
                 disabled={isManager || updateScheduleMutation.isPending}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${status === 'Active' ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#333]'
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${status === 'Active' ? 'bg-blue-600' : 'bg-zinc-200 dark:bg-zinc-700'
                   } ${(isManager || updateScheduleMutation.isPending) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${status === 'Active' ? 'translate-x-6' : 'translate-x-1'
+                  className={`inline-block h-4 w-4 transform rounded-full bg-zinc-50 transition-transform ${status === 'Active' ? 'translate-x-6' : 'translate-x-1'
                     }`}
                 />
               </button>
-              <span className={`text-xs font-bold ${status === 'Active' ? 'text-blue-600' : 'text-[#737373]'}`}>
+              <span className={`text-xs font-bold ${status === 'Active' ? 'text-blue-600' : 'text-zinc-500'}`}>
                 {status}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between lg:justify-start gap-3 px-4 py-2 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-xl shadow-sm w-full lg:w-auto">
-            <span className="text-sm font-semibold text-[#111111] dark:text-white">Max Selections</span>
+          <div className="flex items-center justify-between lg:justify-start gap-3 px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm w-full lg:w-auto">
+            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Max Selections</span>
             <input
               type="number"
               min="1"
@@ -372,7 +372,7 @@ export default function ManageMealSettings() {
                 setIsDirty(true);
               }}
               disabled={isManager || updateScheduleMutation.isPending}
-              className="w-16 h-7 text-center text-sm font-bold bg-gray-100 dark:bg-[#1a1a1a] text-[#111111] dark:text-white border-transparent rounded-md focus:border-blue-500 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-16 h-7 text-center text-sm font-bold bg-zinc-100 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-50 border-transparent rounded-md focus:border-blue-500 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -412,7 +412,7 @@ export default function ManageMealSettings() {
       {/* Meals Configuration */}
       <div className={`space-y-4 ${status === 'Inactive' ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-[#111111] dark:text-white">Daily Meals</h2>
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Daily Meals</h2>
           {!isManager && (
             <button
               onClick={handleAddMeal}
@@ -425,8 +425,8 @@ export default function ManageMealSettings() {
         </div>
 
         {meals.length === 0 ? (
-          <div className="p-8 text-center border border-dashed border-[#e5e5e5] dark:border-[#333333] rounded-2xl bg-[#fafafa] dark:bg-[#111111]">
-            <p className="text-sm font-medium text-[#737373]">
+          <div className="p-8 text-center border border-dashed border-zinc-200 dark:border-zinc-700 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50">
+            <p className="text-sm font-medium text-zinc-500">
               {isManager ? "No meals have been configured by the admin yet." : "No meals configured. Click \"Add Meal\" to get started."}
             </p>
           </div>
@@ -448,11 +448,11 @@ export default function ManageMealSettings() {
       {/* Weekly Menu Schedule */}
       <div className={`space-y-4 ${status === 'Inactive' || meals.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-[#111111] dark:text-white">Weekly Menu Configuration</h2>
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Weekly Menu Configuration</h2>
           {!isManager && meals.length > 0 && (
             <button
               onClick={handleToggleSwapMode}
-              className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 ${isSwapMode ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-gray-100 text-[#404040] dark:bg-[#1a1a1a] dark:text-[#cccccc] hover:bg-gray-200 dark:hover:bg-[#333]'}`}
+              className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 ${isSwapMode ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
             >
               {isSwapMode ? "Cancel Swap" : "Swap Meals"}
             </button>
@@ -474,18 +474,18 @@ export default function ManageMealSettings() {
       {/* Remove Confirmation Modal */}
       {mealToRemove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+          <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
             <div className="flex items-center gap-3 mb-2">
               <AlertTriangle className="w-6 h-6 text-red-500" />
-              <h3 className="text-lg font-black text-[#111111] dark:text-white">Remove Meal?</h3>
+              <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-50">Remove Meal?</h3>
             </div>
-            <p className="text-sm text-[#737373] dark:text-[#a0a0a0] mb-6">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
               Are you sure you want to remove this meal? This will delete all associated weekly menu configurations from the grid.
             </p>
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() => setMealToRemove(null)}
-                className="px-4 py-2 text-sm font-bold text-[#404040] dark:text-[#cccccc] hover:bg-[#f5f5f5] dark:hover:bg-[#1a1a1a] rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111]"
+                className="px-4 py-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900"
               >
                 Cancel
               </button>

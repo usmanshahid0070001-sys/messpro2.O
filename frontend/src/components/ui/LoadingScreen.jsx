@@ -18,13 +18,13 @@ export default function LoadingScreen() {
   }, []);
 
   return (
-    <div className="flex h-screen items-center justify-center bg-[#fafafa] dark:bg-[#050505]">
+    <div className="flex h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
       <div className="flex items-center gap-2.5 min-w-[200px]">
         <div 
-          className="w-6 h-6 rounded-full border-[3px] border-black/10 dark:border-white/10 border-t-[#111111] dark:border-t-white animate-spin shrink-0" 
+          className="w-6 h-6 rounded-full border-[3px] border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-zinc-50 animate-spin shrink-0" 
           style={{ animationTimingFunction: 'linear' }} 
         />
-        <span className="font-sans font-extrabold tracking-tight text-[#111111] dark:text-white text-base animate-pulse">
+        <span className="font-sans font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 text-base animate-pulse">
           {messages[messageIndex]}<span className="text-blue-500">.</span>
         </span>
       </div>

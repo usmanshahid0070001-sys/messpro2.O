@@ -43,7 +43,7 @@ const PRIORITIES = [
 const getStatusBadge = (status) => {
   switch (status) {
     case 'Open':
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#f5f5f5] text-[#404040] dark:bg-[#1a1a1a] dark:text-[#a3a3a3] border border-[#e5e5e5] dark:border-[#333]"><AlertTriangle className="w-3 h-3" /> Open</span>;
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-zinc-100 text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"><AlertTriangle className="w-3 h-3" /> Open</span>;
     case 'Assigned':
       return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20"><Clock className="w-3 h-3" /> Assigned</span>;
     case 'In Progress':
@@ -51,7 +51,7 @@ const getStatusBadge = (status) => {
     case 'Resolved':
       return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20"><CheckCircle2 className="w-3 h-3" /> Resolved</span>;
     default:
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#f5f5f5] text-[#404040] dark:bg-[#1a1a1a] dark:text-[#a3a3a3] border border-[#e5e5e5] dark:border-[#333]">{status}</span>;
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-zinc-100 text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">{status}</span>;
   }
 };
 
@@ -128,8 +128,8 @@ export default function StudentComplaintForm() {
       
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-[#111] dark:text-white tracking-tight">File a Complaint</h1>
-        <p className="text-sm font-semibold text-[#737373] dark:text-[#888888] mt-1">
+        <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">File a Complaint</h1>
+        <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mt-1">
           Report maintenance issues, internet problems, or other concerns.
         </p>
       </div>
@@ -143,16 +143,16 @@ export default function StudentComplaintForm() {
               
               {/* Room Number (Read-only) */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Your Room</label>
-                <div className="w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#333] rounded-xl text-sm font-bold text-[#404040] dark:text-[#a3a3a3] cursor-not-allowed flex items-center justify-between">
+                <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Your Room</label>
+                <div className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-400 cursor-not-allowed flex items-center justify-between">
                   <span>{roomNumber}</span>
-                  <span className="text-[11px] font-semibold text-[#a3a3a3] dark:text-[#737373] px-2 py-0.5 bg-white dark:bg-[#222] rounded shadow-sm border border-[#e5e5e5] dark:border-[#333]">Auto-filled</span>
+                  <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 px-2 py-0.5 bg-white dark:bg-zinc-800 rounded shadow-sm border border-zinc-200 dark:border-zinc-700">Auto-filled</span>
                 </div>
               </div>
 
               {/* Category Selection */}
               <div className="flex flex-col gap-2">
-                <label className="text-[12px] font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Category <span className="text-red-500">*</span></label>
+                <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Category <span className="text-red-500">*</span></label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {CATEGORIES.map(cat => {
                     const isSelected = formData.category === cat.id;
@@ -165,10 +165,10 @@ export default function StudentComplaintForm() {
                         className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${
                           isSelected 
                             ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-400 shadow-sm' 
-                            : 'bg-white dark:bg-[#111] border-[#e5e5e5] dark:border-[#222] text-[#404040] dark:text-[#a3a3a3] hover:bg-[#fafafa] dark:hover:bg-[#1a1a1a]'
+                            : 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
                         }`}
                       >
-                        <Icon className={`w-5 h-5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-[#737373] dark:text-[#737373]'}`} />
+                        <Icon className={`w-5 h-5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-500 dark:text-zinc-500'}`} />
                         <span className="text-[11px] font-bold text-center leading-tight">{cat.label}</span>
                       </button>
                     );
@@ -185,7 +185,7 @@ export default function StudentComplaintForm() {
                     exit={{ opacity: 0, height: 0 }}
                     className="flex flex-col gap-2 overflow-hidden"
                   >
-                    <label className="text-[12px] font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Priority Level <span className="text-[10px] lowercase normal-case font-medium ml-1">(auto-suggested)</span></label>
+                    <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Priority Level <span className="text-[10px] lowercase normal-case font-medium ml-1">(auto-suggested)</span></label>
                     <div className="flex flex-wrap gap-2">
                       {PRIORITIES.map(prio => {
                         const isSelected = formData.priority === prio.id;
@@ -198,10 +198,10 @@ export default function StudentComplaintForm() {
                             className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border transition-all duration-200 flex-1 min-w-[100px] justify-center ${
                               isSelected 
                                 ? `${prio.bg} ${prio.border} shadow-sm ring-1 ring-inset ${prio.color.replace('text-', 'ring-')}` 
-                                : 'bg-white dark:bg-[#111] border-[#e5e5e5] dark:border-[#222] text-[#737373] hover:bg-[#fafafa] dark:hover:bg-[#1a1a1a]'
+                                : 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
                             }`}
                           >
-                            <PrioIcon className={`w-4 h-4 ${isSelected ? prio.color : 'text-[#a3a3a3]'}`} />
+                            <PrioIcon className={`w-4 h-4 ${isSelected ? prio.color : 'text-zinc-400'}`} />
                             <span className={`text-[13px] font-bold ${isSelected ? prio.color : ''}`}>{prio.id}</span>
                           </button>
                         );
@@ -213,14 +213,14 @@ export default function StudentComplaintForm() {
 
               {/* Description */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Description <span className="text-red-500">*</span></label>
+                <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Description <span className="text-red-500">*</span></label>
                 <textarea
                   required
                   rows={4}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe what's wrong and when you noticed it..."
-                  className="w-full px-4 py-3 bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#333] rounded-xl text-sm text-[#111] dark:text-white placeholder:text-[#a3a3a3] dark:placeholder:text-[#555] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
                 />
               </div>
 
@@ -229,7 +229,7 @@ export default function StudentComplaintForm() {
                 <button
                   type="submit"
                   disabled={!formData.category || !formData.description || isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#111] dark:bg-white text-white dark:text-[#111] rounded-xl text-sm font-bold shadow-md hover:bg-black/90 dark:hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-xl text-sm font-bold shadow-md hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   {isSubmitting ? (
                     <div className="w-5 h-5 border-2 border-white/20 dark:border-black/20 border-t-white dark:border-t-black rounded-full animate-spin" />
@@ -251,7 +251,7 @@ export default function StudentComplaintForm() {
           <SectionCard 
             title="My Complaints" 
             subtitle="Recent issues and their current status"
-            action={<History className="w-4 h-4 text-[#a3a3a3]" />}
+            action={<History className="w-4 h-4 text-zinc-400" />}
           >
             <div className="flex flex-col gap-3 pt-2">
               <AnimatePresence mode="popLayout">
@@ -259,11 +259,11 @@ export default function StudentComplaintForm() {
                   <motion.div 
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
-                    className="flex flex-col items-center justify-center py-10 px-4 bg-[#fafafa] dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl text-center"
+                    className="flex flex-col items-center justify-center py-10 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-center"
                   >
                     <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-3" />
-                    <h3 className="text-sm font-bold text-[#111] dark:text-white">All clear!</h3>
-                    <p className="text-[13px] text-[#737373] mt-1">You haven't reported any issues.</p>
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">All clear!</h3>
+                    <p className="text-[13px] text-zinc-500 mt-1">You haven't reported any issues.</p>
                   </motion.div>
                 ) : (
                   complaints.map((complaint) => {
@@ -279,16 +279,16 @@ export default function StudentComplaintForm() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.2 }}
                         key={complaint.id}
-                        className="flex flex-col gap-3 p-4 bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-xl shadow-sm"
+                        className="flex flex-col gap-3 p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm"
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-[#f5f5f5] dark:bg-[#1a1a1a] flex items-center justify-center">
-                              <Icon className="w-4 h-4 text-[#404040] dark:text-[#a3a3a3]" />
+                            <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-900/50 flex items-center justify-center">
+                              <Icon className="w-4 h-4 text-zinc-700 dark:text-zinc-400" />
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-[13px] font-bold text-[#111] dark:text-white leading-tight">{complaint.category}</span>
-                              <span className="text-[11px] text-[#737373]">
+                              <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-50 leading-tight">{complaint.category}</span>
+                              <span className="text-[11px] text-zinc-500">
                                 {new Date(complaint.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                               </span>
                             </div>
@@ -297,12 +297,12 @@ export default function StudentComplaintForm() {
                         </div>
                         
                         <div className="pl-10">
-                          <p className="text-[13px] text-[#404040] dark:text-[#a3a3a3] leading-relaxed line-clamp-2">
+                          <p className="text-[13px] text-zinc-700 dark:text-zinc-400 leading-relaxed line-clamp-2">
                             "{complaint.description}"
                           </p>
                           <div className="flex items-center gap-1.5 mt-2">
                             <PrioIcon className={`w-3.5 h-3.5 ${prioDetails.color}`} />
-                            <span className="text-[11px] font-bold text-[#737373] uppercase tracking-wider">{complaint.priority} Priority</span>
+                            <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">{complaint.priority} Priority</span>
                           </div>
                         </div>
                       </motion.div>

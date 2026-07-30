@@ -51,20 +51,20 @@ const CleaningCard = ({ room, cleaningLogs, activeComplaints }) => {
   return (
     <motion.div 
       layout
-      className="flex flex-col bg-white dark:bg-[#0a0a0a] rounded-2xl border border-[#e5e5e5] dark:border-[#222222] shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden relative group"
+      className="flex flex-col bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden relative group"
     >
       {/* Status indicator strip */}
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${isOverdue ? 'bg-amber-500' : 'bg-transparent'} transition-colors`} />
 
       {/* Card Header */}
-      <div className="px-5 py-4 border-b border-[#e5e5e5] dark:border-[#1a1a1a] flex justify-between items-start bg-[#fafafa] dark:bg-[#111111]">
+      <div className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-start bg-zinc-50 dark:bg-zinc-900/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#333] flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-300">
-            <Sparkles className="w-5 h-5 text-[#111] dark:text-white" />
+          <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-300">
+            <Sparkles className="w-5 h-5 text-zinc-900 dark:text-zinc-50" />
           </div>
           <div>
-            <h3 className="text-base font-black text-[#111] dark:text-white tracking-tight leading-none mb-1">Room {room}</h3>
-            <span className="text-[11px] font-bold text-[#737373] uppercase tracking-wider">
+            <h3 className="text-base font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-none mb-1">Room {room}</h3>
+            <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
               {isOverdue ? 'Attention Needed' : 'Up to Date'}
             </span>
           </div>
@@ -90,45 +90,45 @@ const CleaningCard = ({ room, cleaningLogs, activeComplaints }) => {
       <div className="p-5 flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#a3a3a3] uppercase tracking-widest">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
               <History className="w-3.5 h-3.5" /> Last Clean
             </div>
-            <span className="text-[13px] font-bold text-[#111] dark:text-white">
+            <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-50">
               {lastClean ? new Date(lastClean.cleanedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Never'}
             </span>
           </div>
           <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#a3a3a3] uppercase tracking-widest">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
               <CalendarDays className="w-3.5 h-3.5" /> Scheduled
             </div>
-            <span className={`text-[13px] font-bold ${isOverdue ? 'text-amber-600 dark:text-amber-500' : 'text-[#111] dark:text-white'}`}>
+            <span className={`text-[13px] font-bold ${isOverdue ? 'text-amber-600 dark:text-amber-500' : 'text-zinc-900 dark:text-zinc-50'}`}>
               {nextCleanDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
         </div>
 
-        <div className="pt-4 border-t border-[#f0f0f0] dark:border-[#1a1a1a] flex flex-col gap-1">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#a3a3a3] uppercase tracking-widest">
+        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
             <UserCircle2 className="w-3.5 h-3.5" /> Cleaned By
           </div>
-          <span className="text-[13px] font-semibold text-[#404040] dark:text-[#a3a3a3]">
+          <span className="text-[13px] font-semibold text-zinc-600 dark:text-zinc-400">
             {lastClean ? lastClean.cleanedBy : 'Unassigned'}
           </span>
         </div>
       </div>
 
       {/* Expandable History Toggle */}
-      <div className="mt-auto border-t border-[#f0f0f0] dark:border-[#1a1a1a]">
+      <div className="mt-auto border-t border-zinc-200 dark:border-zinc-800">
         <button 
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full px-5 py-3 text-[12px] font-bold text-[#111] dark:text-white hover:bg-[#fafafa] dark:hover:bg-[#111111]/50 transition-colors flex justify-between items-center bg-transparent focus:outline-none"
+          className="w-full px-5 py-3 text-[12px] font-bold text-zinc-900 dark:text-zinc-50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors flex justify-between items-center bg-transparent focus:outline-none"
         >
           <span>{isExpanded ? 'Hide History' : 'Show History'}</span>
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
           >
-            <ChevronDown className="w-4 h-4 text-[#a3a3a3]" />
+            <ChevronDown className="w-4 h-4 text-zinc-400" />
           </motion.div>
         </button>
         
@@ -139,24 +139,24 @@ const CleaningCard = ({ room, cleaningLogs, activeComplaints }) => {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} // easeOutExpo
-              className="overflow-hidden bg-[#fafafa] dark:bg-[#111111]"
+              className="overflow-hidden bg-zinc-50 dark:bg-zinc-900/30"
             >
-              <div className="p-4 border-t border-[#f0f0f0] dark:border-[#1a1a1a] max-h-48 overflow-y-auto">
+              <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 max-h-48 overflow-y-auto">
                 {sortedLogs.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-4 text-center">
-                    <Clock className="w-5 h-5 text-[#d4d4d4] dark:text-[#333] mb-2" />
-                    <p className="text-[12px] text-[#737373] dark:text-[#888888] font-medium">No records found.</p>
+                    <Clock className="w-5 h-5 text-zinc-300 dark:text-zinc-700 mb-2" />
+                    <p className="text-[12px] text-zinc-500 dark:text-zinc-400 font-medium">No records found.</p>
                   </div>
                 ) : (
-                  <div className="relative pl-3 border-l-2 border-[#e5e5e5] dark:border-[#333] space-y-4 ml-2">
+                  <div className="relative pl-3 border-l-2 border-zinc-200 dark:border-zinc-700 space-y-4 ml-2">
                     {sortedLogs.map((log, idx) => (
                       <div key={log.id} className="relative">
-                        <div className="absolute w-2 h-2 rounded-full bg-[#111] dark:bg-white -left-[17px] top-1.5 ring-4 ring-[#fafafa] dark:ring-[#111111]" />
+                        <div className="absolute w-2 h-2 rounded-full bg-zinc-900 dark:bg-zinc-50 -left-[17px] top-1.5 ring-4 ring-zinc-50 dark:ring-zinc-900/30" />
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-[12px] font-bold text-[#111] dark:text-white">
+                          <span className="text-[12px] font-bold text-zinc-900 dark:text-zinc-50">
                             {new Date(log.cleanedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
-                          <span className="text-[11px] font-medium text-[#737373] dark:text-[#888888]">
+                          <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
                             {log.notes || 'Routine Clean'} • {log.cleanedBy}
                           </span>
                         </div>

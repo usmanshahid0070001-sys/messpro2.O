@@ -72,8 +72,8 @@ export default function AttendanceManagement() {
 
   if (availableTabs.length === 0) {
     return (
-      <div className="w-full h-64 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-2xl flex items-center justify-center">
-        <p className="text-sm font-semibold text-[#737373] dark:text-[#a0a0a0]">Attendance features are not enabled for your plan.</p>
+      <div className="w-full h-64 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center justify-center">
+        <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">Attendance features are not enabled for your plan.</p>
       </div>
     );
   }
@@ -85,16 +85,16 @@ export default function AttendanceManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111111] dark:text-white flex items-center gap-3">
-            <CalendarCheck className="w-6 h-6 text-[#737373] dark:text-[#a3a3a3]" />
+          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
+            <CalendarCheck className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
             Attendance Management
           </h1>
-          <p className="mt-1 text-sm font-medium text-[#737373] dark:text-[#a0a0a0]">Manage and track student attendance effectively.</p>
+          <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">Manage and track student attendance effectively.</p>
         </div>
       </div>
 
       {/* Tabs Navigation (Segmented Control) */}
-      <div className="inline-flex p-1 bg-[#f5f5f5] dark:bg-[#111111] rounded-xl border border-[#e5e5e5] dark:border-[#222222] overflow-x-auto w-full sm:w-auto snap-x">
+      <div className="inline-flex p-1 bg-zinc-100 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-x-auto w-full sm:w-auto snap-x">
         {availableTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -104,14 +104,14 @@ export default function AttendanceManagement() {
               onClick={() => setActiveTab(tab.id)}
               className={`relative flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 snap-start shrink-0 min-w-[120px] ${
                 isActive 
-                  ? 'text-[#111111] dark:text-white' 
-                  : 'text-[#737373] dark:text-[#888888] hover:text-[#111111] dark:hover:text-[#dddddd]'
+                  ? 'text-zinc-900 dark:text-zinc-50' 
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-300'
               }`}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeAttendanceTab"
-                  className="absolute inset-0 bg-white dark:bg-[#1e1e1e] rounded-lg shadow-sm border border-[#e5e5e5] dark:border-[#333333]"
+                  className="absolute inset-0 bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700"
                   initial={false}
                   transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                 />

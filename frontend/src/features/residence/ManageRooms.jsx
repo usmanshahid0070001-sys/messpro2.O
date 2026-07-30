@@ -13,22 +13,22 @@ const STATUS_STYLES = {
   Maintenance: 'bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
 };
 
-const getStatusStyle = (status) => STATUS_STYLES[status] || 'bg-slate-50 text-slate-700 border border-slate-200/60 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20';
+const getStatusStyle = (status) => STATUS_STYLES[status] || 'bg-zinc-50 text-zinc-700 border border-zinc-200/60 dark:bg-zinc-500/10 dark:text-zinc-400 dark:border-zinc-500/20';
 
 const RoomCardSkeleton = () => (
-  <div className="card p-5 animate-pulse border border-gray-100 dark:border-[#222]">
+  <div className="card p-5 animate-pulse border border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/40 backdrop-blur-md">
     <div className="flex justify-between items-start mb-4">
       <div className="space-y-2">
-        <div className="h-5 w-24 bg-gray-200 dark:bg-[#333] rounded"></div>
-        <div className="h-3 w-16 bg-gray-200 dark:bg-[#333] rounded"></div>
+        <div className="h-5 w-24 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
+        <div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
       </div>
-      <div className="h-5 w-16 bg-gray-200 dark:bg-[#333] rounded-full"></div>
+      <div className="h-5 w-16 bg-zinc-200 dark:bg-zinc-700 rounded-full"></div>
     </div>
     <div className="flex flex-col space-y-2">
-      <div className="h-8 bg-gray-100 dark:bg-[#222] rounded-md"></div>
-      <div className="h-8 bg-gray-100 dark:bg-[#222] rounded-md"></div>
-      <div className="h-8 bg-gray-100 dark:bg-[#222] rounded-md"></div>
-      <div className="h-8 bg-gray-100 dark:bg-[#222] rounded-md"></div>
+      <div className="h-8 bg-zinc-100 dark:bg-zinc-800 rounded-md"></div>
+      <div className="h-8 bg-zinc-100 dark:bg-zinc-800 rounded-md"></div>
+      <div className="h-8 bg-zinc-100 dark:bg-zinc-800 rounded-md"></div>
+      <div className="h-8 bg-zinc-100 dark:bg-zinc-800 rounded-md"></div>
     </div>
   </div>
 );
@@ -106,8 +106,8 @@ const ManageRooms = () => {
       <div className="px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5">
           <div className="animate-pulse space-y-2">
-            <div className="h-7 bg-gray-200 dark:bg-[#222] rounded w-48"></div>
-            <div className="h-4 bg-gray-200 dark:bg-[#222] rounded w-72"></div>
+            <div className="h-7 bg-zinc-200 dark:bg-zinc-800 rounded w-48"></div>
+            <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-72"></div>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -139,15 +139,15 @@ const ManageRooms = () => {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Manage Rooms</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Manage Rooms</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             View and manage hostel rooms, capacity, and student allocations.
           </p>
         </div>
         <div>
           <button
             onClick={handleOpenAdd}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors duration-150"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 transition-colors duration-150"
           >
             <svg className="-ml-1 mr-2 h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -185,13 +185,13 @@ const ManageRooms = () => {
         {rooms.map((room) => {
           const isDeleting = deletingRoomId === room._id;
           return (
-            <div key={room._id} className="card p-5 hover:shadow-md hover:shadow-slate-200/50 dark:hover:shadow-black/50 transition-all duration-300 ease-out min-w-0 border border-gray-100 dark:border-[#222]">
+            <div key={room._id} className="card p-5 hover:shadow-md hover:shadow-zinc-200/50 dark:hover:shadow-black/50 transition-all duration-300 ease-out min-w-0 border border-zinc-200 dark:border-zinc-800">
               <div className="flex justify-between items-start gap-2 mb-4">
                 <div className="min-w-0">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={room.roomName}>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 truncate" title={room.roomName}>
                     {room.roomName}
                   </h3>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-0.5">
+                  <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-0.5">
                     {room.occupants} / {room.capacity} Occupants
                   </p>
                 </div>
@@ -205,7 +205,7 @@ const ManageRooms = () => {
               <div className="mt-5 grid grid-cols-2 gap-2.5">
                 <button
                   onClick={() => handleOpenAllotments(room)}
-                  className="col-span-2 inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ease-out active:scale-[0.98]"
+                  className="col-span-2 inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-out active:scale-[0.98]"
                 >
                   View Allotments
                 </button>
@@ -213,7 +213,7 @@ const ManageRooms = () => {
                   onClick={() => handleOpenAssign(room)}
                   disabled={room.status === 'Full'}
                   title={room.status === 'Full' ? 'Room is at full capacity' : undefined}
-                  className="inline-flex justify-center items-center px-4 py-2 border border-slate-200 dark:border-white/10 shadow-sm text-sm font-medium rounded-lg text-slate-700 dark:text-slate-200 bg-white dark:bg-transparent hover:bg-slate-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-out active:scale-[0.98]"
+                  className="inline-flex justify-center items-center px-4 py-2 border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm font-medium rounded-lg text-zinc-700 dark:text-zinc-200 bg-white dark:bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-out active:scale-[0.98]"
                 >
                   Assign
                 </button>
@@ -221,7 +221,7 @@ const ManageRooms = () => {
                   onClick={() => handleOpenSwap(room)}
                   disabled={room.occupants === 0}
                   title={room.occupants === 0 ? 'No one to swap out of this room' : undefined}
-                  className="inline-flex justify-center items-center px-4 py-2 border border-slate-200 dark:border-white/10 shadow-sm text-sm font-medium rounded-lg text-slate-700 dark:text-slate-200 bg-white dark:bg-transparent hover:bg-slate-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-out active:scale-[0.98]"
+                  className="inline-flex justify-center items-center px-4 py-2 border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm font-medium rounded-lg text-zinc-700 dark:text-zinc-200 bg-white dark:bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-out active:scale-[0.98]"
                 >
                   Swap
                 </button>
@@ -237,15 +237,15 @@ const ManageRooms = () => {
           );
         })}
         {rooms.length === 0 && (
-          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-gray-50/50 dark:bg-[#111] border border-dashed border-gray-300 dark:border-[#333] rounded-2xl">
-            <div className="h-14 w-14 rounded-full bg-white dark:bg-[#222] shadow-sm flex items-center justify-center mb-4 border border-gray-100 dark:border-[#333]">
-              <Home className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-zinc-50/50 dark:bg-zinc-900/50 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-2xl">
+            <div className="h-14 w-14 rounded-full bg-white dark:bg-zinc-800 shadow-sm flex items-center justify-center mb-4 border border-zinc-200 dark:border-zinc-700">
+              <Home className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No rooms yet</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-sm">Get started by creating a new room to allot students.</p>
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">No rooms yet</h3>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">Get started by creating a new room to allot students.</p>
             <button
               onClick={handleOpenAdd}
-              className="mt-6 inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg shadow-sm text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 transition-all duration-200 ease-out active:scale-[0.98]"
+              className="mt-6 inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg shadow-sm text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 transition-all duration-200 ease-out active:scale-[0.98]"
             >
               <svg className="-ml-1 mr-2 h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />

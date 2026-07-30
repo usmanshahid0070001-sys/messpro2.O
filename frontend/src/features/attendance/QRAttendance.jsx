@@ -204,7 +204,7 @@ export default function QRAttendance() {
             initial={{ opacity: 0, y: -50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-full max-w-md bg-white dark:bg-[#111111] border border-[#e5e5e5] dark:border-[#333333] shadow-2xl rounded-2xl p-5 overflow-hidden"
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-full max-w-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-2xl rounded-2xl p-5 overflow-hidden"
           >
             {/* Countdown Bar */}
             <motion.div 
@@ -219,20 +219,20 @@ export default function QRAttendance() {
                 <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500" />
               </div>
               <div className="flex-1 pt-1">
-                <h3 className="text-[#111111] dark:text-white font-bold text-base leading-tight">
+                <h3 className="text-zinc-900 dark:text-zinc-50 font-bold text-base leading-tight">
                   {activeGuestRequest.reason === 'guest' ? 'Guest Request' : 'Permission Required'}
                 </h3>
                 {activeGuestRequest.reason === 'unselected' ? (
-                  <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1">
-                    <strong className="text-[#111111] dark:text-[#dddddd]">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) did not reserve this meal. Allow walk-in?
+                  <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
+                    <strong className="text-zinc-900 dark:text-zinc-200">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) did not reserve this meal. Allow walk-in?
                   </p>
                 ) : activeGuestRequest.reason === 'extra_meal' ? (
-                  <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1">
-                    <strong className="text-[#111111] dark:text-[#dddddd]">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) has reached their limit. Allow extra meal?
+                  <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
+                    <strong className="text-zinc-900 dark:text-zinc-200">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) has reached their limit. Allow extra meal?
                   </p>
                 ) : (
-                  <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1">
-                    <strong className="text-[#111111] dark:text-[#dddddd]">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) from another hostel wants to eat here.
+                  <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
+                    <strong className="text-zinc-900 dark:text-zinc-200">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) from another hostel wants to eat here.
                   </p>
                 )}
                 <div className="flex gap-3 mt-4">
@@ -244,7 +244,7 @@ export default function QRAttendance() {
                   </button>
                   <button 
                     onClick={() => handleRespondGuest(activeGuestRequest, false)}
-                    className="flex-1 bg-[#f5f5f5] dark:bg-[#1a1a1a] hover:bg-[#e5e5e5] dark:hover:bg-[#222222] text-[#111111] dark:text-white border border-[#e5e5e5] dark:border-[#222222] py-2 rounded-lg font-semibold transition-colors text-sm"
+                    className="flex-1 bg-zinc-100 dark:bg-zinc-900/50 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 py-2 rounded-lg font-semibold transition-colors text-sm"
                   >
                     Reject
                   </button>
@@ -258,20 +258,20 @@ export default function QRAttendance() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: QR Code & Scanner Button */}
         <div className="lg:col-span-5 flex flex-col space-y-6">
-          <div className="bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] p-8 rounded-2xl flex flex-col items-center">
-            <div className="p-4 bg-white border border-[#e5e5e5] rounded-xl flex items-center justify-center min-w-[200px] min-h-[200px]">
+          <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-8 rounded-2xl flex flex-col items-center">
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-xl flex items-center justify-center min-w-[200px] min-h-[200px]">
               {qrLoading ? (
-                  <div className="w-8 h-8 border-4 border-[#f5f5f5] border-t-[#111111] rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-4 border-zinc-100 border-t-zinc-900 dark:border-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin" />
               ) : qrToken ? (
                 <QRCode value={qrToken} size={200} className="w-48 h-48" />
               ) : (
-                <p className="text-[#737373] text-sm font-medium">Failed to load QR</p>
+                <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Failed to load QR</p>
               )}
             </div>
-            <p className="mt-6 text-[#111111] dark:text-white font-bold text-lg tracking-tight">MessPro Attendance</p>
+            <p className="mt-6 text-zinc-900 dark:text-zinc-50 font-bold text-lg tracking-tight">MessPro Attendance</p>
             <div className="flex items-center gap-2 mt-2">
               <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="text-[#737373] dark:text-[#a0a0a0] text-sm font-medium">
+              <span className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
                 {isConnected ? 'Live sync active' : 'Connecting...'}
               </span>
             </div>
@@ -287,22 +287,22 @@ export default function QRAttendance() {
         </div>
 
         {/* Right: Live Feed */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-2xl overflow-hidden flex flex-col h-[500px]">
-          <div className="flex items-center justify-between p-4 border-b border-[#e5e5e5] dark:border-[#222222] bg-[#fafafa] dark:bg-[#111111]">
+        <div className="lg:col-span-7 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden flex flex-col h-[500px]">
+          <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
             <div className="flex items-center gap-4">
-              <h3 className="text-sm font-bold text-[#111111] dark:text-white flex items-center gap-2 uppercase tracking-wide">
-                <Timer className="w-4 h-4 text-[#737373] dark:text-[#a0a0a0]" />
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 uppercase tracking-wide">
+                <Timer className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
                 Live Feed
               </h3>
-              <div className="flex bg-[#e5e5e5] dark:bg-[#222222] p-1 rounded-lg">
+              <div className="flex bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg">
                 {['All', 'Present', 'Reserved'].map(ft => (
                   <button
                     key={ft}
                     onClick={() => setFilterType(ft)}
                     className={`px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${
                       filterType === ft 
-                        ? 'bg-white dark:bg-[#111111] text-[#111111] dark:text-white shadow-sm' 
-                        : 'text-[#737373] dark:text-[#a0a0a0] hover:text-[#111111] dark:hover:text-white'
+                        ? 'bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm' 
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50'
                     }`}
                   >
                     {ft}
@@ -311,7 +311,7 @@ export default function QRAttendance() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#737373] dark:text-[#a0a0a0] border border-[#e5e5e5] dark:border-[#333333] text-xs px-2.5 py-0.5 rounded-full font-semibold">
+              <span className="bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">
                 {filteredAttendances.length}
               </span>
               <button 
@@ -324,13 +324,13 @@ export default function QRAttendance() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-[#f5f5f5] dark:divide-[#1a1a1a]">
+          <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-zinc-100 dark:divide-zinc-900/50">
             {liveLoading ? (
               <div className="flex justify-center items-center h-full">
-                <div className="w-6 h-6 border-2 border-[#e5e5e5] border-t-[#111111] dark:border-[#333333] dark:border-t-white rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-zinc-200 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-50 rounded-full animate-spin" />
               </div>
             ) : filteredAttendances.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-[#737373] dark:text-[#888888]">
+              <div className="flex flex-col items-center justify-center h-full text-zinc-500 dark:text-zinc-400">
                 <Filter className="w-8 h-8 mb-3 opacity-20" />
                 <p className="text-sm font-medium">No records match this filter.</p>
               </div>
@@ -340,31 +340,31 @@ export default function QRAttendance() {
                   key={idx + '-' + att.rollNumber}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between px-5 py-4 hover:bg-[#fafafa] dark:hover:bg-[#111111] transition-colors group"
+                  className="flex items-center justify-between px-5 py-4 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#222222] flex items-center justify-center shrink-0">
-                      <UserIcon className="w-4 h-4 text-[#a3a3a3] dark:text-[#666666]" />
+                    <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center shrink-0">
+                      <UserIcon className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[#111111] dark:text-white truncate">{att.name}</p>
-                      <p className="text-xs font-medium text-[#737373] dark:text-[#888888] font-mono mt-0.5 truncate">{att.rollNumber}</p>
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">{att.name}</p>
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 font-mono mt-0.5 truncate">{att.rollNumber}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1.5 shrink-0 pl-4">
                     <span className={`text-[11px] px-2 py-0.5 rounded font-bold uppercase tracking-wide border ${
                       att.isGuest 
                         ? 'bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900' 
-                        : (att.attendanceCount > 0 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/50' : 'bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#737373] dark:text-[#a0a0a0] border-[#e5e5e5] dark:border-[#333333]')
+                        : (att.attendanceCount > 0 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/50' : 'bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700')
                     }`}>
                       {att.isGuest ? 'Guest' : (att.attendanceCount > 0 ? 'Present' : 'Not Present')}
                     </span>
                     <div className="flex gap-2">
-                      <span className="text-[10px] text-[#737373] dark:text-[#888888] font-medium uppercase border-r border-[#e5e5e5] dark:border-[#333333] pr-2">
-                        Res: <span className={`font-bold ${att.selectionCount > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-[#111111] dark:text-[#dddddd]'}`}>{att.selectionCount || 0}</span>
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium uppercase border-r border-zinc-200 dark:border-zinc-700 pr-2">
+                        Res: <span className={`font-bold ${att.selectionCount > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-zinc-900 dark:text-zinc-200'}`}>{att.selectionCount || 0}</span>
                       </span>
-                      <span className="text-[10px] text-[#737373] dark:text-[#888888] font-medium uppercase">
-                        Eat: <span className={`font-bold ${att.attendanceCount > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-[#111111] dark:text-[#dddddd]'}`}>{att.attendanceCount || 0}</span>
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium uppercase">
+                        Eat: <span className={`font-bold ${att.attendanceCount > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-900 dark:text-zinc-200'}`}>{att.attendanceCount || 0}</span>
                       </span>
                     </div>
                   </div>
@@ -384,20 +384,20 @@ export default function QRAttendance() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           >
-            <div className="w-full max-w-md bg-white dark:bg-[#111111] p-6 rounded-2xl relative flex flex-col items-center border border-[#e5e5e5] dark:border-[#333333] shadow-2xl">
+            <div className="w-full max-w-md bg-zinc-50 dark:bg-zinc-900 p-6 rounded-2xl relative flex flex-col items-center border border-zinc-200 dark:border-zinc-700 shadow-2xl">
               <button 
                 onClick={() => setIsScanning(false)}
-                className="absolute top-4 right-4 bg-[#f5f5f5] dark:bg-[#1a1a1a] w-8 h-8 rounded-full flex items-center justify-center text-[#737373] hover:text-[#111111] dark:hover:text-white transition-colors border border-[#e5e5e5] dark:border-[#222222]"
+                className="absolute top-4 right-4 bg-zinc-100 dark:bg-zinc-900/50 w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors border border-zinc-200 dark:border-zinc-800"
               >
                 <span className="text-sm font-bold">✕</span>
               </button>
               
-              <h3 className="text-lg font-bold text-[#111111] dark:text-white mb-6">Scan QR</h3>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-6">Scan QR</h3>
 
               <div className="w-full aspect-square bg-black rounded-xl overflow-hidden relative flex items-center justify-center mb-6">
                 {scanResult ? (
                   <div className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-20">
-                    <div className="w-8 h-8 border-4 border-[#e5e5e5] dark:border-[#333333] border-t-blue-600 rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-4 border-zinc-200 dark:border-zinc-700 border-t-blue-600 rounded-full animate-spin" />
                   </div>
                 ) : (
                   <div className="w-full h-full relative">
@@ -423,7 +423,7 @@ export default function QRAttendance() {
                 )}
               </div>
               <div className="text-center">
-                <p className="text-[#737373] dark:text-[#a0a0a0] text-sm font-medium">
+                <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
                   Align QR code within the frame
                 </p>
               </div>

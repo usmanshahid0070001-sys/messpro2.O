@@ -131,19 +131,19 @@ export default function StudentQRAttendance() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-[#111111] dark:text-white">QR Attendance</h2>
-          <p className="mt-1 text-sm font-medium text-[#737373] dark:text-[#a0a0a0]">Scan the Mess QR or show your code.</p>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">QR Attendance</h2>
+          <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">Scan the Mess QR or show your code.</p>
         </div>
       </div>
 
       <div className="flex flex-col items-center justify-center space-y-6">
-        <div className="bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] p-8 rounded-2xl flex flex-col items-center w-full max-w-md">
-          <div className="p-4 bg-white border border-[#e5e5e5] rounded-xl flex items-center justify-center min-w-[200px] min-h-[200px]">
+        <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-8 rounded-2xl flex flex-col items-center w-full max-w-md">
+          <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center justify-center min-w-[200px] min-h-[200px]">
             <QRCode value={studentQRValue} size={200} className="w-48 h-48" />
           </div>
-          <p className="mt-6 text-[#111111] dark:text-white font-bold text-xl tracking-tight">{user?.name}</p>
-          <p className="text-[#737373] dark:text-[#a0a0a0] font-medium font-mono text-sm mt-1">{user?.id}</p>
-          <p className="text-[#a3a3a3] dark:text-[#666666] text-xs mt-3 text-center">Show this to the mess manager<br/>to mark attendance.</p>
+          <p className="mt-6 text-zinc-900 dark:text-zinc-50 font-bold text-xl tracking-tight">{user?.name}</p>
+          <p className="text-zinc-500 dark:text-zinc-400 font-medium font-mono text-sm mt-1">{user?.id}</p>
+          <p className="text-zinc-400 dark:text-zinc-500 text-xs mt-3 text-center">Show this to the mess manager<br/>to mark attendance.</p>
         </div>
 
         <button
@@ -163,29 +163,29 @@ export default function StudentQRAttendance() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           >
-            <div className="w-full max-w-md bg-white dark:bg-[#111111] p-6 rounded-2xl relative flex flex-col items-center border border-[#e5e5e5] dark:border-[#333333] shadow-2xl">
+            <div className="w-full max-w-md bg-zinc-50 dark:bg-zinc-900 p-6 rounded-2xl relative flex flex-col items-center border border-zinc-200 dark:border-zinc-700 shadow-2xl">
               <button 
                 onClick={() => setIsScanning(false)}
-                className="absolute top-4 right-4 bg-[#f5f5f5] dark:bg-[#1a1a1a] w-8 h-8 rounded-full flex items-center justify-center text-[#737373] hover:text-[#111111] dark:hover:text-white transition-colors border border-[#e5e5e5] dark:border-[#222222]"
+                className="absolute top-4 right-4 bg-zinc-100 dark:bg-zinc-900/50 w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors border border-zinc-200 dark:border-zinc-800"
               >
                 <span className="text-sm font-bold">✕</span>
               </button>
               
-              <h3 className="text-lg font-bold text-[#111111] dark:text-white mb-6">Scan Manager QR</h3>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-6">Scan Manager QR</h3>
               
               <div className="w-full aspect-square bg-black rounded-xl overflow-hidden relative flex items-center justify-center mb-6">
                 
                 {waitingForManager ? (
-                  <div className="absolute inset-0 bg-white/95 dark:bg-[#111111]/95 flex flex-col items-center justify-center z-20 p-6 text-center">
+                  <div className="absolute inset-0 bg-white/95 dark:bg-zinc-900/95 flex flex-col items-center justify-center z-20 p-6 text-center">
                     <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
-                    <p className="text-[#111111] dark:text-white font-bold text-lg">Request Sent!</p>
-                    <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1">Wait for manager to accept.</p>
+                    <p className="text-zinc-900 dark:text-zinc-50 font-bold text-lg">Request Sent!</p>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">Wait for manager to accept.</p>
                   </div>
                 ) : crossHostelPrompt ? (
-                  <div className="absolute inset-0 bg-white/95 dark:bg-[#111111]/95 flex flex-col items-center justify-center z-20 p-6 text-center">
+                  <div className="absolute inset-0 bg-white/95 dark:bg-zinc-900/95 flex flex-col items-center justify-center z-20 p-6 text-center">
                     <AlertCircle className="w-12 h-12 text-amber-500 mb-3" />
-                    <p className="text-[#111111] dark:text-white font-bold">Permission Required</p>
-                    <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mt-1 mb-4">{crossHostelPrompt.message}</p>
+                    <p className="text-zinc-900 dark:text-zinc-50 font-bold">Permission Required</p>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1 mb-4">{crossHostelPrompt.message}</p>
                     <div className="flex gap-2 w-full">
                       <button 
                         onClick={() => handleRequestPermission(crossHostelPrompt.managerHostelId, crossHostelPrompt.reason)} 
@@ -195,32 +195,32 @@ export default function StudentQRAttendance() {
                       </button>
                       <button 
                         onClick={handleCancelPermission} 
-                        className="flex-1 bg-[#f5f5f5] dark:bg-[#1a1a1a] hover:bg-[#e5e5e5] dark:hover:bg-[#222222] text-[#111111] dark:text-white border border-[#e5e5e5] dark:border-[#222222] py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                        className="flex-1 bg-zinc-100 dark:bg-zinc-900/50 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 py-2.5 rounded-lg text-sm font-semibold transition-colors"
                       >
                         Cancel
                       </button>
                     </div>
                   </div>
                 ) : successRecord ? (
-                  <div className="absolute inset-0 bg-white/95 dark:bg-[#111111]/95 flex flex-col items-center justify-center z-20 p-6 text-center">
+                  <div className="absolute inset-0 bg-white/95 dark:bg-zinc-900/95 flex flex-col items-center justify-center z-20 p-6 text-center">
                     <div className="w-16 h-16 bg-green-100 dark:bg-green-500/10 rounded-full flex items-center justify-center mb-4">
                       <CheckCircle2 className="w-8 h-8 text-green-500" />
                     </div>
-                    <p className="text-[#111111] dark:text-white font-bold text-xl mb-1">Attendance Marked!</p>
-                    <p className="text-[#737373] dark:text-[#a0a0a0] text-sm mb-6">Show this screen to the manager if their device hasn't updated.</p>
+                    <p className="text-zinc-900 dark:text-zinc-50 font-bold text-xl mb-1">Attendance Marked!</p>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-6">Show this screen to the manager if their device hasn't updated.</p>
                     
-                    <div className="w-full bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#333333] rounded-xl p-4 mb-6 text-left">
-                      <p className="text-sm font-semibold text-[#111111] dark:text-white mb-2">Meal Details</p>
+                    <div className="w-full bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 mb-6 text-left">
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-2">Meal Details</p>
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs text-[#737373] dark:text-[#a0a0a0]">Meal</span>
-                        <span className="text-xs font-bold text-[#111111] dark:text-white">{successRecord.mealType} - {successRecord.mealInfo?.name || 'Meal'}</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">Meal</span>
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-50">{successRecord.mealType} - {successRecord.mealInfo?.name || 'Meal'}</span>
                       </div>
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs text-[#737373] dark:text-[#a0a0a0]">Reserved</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">Reserved</span>
                         <span className="text-xs font-bold text-purple-600 dark:text-purple-400">{successRecord.selection?.count || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-[#737373] dark:text-[#a0a0a0]">Eaten</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">Eaten</span>
                         <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{successRecord.attendance?.count || 1}</span>
                       </div>
                     </div>
@@ -234,7 +234,7 @@ export default function StudentQRAttendance() {
                   </div>
                 ) : scanResult ? (
                   <div className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-20">
-                    <div className="w-8 h-8 border-4 border-[#e5e5e5] dark:border-[#333333] border-t-blue-600 rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-4 border-zinc-200 dark:border-zinc-700 border-t-blue-600 rounded-full animate-spin" />
                   </div>
                 ) : (
                   <div className="w-full h-full relative">
@@ -260,7 +260,7 @@ export default function StudentQRAttendance() {
                 )}
               </div>
               <div className="text-center">
-                <p className="text-[#737373] dark:text-[#a0a0a0] text-sm font-medium">
+                <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
                   Align manager's QR code within the frame
                 </p>
               </div>

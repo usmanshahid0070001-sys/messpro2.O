@@ -43,8 +43,8 @@ export const ServiceManagement = () => {
       
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-[#111111] dark:text-white tracking-tight">Service Management</h1>
-        <p className="text-sm font-semibold text-[#737373] dark:text-[#888888] mt-1">
+        <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">Service Management</h1>
+        <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mt-1">
           {showCleaning && showComplaints 
             ? "Manage daily complaints and room cleaning schedules"
             : showCleaning 
