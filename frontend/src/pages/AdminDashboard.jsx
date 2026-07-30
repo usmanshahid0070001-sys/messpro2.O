@@ -24,6 +24,7 @@ import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 import LoadingScreen from "../components/ui/LoadingScreen";
 import ServiceManagement from "../features/services/ServiceManagement";
 import AttendanceManagement from "../features/attendance/AttendanceManagement";
+import BillGeneration from "../features/billing/BillGeneration";
 
 import { useAuth } from "../context/AuthContext";
 import { useMyHostel } from "../hooks/queries/useHostelQueries";
@@ -137,7 +138,7 @@ export default function AdminDashboard() {
           {activeTab === "users" && <ManageUsers />}
           {activeTab === "rooms" && <ManageRooms />}
           {activeTab === "attendance" && <AttendanceManagement />}
-          {activeTab === "bills" && renderPlaceholder("Generate Bills")}
+          {activeTab === "bills" && <BillGeneration />}
           {activeTab === "meal" && <ManageMealSettings />}
           {activeTab === "mealControl" && renderPlaceholder("Meal Control")}
           {activeTab === "weeklyMenu" && <HostelConfiguration />}

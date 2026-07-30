@@ -7,7 +7,8 @@ import {
   Users,
   ConciergeBell,
   AlertTriangle,
-  QrCode
+  QrCode,
+  Calculator
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -22,6 +23,7 @@ import LoadingScreen from "../components/ui/LoadingScreen";
 import ServiceManagement from "../features/services/ServiceManagement";
 import StudentComplaintForm from "../features/services/StudentComplaintForm";
 import StudentQRAttendance from "../features/attendance/StudentQRAttendance";
+import BillGeneration from "../features/billing/BillGeneration";
 
 // Shared UI Components
 import DashboardLayout from "../components/layout/DashboardLayout";
@@ -121,6 +123,7 @@ export default function StudentDashboard() {
     hasPermission("user_management") && { id: "users", label: "User Management", icon: Users },
     hasPermission("residence_management") && { id: "rooms", label: "Residence Management", icon: Home },
     showServiceTab && { id: "services", label: "Service Management", icon: ConciergeBell },
+    hasPermission("bill_generation") && { id: "bills", label: "Bill Generation", icon: Calculator },
   ].filter(Boolean);
 
   const filteredNavItems = isExpired 
@@ -172,6 +175,8 @@ export default function StudentDashboard() {
           {activeTab === "rooms" && <ManageRooms />}
 
           {activeTab === "services" && <ServiceManagement />}
+
+          {activeTab === "bills" && <BillGeneration />}
 
           {activeTab === "file-complaint" && <StudentComplaintForm />}
 

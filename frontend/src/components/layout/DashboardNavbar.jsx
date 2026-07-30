@@ -24,7 +24,7 @@ export default function DashboardNavbar() {
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md rounded-none md:rounded-2xl border-b border-zinc-200 dark:border-zinc-800 md:border-zinc-200 md:dark:border-zinc-800"
+          className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md rounded-none md:rounded-2xl border border-zinc-200 dark:border-zinc-800 md:border-zinc-200 md:dark:border-zinc-800"
         >
           <div className="flex items-center justify-between px-4 py-2.5 md:px-6">
             

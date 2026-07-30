@@ -12,6 +12,7 @@ import ServiceManagement from "../features/services/ServiceManagement";
 import AttendanceManagement from "../features/attendance/AttendanceManagement";
 import LiveOverview from "../features/attendance/ManagerLiveOverview";
 import LoadingScreen from "../components/ui/LoadingScreen";
+import BillGeneration from "../features/billing/BillGeneration";
 
 // Auth & API
 import { useAuth } from "../context/AuthContext";
@@ -132,9 +133,7 @@ export default function ManagerDashboard() {
           {activeTab === "live" && <LiveOverview />}
 
           {activeTab === "bills" && (
-            <div className="w-full flex items-center justify-center h-64 glass-panel rounded-2xl">
-              <p className="text-[#737373] font-bold">Manage Bills (Migration Pending)</p>
-            </div>
+            <BillGeneration />
           )}
         </motion.div>
       </AnimatePresence>
