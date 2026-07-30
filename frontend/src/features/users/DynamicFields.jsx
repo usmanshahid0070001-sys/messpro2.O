@@ -38,8 +38,8 @@ const DynamicFields = ({ customFields, formData, handleDynamicChange, errors }) 
   };
 
   return (
-    <div className="space-y-4 border-t border-[#f0f0f0] dark:border-[#1a1a1a] pt-6 mt-6">
-      <h4 className="text-sm font-bold text-[#111111] dark:text-white">Additional Information</h4>
+    <div className="space-y-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-6">
+      <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Additional Information</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         {customFields.map((field) => (
           <FormInput

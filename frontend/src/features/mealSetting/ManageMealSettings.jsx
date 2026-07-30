@@ -29,33 +29,14 @@ export default function ManageMealSettings() {
   // Track if there are unsaved changes
   const [isDirty, setIsDirty] = useState(false);
   
-  const setHasUnsavedChanges = useUIStore((state) => state.setHasUnsavedChanges);
+  const { setHasUnsavedChanges, discardTrigger } = useUIStore();
 
   useEffect(() => {
     setHasUnsavedChanges(isDirty);
     return () => setHasUnsavedChanges(false);
   }, [isDirty, setHasUnsavedChanges]);
 
-  // Load from sessionStorage OR backend data
-  useEffect(() => {
-    const draftData = sessionStorage.getItem('mealSettingsDraft');
-
-    if (draftData) {
-      // If we have a draft, load it and skip the backend data for now
-      try {
-        const parsed = JSON.parse(draftData);
-        setStatus(parsed.status || "Active");
-        setMaxMealSelection(parsed.maxMealSelection || 1);
-        setMeals(parsed.meals || []);
-        setMenu(parsed.menu || {});
-        setIsDirty(true);
-        return; // Skip loading from backend
-      } catch (e) {
-        console.error("Failed to parse draft data", e);
-        sessionStorage.removeItem('mealSettingsDraft');
-      }
-    }
-
+  const loadFromServer = () => {
     if (scheduleData && scheduleData.data) {
       const parsed = scheduleData.data;
 
@@ -87,6 +68,42 @@ export default function ManageMealSettings() {
     } else if (!isLoading) {
       initializeEmptyMenu();
     }
+  };
+
+  // Listen to global discard trigger
+  useEffect(() => {
+    if (discardTrigger > 0) {
+      sessionStorage.removeItem('mealSettingsDraft');
+      setIsDirty(false);
+      loadFromServer();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [discardTrigger]);
+
+  // Load from sessionStorage OR backend data
+  useEffect(() => {
+    const draftData = sessionStorage.getItem('mealSettingsDraft');
+
+    if (draftData) {
+      // If we have a draft, load it and skip the backend data for now
+      try {
+        const parsed = JSON.parse(draftData);
+        setStatus(parsed.status || "Active");
+        setMaxMealSelection(parsed.maxMealSelection || 1);
+        setMeals(parsed.meals || []);
+        setMenu(parsed.menu || {});
+        setIsDirty(true);
+        return; // Skip loading from backend
+      } catch (e) {
+        console.error("Failed to parse draft data", e);
+        sessionStorage.removeItem('mealSettingsDraft');
+      }
+    }
+
+    if (!isDirty) {
+      loadFromServer();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduleData, isLoading]);
 
   // Save to draft whenever state changes and it's dirty
@@ -260,7 +277,7 @@ export default function ManageMealSettings() {
 
   if (isLoading && !isDirty) {
     return (
-      <div className="space-y-8 lg:p-8 p-4 w-full max-w-[1600px] mx-auto animate-pulse">
+      <div className="space-y-6 w-full max-w-[1600px] mx-auto animate-pulse">
         {/* Header Skeleton */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between px-4 lg:px-0">
           <div className="space-y-3">
@@ -299,7 +316,7 @@ export default function ManageMealSettings() {
 
   if (isError && !isDirty) {
     return (
-      <div className="lg:p-8">
+      <div>
         <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 rounded-lg flex items-center justify-between gap-4">
           <span>Failed to load meal schedule. Please try again.</span>
           <button
@@ -314,7 +331,7 @@ export default function ManageMealSettings() {
   }
 
   return (
-    <div className="space-y-8 lg:p-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>

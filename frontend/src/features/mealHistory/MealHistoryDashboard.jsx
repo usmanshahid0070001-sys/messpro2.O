@@ -5,7 +5,7 @@ import ActualBills from "./components/ActualBills";
 
 export default function MealHistoryDashboard() {
   return (
-    <div className="w-full space-y-6 lg:space-y-8 p-3 sm:p-4 lg:p-8">
+    <div className="w-full space-y-6">
       {/* Header */}
       <div className="card p-4 sm:p-6">
         <h2 className="text-lg sm:text-xl font-semibold text-[#111111] dark:text-white">Meal History & Billing</h2>

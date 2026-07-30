@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useUserUIStore } from '../../store/useUserUIStore';
 import { useGetHostelDetails } from '../../hooks/queries/useUsers';
-import { Search } from 'lucide-react'; // Ensure you import Search
+import { Search } from 'lucide-react';
 
 // --- Custom Hook for DRY Search Logic ---
 const useFilteredUsers = (users, searchQuery, sortOption = 'alphabetical') => {
@@ -41,14 +41,14 @@ const useFilteredUsers = (users, searchQuery, sortOption = 'alphabetical') => {
 const SearchInput = ({ value, onChange, placeholder = "Search users by name, email, or ID..." }) => (
   <div className="relative w-full sm:w-[320px]">
     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-      <Search className="h-4 w-4 text-[#a3a3a3] dark:text-[#666666]" />
+      <Search className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
     </div>
     <input
       type="text"
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="block w-full pl-9 pr-4 py-2 bg-white dark:bg-[#0a0a0a] border border-[#e5e5e5] dark:border-[#222222] rounded-lg text-sm placeholder:text-[#a3a3a3] dark:placeholder:text-[#666666] text-[#111111] dark:text-white focus:outline-none focus:border-[#111111] focus:ring-1 focus:ring-[#111111] dark:focus:border-white dark:focus:ring-white transition-all shadow-sm"
+      className="block w-full pl-9 pr-4 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:focus:border-zinc-50 dark:focus:ring-zinc-50 transition-all shadow-sm"
     />
   </div>
 );
@@ -57,7 +57,7 @@ const ROLE_STYLES = {
   admin: 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20 dark:bg-purple-900/20 dark:text-purple-300 dark:ring-purple-500/30',
   manager: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-900/20 dark:text-emerald-300 dark:ring-emerald-500/30',
   student: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-900/20 dark:text-blue-300 dark:ring-blue-500/30',
-  default: 'bg-gray-50 text-gray-700 ring-1 ring-inset ring-gray-600/20 dark:bg-gray-900/20 dark:text-gray-300 dark:ring-gray-500/30'
+  default: 'bg-zinc-50 text-zinc-700 ring-1 ring-inset ring-zinc-600/20 dark:bg-zinc-900/30 dark:text-zinc-300 dark:ring-zinc-500/30'
 };
 
 const RoleBadge = ({ role }) => {
@@ -79,29 +79,29 @@ const UsersTable = ({ users }) => {
 
   if (!users || users.length === 0) {
     return (
-      <div className="p-16 flex flex-col items-center justify-center text-center border-t border-[#e5e5e5] dark:border-[#222222]">
-        <div className="bg-[#f5f5f5] dark:bg-[#1a1a1a] p-4 rounded-full mb-4">
-          <Search className="w-6 h-6 text-[#737373] dark:text-[#a3a3a3]" />
+      <div className="p-16 flex flex-col items-center justify-center text-center border-t border-zinc-200 dark:border-zinc-800">
+        <div className="bg-zinc-100 dark:bg-zinc-900/50 p-4 rounded-full mb-4">
+          <Search className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
         </div>
-        <p className="text-sm font-semibold text-[#111111] dark:text-white mb-1">No users found</p>
-        <p className="text-sm text-[#737373] dark:text-[#a3a3a3]">We couldn't find any users matching your criteria.</p>
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-1">No users found</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">We couldn't find any users matching your criteria.</p>
       </div>
     );
   }
 
   return (
     <div className="overflow-x-auto [scrollbar-width:thin]">
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-[#222222]">
-        <thead className="bg-gray-50/50 dark:bg-[#111111]/50">
+      <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
+        <thead className="bg-zinc-50/50 dark:bg-zinc-900/50">
           <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">User</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Email</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Role</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Room</th>
-            <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase tracking-wider">Actions</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">User</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Email</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Role</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Room</th>
+            <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 dark:divide-[#222222] bg-white dark:bg-transparent">
+        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 bg-white dark:bg-transparent">
           {users.map((user) => {
             const initial = user?.name ? user.name.charAt(0).toUpperCase() : '?';
             const hasExtraInfo = user.additionalInfo && user.additionalInfo.length > 0;
@@ -109,54 +109,54 @@ const UsersTable = ({ users }) => {
             
             return (
               <React.Fragment key={user._id}>
-              <tr className="hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors duration-150">
+              <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors duration-150">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="h-9 w-9 shrink-0 rounded-full bg-[#f1f5f9] dark:bg-[#1e293b] flex items-center justify-center">
-                      <span className="text-[#334155] dark:text-[#cbd5e1] font-bold text-sm">
+                    <div className="h-9 w-9 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                      <span className="text-zinc-600 dark:text-zinc-300 font-medium text-sm">
                         {initial}
                       </span>
                     </div>
                     <div className="ml-3 min-w-0">
-                      <div className="text-sm font-semibold text-[#111111] dark:text-white truncate">{user.name || 'Unknown User'}</div>
-                      {user.id && <div className="text-xs font-medium text-[#737373] dark:text-[#888888] truncate">{user.id}</div>}
+                      <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">{user.name || 'Unknown User'}</div>
+                      {user.id && <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">{user.id}</div>}
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#737373] dark:text-[#a3a3a3]">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-500 dark:text-zinc-400">
                   {user.email}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <RoleBadge role={user.role} />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#111111] dark:text-white">
-                  {user.room?.roomName || <span className="text-[#a3a3a3] dark:text-[#666666] italic">Unassigned</span>}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                  {user.room?.roomName || <span className="text-zinc-400 dark:text-zinc-500 italic">Unassigned</span>}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                   {hasExtraInfo && (
                     <button
                       onClick={() => setExpandedUserId(isExpanded ? null : user._id)}
-                      className="inline-flex items-center justify-center px-3 py-1.5 text-[13px] font-medium text-[#737373] bg-[#f5f5f5] border border-transparent rounded-md hover:bg-[#e5e5e5] hover:text-[#111] dark:bg-[#1a1a1a] dark:text-[#a3a3a3] dark:hover:bg-[#222] dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      className="inline-flex items-center justify-center px-3 py-1.5 text-[13px] font-medium text-zinc-600 bg-zinc-100 border border-transparent rounded-md hover:bg-zinc-200 hover:text-zinc-900 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-zinc-50/20"
                     >
                       {isExpanded ? 'Hide Details' : 'View Details'}
                     </button>
                   )}
                   <button
                     onClick={() => openUpdateModal(user)}
-                    className="inline-flex items-center justify-center px-3 py-1.5 text-[13px] font-medium text-[#111111] bg-white border border-[#d4d4d4] rounded-md shadow-sm hover:bg-[#f5f5f5] dark:bg-[#111111] dark:text-white dark:border-[#333333] dark:hover:bg-[#222222] transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className="inline-flex items-center justify-center px-3 py-1.5 text-[13px] font-medium text-zinc-700 bg-white border border-zinc-300 rounded-md shadow-sm hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-zinc-50/20"
                   >
                     Edit
                   </button>
                 </td>
               </tr>
               {isExpanded && hasExtraInfo && (
-                <tr className="bg-[#fafafa] dark:bg-[#0a0a0a]">
-                  <td colSpan="4" className="px-6 py-5 border-t-0">
+                <tr className="bg-zinc-50/50 dark:bg-zinc-900/20">
+                  <td colSpan="5" className="px-6 py-5 border-t-0">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                       {user.additionalInfo.map((info, idx) => (
                         <div key={idx}>
-                          <p className="text-[10px] font-bold text-[#a3a3a3] dark:text-[#737373] uppercase tracking-wider mb-1">{info.key}</p>
-                          <p className="text-sm font-semibold text-[#111111] dark:text-white">{info.value || '-'}</p>
+                          <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">{info.key}</p>
+                          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{info.value || '-'}</p>
                         </div>
                       ))}
                     </div>
@@ -208,17 +208,17 @@ export const SuperadminView = ({ users, sortOption }) => {
       </div>
 
       {Object.keys(groupedUsers).length === 0 && searchQuery && (
-        <div className="p-8 bg-white dark:bg-[#0a0a0a] rounded-2xl border border-[#e5e5e5] dark:border-[#222222] text-center">
-          <p className="text-sm font-semibold text-[#111111] dark:text-white">No tenants match your search.</p>
+        <div className="p-8 bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-center">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">No tenants match your search.</p>
         </div>
       )}
 
       {Object.entries(groupedUsers).map(([hostelName, hostelUsers]) => (
-        <div key={hostelName} className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm border border-[#e5e5e5] dark:border-[#222222] overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#f0f0f0] dark:border-[#1a1a1a] bg-[#fafafa]/80 dark:bg-[#111111]/60 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-[#111111] dark:text-white flex items-center gap-3">
+        <div key={hostelName} className="bg-white dark:bg-zinc-950 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+          <div className="px-6 py-4 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/80 dark:bg-zinc-900/40 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
               {hostelName}
-              <span className="flex items-center justify-center px-2 py-0.5 bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#333333] rounded-full text-[11px] font-semibold text-[#737373] dark:text-[#a3a3a3]">
+              <span className="flex items-center justify-center px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
                 {hostelUsers.length}
               </span>
             </h3>
@@ -247,8 +247,8 @@ export const AdminView = ({ users, sortOption }) => {
   }, [filteredUsers]);
 
   return (
-    <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm border border-[#e5e5e5] dark:border-[#222222] overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#f0f0f0] dark:border-[#1a1a1a] px-6 bg-[#fafafa]/80 dark:bg-[#111111]/60">
+    <div className="bg-white dark:bg-zinc-950 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 px-6 bg-zinc-50/80 dark:bg-zinc-900/40">
         
         <nav className="-mb-px flex space-x-6" aria-label="Tabs">
           {[
@@ -262,15 +262,15 @@ export const AdminView = ({ users, sortOption }) => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-[14px] transition-all duration-150 flex items-center gap-2 ${
                   isActive
-                    ? 'border-[#111111] text-[#111111] dark:border-white dark:text-white'
-                    : 'border-transparent text-[#737373] hover:text-[#111111] hover:border-[#e5e5e5] dark:text-[#a3a3a3] dark:hover:text-[#dddddd] dark:hover:border-[#333333]'
+                    ? 'border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:border-zinc-700'
                 }`}
               >
                 {tab.label}
                 <span className={`py-0.5 px-2 rounded-full text-[11px] font-semibold transition-colors ${
                   isActive 
-                    ? 'bg-[#111111] text-white dark:bg-white dark:text-[#111111]' 
-                    : 'bg-[#f5f5f5] text-[#737373] dark:bg-[#1a1a1a] dark:text-[#a3a3a3]'
+                    ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900' 
+                    : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'
                 }`}>
                   {tab.count}
                 </span>
@@ -297,8 +297,8 @@ export const FlatListView = ({ users, sortOption }) => {
   const filteredUsers = useFilteredUsers(users, searchQuery, sortOption);
 
   return (
-    <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm border border-[#e5e5e5] dark:border-[#222222] overflow-hidden flex flex-col">
-      <div className="p-4 border-b border-[#f0f0f0] dark:border-[#1a1a1a] flex justify-end bg-[#fafafa]/80 dark:bg-[#111111]/60">
+    <div className="bg-white dark:bg-zinc-950 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-end bg-zinc-50/80 dark:bg-zinc-900/40">
          <SearchInput value={searchQuery} onChange={setSearchQuery} />
       </div>
       <UsersTable users={filteredUsers} />

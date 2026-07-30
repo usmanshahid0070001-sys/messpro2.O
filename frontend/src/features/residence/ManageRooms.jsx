@@ -103,7 +103,7 @@ const ManageRooms = () => {
 
   if (roomsLoading) {
     return (
-      <div className="px-4 sm:px-6 lg:px-8 p-4">
+      <div className="px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5">
           <div className="animate-pulse space-y-2">
             <div className="h-7 bg-gray-200 dark:bg-[#222] rounded w-48"></div>
@@ -136,7 +136,7 @@ const ManageRooms = () => {
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 p-4">
+    <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Manage Rooms</h1>

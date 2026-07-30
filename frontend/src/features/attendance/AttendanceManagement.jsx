@@ -81,7 +81,7 @@ export default function AttendanceManagement() {
   const activeComponent = availableTabs.find(t => t.id === activeTab)?.component;
 
   return (
-    <div className="space-y-6 p-4 lg:p-8 w-full">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>

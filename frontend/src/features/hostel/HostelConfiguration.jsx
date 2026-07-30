@@ -16,9 +16,9 @@ export default function HostelConfiguration() {
   const [features, setFeatures] = useState([]);
   const [autoVerification, setAutoVerification] = useState(false);
   
-  const setHasUnsavedChanges = useUIStore((state) => state.setHasUnsavedChanges);
+  const { hasUnsavedChanges, setHasUnsavedChanges, discardTrigger } = useUIStore();
   
-  useEffect(() => {
+  const loadFromServer = () => {
     if (hostelResponse?.data) {
       setSubdomain(hostelResponse.data.subdomain || '');
       setLocation(hostelResponse.data.location || '');
@@ -26,7 +26,21 @@ export default function HostelConfiguration() {
       setFeatures(hostelResponse.data.plan?.features || []);
       setAutoVerification(hostelResponse.data.settings?.autoVerification || false);
     }
+  };
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      loadFromServer();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hostelResponse]);
+
+  useEffect(() => {
+    if (discardTrigger > 0) {
+      loadFromServer();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [discardTrigger]);
 
   useEffect(() => {
     if (!hostelResponse?.data) return;
@@ -92,47 +106,47 @@ export default function HostelConfiguration() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 lg:p-8 p-4 w-full max-w-[1600px] mx-auto animate-pulse">
+      <div className="space-y-6 w-full max-w-[1600px] mx-auto animate-pulse">
         {/* Header Skeleton */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 lg:px-0">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-3">
-            <div className="h-8 bg-black/5 dark:bg-white/5 rounded-lg w-64"></div>
-            <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-96 max-w-full"></div>
+            <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-64"></div>
+            <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-96 max-w-full"></div>
           </div>
-          <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full sm:w-40"></div>
+          <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-full sm:w-40"></div>
         </div>
 
         {/* Grid Skeleton */}
-        <div className="px-4 lg:px-0 grid grid-cols-1 xl:grid-cols-2 gap-6 pb-10">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-10">
           {/* Left Column */}
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm space-y-6">
-              <div className="h-6 bg-black/5 dark:bg-white/5 rounded-lg w-32"></div>
+          <div className="space-y-8">
+            <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-32"></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-24"></div>
-                  <div className="h-11 bg-black/5 dark:bg-white/5 rounded-xl w-full"></div>
+                  <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-24"></div>
+                  <div className="h-11 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-full"></div>
                 </div>
                 <div className="space-y-2">
-                  <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-24"></div>
-                  <div className="h-11 bg-black/5 dark:bg-white/5 rounded-xl w-full"></div>
+                  <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-24"></div>
+                  <div className="h-11 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-full"></div>
                 </div>
               </div>
             </div>
           </div>
           {/* Right Column */}
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="space-y-8">
+            <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-6">
               <div className="flex justify-between items-center">
                 <div className="space-y-2">
-                  <div className="h-6 bg-black/5 dark:bg-white/5 rounded-lg w-48"></div>
-                  <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-64 max-w-full"></div>
+                  <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-48"></div>
+                  <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-64 max-w-full"></div>
                 </div>
-                <div className="h-9 bg-black/5 dark:bg-white/5 rounded-lg w-24"></div>
+                <div className="h-9 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-24"></div>
               </div>
               <div className="space-y-3">
                 {[1, 2].map((i) => (
-                  <div key={i} className="h-[46px] bg-black/5 dark:bg-white/5 rounded-xl w-full"></div>
+                  <div key={i} className="h-[46px] bg-zinc-200 dark:bg-zinc-800 rounded-xl w-full"></div>
                 ))}
               </div>
             </div>
@@ -143,199 +157,202 @@ export default function HostelConfiguration() {
   }
 
   return (
-    <div className="space-y-6 lg:p-8 p-4">
+    <div className="space-y-6 max-w-[1600px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 lg:px-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111111] dark:text-white">Hostel Configuration</h1>
-          <p className="mt-1 text-sm font-medium text-[#737373] dark:text-[#a0a0a0]">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Hostel Configuration</h1>
+          <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
             Manage hostel settings, location, and custom registration fields.
           </p>
         </div>
         <button
           onClick={handleSave}
           disabled={updateSettingsMutation.isPending}
-          className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-sm disabled:opacity-50 w-full sm:w-auto justify-center sm:justify-start"
+          className="flex items-center gap-2 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-xl px-6 py-2.5 text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm disabled:opacity-50 w-full sm:w-auto justify-center sm:justify-start"
         >
           {updateSettingsMutation.isPending ? 'Saving...' : <><Save className="w-4 h-4" /> Save Configuration</>}
         </button>
       </div>
 
-      <div className="px-4 lg:px-0 grid grid-cols-1 xl:grid-cols-2 gap-6 pb-10">
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-[#111] dark:text-white mb-4">Hostel Details</h2>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-                <Globe className="w-4 h-4" /> Subdomain (Email domain)
-              </label>
-              <input
-                type="text"
-                value={subdomain}
-                onChange={(e) => setSubdomain(e.target.value)}
-                placeholder="e.g., @student.uet.edu.pk"
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-[#111111] border rounded-xl text-sm text-[#111111] dark:text-white placeholder:text-[#c4c4c4] dark:placeholder:text-[#444444] focus:outline-none focus:ring-1 transition-all border-[#e5e5e5] dark:border-[#222222] focus:border-[#111111] focus:ring-[#111111] dark:focus:border-white dark:focus:ring-white"
-              />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-10">
+        <div className="space-y-8">
+          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 mb-5">Hostel Details</h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                  <Globe className="w-4 h-4 text-zinc-400" /> Subdomain (Email domain)
+                </label>
+                <input
+                  type="text"
+                  value={subdomain}
+                  onChange={(e) => setSubdomain(e.target.value)}
+                  placeholder="e.g., @student.uet.edu.pk"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900/50 border rounded-xl text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 transition-all border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-zinc-50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-zinc-400" /> Location (Timezone)
+                </label>
+                <select
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900/50 border rounded-xl text-sm text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 transition-all border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-zinc-50 appearance-none cursor-pointer"
+                >
+                  <option value="">Select Timezone</option>
+                  <option value="Asia/Karachi">Asia/Karachi (Pakistan)</option>
+                  <option value="Asia/Dubai">Asia/Dubai (UAE)</option>
+                  <option value="Asia/Riyadh">Asia/Riyadh (Saudi Arabia)</option>
+                  <option value="America/New_York">America/New_York (EST)</option>
+                  <option value="Europe/London">Europe/London (GMT)</option>
+                  <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-                <MapPin className="w-4 h-4" /> Location (Timezone)
-              </label>
-              <select
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-[#111111] border rounded-xl text-sm text-[#111111] dark:text-white focus:outline-none focus:ring-1 transition-all border-[#e5e5e5] dark:border-[#222222] focus:border-[#111111] focus:ring-[#111111] dark:focus:border-white dark:focus:ring-white appearance-none cursor-pointer"
+          </div>
+
+          {/* Global Settings Section */}
+          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
+            <div className="mb-5">
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">General Settings</h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Configure hostel-wide policies.</p>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-800/50 rounded-xl">
+                <div>
+                  <span className="text-sm font-medium block text-zinc-900 dark:text-zinc-50">Auto Verification (QR)</span>
+                  <span className="text-xs text-zinc-500 block mt-0.5">Bypass manager permission</span>
+                </div>
+                <ToggleSwitch 
+                  checked={autoVerification} 
+                  onChange={() => setAutoVerification(!autoVerification)} 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Features Configuration Section (Moved to left column) */}
+          {features.length > 0 && (
+            <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-8">
+              <div>
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Plan Features</h2>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Configure the features available in your current plan.</p>
+              </div>
+
+              {/* Core Features */}
+              {coreFeatures.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">Core Features (Default)</h3>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {coreFeatures.map((feature, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3.5 bg-zinc-50/80 dark:bg-zinc-900/30 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl opacity-90">
+                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{feature.name}</span>
+                        <div className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-200/50 dark:bg-zinc-800/50 px-2.5 py-1 rounded-md">DEFAULT</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Attendance Features */}
+              {attendanceFeatures.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">Attendance Methods</h3>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {attendanceFeatures.map((feature, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800/50 rounded-xl">
+                        <span className="text-sm font-medium block text-zinc-900 dark:text-zinc-50">{feature.name}</span>
+                        <ToggleSwitch 
+                          checked={feature.isEnabled} 
+                          onChange={() => handleFeatureToggle(feature.name)} 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Other Services */}
+              {otherFeatures.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">Other Services</h3>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {otherFeatures.map((feature, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800/50 rounded-xl">
+                        <span className="text-sm font-medium block text-zinc-900 dark:text-zinc-50">{feature.name}</span>
+                        <ToggleSwitch 
+                          checked={feature.isEnabled} 
+                          onChange={() => handleFeatureToggle(feature.name)} 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-8">
+          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Custom Registration Fields</h2>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Add up to 5 custom fields that users must fill out during registration.</p>
+              </div>
+              <button
+                onClick={handleAddField}
+                disabled={customFields.length >= 5}
+                className="flex items-center gap-2 bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100 rounded-lg px-4 py-2 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50 whitespace-nowrap self-start sm:self-auto"
               >
-                <option value="">Select Timezone</option>
-                <option value="Asia/Karachi">Asia/Karachi (Pakistan)</option>
-                <option value="Asia/Dubai">Asia/Dubai (UAE)</option>
-                <option value="Asia/Riyadh">Asia/Riyadh (Saudi Arabia)</option>
-                <option value="America/New_York">America/New_York (EST)</option>
-                <option value="Europe/London">Europe/London (GMT)</option>
-                <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Global Settings Section */}
-        <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-[#111] dark:text-white">General Settings</h2>
-            <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Configure hostel-wide policies.</p>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
-              <div>
-                <span className="text-sm font-semibold block text-[#111111] dark:text-white">Auto Verification (QR)</span>
-                <span className="text-xs text-[#737373] block mt-0.5">Bypass manager permission</span>
-              </div>
-              <ToggleSwitch 
-                checked={autoVerification} 
-                onChange={() => setAutoVerification(!autoVerification)} 
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Features Configuration Section (Moved to left column) */}
-        {features.length > 0 && (
-          <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-lg font-bold text-[#111] dark:text-white">Plan Features</h2>
-              <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Configure the features available in your current plan.</p>
+                <Plus className="w-4 h-4" /> Add Field
+              </button>
             </div>
 
-            {/* Core Features */}
-            {coreFeatures.length > 0 && (
-              <div>
-                <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#a3a3a3] mb-3">Core Features (Default)</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {coreFeatures.map((feature, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-[#111]/50 border border-gray-200 dark:border-[#222] rounded-xl opacity-80">
-                      <span className="text-sm font-semibold text-[#111111] dark:text-white">{feature.name}</span>
-                      <div className="text-[10px] font-bold text-[#111] dark:text-white bg-black/5 dark:bg-white/10 px-2 py-1 rounded tracking-wider">DEFAULT</div>
-                    </div>
-                  ))}
+            <div className="space-y-3">
+              {customFields.length === 0 ? (
+                <div className="p-8 text-center bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800/50 rounded-xl text-zinc-500 text-sm">
+                  No custom fields added. Click "Add Field" to begin.
                 </div>
-              </div>
-            )}
-
-            {/* Attendance Features */}
-            {attendanceFeatures.length > 0 && (
-              <div>
-                <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#a3a3a3] mb-3">Attendance Methods</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {attendanceFeatures.map((feature, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
-                      <span className="text-sm font-semibold block text-[#111111] dark:text-white">{feature.name}</span>
-                      <ToggleSwitch 
-                        checked={feature.isEnabled} 
-                        onChange={() => handleFeatureToggle(feature.name)} 
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Other Services */}
-            {otherFeatures.length > 0 && (
-              <div>
-                <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#a3a3a3] mb-3">Other Services</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {otherFeatures.map((feature, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
-                      <span className="text-sm font-semibold block text-[#111111] dark:text-white">{feature.name}</span>
-                      <ToggleSwitch 
-                        checked={feature.isEnabled} 
-                        onChange={() => handleFeatureToggle(feature.name)} 
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Right Column */}
-      <div className="space-y-6">
-        <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold text-[#111] dark:text-white">Custom Registration Fields</h2>
-              <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Add up to 5 custom fields that users must fill out during registration.</p>
-            </div>
-            <button
-              onClick={handleAddField}
-              disabled={customFields.length >= 5}
-              className="flex items-center gap-2 bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-400 rounded-lg px-4 py-2 text-sm font-bold hover:bg-blue-600/20 dark:hover:bg-blue-600/30 transition-colors disabled:opacity-50"
-            >
-              <Plus className="w-4 h-4" /> Add Field
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {customFields.length === 0 ? (
-              <div className="p-6 text-center border-2 border-dashed border-[#e5e5e5] dark:border-[#333333] rounded-xl text-[#737373]">
-                No custom fields added.
-              </div>
-            ) : (
-              customFields.map((field, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl">
-                  <input
-                    type="text"
-                    value={field.name}
-                    onChange={(e) => handleFieldChange(idx, 'name', e.target.value)}
-                    placeholder="Field Name (e.g., CNIC)"
-                    className="flex-1 px-3.5 py-2.5 bg-white dark:bg-[#111111] border rounded-xl text-sm text-[#111111] dark:text-white placeholder:text-[#c4c4c4] dark:placeholder:text-[#444444] focus:outline-none focus:ring-1 transition-all border-[#e5e5e5] dark:border-[#222222] focus:border-[#111111] focus:ring-[#111111] dark:focus:border-white dark:focus:ring-white"
-                  />
-                  <label className="flex items-center gap-2 text-sm font-semibold text-[#111111] dark:text-white ml-2">
+              ) : (
+                customFields.map((field, idx) => (
+                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-800/50 rounded-xl group transition-colors hover:border-zinc-300 dark:hover:border-zinc-700">
                     <input
-                      type="checkbox"
-                      checked={field.isRequired}
-                      onChange={(e) => handleFieldChange(idx, 'isRequired', e.target.checked)}
-                      className="rounded border-[#e5e5e5] dark:border-[#444] text-[#111] dark:text-white focus:ring-[#111] dark:focus:ring-white bg-white dark:bg-[#222] w-4 h-4 cursor-pointer transition-colors"
+                      type="text"
+                      value={field.name}
+                      onChange={(e) => handleFieldChange(idx, 'name', e.target.value)}
+                      placeholder="Field Name (e.g., CNIC)"
+                      className="flex-1 px-3.5 py-2.5 bg-white dark:bg-zinc-900/50 border rounded-lg text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 transition-all border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-zinc-50"
                     />
-                    Required
-                  </label>
-                  <button
-                    onClick={() => handleRemoveField(idx)}
-                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))
-            )}
+                    <div className="flex items-center justify-between sm:justify-start gap-4 sm:ml-2">
+                      <label className="flex items-center gap-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={field.isRequired}
+                          onChange={(e) => handleFieldChange(idx, 'isRequired', e.target.checked)}
+                          className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-zinc-900 dark:focus:ring-zinc-100 bg-white dark:bg-zinc-900 w-4 h-4 cursor-pointer transition-colors"
+                        />
+                        Required
+                      </label>
+                      <button
+                        onClick={() => handleRemoveField(idx)}
+                        className="p-2.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                        title="Remove field"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }

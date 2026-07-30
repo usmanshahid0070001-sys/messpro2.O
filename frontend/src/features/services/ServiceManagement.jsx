@@ -39,7 +39,7 @@ export const ServiceManagement = () => {
   };
 
   return (
-    <div className="space-y-4 flex flex-col w-full animate-in fade-in slide-in-from-bottom-2 duration-300 p-2 lg:p-8">
+    <div className="space-y-4 flex flex-col w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
       
       {/* Header */}
       <div>

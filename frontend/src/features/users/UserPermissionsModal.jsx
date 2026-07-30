@@ -86,20 +86,20 @@ export default function UserPermissionsModal({ user, isOpen, onClose }) {
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            className="relative w-full max-w-md max-h-[calc(100vh-3rem)] flex flex-col bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-2xl border border-[#e5e5e5] dark:border-[#222222]"
+            className="relative w-full max-w-md max-h-[calc(100vh-3rem)] flex flex-col bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800"
           >
             {/* Header */}
-            <div className="shrink-0 flex justify-between items-start gap-4 px-6 py-5 border-b border-[#f0f0f0] dark:border-[#1a1a1a]">
+            <div className="shrink-0 flex justify-between items-start gap-4 px-6 py-5 border-b border-zinc-200 dark:border-zinc-800">
               <div>
-                <h2 className="text-lg font-bold text-[#111111] dark:text-white flex items-center gap-2">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
                   <Shield className="w-5 h-5 text-emerald-500" />
                   Manage Permissions
                 </h2>
-                <p className="text-[13px] text-[#737373] dark:text-[#888888] mt-1">
-                  Grant additional access to <span className="font-bold text-[#111] dark:text-white">{user?.name}</span>. Only features available in your active plan are shown.
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-400 mt-1">
+                  Grant additional access to <span className="font-bold text-zinc-900 dark:text-zinc-50">{user?.name}</span>. Only features available in your active plan are shown.
                 </p>
               </div>
-              <button onClick={onClose} className="p-2 rounded-lg text-[#a3a3a3] hover:text-[#111111] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+              <button onClick={onClose} className="p-2 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -112,25 +112,25 @@ export default function UserPermissionsModal({ user, isOpen, onClose }) {
                 </div>
               ) : allowedPermissions.length === 0 ? (
                 <div className="text-center py-6">
-                  <AlertCircle className="w-10 h-10 text-[#a3a3a3] mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-[#111] dark:text-white">No Additional Permissions Available</p>
-                  <p className="text-xs text-[#737373] mt-1">Your current plan does not support any delegatable functionalities.</p>
+                  <AlertCircle className="w-10 h-10 text-zinc-400 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">No Additional Permissions Available</p>
+                  <p className="text-xs text-zinc-500 mt-1">Your current plan does not support any delegatable functionalities.</p>
                 </div>
               ) : (
                 <form id={formId} onSubmit={handleSubmit} className="space-y-3">
                   {allowedPermissions.map((perm) => {
                     const isChecked = permissions.includes(perm.slug);
                     return (
-                      <label key={perm.slug} className={`relative flex items-center gap-3 cursor-pointer rounded-xl px-4 py-3 border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#111111] dark:has-[:focus-visible]:ring-white ${
-                        isChecked ? 'bg-[#f5f5f5] dark:bg-[#1a1a1a] border-[#d4d4d4] dark:border-[#333]' : 'bg-white dark:bg-[#111] border-[#e5e5e5] dark:border-[#222] hover:bg-[#fafafa] dark:hover:bg-[#151515]'
+                      <label key={perm.slug} className={`relative flex items-center gap-3 cursor-pointer rounded-xl px-4 py-3 border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-zinc-900 dark:has-[:focus-visible]:ring-zinc-50 ${
+                        isChecked ? 'bg-zinc-100 dark:bg-zinc-900/50 border-zinc-300 dark:border-zinc-700' : 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900/30'
                       }`}>
                         <div className={`w-5 h-5 shrink-0 rounded flex items-center justify-center transition-all duration-150 ${
-                          isChecked ? 'bg-[#111111] dark:bg-white border border-[#111111] dark:border-white' : 'bg-white dark:bg-[#111111] border border-[#d4d4d4] dark:border-[#333333]'
+                          isChecked ? 'bg-zinc-900 dark:bg-zinc-50 border border-zinc-900 dark:border-zinc-50' : 'bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700'
                         }`}>
-                          {isChecked && <Check className="w-3.5 h-3.5 text-white dark:text-[#111111]" />}
+                          {isChecked && <Check className="w-3.5 h-3.5 text-white dark:text-zinc-900" />}
                         </div>
                         <input type="checkbox" className="sr-only" checked={isChecked} onChange={() => handleToggle(perm.slug)} />
-                        <span className={`text-sm font-medium transition-colors ${isChecked ? 'text-[#111111] dark:text-white' : 'text-[#737373] dark:text-[#888888]'}`}>
+                        <span className={`text-sm font-medium transition-colors ${isChecked ? 'text-zinc-900 dark:text-zinc-50' : 'text-zinc-500 dark:text-zinc-400'}`}>
                           {perm.label}
                         </span>
                       </label>
@@ -141,15 +141,15 @@ export default function UserPermissionsModal({ user, isOpen, onClose }) {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-[#f0f0f0] dark:border-[#1a1a1a] bg-[#fafafa]/80 dark:bg-[#111111]/60 flex justify-end gap-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold text-[#404040] hover:bg-black/5 dark:text-white dark:hover:bg-white/10 transition-colors">
+            <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/40 flex justify-end gap-3">
+              <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors">
                 Cancel
               </button>
               <button 
                 form={formId} 
                 type="submit" 
                 disabled={updatePermissionsMutation.isPending || isLoadingHostel} 
-                className="min-w-[100px] px-5 py-2 rounded-xl text-sm font-semibold bg-[#111111] dark:bg-white text-white dark:text-[#111111] hover:bg-black/80 transition-colors flex items-center justify-center gap-2"
+                className="min-w-[100px] px-5 py-2 rounded-xl text-sm font-semibold bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
               >
                 {updatePermissionsMutation.isPending ? 'Saving...' : 'Save Permissions'}
               </button>

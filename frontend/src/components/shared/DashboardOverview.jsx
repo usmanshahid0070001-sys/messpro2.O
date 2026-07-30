@@ -138,7 +138,7 @@ export default function DashboardOverview({ userRole, user, navItems = [], setAc
       )}
 
       {/* Header */}
-      <div className="flex flex-col gap-1.5 px-4 lg:px-0">
+      <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
           Welcome back, {user?.name || 'User'}
         </h1>
@@ -150,12 +150,12 @@ export default function DashboardOverview({ userRole, user, navItems = [], setAc
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 flex-1">
         {/* Left Column: Quick Navigation */}
         <div className="xl:col-span-7 flex flex-col gap-5">
-          <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 px-4 lg:px-0">Quick Actions</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Quick Actions</h2>
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4 lg:px-0"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
           >
             {quickLinks.map((link) => {
               const Icon = link.icon;
@@ -186,7 +186,7 @@ export default function DashboardOverview({ userRole, user, navItems = [], setAc
         </div>
 
         {/* Right Column: Information Panels */}
-        <div className="xl:col-span-5 flex flex-col gap-5 px-4 lg:px-0">
+        <div className="xl:col-span-5 flex flex-col gap-5">
           <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Details & Status</h2>
 
           <div className="flex flex-col gap-4">

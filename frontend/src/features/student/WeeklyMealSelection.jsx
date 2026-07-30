@@ -235,7 +235,7 @@ export default function WeeklyMealSelection() {
 
   if (isScheduleLoading || isHostelLoading || isSelectionsLoading) {
     return (
-      <div className="space-y-8 lg:p-8 p-4 w-full max-w-[1600px] mx-auto animate-pulse">
+      <div className="space-y-6 w-full max-w-[1600px] mx-auto animate-pulse">
         {/* Header Skeleton */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="space-y-3">

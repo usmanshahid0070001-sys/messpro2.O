@@ -6,9 +6,11 @@ const useUIStore = create((set) => ({
   activeSectionLabel: '',
   hasUnsavedChanges: false,
   pendingTabId: null,
+  discardTrigger: 0,
 
   setHasUnsavedChanges: (hasChanges) => set({ hasUnsavedChanges: hasChanges }),
   setPendingTabId: (tabId) => set({ pendingTabId: tabId }),
+  triggerDiscard: () => set((state) => ({ discardTrigger: state.discardTrigger + 1 })),
 
   setActiveSectionLabel: (label) => set({ activeSectionLabel: label }),
 

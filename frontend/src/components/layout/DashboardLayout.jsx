@@ -63,7 +63,7 @@ export default function DashboardLayout({
   setActiveTab,
   children,
 }) {
-  const { isMobileMenuOpen, toggleMobileMenu, hasUnsavedChanges, setHasUnsavedChanges, pendingTabId, setPendingTabId } = useUIStore();
+  const { triggerDiscard, isMobileMenuOpen, toggleMobileMenu, hasUnsavedChanges, setHasUnsavedChanges, pendingTabId, setPendingTabId } = useUIStore();
   const setActiveSectionLabel = useUIStore.getState().setActiveSectionLabel;
 
   // Sync the active section label to the store so the navbar can display it
@@ -74,6 +74,18 @@ export default function DashboardLayout({
     return () => setActiveSectionLabel('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  // Protect against accidental browser refresh when there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = ''; // Standard way to trigger the browser's unsaved changes warning
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const handleMobileTabClick = (tabId) => {
     if (activeTab === tabId) {
@@ -90,6 +102,8 @@ export default function DashboardLayout({
   };
 
   const handleDiscardChanges = () => {
+    sessionStorage.removeItem('mealSettingsDraft');
+    triggerDiscard();
     setHasUnsavedChanges(false);
     setActiveTab(pendingTabId);
     setPendingTabId(null);
@@ -116,7 +130,7 @@ export default function DashboardLayout({
 
         {/* Dynamic Page Content */}
         <main
-          className="flex-1 w-full overflow-x-hidden lg:pl-2.5 px-4 md:px-6 pt-4 lg:pt-0 pb-20 md:pb-10 transition-all duration-300 ease-in-out lg:ml-[112px]"
+          className="flex-1 w-full overflow-x-hidden px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-6 transition-all duration-300 ease-in-out lg:ml-[112px] pb-24 md:pb-10"
         >
           <div className="h-full w-full max-w-[1600px] mx-auto flex flex-col">
             {children || <Outlet />}

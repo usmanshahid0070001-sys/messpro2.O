@@ -27,41 +27,41 @@ const ManageUsers = () => {
 
   if (!hasAccess) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white dark:bg-[#0a0a0a] rounded-2xl border border-[#e5e5e5] dark:border-[#222] p-8 text-center shadow-sm">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-center shadow-sm">
         <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-full mb-4">
           <ShieldAlert className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-[#111] dark:text-white mb-2">Access Restricted</h2>
-        <p className="text-sm text-[#737373] dark:text-[#a3a3a3] max-w-sm">You do not have the required permissions to view the User Management module.</p>
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Access Restricted</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">You do not have the required permissions to view the User Management module.</p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="space-y-6 lg:p-8 p-4 w-full max-w-[1600px] mx-auto animate-pulse">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 lg:px-0">
+      <div className="space-y-6 w-full max-w-[1600px] mx-auto animate-pulse">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-3">
-            <div className="h-8 bg-black/5 dark:bg-white/5 rounded-lg w-64"></div>
-            <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-96 max-w-full"></div>
+            <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-64"></div>
+            <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-96 max-w-full"></div>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-32"></div>
-            <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-32"></div>
+            <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-32"></div>
+            <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-32"></div>
           </div>
         </div>
 
-        <div className="px-4 lg:px-0">
-          <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-sm space-y-6">
+        <div>
+          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full sm:w-64"></div>
-              <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full sm:w-32"></div>
+              <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-full sm:w-64"></div>
+              <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-full sm:w-32"></div>
             </div>
             
             <div className="space-y-4">
-              <div className="h-12 bg-black/5 dark:bg-white/5 rounded-xl w-full"></div>
+              <div className="h-12 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-full"></div>
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-[68px] bg-black/5 dark:bg-white/5 rounded-xl w-full"></div>
+                <div key={i} className="h-[68px] bg-zinc-200 dark:bg-zinc-800 rounded-xl w-full"></div>
               ))}
             </div>
           </div>
@@ -153,11 +153,11 @@ const ManageUsers = () => {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:p-8 p-4">
+    <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Manage Users</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Manage Users</h1>
+          <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
             View and manage {role === 'superadmin' ? 'admins and managers' : role === 'admin' ? 'managers and students' : 'students'} across the platform.
           </p>
         </div>
@@ -166,25 +166,25 @@ const ManageUsers = () => {
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value)}
-              className="block w-full pl-3 pr-8 py-2 bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-lg text-sm text-[#111] dark:text-white focus:outline-none focus:ring-1 focus:border-[#111] focus:ring-[#111] dark:focus:border-white dark:focus:ring-white appearance-none shadow-sm cursor-pointer font-semibold transition-all"
+              className="block w-full pl-3 pr-8 py-2 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 transition-all appearance-none shadow-sm cursor-pointer font-medium"
             >
               <option value="alphabetical">Alphabetical</option>
               <option value="room">By Room Number</option>
               <option value="newest">Recently Added</option>
             </select>
-            <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-[#a3a3a3] pointer-events-none" />
+            <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
           </div>
           <button
             onClick={handleExport}
             disabled={!users || users.length === 0}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-[#e5e5e5] dark:border-[#333] rounded-lg shadow-sm text-sm font-semibold text-[#111] dark:text-white bg-white dark:bg-[#111] hover:bg-[#f5f5f5] dark:hover:bg-[#222] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-offset-[#050505] transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm text-sm font-medium text-zinc-900 dark:text-zinc-50 bg-white dark:bg-zinc-950 hover:bg-zinc-50 dark:hover:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-4 h-4" />
             Export
           </button>
           <button
             onClick={openCreateModal}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-offset-[#050505] transition-colors duration-150"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-zinc-100/20 transition-colors duration-150"
           >
             <Plus className="w-4 h-4" />
             Create User

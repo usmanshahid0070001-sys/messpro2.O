@@ -9,6 +9,7 @@ import { useGetTargettedUsers } from '../../hooks/queries/useUsers';
 import { useGetAttendance } from '../../hooks/queries/useAttendanceQueries';
 import { useSaveAttendance } from '../../hooks/mutations/useAttendanceMutations';
 import LoadingScreen from '../../components/ui/LoadingScreen';
+import useUIStore from '../../store/useUIStore';
 
 export default function ManualAttendance() {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export default function ManualAttendance() {
   // -- Draft State --
   // Format: { [rollNumber]: count }
   const [draftAttendance, setDraftAttendance] = useState({});
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const { hasUnsavedChanges, setHasUnsavedChanges, discardTrigger } = useUIStore();
 
   // -- Guest Entry State --
   const [guestRollNumber, setGuestRollNumber] = useState('');
@@ -66,21 +67,22 @@ export default function ManualAttendance() {
     setGuests([]);
     setDraftAttendance({});
     setHasUnsavedChanges(false);
-  }, [selectedDate, selectedMealId]);
+  }, [selectedDate, selectedMealId, setHasUnsavedChanges]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => setHasUnsavedChanges(false);
+  }, [setHasUnsavedChanges]);
 
   const { mutate: saveAttendance, isPending: isSaving } = useSaveAttendance();
 
-  // -- Sync Server Data to Draft when dependencies change --
-  useEffect(() => {
-    if (serverAttendance && !attendanceFetching) {
-      if (hasUnsavedChanges) return; // Prevent background refresh from wiping out user's active edits
-
+  const loadFromServer = () => {
+    if (serverAttendance) {
       const newDraft = {};
       const newGuests = [];
       serverAttendance.forEach(att => {
         newDraft[att.rollNumber] = att.attendance?.count || 0;
         if (att.isGuest) {
-          // If they aren't in the student list, they are a guest
           if (!students.find(s => s.id === att.rollNumber)) {
             newGuests.push({ rollNumber: att.rollNumber, count: att.attendance?.count || 0, name: att.studentId?.name || 'Guest' });
           }
@@ -89,7 +91,23 @@ export default function ManualAttendance() {
       setDraftAttendance(newDraft);
       setGuests(newGuests);
     }
+  };
+
+  // -- Sync Server Data to Draft when dependencies change --
+  useEffect(() => {
+    if (serverAttendance && !attendanceFetching) {
+      if (hasUnsavedChanges) return; // Prevent background refresh from wiping out user's active edits
+      loadFromServer();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverAttendance, attendanceFetching, hasUnsavedChanges, students]);
+
+  useEffect(() => {
+    if (discardTrigger > 0) {
+      loadFromServer();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [discardTrigger]);
 
   // -- Derived Data --
   const mergedStudentsList = useMemo(() => {
