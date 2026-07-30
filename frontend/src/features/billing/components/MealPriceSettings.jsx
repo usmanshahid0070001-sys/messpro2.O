@@ -33,20 +33,7 @@ const mealTypeStyles = {
   Dinner: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400",
 };
 
-export default function MealPriceSettingsTable({ onTotalsChange }) {
-  const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-  const formatDate = (date) => {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
-
-  const [fromDate, setFromDate] = useState(formatDate(firstDay));
-  const [toDate, setToDate] = useState(formatDate(lastDay));
+export default function MealPriceSettingsTable({ onTotalsChange, fromDate, toDate }) {
   const [search, setSearch] = useState("");
   const [records, setRecords] = useState(mockMealRecords);
   const [savedAt, setSavedAt] = useState(null);
@@ -192,28 +179,6 @@ export default function MealPriceSettingsTable({ onTotalsChange }) {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full xl:w-auto shrink-0">
-          <div className="flex items-center w-full sm:w-auto bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200/80 dark:border-zinc-700/80">
-            <div className="flex-1 sm:flex-none flex items-center">
-              <input
-                type="date"
-                value={fromDate}
-                title="From Date"
-                onChange={(e) => setFromDate(e.target.value)}
-                className="px-4 py-2 h-[42px] w-full sm:w-[150px] bg-transparent text-sm font-semibold text-zinc-900 dark:text-zinc-100 outline-none rounded-l-xl focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer"
-              />
-            </div>
-            <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-700" />
-            <div className="flex-1 sm:flex-none flex items-center">
-              <input
-                type="date"
-                value={toDate}
-                title="To Date"
-                onChange={(e) => setToDate(e.target.value)}
-                className="px-4 py-2 h-[42px] w-full sm:w-[150px] bg-transparent text-sm font-semibold text-zinc-900 dark:text-zinc-100 outline-none rounded-r-xl focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer"
-              />
-            </div>
-          </div>
-
           <div className="relative w-full sm:w-56">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
             <input
