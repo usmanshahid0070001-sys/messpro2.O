@@ -9,7 +9,9 @@ import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
 import { useGetLiveOverviewData } from '../../hooks/queries/useAttendanceQueries';
+import { useRespondGuestPermission } from '../../hooks/mutations/useAttendanceMutations';
 import LoadingScreen from '../../components/ui/LoadingScreen';
+import toast from 'react-hot-toast';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
@@ -25,6 +27,10 @@ export default function LiveOverview() {
   const [sortBy, setSortBy] = useState('default'); // default | name | roll | status
   const [flashedRolls, setFlashedRolls] = useState(new Set());
   const flashTimers = useRef({});
+  const requestTimeoutRef = useRef(null);
+
+  const [activeGuestRequest, setActiveGuestRequest] = useState(null);
+  const { mutateAsync: respondToGuest } = useRespondGuestPermission();
 
   const isToday = selectedDate === todayStr();
 
@@ -86,6 +92,15 @@ export default function LiveOverview() {
         };
       });
 
+      // Show the confirmation card
+      toast.success(`${data.name} marked present! (Count: ${data.count || 1})`, { 
+        id: `scan_${data.rollNumber}`,
+        iconTheme: {
+          primary: '#10b981', // emerald-500
+          secondary: '#fff',
+        },
+      });
+
       // Flash the updated row
       setFlashedRolls(prev => new Set(prev).add(data.rollNumber));
       clearTimeout(flashTimers.current[data.rollNumber]);
@@ -98,8 +113,20 @@ export default function LiveOverview() {
       }, 2500);
     });
 
+    socket.on('guest_permission_request', (requestData) => {
+      setActiveGuestRequest(requestData);
+      
+      // Auto-cancel after 10 seconds
+      if (requestTimeoutRef.current) clearTimeout(requestTimeoutRef.current);
+      requestTimeoutRef.current = setTimeout(() => {
+        handleRespondGuest(requestData, false); // auto reject
+      }, 10000);
+    });
+
     return () => {
       socket.off('attendance_success');
+      socket.off('guest_permission_request');
+      if (requestTimeoutRef.current) clearTimeout(requestTimeoutRef.current);
     };
   }, [socket, selectedDate]);
 
@@ -107,6 +134,21 @@ export default function LiveOverview() {
     const timers = flashTimers.current;
     return () => Object.values(timers).forEach(clearTimeout);
   }, []);
+
+  const handleRespondGuest = async (requestData, isApproved) => {
+    if (requestTimeoutRef.current) clearTimeout(requestTimeoutRef.current);
+    setActiveGuestRequest(null);
+
+    try {
+      await respondToGuest({
+        requestId: requestData.requestId,
+        studentId: requestData.studentId,
+        isApproved
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handlePrevDay = () => {
     const d = new Date(selectedDate);
@@ -200,7 +242,72 @@ export default function LiveOverview() {
   if (isLoading && !liveResponse) return <LoadingScreen />;
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 relative">
+      <AnimatePresence>
+        {activeGuestRequest && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-4"
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0.5 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-2xl w-full max-w-sm shadow-2xl flex flex-col items-center text-center relative overflow-hidden mb-2 sm:mb-0"
+            >
+              {/* Optional pull pill for mobile aesthetics */}
+              <div className="w-12 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mb-4 sm:hidden" />
+
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-100 dark:bg-amber-500/10 rounded-full flex items-center justify-center mb-4 sm:mb-5">
+                <AlertCircle className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 dark:text-amber-500" />
+              </div>
+              <h3 className="text-zinc-900 dark:text-zinc-50 font-bold text-lg sm:text-xl leading-tight mb-2">
+                {activeGuestRequest.reason === 'guest' ? 'Guest Request' : 'Permission Required'}
+              </h3>
+              
+              {activeGuestRequest.reason === 'unselected' ? (
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6 sm:mb-8">
+                  <strong className="text-zinc-900 dark:text-zinc-200">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) did not reserve this meal. Allow walk-in?
+                </p>
+              ) : activeGuestRequest.reason === 'extra_meal' ? (
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6 sm:mb-8">
+                  <strong className="text-zinc-900 dark:text-zinc-200">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) has reached their limit. Allow extra meal?
+                </p>
+              ) : (
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6 sm:mb-8">
+                  <strong className="text-zinc-900 dark:text-zinc-200">{activeGuestRequest.name}</strong> ({activeGuestRequest.rollNumber}) from another hostel wants to eat here.
+                </p>
+              )}
+              
+              <div className="flex gap-3 w-full relative z-10">
+                <button 
+                  onClick={() => handleRespondGuest(activeGuestRequest, true)}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 sm:py-3 rounded-xl font-semibold transition-all text-sm shadow-sm active:scale-95"
+                >
+                  Accept
+                </button>
+                <button 
+                  onClick={() => handleRespondGuest(activeGuestRequest, false)}
+                  className="flex-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-50 py-3.5 sm:py-3 rounded-xl font-semibold transition-all text-sm shadow-sm active:scale-95"
+                >
+                  Reject
+                </button>
+              </div>
+              
+              <motion.div 
+                initial={{ width: '100%' }}
+                animate={{ width: '0%' }}
+                transition={{ duration: 10, ease: "linear" }}
+                className="absolute bottom-0 left-0 h-1.5 bg-amber-500"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header and Date Toggle */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>

@@ -269,15 +269,17 @@ export const getManagerLiveOverview = catchAsync(async (req, res) => {
         resultData[mType].summary.totalAttendance += 1;
       }
 
-      resultData[mType].data.push({
-        name: student.name,
-        rollNumber: student.id,
-        isGuest: false, // Students of this hostel are not guests
-        attendanceCount: att?.attendance?.count || 0,
-        selectionCount: selCount,
-        hasAttended: isAttended,
-        isSelected: selCount > 0
-      });
+      if (selCount > 0 || isAttended) {
+        resultData[mType].data.push({
+          name: student.name,
+          rollNumber: student.id,
+          isGuest: false, // Students of this hostel are not guests
+          attendanceCount: att?.attendance?.count || 0,
+          selectionCount: selCount,
+          hasAttended: isAttended,
+          isSelected: selCount > 0
+        });
+      }
     });
 
     // Also include any guests who might not be in the allStudents list
@@ -292,15 +294,17 @@ export const getManagerLiveOverview = catchAsync(async (req, res) => {
             resultData[mType].summary.totalAttendance += 1;
           }
 
-          resultData[mType].data.push({
-            name: att.studentId?.name || 'Guest',
-            rollNumber: att.studentId?.id || att.rollNumber,
-            isGuest: true,
-            attendanceCount: att.attendance?.count || 0,
-            selectionCount: selCount,
-            hasAttended: isAttended,
-            isSelected: selCount > 0
-          });
+          if (isAttended || selCount > 0) {
+            resultData[mType].data.push({
+              name: att.studentId?.name || 'Guest',
+              rollNumber: att.studentId?.id || att.rollNumber,
+              isGuest: true,
+              attendanceCount: att.attendance?.count || 0,
+              selectionCount: selCount,
+              hasAttended: isAttended,
+              isSelected: selCount > 0
+            });
+          }
         }
       });
     }
