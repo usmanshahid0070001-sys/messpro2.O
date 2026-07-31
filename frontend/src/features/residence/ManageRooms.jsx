@@ -139,8 +139,11 @@ const ManageRooms = () => {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Manage Rooms</h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
+            <Building2 className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
+            Manage Rooms
+          </h1>
+          <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
             View and manage hostel rooms, capacity, and student allocations.
           </p>
         </div>

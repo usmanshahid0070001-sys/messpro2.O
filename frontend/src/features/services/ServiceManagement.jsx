@@ -4,6 +4,7 @@ import { CleaningManagement } from './CleaningManagement';
 import { mockComplaintsData, mockCleaningData, mockRooms } from './mockData';
 import { useAuth } from '../../context/AuthContext';
 import { useMyHostel } from '../../hooks/queries/useHostelQueries';
+import { Wrench } from 'lucide-react';
 
 export const ServiceManagement = () => {
   const { user } = useAuth();
@@ -43,7 +44,10 @@ export const ServiceManagement = () => {
       
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">Service Management</h1>
+        <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-3">
+          <Wrench className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
+          Service Management
+        </h1>
         <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mt-1">
           {showCleaning && showComplaints 
             ? "Manage daily complaints and room cleaning schedules"

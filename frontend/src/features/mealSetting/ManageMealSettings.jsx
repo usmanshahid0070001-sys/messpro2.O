@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Save, Info, AlertTriangle } from 'lucide-react';
+import { Plus, Save, Info, AlertTriangle, UtensilsCrossed } from 'lucide-react';
 import MealCard from './MealCard';
 import WeeklyMenuGrid from './WeeklyMenuGrid';
 import { useAuth } from '../../context/AuthContext';
@@ -335,7 +335,10 @@ export default function ManageMealSettings() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">Meal Settings</h1>
+          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
+            <UtensilsCrossed className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
+            Meal Settings
+          </h1>
           <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
             Configure global meal timings, pricing, and weekly schedule.
           </p>

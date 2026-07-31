@@ -16,7 +16,7 @@ export default function BillGeneration() {
 
   const [fromDate, setFromDate] = useState(formatDate(firstDay));
   const [toDate, setToDate] = useState(formatDate(lastDay));
-  
+
   const [messTotals, setMessTotals] = useState({ grandTotal: 0, totalAttendance: 0 });
   const [billFields, setBillFields] = useState([
     { id: 'default-mess', name: 'Mess Bill', type: 'meal_attendance', value: null, linkedFieldId: null, included: true },
@@ -71,18 +71,19 @@ export default function BillGeneration() {
 
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-300">
-      
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
+            <Calculator className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
             Bill Generation
           </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
             Define dynamic billing methods and generate monthly bills for all students.
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="flex items-center w-full sm:w-auto bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200/80 dark:border-zinc-700/80">
             <div className="flex-1 sm:flex-none flex items-center">
@@ -105,7 +106,7 @@ export default function BillGeneration() {
               />
             </div>
           </div>
-          
+
           <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 hidden sm:block"></div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -133,9 +134,9 @@ export default function BillGeneration() {
               Bill Methods
             </h2>
           </div>
-          
+
           {billFields.length < 10 && (
-            <button 
+            <button
               onClick={addField}
               className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-colors"
             >
@@ -151,11 +152,11 @@ export default function BillGeneration() {
               const calculatedValue = calculateFieldValue(field);
               return (
                 <div key={field.id} className={`flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 transition-colors group ${field.included === false ? 'bg-zinc-100/50 dark:bg-zinc-900/10 opacity-70' : 'bg-zinc-50/30 dark:bg-zinc-900/20 hover:border-zinc-300 dark:hover:border-zinc-700'}`}>
-                  
+
                   {/* Serial Number, Checkbox & Name */}
                   <div className="flex items-center gap-3 w-full sm:w-1/4 min-w-[200px]">
                     <div className="flex items-center justify-center shrink-0 w-6">
-                      <input 
+                      <input
                         type="checkbox"
                         checked={field.included !== false}
                         onChange={(e) => updateField(field.id, 'included', e.target.checked)}
@@ -215,7 +216,7 @@ export default function BillGeneration() {
                         />
                       </div>
                     )}
-                    
+
                     {(field.type === 'percentage' || field.type === 'multiplier') && (
                       <div className="flex items-center gap-2 w-full">
                         <div className="relative w-[100px] shrink-0">
@@ -240,8 +241,8 @@ export default function BillGeneration() {
                           {billFields
                             .filter(f => f.id !== field.id) // Cannot link to itself
                             .map(f => (
-                            <option key={f.id} value={f.id}>{f.name}</option>
-                          ))}
+                              <option key={f.id} value={f.id}>{f.name}</option>
+                            ))}
                         </select>
                       </div>
                     )}
@@ -271,9 +272,9 @@ export default function BillGeneration() {
                         {field.type === 'previous_unpaid' ? 'Dynamic' : `Rs. ${Math.round(calculatedValue).toLocaleString('en-PK')}`}
                       </span>
                     </div>
-                    
+
                     {field.type !== 'meal_attendance' && field.type !== 'previous_unpaid' ? (
-                      <button 
+                      <button
                         onClick={() => removeField(field.id)}
                         className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 shrink-0"
                         title="Remove Field"
@@ -296,7 +297,7 @@ export default function BillGeneration() {
                 <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 max-w-sm">
                   Add dynamic fields like Room Rent or Tax to define how student bills are calculated.
                 </p>
-                <button 
+                <button
                   onClick={addField}
                   className="mt-4 px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-all"
                 >

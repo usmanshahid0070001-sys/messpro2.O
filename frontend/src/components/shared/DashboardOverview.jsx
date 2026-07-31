@@ -11,7 +11,8 @@ import {
   Crown,
   Activity,
   Settings,
-  AlertTriangle
+  AlertTriangle,
+  LayoutDashboard
 } from "lucide-react";
 import { useMyHostel } from "../../hooks/queries/useHostelQueries";
 import toast from "react-hot-toast";
@@ -110,7 +111,7 @@ export default function DashboardOverview({ userRole, user, navItems = [], setAc
   const planStyle = hostelData?.plan ? getPlanStyle(hostelData.plan.name) : getPlanStyle('');
 
   return (
-    <div className="w-full h-full flex flex-col gap-8 lg:p-8 pb-4">
+    <div className="w-full h-full flex flex-col gap-8 pb-4">
       {isExpired && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50">
           <div className="flex items-center gap-4">
@@ -138,11 +139,12 @@ export default function DashboardOverview({ userRole, user, navItems = [], setAc
       )}
 
       {/* Header */}
-      <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
+          <LayoutDashboard className="w-6 h-6 md:w-8 md:h-8 text-zinc-500 dark:text-zinc-400" />
           Welcome back, {user?.name || 'User'}
         </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+        <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
           Here's what's happening at your hostel today.
         </p>
       </div>

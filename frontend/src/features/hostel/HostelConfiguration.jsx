@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, Globe, MapPin } from 'lucide-react';
+import { Save, Plus, Trash2, Globe, MapPin, Settings } from 'lucide-react';
 import { useMyHostel } from '../../hooks/queries/useHostelQueries';
 import { useUpdateMyHostelSettings } from '../../hooks/mutations/useHostelMutations';
 import toast from 'react-hot-toast';
@@ -161,8 +161,11 @@ export default function HostelConfiguration() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Hostel Configuration</h1>
-          <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
+            <Settings className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
+            Hostel Configuration
+          </h1>
+          <p className="mt-1.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">
             Manage hostel settings, location, and custom registration fields.
           </p>
         </div>

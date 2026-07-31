@@ -5,7 +5,7 @@ import { useUserUIStore } from '../../store/useUserUIStore';
 import { SuperadminView, AdminView, FlatListView } from './UserListViews';
 import UserModal from './UserModal';
 import UserPermissionsModal from './UserPermissionsModal';
-import { ChevronDown, Download, Plus, ShieldAlert } from 'lucide-react';
+import { ChevronDown, Download, Plus, ShieldAlert, Users } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const ManageUsers = () => {
@@ -156,8 +156,11 @@ const ManageUsers = () => {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Manage Users</h1>
-          <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
+            <Users className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
+            Manage Users
+          </h1>
+          <p className="mt-1.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">
             View and manage {role === 'superadmin' ? 'admins and managers' : role === 'admin' ? 'managers and students' : 'students'} across the platform.
           </p>
         </div>

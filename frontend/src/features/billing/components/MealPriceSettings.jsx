@@ -170,10 +170,11 @@ export default function MealPriceSettingsTable({ onTotalsChange, fromDate, toDat
       {/* Page Header */}
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+          <h2 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
+            <Receipt className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
             Meal Price Settings
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          </h2>
+          <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
             Review meal attendance, adjust daily prices, and save configuration to generate accurate monthly bills.
           </p>
         </div>
