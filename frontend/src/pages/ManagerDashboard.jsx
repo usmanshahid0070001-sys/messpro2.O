@@ -13,6 +13,7 @@ import AttendanceManagement from "../features/attendance/AttendanceManagement";
 import LiveOverview from "../features/attendance/ManagerLiveOverview";
 import LoadingScreen from "../components/ui/LoadingScreen";
 import BillGeneration from "../features/billing/BillGeneration";
+import BillManagement from "../features/billing/BillManagement";
 
 // Auth & API
 import { useAuth } from "../context/AuthContext";
@@ -91,6 +92,7 @@ export default function ManagerDashboard() {
     hasPermission("meal_settings") && { id: "live", label: "Live Overview", icon: Activity },
     hasPermission("meal_settings") && { id: "menu", label: "Weekly Menu", icon: Utensils },
     hasPermission("bill_management") && { id: "bills", label: "Bill Management", icon: FileText },
+    hasPermission("bill_generation") && { id: "bill_gen", label: "Bill Generation", icon: Calculator },
     hasPermission("user_management") && { id: "users", label: "User Management", icon: Users },
     hasPermission("residence_management") && { id: "rooms", label: "Residence Management", icon: Home },
     showServiceTab && { id: "services", label: "Service Management", icon: ConciergeBell },
@@ -133,6 +135,10 @@ export default function ManagerDashboard() {
           {activeTab === "live" && <LiveOverview />}
 
           {activeTab === "bills" && (
+            <BillManagement />
+          )}
+
+          {activeTab === "bill_gen" && (
             <BillGeneration />
           )}
         </motion.div>

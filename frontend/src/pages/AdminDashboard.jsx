@@ -25,6 +25,7 @@ import LoadingScreen from "../components/ui/LoadingScreen";
 import ServiceManagement from "../features/services/ServiceManagement";
 import AttendanceManagement from "../features/attendance/AttendanceManagement";
 import BillGeneration from "../features/billing/BillGeneration";
+import BillManagement from "../features/billing/BillManagement";
 
 import { useAuth } from "../context/AuthContext";
 import { useMyHostel } from "../hooks/queries/useHostelQueries";
@@ -134,7 +135,7 @@ export default function AdminDashboard() {
           {activeTab === "dashboard" && (
             <DashboardOverview userRole={user?.role} user={user} navItems={filteredNavItems} setActiveTab={setActiveTab} />
           )}
-          {activeTab === "billManagement" && renderPlaceholder("Bill Management")}
+          {activeTab === "billManagement" && <BillManagement />}
           {activeTab === "users" && <ManageUsers />}
           {activeTab === "rooms" && <ManageRooms />}
           {activeTab === "attendance" && <AttendanceManagement />}
