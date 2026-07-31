@@ -217,6 +217,105 @@ export const getDailyOverview = catchAsync(async (req, res) => {
   });
 });
 
+export const getManagerLiveOverview = catchAsync(async (req, res) => {
+  const { hostelId } = req.user;
+  const targetDate = req.query.date || new Date().toISOString().split('T')[0];
+
+  const schedule = await MealSchedule.findOne({ hostelId });
+  const mealTypes = schedule ? schedule.mealNames : [];
+
+  if (!mealTypes.length) {
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        date: targetDate,
+        mealTypes: [],
+        data: {}
+      }
+    });
+  }
+
+  // 1. Fetch ALL students for this hostel
+  const allStudents = await User.find({ hostelId, role: 'student' }).select('name id');
+
+  // 2. Fetch MealRecords for this date
+  const attendances = await MealRecord.find({
+    hostelId: hostelId,
+    date: targetDate
+  }).populate('studentId', 'name id');
+
+  const resultData = {};
+  mealTypes.forEach(mt => {
+    resultData[mt] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+  });
+
+  // Organize attendances by mealType and rollNumber for quick lookup
+  const recordMap = {};
+  attendances.forEach(att => {
+    const roll = att.studentId?.id || att.rollNumber;
+    if (!recordMap[att.mealType]) recordMap[att.mealType] = {};
+    recordMap[att.mealType][roll] = att;
+  });
+
+  // 3. For each mealType, map over ALL students
+  mealTypes.forEach(mType => {
+    allStudents.forEach(student => {
+      const att = recordMap[mType]?.[student.id];
+      const isAttended = att?.attendance?.count > 0;
+      const selCount = att?.selection?.count || 0;
+      
+      resultData[mType].summary.totalSelections += selCount;
+      if (isAttended) {
+        resultData[mType].summary.totalAttendance += 1;
+      }
+
+      resultData[mType].data.push({
+        name: student.name,
+        rollNumber: student.id,
+        isGuest: false, // Students of this hostel are not guests
+        attendanceCount: att?.attendance?.count || 0,
+        selectionCount: selCount,
+        hasAttended: isAttended,
+        isSelected: selCount > 0
+      });
+    });
+
+    // Also include any guests who might not be in the allStudents list
+    if (recordMap[mType]) {
+      Object.values(recordMap[mType]).forEach(att => {
+        if (att.isGuest) {
+          const isAttended = att.attendance?.count > 0;
+          const selCount = att.selection?.count || 0;
+          
+          resultData[mType].summary.totalSelections += selCount;
+          if (isAttended) {
+            resultData[mType].summary.totalAttendance += 1;
+          }
+
+          resultData[mType].data.push({
+            name: att.studentId?.name || 'Guest',
+            rollNumber: att.studentId?.id || att.rollNumber,
+            isGuest: true,
+            attendanceCount: att.attendance?.count || 0,
+            selectionCount: selCount,
+            hasAttended: isAttended,
+            isSelected: selCount > 0
+          });
+        }
+      });
+    }
+  });
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      date: targetDate,
+      mealTypes: mealTypes,
+      data: resultData
+    }
+  });
+});
+
 
 export const scanManagerQR = catchAsync(async (req, res) => {
   const { h: targetHostelId, s: scannedSecret, lat, lng } = req.body;

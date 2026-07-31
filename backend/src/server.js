@@ -100,7 +100,6 @@ import userRoutes from './modules/user/user.routes.js';
 import residenceRoutes from './modules/residence/residence.routes.js';
 import { globalErrorHandler } from './middlewares/error.middleware.js';
 
-// 👇 NEW: Import the Meal Routes
 import mealRoutes from './modules/meal/meal.routes.js'; 
 import attendanceRoutes from './modules/mealRecord/attendance.routes.js';
 

@@ -66,3 +66,16 @@ export const useGetStudentSelections = (startDate, endDate) => {
     enabled: !!startDate && !!endDate,
   });
 };
+
+export const useGetLiveOverviewData = (date) => {
+  return useQuery({
+    queryKey: ['newLiveOverviewData', date],
+    queryFn: async () => {
+      const response = await api.get('/api/attendance/live-overview', {
+        params: { date }
+      });
+      return response.data.data;
+    },
+    enabled: !!date,
+  });
+};

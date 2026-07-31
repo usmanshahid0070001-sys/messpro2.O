@@ -9,6 +9,7 @@ import {
   scanStudentQR,
   getLiveQRAttendance,
   getDailyOverview,
+  getManagerLiveOverview,
   bulkSelectMeals,
   getStudentSelections
 } from './mealRecord.controller.js';
@@ -33,9 +34,11 @@ router.get('/selections', getStudentSelections);
 
 // Main attendance endpoints
 router
-  .route('/')
-  .get(restrictTo('admin', 'manager'), getAttendance)
-  .post(restrictTo('admin', 'manager'), saveAttendance);
+.route('/')
+.get(restrictTo('admin', 'manager'), getAttendance)
+.post(restrictTo('admin', 'manager'), saveAttendance);
 
-  export default router;
-  
+// new updated live overview route 
+router.get('/live-overview', requirePermission('meal_settings'), getManagerLiveOverview);
+
+export default router;
