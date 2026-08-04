@@ -5,6 +5,8 @@
   "main": "migrate_users.js",
   "type": "module",
   "scripts": {
+    "backup": "node backupMessPro.js",
+    "migrate-users": "node migrate_users.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
