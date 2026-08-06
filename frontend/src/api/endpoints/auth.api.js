@@ -14,5 +14,11 @@ export const authApi = {
   verify: async () => {
     const response = await api.get('/api/auth/verify');
     return response.data;
-  }
+  },
+
+  signAgreement: async () => {
+    const response = await api.post('/api/users/sign-agreement');
+    return response.data;
+  },
 };
+

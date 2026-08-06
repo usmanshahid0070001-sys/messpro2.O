@@ -1,12 +1,14 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getDashboardPath } from "../../utils/authRoutes";
+import LegalAgreementModal from "../../components/LegalAgreementModal";
+import toast from "react-hot-toast";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
-  const { isAuthenticated, role, loading } = useAuth();
+  const { isAuthenticated, role, loading, user, setUser, logout } = useAuth();
   const location = useLocation();
 
-  // Wait for AuthProvider to finish checking session
+  // ── 1. Wait for AuthProvider to finish checking session ──────────────────
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#fafafa] dark:bg-[#060812]">
@@ -23,14 +25,49 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     );
   }
 
-  // Not logged in -> redirect to login
+  // ── 2. Not logged in → redirect to login ─────────────────────────────────
   if (!isAuthenticated) {
     localStorage.clear();
     sessionStorage.clear();
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  // Check role access
+  // ── 3. Agreement gate — blocks ALL roles until they sign ─────────────────
+  //    Treats undefined (old DB users without the field) same as 'pending'
+  const agreementNotSigned = user?.agreement !== 'signed';
+
+  const handleAgreementAccepted = (updatedUser) => {
+    // Patch the in-memory user so the gate re-evaluates without a page reload
+    const merged = {
+      ...user,
+      agreement: 'signed',
+      agreementSignedAt: updatedUser?.agreementSignedAt,
+    };
+    localStorage.setItem('userInfo', JSON.stringify(merged));
+    setUser(merged);
+  };
+
+  const handleAgreementDeclined = async () => {
+    await logout();
+    toast.error('You must agree to the terms to use MessPro.');
+  };
+
+  if (agreementNotSigned) {
+    return (
+      <>
+        {/* Render a blank screen behind the modal */}
+        <div className="min-h-screen bg-[#fafafa] dark:bg-[#050505]" />
+        <LegalAgreementModal
+          isOpen={true}
+          userRole={user?.role}
+          onAccept={handleAgreementAccepted}
+          onClose={handleAgreementDeclined}
+        />
+      </>
+    );
+  }
+
+  // ── 4. Check role access ─────────────────────────────────────────────────
   if (role && allowedRoles && !allowedRoles.includes(role)) {
     return <Navigate to={getDashboardPath(role)} replace />;
   }

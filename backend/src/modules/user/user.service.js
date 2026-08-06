@@ -157,3 +157,27 @@ export const updateUser = async (requesterRole, requesterHostelId, targetUserId,
 
   return updatedUser;
 };
+
+// ─── Sign Legal Agreement ────────────────────────────────────────────────────
+// Called when the user clicks "I Agree" in the LegalAgreementModal.
+// Sets agreement = 'signed' and stamps agreementSignedAt timestamp.
+export const signAgreement = async (userId) => {
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        agreement: 'signed',
+        agreementSignedAt: new Date(),
+      },
+    },
+    { new: true, runValidators: true }
+  ).select('-password');
+
+  if (!updatedUser) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return updatedUser;
+};

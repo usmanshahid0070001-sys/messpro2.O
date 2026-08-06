@@ -13,6 +13,9 @@ import StudentDashboard from "./pages/StudentDashboard.jsx";
 // SuperAdmin Dashboard
 import SuperAdminDashboard from "./pages/SuperAdminDashboard.jsx";
 
+// Legal
+import LegalPage from "./pages/LegalPage.jsx";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -69,7 +72,10 @@ export default function App() {
           }
         />
 
-        {/* ─── Fallback ───────────────────────────────────────────── */}
+        {/* ─── Public Legal Route ──────────────────────────────────────── */}
+        <Route path="/legal" element={<LegalPage />} />
+
+        {/* ─── Fallback ───────────────────────────────────────────────── */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

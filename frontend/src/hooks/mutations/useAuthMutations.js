@@ -12,3 +12,10 @@ export const useLogoutMutation = () => {
     mutationFn: () => authApi.logout(),
   });
 };
+
+export const useSignAgreementMutation = () => {
+  return useMutation({
+    mutationFn: () => authApi.signAgreement(),
+  });
+};
+

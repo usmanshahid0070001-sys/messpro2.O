@@ -1,7 +1,7 @@
 import { catchAsync } from '../../utils/catchAsync.js';
 import * as userService from './user.service.js';
 import { updateUserSchema } from './user.validation.js';
-import hostelService from '../hostel/hostel.service.js'; // 👈 Import the hostel service we updated earlier!
+import hostelService from '../hostel/hostel.service.js';
 
 export const getTargetedUsers = catchAsync(async (req, res) => {
   // Pass WHO is asking, and WHICH hostel they belong to
@@ -48,5 +48,18 @@ export const createUser = catchAsync(async (req, res) => {
     success: true,
     message: 'User created successfully and email sent.',
     data: newUser,
+  });
+});
+
+// ─── Sign Legal Agreement ────────────────────────────────────────────────────
+// POST /api/users/sign-agreement
+// The authenticated user signs their own agreement — no body required.
+export const signAgreementHandler = catchAsync(async (req, res) => {
+  const updatedUser = await userService.signAgreement(req.user._id);
+
+  res.status(200).json({
+    success: true,
+    message: 'Agreement signed successfully.',
+    data: updatedUser,
   });
 });

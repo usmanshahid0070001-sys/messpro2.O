@@ -10,12 +10,16 @@ import { useLoginMutation } from "../../hooks/mutations/useAuthMutations";
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 import { getDashboardPath } from "../../utils/authRoutes";
+import LegalAgreementModal from "../../components/LegalAgreementModal";
 
 export default function LoginForm() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, logout, setUser } = useAuth();
 
-  // State to track server-side wrong password errors
+  // ─── Agreement gate state ──────────────────────────────────────────────────
+  // Holds the pending user + token while we wait for agreement confirmation
+  const [pendingAuth, setPendingAuth] = useState(null);
+
   const [showForgot, setShowForgot] = useState(false);
 
   const {
@@ -40,9 +44,18 @@ export default function LoginForm() {
       {
         onSuccess: (responseData) => {
           const { user, token } = responseData;
-          login(user, token);
-          toast.success(`Welcome back, ${user.name}!`);
-          navigate(getDashboardPath(user.role));
+
+          if (user.agreement !== 'signed') {
+            // ── Agreement not yet signed: stage the auth, show modal ──────────
+            // We call login() so the token/cookie is set, but we DON'T navigate yet.
+            login(user, token);
+            setPendingAuth({ user, token });
+          } else {
+            // ── Already signed: proceed straight to dashboard ─────────────────
+            login(user, token);
+            toast.success(`Welcome back, ${user.name}!`);
+            navigate(getDashboardPath(user.role));
+          }
         },
         onError: (error) => {
           if (error.response?.status === 401) {
@@ -56,6 +69,26 @@ export default function LoginForm() {
       }
     );
   };
+
+  // Called when user clicks "I Agree" — backend has already been updated at this point
+  const handleAgreementAccepted = (updatedUser) => {
+    // Merge the agreement fields into the in-memory user
+    const merged = { ...pendingAuth.user, agreement: 'signed', agreementSignedAt: updatedUser?.agreementSignedAt };
+    localStorage.setItem('userInfo', JSON.stringify(merged));
+    setUser(merged);
+    setPendingAuth(null);
+    toast.success(`Welcome to MessPro, ${merged.name}!`);
+    navigate(getDashboardPath(merged.role));
+  };
+
+  // Called when user clicks "Decline" — force logout immediately
+  const handleAgreementDeclined = async () => {
+    setPendingAuth(null);
+    await logout();
+    toast.error('You must agree to the terms to use MessPro.');
+  };
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-white dark:bg-[#050505] transition-colors duration-300 relative overflow-hidden">
@@ -208,6 +241,18 @@ export default function LoginForm() {
           </p>
         </div>
       </motion.div>
+
+      {/* ── Legal Agreement Gate ─────────────────────────────────────────────
+          Shown on first login when user.agreement !== 'signed'.
+          No onClose prop = no X button = user MUST agree or decline.
+      ────────────────────────────────────────────────────────────────────── */}
+      <LegalAgreementModal
+        isOpen={!!pendingAuth}
+        userRole={pendingAuth?.user?.role}
+        onAccept={handleAgreementAccepted}
+        onClose={handleAgreementDeclined}
+      />
     </div>
   );
 }
+

@@ -186,9 +186,24 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+
+    // ─── Legal Agreement Consent ────────────────────────────────────────
+    // 'pending' = not yet agreed (show modal on next login)
+    // 'signed'  = user has accepted the platform legal agreement
+    agreement: {
+      type: String,
+      enum: ['pending', 'signed'],
+      default: 'pending',
+    },
+    agreementSignedAt: {
+      type: Date,
+      default: null,
+    },
+    // ────────────────────────────────────────────────────────────────────
   },
   { timestamps: true }
 );
+
 
 userSchema.pre('validate', function (next) {
   if (!this.id) {
