@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Plus, Settings, CreditCard, CheckCircle2, Shield, Users, Infinity, Zap, Receipt, ScanLine } from 'lucide-react';
-import StatusBadge from '../../components/ui/StatusBadge';
+import StatusBadge from '../../features/ui/StatusBadge';
 import { usePlans } from '../../hooks/queries/usePlanQueries';
-import PlanFormModal from '../../components/superadmin/PlanFormModal';
+import PlanFormModal from './components/PlanFormModal';
 
 // Helper to format limits nicely
 function formatLimit(value) {

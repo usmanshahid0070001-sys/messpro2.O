@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useId } from 'react';
 import { X, Check, AlertCircle, DollarSign } from 'lucide-react';
-import { useCreatePlan, useUpdatePlan } from '../../hooks/mutations/usePlanMutations';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import { useCreatePlan, useUpdatePlan } from '../../../hooks/mutations/usePlanMutations';
+import ToggleSwitch from '../../ui/ToggleSwitch';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ATTENDANCE_METHODS = ['Manual', 'QR', 'Biometric'];

@@ -3,8 +3,8 @@ import { useRooms } from '../../hooks/queries/useResidenceQueries';
 import { useRemoveRoom, useRemoveStudentFromRoom } from '../../hooks/mutations/useResidenceMutations';
 import { useGetTargettedUsers } from '../../hooks/queries/useUsers';
 import RoomModal from './RoomModal';
-import ConfirmationCard from '../../components/ui/ConfirmationCard';
-import StatCard from '../../components/ui/StatCard';
+import ConfirmationCard from '../../features/ui/ConfirmationCard';
+import StatCard from '../../features/ui/StatCard';
 import { Home, Users, Building2 } from 'lucide-react';
 // Centralized status -> badge style map (dark-mode aware, no clashing pure-100 fills on dark bg)
 const STATUS_STYLES = {

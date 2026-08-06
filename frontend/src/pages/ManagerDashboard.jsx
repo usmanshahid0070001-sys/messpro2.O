@@ -3,15 +3,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Shared UI Components
-import DashboardLayout from "../components/layout/DashboardLayout";
-import DashboardOverview from "../components/shared/DashboardOverview";
+import DashboardLayout from "../features/layout/DashboardLayout";
+import DashboardOverview from "../features/layout/DashboardOverview";
 import ManageRooms from "../features/residence/ManageRooms";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 import ManageUsers from "../features/users/ManageUsers";
 import ServiceManagement from "../features/services/ServiceManagement";
 import AttendanceManagement from "../features/attendance/AttendanceManagement";
 import LiveOverview from "../features/attendance/ManagerLiveOverview";
-import LoadingScreen from "../components/ui/LoadingScreen";
+import LoadingScreen from "../features/ui/LoadingScreen";
 import BillGeneration from "../features/billing/BillGeneration";
 import BillManagement from "../features/billing/BillManagement";
 

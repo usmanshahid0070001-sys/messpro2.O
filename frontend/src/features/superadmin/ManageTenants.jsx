@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { Plus, Settings, Search, Building2 } from 'lucide-react';
-import StatusBadge from '../../components/ui/StatusBadge';
+import StatusBadge from '../../features/ui/StatusBadge';
 import { useHostels } from '../../hooks/queries/useSuperadminQueries';
-import CreateHostelModal from '../../components/superadmin/CreateHostelModal';
-import HostelSettingsModal from '../../components/superadmin/HostelSettingsModal';
-import AddHostelUserModal from '../../components/superadmin/AddHostelUserModal';
+import CreateHostelModal from './components/CreateHostelModal';
+import HostelSettingsModal from './components/HostelSettingsModal';
+import AddHostelUserModal from './components/AddHostelUserModal';
 import { UserPlus, Download } from 'lucide-react';
 import { exportHostelsToExcel } from '../../utils/exportUtils';
 

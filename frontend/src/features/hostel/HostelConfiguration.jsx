@@ -3,7 +3,7 @@ import { Save, Plus, Trash2, Globe, MapPin, Settings } from 'lucide-react';
 import { useMyHostel } from '../../hooks/queries/useHostelQueries';
 import { useUpdateMyHostelSettings } from '../../hooks/mutations/useHostelMutations';
 import toast from 'react-hot-toast';
-import ToggleSwitch from '../../components/ui/ToggleSwitch';
+import ToggleSwitch from '../../features/ui/ToggleSwitch';
 import useUIStore from '../../store/useUIStore';
 
 export default function HostelConfiguration() {

@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, CreditCard, RefreshCw, MapPin, Utensils } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useUpdateHostelSettings } from '../../hooks/mutations/useSuperadminMutations';
-import { usePlans } from '../../hooks/queries/usePlanQueries';
+import { useUpdateHostelSettings } from '../../../hooks/mutations/useSuperadminMutations';
+import { usePlans } from '../../../hooks/queries/usePlanQueries';
 
 export default function HostelSettingsModal({ isOpen, onClose, hostel }) {
   const [formData, setFormData] = useState({

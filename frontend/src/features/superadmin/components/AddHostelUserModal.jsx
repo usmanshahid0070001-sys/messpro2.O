@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useId } from 'react';
 import { X, UserPlus, AlertCircle } from 'lucide-react';
-import { useAddHostelUser } from '../../hooks/mutations/useSuperadminMutations';
+import { useAddHostelUser } from '../../../hooks/mutations/useSuperadminMutations';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const INITIAL_FORM = {

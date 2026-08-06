@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
 import { useGetLiveOverviewData } from '../../hooks/queries/useAttendanceQueries';
 import { useRespondGuestPermission } from '../../hooks/mutations/useAttendanceMutations';
-import LoadingScreen from '../../components/ui/LoadingScreen';
+import LoadingScreen from '../../features/ui/LoadingScreen';
 import toast from 'react-hot-toast';
 
 const todayStr = () => new Date().toISOString().split('T')[0];

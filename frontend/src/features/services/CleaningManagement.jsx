@@ -12,7 +12,7 @@ import {
   ArrowRight,
   ArrowDownRight
 } from 'lucide-react';
-import SectionCard from '../../components/ui/SectionCard';
+import SectionCard from '../../features/ui/SectionCard';
 
 const getPriorityDetails = (priority) => {
   switch (priority) {

@@ -19,7 +19,7 @@ import Integrations from "../features/superadmin/Integrations";
 import SecurityAudit from "../features/superadmin/SecurityAudit";
 
 // Shared UI Components
-import DashboardLayout from "../components/layout/DashboardLayout";
+import DashboardLayout from "../features/layout/DashboardLayout";
 import ManageUsers from "../features/users/ManageUsers";
 
 export default function SuperAdminDashboard() {

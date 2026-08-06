@@ -8,7 +8,7 @@ import { useMealSchedule } from '../../hooks/queries/useMealQueries';
 import { useGetTargettedUsers } from '../../hooks/queries/useUsers';
 import { useGetAttendance } from '../../hooks/queries/useAttendanceQueries';
 import { useSaveAttendance } from '../../hooks/mutations/useAttendanceMutations';
-import LoadingScreen from '../../components/ui/LoadingScreen';
+import LoadingScreen from '../../features/ui/LoadingScreen';
 import useUIStore from '../../store/useUIStore';
 
 export default function ManualAttendance() {

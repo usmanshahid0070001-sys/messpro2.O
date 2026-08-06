@@ -20,7 +20,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import SectionCard from '../../components/ui/SectionCard';
+import SectionCard from '../../features/ui/SectionCard';
 
 const CATEGORIES = [
   { id: 'electrical', label: 'Electrical', icon: Zap, defaultPriority: 'High' },

@@ -1,6 +1,6 @@
 import { SlidersHorizontal, Paintbrush, Layers } from 'lucide-react';
-import SectionCard from '../../components/ui/SectionCard';
-import ToggleSwitch from '../../components/ui/ToggleSwitch';
+import SectionCard from '../../features/ui/SectionCard';
+import ToggleSwitch from '../../features/ui/ToggleSwitch';
 
 const settings = [
   { label: 'Auto meal verification', description: 'Enable automated validation for daily meal claims.', enabled: true },

@@ -13,7 +13,7 @@ import {
   ArrowDownRight,
   MessageSquare
 } from 'lucide-react';
-import SectionCard from '../../components/ui/SectionCard';
+import SectionCard from '../../features/ui/SectionCard';
 
 const getCategoryIcon = (category) => {
   switch (category?.toLowerCase()) {

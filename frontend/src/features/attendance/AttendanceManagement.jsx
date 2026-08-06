@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { UserCheck, QrCode, Fingerprint, CalendarCheck } from 'lucide-react';
 import { useMyHostel } from '../../hooks/queries/useHostelQueries';
 import { useAuth } from '../../context/AuthContext';
-import LoadingScreen from '../../components/ui/LoadingScreen';
+import LoadingScreen from '../../features/ui/LoadingScreen';
 
 import ManualAttendance from './ManualAttendance';
 import QRAttendance from './QRAttendance';

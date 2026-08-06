@@ -19,15 +19,15 @@ import MealHistoryDashboard from "../features/mealHistory/MealHistoryDashboard";
 import ManageUsers from "../features/users/ManageUsers";
 import ManageRooms from "../features/residence/ManageRooms";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
-import LoadingScreen from "../components/ui/LoadingScreen";
+import LoadingScreen from "../features/ui/LoadingScreen";
 import ServiceManagement from "../features/services/ServiceManagement";
 import StudentComplaintForm from "../features/services/StudentComplaintForm";
 import StudentQRAttendance from "../features/attendance/StudentQRAttendance";
 import BillGeneration from "../features/billing/BillGeneration";
 
 // Shared UI Components
-import DashboardLayout from "../components/layout/DashboardLayout";
-import DashboardOverview from "../components/shared/DashboardOverview";
+import DashboardLayout from "../features/layout/DashboardLayout";
+import DashboardOverview from "../features/layout/DashboardOverview";
 
 // Auth
 import { useAuth } from "../context/AuthContext";

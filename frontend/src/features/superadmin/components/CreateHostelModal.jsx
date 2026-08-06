@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle, ChevronRight, ChevronLeft, Check, Building2, Users, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useCreateHostel } from '../../hooks/mutations/useSuperadminMutations';
-import { usePlans } from '../../hooks/queries/usePlanQueries';
-import { useFormDraft } from '../../hooks/useFormDraft';
+import { useCreateHostel } from '../../../hooks/mutations/useSuperadminMutations';
+import { usePlans } from '../../../hooks/queries/usePlanQueries';
+import { useFormDraft } from '../../../hooks/useFormDraft';
 
 const INITIAL_FORM = {
   name: '', subdomain: '', location: '', plan: '', maxMealSelection: 4,
