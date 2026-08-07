@@ -65,3 +65,87 @@ From now on, whenever we create or edit a module in the backend, we must strictl
 - **Validations:** Must be placed in the <module>.validation.js file (using Zod or equivalent).
 - **Controllers:** Should only handle request parsing, calling the service, and sending responses.
 - **Routes:** Should only handle endpoint definitions and middleware chaining.
+
+## 7. Mobile App (React Native / Expo) — Architecture & Performance Rules
+
+> **Applies to:** Everything under `e:\messpro2.O\mobile\`. These rules are MANDATORY when working on the mobile app. The stack is: Expo SDK 57, React Native 0.86, React 19, NativeWind v2, expo-router.
+
+### 7.1 What Is Already Active — Do NOT Re-configure
+
+These are on by default and require zero action:
+- **New Architecture (Fabric + TurboModules + JSI):** Mandatory default since Expo SDK 55. Synchronous C++ bridge, no serialization overhead.
+- **Hermes V1 Engine:** Default in RN 0.86. Pre-compiled bytecode, 25–55% faster JS execution.
+- **Reanimated:** Already wired in `babel.config.js`. Just import and use.
+
+### 7.2 State Management — Mobile Decision Tree
+
+```
+Is it SERVER data? (API response, needs caching/refetch)
+  → YES → TanStack Query (hooks in src/hooks/queries/ or src/hooks/mutations/)
+  → NO → Is it SIMPLE UI state? (modal, tab, theme)
+      → YES → Zustand store in src/store/
+      → NO → Complex multi-step UI logic?
+          → YES → Redux Toolkit slice in src/store/
+```
+
+**NEVER use raw `useEffect + useState` to fetch API data.** Always use TanStack Query.
+
+**NEVER use React Context API for new global state.** The existing `AuthContext` is a known legacy issue — it will be migrated to Zustand. Do not replicate this pattern.
+
+### 7.3 Known Issue — AuthContext Re-render Problem
+
+`src/context/AuthContext.tsx` passes an inline object literal to `Provider.value`. This causes every `useAuth()` consumer to re-render on any auth state change (including the `loading` flip on startup). **Do not add more Context-based global state.** The migration plan is to replace it with `src/store/useAuthStore.ts` (Zustand).
+
+### 7.4 Memoization Rules
+
+- Use `React.memo` on components that receive the same props from frequently re-rendering parents (e.g., list item cards, tab icons).
+- Use `useMemo` only for genuinely expensive derivations (filtering/sorting large arrays, permission checks). Not for cheap operations.
+- Use `useCallback` only when passing callbacks as props to memoized children.
+- **Never define arrays or objects inline in JSX props** — they create new references every render.
+
+```tsx
+// ❌ New array reference every render
+const enabledFeatures = [{ name: 'X', isEnabled: true }];
+
+// ✅ Outside component or wrapped in useMemo
+const ENABLED_FEATURES = [{ name: 'X', isEnabled: true }]; // static → outside
+const enabledFeatures = useMemo(() => [...], [dep]);        // dynamic → useMemo
+```
+
+### 7.5 List Rendering — Always Use FlashList
+
+| List Size | Use | Required Props |
+|---|---|---|
+| < 20 items (static) | `ScrollView` + `.map()` | — |
+| 20–500 items | **`FlashList`** (`@shopify/flash-list`) | `estimatedItemSize`, `keyExtractor`, `getItemType` |
+| 500+ items | **`FlashList`** + `useInfiniteQuery` | All above + `onEndReached` pagination |
+
+**Do not use `FlatList` as the default.** FlashList recycles views instead of creating/destroying them.
+
+### 7.6 Animation Rules
+
+- For **opacity/transform animations** with the classic Animated API: always `useNativeDriver: true`.
+- For **gesture-driven UI, complex sequences, or layout-affecting animations** (height, backgroundColor): use **Reanimated worklets** — they run entirely on the UI thread.
+- For **expensive work after navigation** (loading charts, large data): wrap in `InteractionManager.runAfterInteractions()` to let the navigation animation complete first.
+
+### 7.7 Image Handling
+
+- **Always use `expo-image`** (not RN's built-in `Image`) for remote images — it handles memory + disk caching automatically.
+- Serve images as **WebP** format, sized to their rendered dimensions. Never load a 1200×1200 source for a 48×48 avatar.
+
+### 7.8 Production Hygiene
+
+- **Remove all `console.log` / `console.error` calls** from component files before any production build.
+- **Never trust Expo Go performance metrics** — dev builds are 2–5x slower. All optimization validation must be done on a production build (`eas build --profile production`).
+- Profile with **Hermes Profiler** (Android) and **Xcode Instruments** (iOS), not React DevTools alone.
+
+### 7.9 Recommended Packages (Install Before Building Related Features)
+
+```bash
+npx expo install zustand                  # Auth store migration + UI state
+npx expo install @tanstack/react-query    # All API data fetching
+npx expo install @shopify/flash-list      # All list screens
+npx expo install expo-image               # All remote image rendering
+npx expo install react-native-gesture-handler  # Swipe/gesture interactions
+npx expo install react-native-reanimated  # Complex animations (plugin already wired)
+```
