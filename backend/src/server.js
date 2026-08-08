@@ -101,7 +101,7 @@ import residenceRoutes from './modules/residence/residence.routes.js';
 import { globalErrorHandler } from './middlewares/error.middleware.js';
 
 import mealRoutes from './modules/meal/meal.routes.js'; 
-import attendanceRoutes from './modules/mealRecord/attendance.routes.js';
+import attendanceRoutes from './modules/mealRecord/mealRecord.routes.js';
 
 dotenv.config(); // this will load the environment variables first 
 
