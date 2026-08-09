@@ -1,28 +1,96 @@
-import { useState, useCallback } from "react";
-import { Plus, Trash2, Calculator, Save, Send, Link as LinkIcon, Settings2 } from "lucide-react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { Plus, Trash2, Calculator, Save, Send, Link as LinkIcon, Settings2, Calendar, CheckCheck } from "lucide-react";
 import MealPriceSettings from "./components/MealPriceSettings";
+import { useGetBillingSettings, useUpdateBillingSettings, useGenerateBills } from "../../hooks/queries/useAdminQueries";
 
 export default function BillGeneration() {
-  const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const [fromDate, setFromDate] = useState(() => sessionStorage.getItem("billGen_fromDate") || "");
+  const [toDate, setToDate] = useState(() => sessionStorage.getItem("billGen_toDate") || "");
 
-  const formatDate = (date) => {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
+  useEffect(() => {
+    sessionStorage.setItem("billGen_fromDate", fromDate);
+  }, [fromDate]);
 
-  const [fromDate, setFromDate] = useState(formatDate(firstDay));
-  const [toDate, setToDate] = useState(formatDate(lastDay));
+  useEffect(() => {
+    sessionStorage.setItem("billGen_toDate", toDate);
+  }, [toDate]);
+
+  const isDateRangeSelected = fromDate && toDate;
+
+  const { data: settingsResponse, isLoading: isSettingsLoading } = useGetBillingSettings();
+  const updateSettingsMutation = useUpdateBillingSettings();
+  const generateBillsMutation = useGenerateBills();
+
+  const mealSettingsRef = useRef(null);
 
   const [messTotals, setMessTotals] = useState({ grandTotal: 0, totalAttendance: 0 });
-  const [billFields, setBillFields] = useState([
-    { id: 'default-mess', name: 'Mess Bill', type: 'meal_attendance', value: null, linkedFieldId: null, included: true },
-    { id: 'default-unpaid', name: 'Previous Unpaid Balance', type: 'previous_unpaid', value: null, linkedFieldId: null, included: true },
-    { id: 'default-rent', name: 'Room Rent', type: 'static', value: 5000, linkedFieldId: null, included: true }
-  ]);
+  const [billFields, setBillFields] = useState(() => {
+    const draft = sessionStorage.getItem("billGen_fieldsDraft");
+    return draft ? JSON.parse(draft) : [];
+  });
+  
+  const savedSnapshot = useRef(JSON.stringify([]));
+
+  useEffect(() => {
+    if (settingsResponse?.data) {
+      const serverFields = (settingsResponse.data.customCharges && settingsResponse.data.customCharges.length > 0)
+        ? settingsResponse.data.customCharges
+        : [
+            { id: 'default-mess', name: 'Mess Bill', type: 'meal_attendance', value: null, linkedFieldId: null, included: true },
+            { id: 'default-unpaid', name: 'Previous Unpaid Balance', type: 'previous_unpaid', value: null, linkedFieldId: null, included: true },
+            { id: 'default-rent', name: 'Room Rent', type: 'static', value: 5000, linkedFieldId: null, included: true }
+          ];
+          
+      savedSnapshot.current = JSON.stringify(serverFields);
+
+      // Only override local state if there's no draft saved in session storage
+      if (!sessionStorage.getItem("billGen_fieldsDraft")) {
+        setBillFields(serverFields);
+      }
+    }
+  }, [settingsResponse]);
+
+  useEffect(() => {
+    if (billFields.length > 0) {
+      sessionStorage.setItem("billGen_fieldsDraft", JSON.stringify(billFields));
+    }
+  }, [billFields]);
+
+  const isDirty = JSON.stringify(billFields) !== savedSnapshot.current;
+
+  const handleSaveSettings = async () => {
+    if (isDirty) {
+      await updateSettingsMutation.mutateAsync({ customCharges: billFields, isDynamicBillingEnabled: true });
+      savedSnapshot.current = JSON.stringify(billFields);
+      sessionStorage.removeItem("billGen_fieldsDraft"); // Draft is now safely in backend
+    }
+  };
+
+  const handleGenerateBills = async () => {
+    try {
+      if (mealSettingsRef.current?.isDirty) {
+        await mealSettingsRef.current.save();
+      }
+      
+      if (isDirty) {
+        await handleSaveSettings();
+      }
+
+      generateBillsMutation.mutate({
+        startDate: fromDate,
+        endDate: toDate,
+      }, {
+        onSuccess: () => {
+          alert("Bills generated successfully!");
+        },
+        onError: (error) => {
+          alert(error.response?.data?.message || "Failed to generate bills");
+        }
+      });
+    } catch (err) {
+      alert("Failed to save drafts before generating bills.");
+    }
+  };
 
   const handleTotalsChange = useCallback((totals) => {
     setMessTotals(totals);
@@ -110,14 +178,32 @@ export default function BillGeneration() {
           <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 hidden sm:block"></div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button className="h-[42px] w-full sm:w-auto px-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-semibold rounded-xl text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98]">
-              <Save className="w-4 h-4" />
-              <span className="hidden xl:inline">Save Settings</span>
-              <span className="xl:hidden">Save</span>
+            <button 
+              disabled={!isDirty || updateSettingsMutation.isPending || isSettingsLoading}
+              onClick={handleSaveSettings}
+              className={`h-[42px] w-full sm:w-auto px-6 font-semibold rounded-xl text-sm flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 ${isDirty && !updateSettingsMutation.isPending ? 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-zinc-700 dark:text-zinc-300 active:scale-[0.98]' : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600 border border-transparent cursor-not-allowed'}`}
+            >
+              {updateSettingsMutation.isPending ? (
+                <div className="w-4 h-4 border-2 border-zinc-400 border-t-zinc-600 dark:border-t-zinc-300 rounded-full animate-spin" />
+              ) : updateSettingsMutation.isSuccess ? (
+                <CheckCheck className="w-4 h-4 text-emerald-500" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span className="hidden xl:inline">{updateSettingsMutation.isPending ? "Saving..." : updateSettingsMutation.isSuccess ? "Saved Settings" : "Save Settings"}</span>
+              <span className="xl:hidden">{updateSettingsMutation.isPending ? "Saving..." : updateSettingsMutation.isSuccess ? "Saved" : "Save"}</span>
             </button>
-            <button className="h-[42px] w-full sm:w-auto px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98]">
-              <Send className="w-4 h-4" />
-              <span>Generate Bills</span>
+            <button 
+              disabled={!isDateRangeSelected || generateBillsMutation.isPending}
+              onClick={handleGenerateBills}
+              className={`h-[42px] w-full sm:w-auto px-6 font-semibold rounded-xl text-sm flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 ${isDateRangeSelected && !generateBillsMutation.isPending ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-[0.98]' : 'bg-blue-400/50 dark:bg-blue-500/20 text-white/70 dark:text-blue-200/50 cursor-not-allowed'}`}
+            >
+              {generateBillsMutation.isPending ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              <span>{generateBillsMutation.isPending ? "Generating..." : "Generate Bills"}</span>
             </button>
           </div>
         </div>
@@ -323,7 +409,23 @@ export default function BillGeneration() {
       </div>
 
       {/* Existing Settings */}
-      <MealPriceSettings onTotalsChange={handleTotalsChange} fromDate={fromDate} toDate={toDate} />
+      {isDateRangeSelected ? (
+        <MealPriceSettings 
+          ref={mealSettingsRef}
+          onTotalsChange={handleTotalsChange} 
+          fromDate={fromDate} 
+          toDate={toDate} 
+        />) : (
+        <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-12 text-center shadow-sm">
+          <div className="h-14 w-14 rounded-full bg-zinc-50 dark:bg-zinc-900 shadow-sm flex items-center justify-center mx-auto mb-4 border border-zinc-200 dark:border-zinc-800">
+            <Calendar className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+          </div>
+          <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Select a Date Range</h3>
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2 max-w-md mx-auto">
+            Please select both a <span className="font-bold text-zinc-700 dark:text-zinc-300">From Date</span> and a <span className="font-bold text-zinc-700 dark:text-zinc-300">To Date</span> at the top of the page to load meal records and configure pricing.
+          </p>
+        </div>
+      )}
 
     </div>
   );

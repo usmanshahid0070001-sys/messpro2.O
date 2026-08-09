@@ -1,31 +1,8 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { Calendar, Save, User, CheckCircle2, Receipt, Search, CheckCheck, Clock, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 
-// Mock data (swap for your real fetch/import)
-const mockMealRecords = [
-  {
-    date: "2026-07-28",
-    meals: [
-      { id: "m1", mealType: "Lunch", mealInfo: { name: "Biryani", price: 200 }, attendanceCount: 140, selectionCount: 150 },
-    ],
-  },
-  {
-    date: "2026-07-29",
-    meals: [
-      { id: "m2", mealType: "Lunch", mealInfo: { name: "Pasta", price: 200 }, attendanceCount: 90, selectionCount: 80 },
-      { id: "m3", mealType: "Dinner", mealInfo: { name: "Aloo Qeema", price: 174 }, attendanceCount: 168, selectionCount: 70 },
-    ],
-  },
-  {
-    date: "2026-07-30",
-    meals: [
-      { id: "m4", mealType: "Breakfast", mealInfo: { name: "Halwa Puri", price: 100 }, attendanceCount: 120, selectionCount: 130 },
-      { id: "m5", mealType: "Lunch", mealInfo: { name: "Chicken Karahi", price: 250 }, attendanceCount: 180, selectionCount: 175 },
-      { id: "m6", mealType: "Dinner", mealInfo: { name: "Aloo Qeema", price: 174 }, attendanceCount: 168, selectionCount: 70 },
-    ],
-  },
-];
+import { useGetMealPricesForBilling, useUpdateMealPrices } from "../../../hooks/queries/useAdminQueries";
 
 const mealTypeStyles = {
   Breakfast: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
@@ -33,14 +10,64 @@ const mealTypeStyles = {
   Dinner: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400",
 };
 
-export default function MealPriceSettingsTable({ onTotalsChange, fromDate, toDate }) {
+export default forwardRef(function MealPriceSettingsTable({ onTotalsChange, fromDate, toDate }, ref) {
+  const { data: response, isLoading } = useGetMealPricesForBilling(fromDate, toDate);
+  const updatePricesMutation = useUpdateMealPrices();
+  const fetchedRecords = response?.data;
+
   const [search, setSearch] = useState("");
-  const [records, setRecords] = useState(mockMealRecords);
+  const [records, setRecords] = useState([]);
   const [savedAt, setSavedAt] = useState(null);
   const [editingTotal, setEditingTotal] = useState({ id: null, value: "" });
 
-  const savedSnapshot = useRef(JSON.stringify(mockMealRecords));
+  const savedSnapshot = useRef(JSON.stringify([]));
+
+  useEffect(() => {
+    if (fetchedRecords) {
+      setRecords(fetchedRecords);
+      savedSnapshot.current = JSON.stringify(fetchedRecords);
+    }
+  }, [fetchedRecords]);
+
   const isDirty = JSON.stringify(records) !== savedSnapshot.current;
+
+  // Expose methods to parent
+  useImperativeHandle(ref, () => ({
+    isDirty,
+    save: async () => {
+      if (!isDirty) return true;
+      const originalRecords = JSON.parse(savedSnapshot.current);
+      const updates = [];
+
+      records.forEach((group) => {
+        const originalGroup = originalRecords.find(g => g.date === group.date);
+        if (!originalGroup) return;
+
+        group.meals.forEach((meal) => {
+          const originalMeal = originalGroup.meals.find(m => m.id === meal.id);
+          if (!originalMeal) return;
+
+          if (meal.mealInfo.price !== originalMeal.mealInfo.price || meal.mealInfo.name !== originalMeal.mealInfo.name) {
+            updates.push({
+              date: group.date,
+              mealType: meal.mealType,
+              oldName: originalMeal.mealInfo.name,
+              newName: meal.mealInfo.name,
+              newPrice: meal.mealInfo.price
+            });
+          }
+        });
+      });
+
+      if (updates.length > 0) {
+        await updatePricesMutation.mutateAsync(updates);
+        savedSnapshot.current = JSON.stringify(records);
+        setSavedAt(new Date());
+        return true;
+      }
+      return true;
+    }
+  }));
 
   useEffect(() => {
     if (!savedAt) return;
@@ -125,8 +152,40 @@ export default function MealPriceSettingsTable({ onTotalsChange, fromDate, toDat
   };
 
   const handleSave = () => {
-    savedSnapshot.current = JSON.stringify(records);
-    setSavedAt(new Date());
+    const originalRecords = JSON.parse(savedSnapshot.current);
+    const updates = [];
+
+    // Find all meals that were edited
+    records.forEach((group) => {
+      const originalGroup = originalRecords.find(g => g.date === group.date);
+      if (!originalGroup) return;
+
+      group.meals.forEach((meal) => {
+        const originalMeal = originalGroup.meals.find(m => m.id === meal.id);
+        if (!originalMeal) return;
+
+        if (meal.mealInfo.price !== originalMeal.mealInfo.price || meal.mealInfo.name !== originalMeal.mealInfo.name) {
+          updates.push({
+            date: group.date,
+            mealType: meal.mealType,
+            oldName: originalMeal.mealInfo.name, // Used to match the document in the backend
+            newName: meal.mealInfo.name,
+            newPrice: meal.mealInfo.price
+          });
+        }
+      });
+    });
+
+    if (updates.length > 0) {
+      updatePricesMutation.mutate(updates, {
+        onSuccess: () => {
+          savedSnapshot.current = JSON.stringify(records);
+          setSavedAt(new Date());
+        }
+      });
+    } else {
+      setSavedAt(new Date()); // Nothing to save, just show success
+    }
   };
 
   const handleExportExcel = () => {
@@ -202,15 +261,21 @@ export default function MealPriceSettingsTable({ onTotalsChange, fromDate, toDat
 
           <button
             onClick={handleSave}
-            disabled={!isDirty}
+            disabled={!isDirty || updatePricesMutation.isPending}
             className={`h-[42px] w-full sm:w-auto px-6 font-semibold rounded-xl text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] shrink-0 ${
-              isDirty
+              isDirty && !updatePricesMutation.isPending
                 ? "bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 text-white dark:text-zinc-900"
                 : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600 cursor-not-allowed"
             }`}
           >
-            {savedAt ? <CheckCheck className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            <span>{savedAt ? "Saved" : isDirty ? "Save Prices" : "Saved"}</span>
+            {updatePricesMutation.isPending ? (
+              <div className="w-4 h-4 border-2 border-zinc-400 border-t-zinc-600 dark:border-t-zinc-300 rounded-full animate-spin" />
+            ) : savedAt ? (
+              <CheckCheck className="w-4 h-4" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{updatePricesMutation.isPending ? "Saving..." : savedAt ? "Saved" : isDirty ? "Save Prices" : "Saved"}</span>
           </button>
         </div>
       </div>
@@ -221,8 +286,7 @@ export default function MealPriceSettingsTable({ onTotalsChange, fromDate, toDat
         <div className="flex items-center gap-2 text-zinc-400 dark:text-zinc-500">
           <Receipt className="w-4 h-4" />
           <span className="text-[11px] font-bold uppercase tracking-widest">
-            {filteredRecords.length} day{filteredRecords.length !== 1 && "s"} · {totalMeals} meal
-            {totalMeals !== 1 && "s"}
+            {isLoading ? "Loading..." : `${filteredRecords.length} day${filteredRecords.length !== 1 ? 's' : ''} · ${totalMeals} meal${totalMeals !== 1 ? 's' : ''}`}
           </span>
         </div>
         <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
@@ -257,8 +321,8 @@ export default function MealPriceSettingsTable({ onTotalsChange, fromDate, toDat
                 </th>
               </tr>
             </thead>
-            <tbody>
-              {filteredRecords.map((group, gi) => {
+            {filteredRecords.length > 0 ? (
+              filteredRecords.map((group, gi) => {
                 const formattedDate = new Intl.DateTimeFormat("en-US", {
                   weekday: "short",
                   month: "short",
@@ -271,19 +335,24 @@ export default function MealPriceSettingsTable({ onTotalsChange, fromDate, toDat
                 );
                 const allPriced = group.meals.every((m) => m.mealInfo.price !== "" && m.mealInfo.price > 0);
 
-                return group.meals.map((meal, mi) => {
-                  const mealPrice = meal.mealInfo.price || 0;
-                  const mealTotal = mealPrice * meal.attendanceCount;
+                return (
+                  <tbody 
+                    key={group.date} 
+                    className="group/day border-b border-zinc-200/50 dark:border-zinc-800/50 hover:bg-zinc-50/80 dark:hover:bg-zinc-900/30 transition-colors"
+                  >
+                    {group.meals.map((meal, mi) => {
+                      const mealPrice = meal.mealInfo.price || 0;
+                      const mealTotal = mealPrice * meal.attendanceCount;
 
-                  return (
-                    <tr
-                      key={meal.id}
-                      className={`bg-white dark:bg-zinc-950 ${
-                        mi === 0 ? "border-t-2 border-t-zinc-200 dark:border-t-zinc-800" : "border-t border-zinc-100 dark:border-zinc-900"
-                      } transition-colors`}
-                    >
-                      {mi === 0 && (
-                        <td rowSpan={group.meals.length} className="px-5 py-4 align-top">
+                      return (
+                        <tr
+                          key={meal.id}
+                          className={`${
+                            mi === 0 ? "" : "border-t border-zinc-100 dark:border-zinc-900/50"
+                          } transition-colors`}
+                        >
+                          {mi === 0 && (
+                            <td rowSpan={group.meals.length} className="px-5 py-4 align-top">
                           <div className="flex items-start gap-2.5">
                             <Calendar className="w-4 h-4 text-zinc-400 mt-0.5 shrink-0" />
                             <div>
@@ -386,25 +455,33 @@ export default function MealPriceSettingsTable({ onTotalsChange, fromDate, toDat
                       )}
                     </tr>
                   );
-                });
-              })}
-
-              {filteredRecords.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-16">
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <div className="h-14 w-14 rounded-full bg-zinc-50 dark:bg-zinc-900 shadow-sm flex items-center justify-center mb-4 border border-zinc-200 dark:border-zinc-800">
-                        <Receipt className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
-                      </div>
-                      <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">No records found</h3>
-                      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">
-                        Adjust the date range or search above to view meal attendances.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
+                })}
+              </tbody>
+            );
+          })
+        ) : (
+          <tbody>
+            <tr>
+              <td colSpan={7} className="py-16">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="h-14 w-14 rounded-full bg-zinc-50 dark:bg-zinc-900 shadow-sm flex items-center justify-center mb-4 border border-zinc-200 dark:border-zinc-800">
+                    {isLoading ? (
+                       <div className="w-6 h-6 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin" />
+                    ) : (
+                       <Receipt className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+                    )}
+                  </div>
+                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                    {isLoading ? "Loading records..." : "No records found"}
+                  </h3>
+                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">
+                    {isLoading ? "Fetching meal attendance for the selected date range." : "Adjust the date range or search above to view meal attendances."}
+                  </p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        )}
 
             {filteredRecords.length > 0 && (
               <tfoot>
@@ -444,4 +521,4 @@ export default function MealPriceSettingsTable({ onTotalsChange, fromDate, toDat
       </div>
     </div>
   );
-}
+})

@@ -24,5 +24,25 @@ export const billingApi = {
   getMonthlyBill: async (month) => {
     const response = await api.get(`/api/billing/monthly?month=${month}`);
     return response.data;
+  },
+
+  getMealPricesForBilling: async (startDate, endDate) => {
+    const response = await api.get(`/api/billing/meal-prices?startDate=${startDate}&endDate=${endDate}`);
+    return response.data;
+  },
+
+  updateMealPrices: async (updates) => {
+    const response = await api.put('/api/billing/meal-prices', { updates });
+    return response.data;
+  },
+
+  getBillingSettings: async () => {
+    const response = await api.get('/api/billing/settings');
+    return response.data;
+  },
+
+  updateBillingSettings: async (customCharges, isDynamicBillingEnabled) => {
+    const response = await api.put('/api/billing/settings', { customCharges, isDynamicBillingEnabled });
+    return response.data;
   }
 };

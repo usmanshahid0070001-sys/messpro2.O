@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '../../api/endpoints/user.api';
 import { mealApi } from '../../api/endpoints/meal.api';
 import { billingApi } from '../../api/endpoints/billing.api';
@@ -79,5 +79,53 @@ export const usePendingBills = (rollNumber) => {
     queryKey: ['pendingBills', rollNumber],
     queryFn: () => billingApi.getAllBills(), // Fallback
     enabled: !!rollNumber,
+  });
+};
+
+export const useGetMealPricesForBilling = (startDate, endDate) => {
+  return useQuery({
+    queryKey: ['mealPricesForBilling', startDate, endDate],
+    queryFn: () => billingApi.getMealPricesForBilling(startDate, endDate),
+    enabled: !!startDate && !!endDate,
+  });
+};
+
+export const useUpdateMealPrices = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (updates) => billingApi.updateMealPrices(updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mealPricesForBilling'] });
+    },
+  });
+};
+
+export const useGetBillingSettings = () => {
+  return useQuery({
+    queryKey: ['billingSettings'],
+    queryFn: () => billingApi.getBillingSettings(),
+  });
+};
+
+export const useUpdateBillingSettings = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ customCharges, isDynamicBillingEnabled }) => billingApi.updateBillingSettings(customCharges, isDynamicBillingEnabled),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billingSettings'] });
+    },
+  });
+};
+
+export const useGenerateBills = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data) => billingApi.generateBills(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminBillSummary'] });
+    },
   });
 };
