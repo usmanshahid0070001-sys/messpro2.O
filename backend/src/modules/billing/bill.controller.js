@@ -2,6 +2,17 @@ import { catchAsync } from '../../utils/catchAsync.js';
 import billService from './bill.service.js';
 import { generateBillSchema, updatePaymentSchema } from './bill.validation.js';
 
+export const getBillingSettings = catchAsync(async (req, res) => {
+  const settings = await billService.getBillingSettings(req.user.hostelId);
+  res.status(200).json({ success: true, data: settings });
+});
+
+export const updateBillingSettings = catchAsync(async (req, res) => {
+  const { customCharges, isDynamicBillingEnabled } = req.body;
+  const settings = await billService.updateBillingSettings(req.user.hostelId, customCharges, isDynamicBillingEnabled);
+  res.status(200).json({ success: true, message: 'Billing settings saved successfully.', data: settings });
+});
+
 export const generateMonthlyBills = catchAsync(async (req, res) => {
   // 1. Zod shields the engine from bad math inputs
   const validatedData = generateBillSchema.parse(req.body);
@@ -19,6 +30,31 @@ export const generateMonthlyBills = catchAsync(async (req, res) => {
     message: `Successfully generated ${bills.length} new bills.`,
     results: bills.length,
     data: bills
+  });
+});
+
+export const getMealPricesForBilling = catchAsync(async (req, res) => {
+  const { startDate, endDate } = req.query;
+  const hostelId = req.user.hostelId;
+
+  const mealPrices = await billService.getMealPricesForBilling(hostelId, startDate, endDate);
+
+  res.status(200).json({
+    success: true,
+    data: mealPrices
+  });
+});
+
+export const updateMealPrices = catchAsync(async (req, res) => {
+  const { updates } = req.body;
+  const hostelId = req.user.hostelId;
+
+  const result = await billService.updateMealPrices(hostelId, updates);
+
+  res.status(200).json({
+    success: true,
+    message: 'Meal prices updated successfully',
+    data: result
   });
 });
 

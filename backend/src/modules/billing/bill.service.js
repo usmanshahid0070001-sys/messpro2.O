@@ -2,8 +2,26 @@ import mongoose from 'mongoose';
 import User from '../auth/auth.model.js';
 import MealRecord from '../mealRecord/mealRecord.model.js';
 import billRepository from './bill.repository.js';
+import Hostel from '../hostel/hostel.model.js';
 
 class BillService {
+  async getBillingSettings(hostelId) {
+    const hostel = await Hostel.findById(hostelId).select('settings');
+    if (!hostel) throw Object.assign(new Error('Hostel not found.'), { statusCode: 404 });
+    return hostel.settings;
+  }
+
+  async updateBillingSettings(hostelId, customCharges, isDynamicBillingEnabled) {
+    const hostel = await Hostel.findById(hostelId);
+    if (!hostel) throw Object.assign(new Error('Hostel not found.'), { statusCode: 404 });
+
+    hostel.settings.customCharges = customCharges;
+    hostel.settings.isDynamicBillingEnabled = isDynamicBillingEnabled;
+
+    await hostel.save();
+    return hostel.settings;
+  }
+
   async getBills(user, month) {
     const query = { hostelId: user.hostelId };
 
@@ -31,7 +49,100 @@ class BillService {
   }
   
   // ==========================================
-  // 1. BILL GENERATION & MATH ENGINE
+  // 1. MEAL PRICE AGGREGATION FOR SETTINGS
+  // ==========================================
+  async getMealPricesForBilling(hostelId, startDate, endDate) {
+    if (!startDate || !endDate) {
+      throw Object.assign(new Error('Start and end dates are required.'), { statusCode: 400 });
+    }
+
+    const aggregationPipeline = [
+      {
+        $match: {
+          hostelId: new mongoose.Types.ObjectId(hostelId),
+          date: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: { date: '$date', mealType: '$mealType', name: '$mealInfo.name' },
+          price: { $first: '$mealInfo.price' },
+          attendanceCount: {
+            $sum: { $cond: ['$attendance.hasEaten', '$attendance.count', 0] }
+          },
+          selectionCount: {
+            $sum: { $cond: ['$selection.hasSelected', '$selection.count', 0] }
+          }
+        }
+      },
+      {
+        $match: {
+          attendanceCount: { $gt: 0 }
+        }
+      },
+      {
+        $group: {
+          _id: '$_id.date',
+          meals: {
+            $push: {
+              id: { $concat: ['$_id.date', '_', '$_id.mealType', '_', '$_id.name'] },
+              mealType: '$_id.mealType',
+              mealInfo: {
+                name: '$_id.name',
+                price: '$price'
+              },
+              attendanceCount: '$attendanceCount',
+              selectionCount: '$selectionCount'
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          date: '$_id',
+          meals: 1
+        }
+      },
+      {
+        $sort: { date: 1 }
+      }
+    ];
+
+    return await MealRecord.aggregate(aggregationPipeline);
+  }
+
+  async updateMealPrices(hostelId, updates) {
+    if (!updates || !Array.isArray(updates)) {
+      throw Object.assign(new Error('Updates must be an array.'), { statusCode: 400 });
+    }
+
+    const bulkOps = updates.map(update => ({
+      updateMany: {
+        filter: { 
+          hostelId: new mongoose.Types.ObjectId(hostelId),
+          date: update.date,
+          mealType: update.mealType,
+          'mealInfo.name': update.oldName // Match by the original name to update all students' records
+        },
+        update: {
+          $set: {
+            'mealInfo.name': update.newName,
+            'mealInfo.price': Number(update.newPrice)
+          }
+        }
+      }
+    }));
+
+    if (bulkOps.length > 0) {
+      await MealRecord.bulkWrite(bulkOps);
+    }
+    
+    return { updatedCount: bulkOps.length };
+  }
+
+  // ==========================================
+  // 2. BILL GENERATION & MATH ENGINE
   // ==========================================
   async generateBills(hostelId, billingPeriod, customChargesInput) {
     const { startDate, endDate } = billingPeriod;
