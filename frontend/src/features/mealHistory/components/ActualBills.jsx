@@ -30,36 +30,40 @@ export default function ActualBills() {
           </div>
 
           {/* Modal Body - The actual invoice view */}
-          <div className="p-4 sm:p-8 overflow-y-auto">
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 sm:gap-0 mb-8 sm:mb-10">
+          <div className="p-4 sm:p-10 overflow-y-auto">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-8 sm:gap-0 mb-12 border-b border-black/10 dark:border-white/10 pb-8">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#111111] dark:text-white tracking-tight">INVOICE</h1>
-                <p className="text-sm sm:text-base text-[#737373] dark:text-[#a0a0a0] mt-1">{selectedBill.id}</p>
+                <h1 className="text-4xl font-medium tracking-tighter text-[#111111] dark:text-white uppercase">Invoice</h1>
+                <p className="text-sm text-[#737373] dark:text-[#a0a0a0] mt-2 font-mono">{selectedBill.id}</p>
               </div>
-              <div className="sm:text-right">
-                <div className="text-sm font-medium text-[#111111] dark:text-white">Issue Date</div>
-                <div className="text-sm text-[#737373] dark:text-[#a0a0a0]">{format(parseISO(selectedBill.date), 'MMMM dd, yyyy')}</div>
-                <div className="mt-3 sm:mt-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400">
+              <div className="sm:text-right flex flex-col gap-1">
+                <div className="text-sm font-medium text-[#737373] dark:text-[#a0a0a0] uppercase tracking-wider">Issue Date</div>
+                <div className="text-base text-[#111111] dark:text-white font-medium">{format(parseISO(selectedBill.date), 'MMMM dd, yyyy')}</div>
+                <div className="mt-4">
+                  <span className={`inline-flex items-center px-3 py-1 text-[10px] uppercase tracking-widest font-bold ${
+                    selectedBill.status.toLowerCase() === 'paid' 
+                      ? "bg-[#111111] dark:bg-white text-white dark:text-black" 
+                      : "bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#111111] dark:text-white"
+                  }`}>
                     {selectedBill.status}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="border border-black/5 dark:border-white/10 rounded-lg mb-6 sm:mb-8">
+            <div className="mb-12">
               <table className="w-full text-left text-sm">
-                <thead className="bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/10 text-[#404040] dark:text-[#d4d4d4] font-medium">
-                  <tr>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4">Description</th>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-right">Amount</th>
+                <thead>
+                  <tr className="border-b border-black/10 dark:border-white/10 text-[#737373] dark:text-[#a0a0a0] text-xs uppercase tracking-widest">
+                    <th className="py-4 font-medium">Description</th>
+                    <th className="py-4 font-medium text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/5 dark:divide-white/5">
                   {selectedBill.items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-[#111111] dark:text-white">{item.name}</td>
-                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-right text-[#737373] dark:text-[#a0a0a0]">₹{item.amount.toFixed(2)}</td>
+                    <tr key={idx} className="group">
+                      <td className="py-5 text-base text-[#111111] dark:text-white">{item.name}</td>
+                      <td className="py-5 text-base text-right font-medium text-[#111111] dark:text-white tabular-nums">₹{item.amount.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -67,14 +71,14 @@ export default function ActualBills() {
             </div>
 
             <div className="flex justify-end text-[#111111] dark:text-white">
-              <div className="w-full sm:w-64">
-                <div className="flex justify-between items-center py-3 border-b border-black/5 dark:border-white/10">
-                  <span className="text-sm text-[#737373] dark:text-[#a0a0a0]">Subtotal</span>
-                  <span className="font-medium">₹{selectedBill.items.reduce((acc, item) => acc + item.amount, 0).toFixed(2)}</span>
+              <div className="w-full sm:w-72">
+                <div className="flex justify-between items-center py-3">
+                  <span className="text-[#737373] dark:text-[#a0a0a0]">Subtotal</span>
+                  <span className="font-medium tabular-nums">₹{selectedBill.items.reduce((acc, item) => acc + item.amount, 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center py-4">
-                  <span className="font-semibold text-base sm:text-lg">Total Due</span>
-                  <span className="text-lg sm:text-xl font-bold">₹{selectedBill.total.toFixed(2)}</span>
+                <div className="flex justify-between items-center py-6 border-t-2 border-[#111111] dark:border-white mt-2">
+                  <span className="font-medium text-lg uppercase tracking-wider">Total Due</span>
+                  <span className="text-2xl font-semibold tabular-nums tracking-tight">₹{selectedBill.total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -101,40 +105,53 @@ export default function ActualBills() {
   return (
     <div>
       {mockBills.length === 0 ? (
-        <div className="text-center py-10 sm:py-12 border border-dashed border-black/10 dark:border-white/10 rounded-xl bg-black/5 dark:bg-white/5">
-          <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-[#a3a3a3] dark:text-[#737373] mx-auto mb-3" />
-          <h4 className="text-[#111111] dark:text-white font-medium text-sm sm:text-base">No bills yet</h4>
-          <p className="text-xs sm:text-sm text-[#737373] dark:text-[#a0a0a0] mt-1">Your generated invoices will appear here.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
+            <FileText className="w-5 h-5 text-[#a3a3a3] dark:text-[#555]" />
+          </div>
+          <h4 className="text-lg font-medium text-[#111111] dark:text-white mb-2">No finalized bills</h4>
+          <p className="text-[#737373] dark:text-[#a0a0a0] max-w-sm">
+            At the end of each billing cycle, your official invoice will appear here. 
+            Use the estimator to project your upcoming costs.
+          </p>
         </div>
       ) : (
-        <div className="grid gap-3">
+        <div className="flex flex-col gap-6">
           {mockBills.map((bill) => (
             <div
               key={bill.id}
               onClick={() => setSelectedBill(bill)}
-              className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-4 sm:gap-0 border border-black/5 dark:border-white/5 rounded-xl hover:bg-[#fafafa] dark:hover:bg-white/5 cursor-pointer transition-all bg-white dark:bg-transparent group"
+              className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 sm:p-8 rounded-2xl border border-black/5 dark:border-white/5 hover:border-black/10 dark:hover:border-white/10 hover:bg-[#fafafa] dark:hover:bg-[#0a0a0a] transition-all cursor-pointer"
             >
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="p-2 sm:p-3 bg-black/5 dark:bg-white/5 rounded-lg group-hover:bg-black/10 dark:group-hover:bg-white/10 transition-colors shrink-0">
-                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-[#737373] dark:text-[#a0a0a0]" />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+                <div className="text-sm font-medium text-[#737373] dark:text-[#a0a0a0] w-24">
+                  {format(parseISO(bill.date), 'MMM dd, yyyy')}
                 </div>
+                <div className="w-px h-10 bg-black/5 dark:bg-white/5 hidden sm:block"></div>
                 <div>
-                  <h4 className="font-medium text-sm sm:text-base text-[#111111] dark:text-white">{format(parseISO(bill.date), 'MMMM yyyy')}</h4>
-                  <p className="text-xs sm:text-sm text-[#737373] dark:text-[#a0a0a0] mt-0.5">{bill.id} · {format(parseISO(bill.date), 'MMM dd')}</p>
+                  <h4 className="text-xl font-medium tracking-tight text-[#111111] dark:text-white group-hover:underline decoration-black/20 dark:decoration-white/20 underline-offset-4">
+                    {format(parseISO(bill.date), 'MMMM yyyy')} Invoice
+                  </h4>
+                  <p className="text-sm text-[#737373] dark:text-[#a0a0a0] mt-1 font-mono text-xs">{bill.id}</p>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6 border-t sm:border-t-0 border-black/5 dark:border-white/5 pt-3 sm:pt-0">
+              <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-10 mt-6 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-0 border-black/5 dark:border-white/5">
                 <div className="text-left sm:text-right">
-                  <div className="font-semibold text-sm sm:text-base text-[#111111] dark:text-white flex items-center justify-start sm:justify-end">
-                    <IndianRupee className="w-3.5 h-3.5 mr-0.5" />
-                    {bill.total.toFixed(2)}
+                  <div className="font-medium text-2xl tracking-tight text-[#111111] dark:text-white tabular-nums">
+                    ₹{bill.total.toFixed(2)}
                   </div>
-                  <div className="text-[10px] sm:text-xs font-medium text-green-600 dark:text-green-400 mt-1 sm:mt-0.5 bg-green-50 dark:bg-green-500/10 inline-block px-2 py-0.5 rounded">
+                  <div className={`text-[10px] font-bold uppercase tracking-widest mt-1.5 ${
+                    bill.status.toLowerCase() === 'paid' 
+                      ? "text-green-600 dark:text-green-400" 
+                      : "text-amber-600 dark:text-amber-400"
+                  }`}>
                     {bill.status}
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-[#a3a3a3] dark:text-[#737373] group-hover:text-[#737373] dark:group-hover:text-[#a0a0a0] transition-colors shrink-0" />
+                <div className="w-12 h-12 rounded-full bg-white dark:bg-[#111111] shadow-sm border border-black/5 dark:border-white/5 flex items-center justify-center group-hover:scale-105 group-hover:bg-[#111111] group-hover:border-[#111111] dark:group-hover:bg-white dark:group-hover:border-white transition-all">
+                  <ChevronRight className="w-5 h-5 text-[#111111] dark:text-white group-hover:text-white dark:group-hover:text-black transition-colors" />
+                </div>
               </div>
             </div>
           ))}
