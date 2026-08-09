@@ -7,7 +7,8 @@ import {
   getMealPricesForBilling,
   updateMealPrices,
   getBillingSettings,
-  updateBillingSettings
+  updateBillingSettings,
+  updateBill
 } from './bill.controller.js';
 import { protect, restrictTo } from '../../middlewares/auth.middleware.js';
 
@@ -33,5 +34,6 @@ router.route('/settings')
 router.post('/generate', restrictTo('admin', 'manager'), generateMonthlyBills);
 router.post('/:id/pay', restrictTo('admin', 'manager'), payBill);
 router.post('/:id/partial-pay', restrictTo('admin', 'manager'), payBill);
+router.put('/:id', restrictTo('admin'), updateBill);
 
 export default router;

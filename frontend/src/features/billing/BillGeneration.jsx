@@ -31,6 +31,8 @@ export default function BillGeneration() {
   
   const savedSnapshot = useRef(JSON.stringify([]));
 
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+
   useEffect(() => {
     if (settingsResponse?.data) {
       const serverFields = (settingsResponse.data.customCharges && settingsResponse.data.customCharges.length > 0)
@@ -76,12 +78,39 @@ export default function BillGeneration() {
         await handleSaveSettings();
       }
 
+      const mappedCustomCharges = billFields
+        .filter(f => f.included !== false && f.type !== 'meal_attendance' && f.type !== 'previous_unpaid')
+        .map(f => {
+          let target = 'none';
+          // Find the linked field to determine target
+          if (f.linkedFieldId) {
+            const linked = billFields.find(bf => bf.id === f.linkedFieldId);
+            if (linked?.type === 'meal_attendance') target = 'mess_bill';
+            else if (linked?.type === 'previous_unpaid') target = 'unpaid_bill';
+          }
+          
+          let chargeType = 'addition';
+          if (f.type === 'percentage') chargeType = 'percentage';
+          if (f.type === 'multiplier') chargeType = 'multiple';
+
+          return {
+            name: f.name || 'Custom Charge',
+            chargeType,
+            value: Number(f.value) || 0,
+            target
+          };
+        });
+
       generateBillsMutation.mutate({
-        startDate: fromDate,
-        endDate: toDate,
+        billingPeriod: {
+          startDate: fromDate,
+          endDate: toDate,
+        },
+        customCharges: mappedCustomCharges
       }, {
         onSuccess: () => {
           alert("Bills generated successfully!");
+          setIsConfirmModalOpen(false);
         },
         onError: (error) => {
           alert(error.response?.data?.message || "Failed to generate bills");
@@ -90,6 +119,10 @@ export default function BillGeneration() {
     } catch (err) {
       alert("Failed to save drafts before generating bills.");
     }
+  };
+
+  const onGenerateClick = () => {
+    setIsConfirmModalOpen(true);
   };
 
   const handleTotalsChange = useCallback((totals) => {
@@ -195,7 +228,7 @@ export default function BillGeneration() {
             </button>
             <button 
               disabled={!isDateRangeSelected || generateBillsMutation.isPending}
-              onClick={handleGenerateBills}
+              onClick={onGenerateClick}
               className={`h-[42px] w-full sm:w-auto px-6 font-semibold rounded-xl text-sm flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 ${isDateRangeSelected && !generateBillsMutation.isPending ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-[0.98]' : 'bg-blue-400/50 dark:bg-blue-500/20 text-white/70 dark:text-blue-200/50 cursor-not-allowed'}`}
             >
               {generateBillsMutation.isPending ? (
@@ -424,6 +457,81 @@ export default function BillGeneration() {
           <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2 max-w-md mx-auto">
             Please select both a <span className="font-bold text-zinc-700 dark:text-zinc-300">From Date</span> and a <span className="font-bold text-zinc-700 dark:text-zinc-300">To Date</span> at the top of the page to load meal records and configure pricing.
           </p>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Confirm Bill Generation</h3>
+              <button 
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 rounded-lg transition-colors flex items-center justify-center"
+              >
+                <span className="font-bold">✕</span>
+              </button>
+            </div>
+            
+            <div className="p-5 overflow-y-auto space-y-6">
+              <div className="bg-blue-50/50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl p-4">
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Billing Period</p>
+                <p className="font-bold text-blue-900 dark:text-blue-200">
+                  {new Date(fromDate).toLocaleDateString()} — {new Date(toDate).toLocaleDateString()}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Estimated Breakdown (Per Student)</h4>
+                <div className="space-y-2">
+                  {billFields.filter(f => f.included !== false).map((field, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-sm">
+                      <span className="text-zinc-600 dark:text-zinc-400">{field.name}</span>
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                        {field.type === 'previous_unpaid' ? 'Dynamic' : `Rs. ${Math.round(calculateFieldValue(field)).toLocaleString('en-PK')}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">Estimated Total</span>
+                <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                  Rs. {Math.round(totalBillAmount).toLocaleString('en-PK')}
+                </span>
+              </div>
+              
+              <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4">
+                <p className="text-sm text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
+                  <strong>Warning:</strong> Generating bills will finalize these charges for all active students in the selected date range. Please ensure all meal records and settings are accurate before proceeding.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-end gap-3 shrink-0">
+              <button
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-semibold text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                disabled={generateBillsMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleGenerateBills}
+                disabled={generateBillsMutation.isPending}
+                className="px-5 py-2.5 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-2"
+              >
+                {generateBillsMutation.isPending ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <CheckCheck className="w-4 h-4" />
+                )}
+                Confirm & Generate
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

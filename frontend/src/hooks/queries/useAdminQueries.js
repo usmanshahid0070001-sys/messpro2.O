@@ -58,11 +58,38 @@ export const useAdminMenuDefaults = () => {
   });
 };
 
-export const useAdminBillSummary = (month) => {
+export const useAdminBillSummary = (month, status) => {
   return useQuery({
-    queryKey: ['adminBillSummary', month],
-    queryFn: () => billingApi.getAllBills(), // Fallback
-    enabled: !!month,
+    queryKey: ['adminBillSummary', month, status],
+    queryFn: () => month ? billingApi.getMonthlyBill(month, status) : billingApi.getAllBills(status),
+  });
+};
+
+export const usePayBill = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ billId, amount }) => billingApi.partialPayBill(billId, amount),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminBillSummary'] });
+      toast.success('Payment recorded successfully');
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Failed to record payment');
+    }
+  });
+};
+
+export const useUpdateBill = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ billId, customCharges }) => billingApi.updateBill(billId, customCharges),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminBillSummary'] });
+      toast.success('Bill updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Failed to update bill');
+    }
   });
 };
 

@@ -59,7 +59,7 @@ export const updateMealPrices = catchAsync(async (req, res) => {
 });
 
 export const getBills = catchAsync(async (req, res) => {
-  const bills = await billService.getBills(req.user, req.query.month);
+  const bills = await billService.getBills(req.user, req.query.month, req.query.status);
 
   res.status(200).json({
     success: true,
@@ -69,7 +69,7 @@ export const getBills = catchAsync(async (req, res) => {
 });
 
 export const getMonthlyBill = catchAsync(async (req, res) => {
-  const bills = await billService.getBills(req.user, req.query.month);
+  const bills = await billService.getBills(req.user, req.query.month, req.query.status);
 
   res.status(200).json({
     success: true,
@@ -90,6 +90,20 @@ export const payBill = catchAsync(async (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'Payment recorded successfully.',
+    data: updatedBill
+  });
+});
+
+export const updateBill = catchAsync(async (req, res) => {
+  const billId = req.params.id;
+  const hostelId = req.user.hostelId;
+  const { customCharges } = req.body;
+
+  const updatedBill = await billService.updateBillCustomCharges(hostelId, billId, customCharges);
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Bill updated successfully.',
     data: updatedBill
   });
 });

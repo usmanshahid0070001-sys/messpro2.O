@@ -6,8 +6,9 @@ export const billingApi = {
     return response.data;
   },
 
-  getAllBills: async () => {
-    const response = await api.get('/api/billing');
+  getAllBills: async (status) => {
+    const queryParams = status ? `?status=${status}` : '';
+    const response = await api.get(`/api/billing${queryParams}`);
     return response.data;
   },
   
@@ -21,8 +22,15 @@ export const billingApi = {
     return response.data;
   },
 
-  getMonthlyBill: async (month) => {
-    const response = await api.get(`/api/billing/monthly?month=${month}`);
+  getMonthlyBill: async (month, status) => {
+    let queryParams = `?month=${month}`;
+    if (status) queryParams += `&status=${status}`;
+    const response = await api.get(`/api/billing/monthly${queryParams}`);
+    return response.data;
+  },
+
+  updateBill: async (billId, customCharges) => {
+    const response = await api.put(`/api/billing/${billId}`, { customCharges });
     return response.data;
   },
 
