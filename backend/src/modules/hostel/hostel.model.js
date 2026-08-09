@@ -44,7 +44,9 @@ const hostelSchema = new mongoose.Schema({
     // THE SNAPSHOT: The exact limits copied from the Plan at the time of creation
     limits: {
       maxStudents: { type: Number, required: true },
-      maxManagers: { type: Number, required: true }
+      maxManagers: { type: Number, required: true },
+      students: { type: Number, default: 0 },
+      managers: { type: Number, default: 0 }
     },
     features: [{
       name: { type: String, required: true },

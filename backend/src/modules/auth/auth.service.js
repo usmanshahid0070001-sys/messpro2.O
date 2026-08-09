@@ -28,6 +28,30 @@ export const registerUser = async (data) => {
     throw error;
   }
 
+  // 👇 THE SAAS LIMIT CHECK 👇
+  const role = data.role || 'student';
+  if (role === 'student' || role === 'manager') {
+    const hostel = await Hostel.findById(data.hostelId);
+    if (!hostel) {
+      const error = new Error('Hostel not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const limit = role === 'manager' ? hostel.plan.limits.maxManagers : hostel.plan.limits.maxStudents;
+    const current = role === 'manager' ? hostel.plan.limits.managers : hostel.plan.limits.students;
+
+    if (limit !== -1 && current >= limit) {
+      const error = new Error(`Upgrade required. Your current plan only allows ${limit} ${role}(s).`);
+      error.statusCode = 402;
+      throw error;
+    }
+
+    // Atomically increment the counter for this hostel
+    const incrementField = role === 'manager' ? 'plan.limits.managers' : 'plan.limits.students';
+    await Hostel.findByIdAndUpdate(data.hostelId, { $inc: { [incrementField]: 1 } });
+  }
+
   const user = await User.create({
     ...data,
     email,

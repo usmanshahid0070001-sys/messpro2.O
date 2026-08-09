@@ -447,15 +447,6 @@ class HostelService {
     const hostel = await hostelRepository.findById(hostelId);
     if (!hostel) throw new Error('Hostel not found.');
 
-    if (userData.role === 'manager' || userData.role === 'student') {
-      const currentCount = await User.countDocuments({ hostelId: hostelId.toString(), role: userData.role });
-      const limit = userData.role === 'manager' ? hostel.plan.limits.maxManagers : hostel.plan.limits.maxStudents;
-      if (limit !== -1 && currentCount >= limit) {
-        const error = new Error(`Upgrade required. Your current plan only allows ${limit} ${userData.role}(s).`);
-        error.statusCode = 402; throw error;
-      }
-    }
-
     return this.createHostelUser(hostelId, hostel.name, userData);
   }
 
