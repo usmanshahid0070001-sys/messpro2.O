@@ -21,6 +21,7 @@ import attendanceRoutes from './modules/mealRecord/mealRecord.routes.js';
 
 // 👇 NEW: Import the Billing Routes
 import billRoutes from './modules/billing/bill.routes.js';
+import complaintRoutes from './modules/complaint/complaint.routes.js';
 
 dotenv.config(); // this will load the environment variables first 
 
@@ -60,6 +61,7 @@ app.use('/api/attendance', attendanceRoutes);
 
 // 👇 NEW: Mount the Billing Routes to the API
 app.use('/api/billing', billRoutes);
+app.use('/api/complaints', complaintRoutes);
 
 app.get('/', (req, res) => {
   res.send('MessPro SaaS API is running securely...');

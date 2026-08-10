@@ -4,6 +4,7 @@ import { CleaningManagement } from './CleaningManagement';
 import { mockComplaintsData, mockCleaningData, mockRooms } from './mockData';
 import { useAuth } from '../../context/AuthContext';
 import { useMyHostel } from '../../hooks/queries/useHostelQueries';
+import { useComplaints } from '../../hooks/queries/useComplaints';
 import { Wrench } from 'lucide-react';
 
 export const ServiceManagement = () => {
@@ -27,17 +28,10 @@ export const ServiceManagement = () => {
 
   const showCleaning = hasFeatureAndPermission("Service Management", "service_management");
   const showComplaints = hasFeatureAndPermission("Complaint Management", "complaint_management");
-  const [complaints, setComplaints] = useState(mockComplaintsData);
   const [cleaningData, setCleaningData] = useState(mockCleaningData);
 
-  // Cross-link logic happens naturally here as both states are managed at this level.
-  // The child components receive the states and filter based on 'roomId' and 'status'.
-  
-  const handleUpdateComplaintStatus = (id, newStatus) => {
-    setComplaints(prev => 
-      prev.map(c => c.id === id ? { ...c, status: newStatus } : c)
-    );
-  };
+  // Fetch all active complaints for cleaning management
+  const { data: allComplaints = [] } = useComplaints('all');
 
   return (
     <div className="space-y-4 flex flex-col w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -63,10 +57,7 @@ export const ServiceManagement = () => {
         {/* Top Half: Complaints */}
         {showComplaints && (
           <div className="w-full">
-            <ComplaintManagement 
-              complaints={complaints} 
-              onUpdateStatus={handleUpdateComplaintStatus} 
-            />
+            <ComplaintManagement />
           </div>
         )}
 
@@ -76,7 +67,7 @@ export const ServiceManagement = () => {
             <CleaningManagement 
               rooms={mockRooms} 
               cleaningData={cleaningData} 
-              complaints={complaints} 
+              complaints={allComplaints} 
             />
           </div>
         )}

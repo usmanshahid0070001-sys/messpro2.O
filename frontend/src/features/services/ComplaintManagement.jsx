@@ -14,6 +14,8 @@ import {
   MessageSquare
 } from 'lucide-react';
 import SectionCard from '../../features/ui/SectionCard';
+import { useComplaints } from '../../hooks/queries/useComplaints';
+import { useUpdateComplaintStatus } from '../../hooks/mutations/useComplaintMutations';
 
 const getCategoryIcon = (category) => {
   switch (category?.toLowerCase()) {
@@ -48,12 +50,17 @@ const getStatusBadge = (status) => {
   }
 };
 
-export const ComplaintManagement = ({ complaints, onUpdateStatus }) => {
+export const ComplaintManagement = () => {
   const [filterStatus, setFilterStatus] = useState('All');
+  
+  const { data: complaints = [] } = useComplaints(filterStatus);
+  const updateStatusMutation = useUpdateComplaintStatus();
 
-  const filteredComplaints = filterStatus === 'All' 
-    ? complaints 
-    : complaints.filter(c => c.status === filterStatus);
+  const handleUpdateStatus = (id, status) => {
+    updateStatusMutation.mutate({ id, status });
+  };
+
+  const filteredComplaints = complaints; // Filter is already applied by the backend API
 
   const filterTabs = ['All', 'Open', 'Assigned', 'In Progress', 'Resolved'];
 
@@ -136,7 +143,7 @@ export const ComplaintManagement = ({ complaints, onUpdateStatus }) => {
                       >
                         <td className="px-6 py-4">
                           <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 text-[13px] font-black text-zinc-900 dark:text-zinc-50">
-                            {complaint.roomId}
+                            {complaint.roomid?.roomNumber || 'N/A'}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -155,7 +162,7 @@ export const ComplaintManagement = ({ complaints, onUpdateStatus }) => {
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center ${Prio.bg}`}>
                               <Prio.icon className={`w-3.5 h-3.5 ${Prio.color}`} />
                             </div>
-                            <span className="text-[13px] font-bold text-zinc-700 dark:text-zinc-400">{complaint.priority}</span>
+                            <span className="text-[13px] font-bold text-zinc-700 dark:text-zinc-400">{complaint.intensity}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -164,22 +171,34 @@ export const ComplaintManagement = ({ complaints, onUpdateStatus }) => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2.5">
                             <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-[11px] font-bold text-white shadow-sm">
-                              {complaint.raisedBy.charAt(0).toUpperCase()}
+                              {complaint.roll_number.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-50">{complaint.raisedBy}</span>
+                              <p className="text-[12px] font-medium text-zinc-900 dark:text-zinc-50 leading-tight truncate">
+                                Room {complaint.roomid?.roomNumber || 'N/A'} • {complaint.roll_number}
+                              </p>
                               <span className="text-[11px] text-zinc-500">
-                                {new Date(complaint.dateRaised).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                {new Date(complaint.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                               </span>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {complaint.status !== 'Resolved' && (
+                          <div className="flex items-center justify-end gap-2 transition-opacity">
+                            {complaint.status === 'Open' && (
                               <button 
-                                onClick={() => onUpdateStatus(complaint.id, 'Resolved')}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm"
+                                onClick={() => handleUpdateStatus(complaint._id, 'In Progress')}
+                                disabled={updateStatusMutation.isPending}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm disabled:opacity-50"
+                              >
+                                In Progress
+                              </button>
+                            )}
+                            {complaint.status === 'In Progress' && (
+                              <button 
+                                onClick={() => handleUpdateStatus(complaint._id, 'Resolved')}
+                                disabled={updateStatusMutation.isPending}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm disabled:opacity-50"
                               >
                                 Resolve
                               </button>
@@ -230,13 +249,13 @@ export const ComplaintManagement = ({ complaints, onUpdateStatus }) => {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="inline-flex items-center justify-center px-2 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 text-[12px] font-black text-zinc-900 dark:text-zinc-50">
-                          {complaint.roomId}
+                          {complaint.roomid?.roomNumber || 'N/A'}
                         </div>
                         {getStatusBadge(complaint.status)}
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Prio.icon className={`w-3.5 h-3.5 ${Prio.color}`} />
-                        <span className="text-[12px] font-bold text-zinc-700 dark:text-zinc-400">{complaint.priority}</span>
+                        <span className="text-[12px] font-bold text-zinc-700 dark:text-zinc-400">{complaint.intensity}</span>
                       </div>
                     </div>
                     
@@ -253,20 +272,30 @@ export const ComplaintManagement = ({ complaints, onUpdateStatus }) => {
                     <div className="flex items-center justify-between pt-3 border-t border-zinc-200 dark:border-zinc-800 mt-1">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
-                          {complaint.raisedBy.charAt(0).toUpperCase()}
+                          {complaint.roll_number.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[12px] font-bold text-zinc-900 dark:text-zinc-50">{complaint.raisedBy}</span>
+                          <span className="text-[12px] font-bold text-zinc-900 dark:text-zinc-50">{complaint.roll_number}</span>
                           <span className="text-[10px] text-zinc-500">
-                            {new Date(complaint.dateRaised).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            {new Date(complaint.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                           </span>
                         </div>
                       </div>
                       
-                      {complaint.status !== 'Resolved' && (
+                      {complaint.status === 'Open' && (
                         <button 
-                          onClick={() => onUpdateStatus(complaint.id, 'Resolved')}
-                          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[12px] font-bold bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm"
+                          onClick={() => handleUpdateStatus(complaint._id, 'In Progress')}
+                          disabled={updateStatusMutation.isPending}
+                          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[12px] font-bold bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm disabled:opacity-50"
+                        >
+                          In Progress
+                        </button>
+                      )}
+                      {complaint.status === 'In Progress' && (
+                        <button 
+                          onClick={() => handleUpdateStatus(complaint._id, 'Resolved')}
+                          disabled={updateStatusMutation.isPending}
+                          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[12px] font-bold bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm disabled:opacity-50"
                         >
                           Resolve
                         </button>

@@ -21,6 +21,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import SectionCard from '../../features/ui/SectionCard';
+import { useStudentComplaints } from '../../hooks/queries/useComplaints';
+import { useCreateComplaint, useDeleteComplaint } from '../../hooks/mutations/useComplaintMutations';
+import { Loader2, Trash2 } from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'electrical', label: 'Electrical', icon: Zap, defaultPriority: 'High' },
@@ -67,26 +70,11 @@ export default function StudentComplaintForm() {
     description: ''
   });
 
-  // Mocked complaints history state
-  const [complaints, setComplaints] = useState([
-    {
-      id: 1,
-      category: 'Electrical',
-      priority: 'High',
-      description: 'Fan is making a loud noise and spinning slowly',
-      status: 'Resolved',
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 2,
-      category: 'Internet/WiFi',
-      priority: 'Medium',
-      description: 'Connection drops frequently near the window',
-      status: 'Open',
-      createdAt: new Date().toISOString(),
-    }
-  ]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: complaints = [], isLoading } = useStudentComplaints();
+  const createComplaintMutation = useCreateComplaint();
+  const deleteComplaintMutation = useDeleteComplaint();
+
+  const isSubmitting = createComplaintMutation.isPending;
 
   // Auto-update priority when category changes
   const handleCategorySelect = (categoryId) => {
@@ -100,35 +88,29 @@ export default function StudentComplaintForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.category || !formData.description) return;
+    if (!formData.category || !formData.description || !formData.priority) return;
     
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      const newComplaint = {
-        id: Date.now(),
-        category: CATEGORIES.find(c => c.id === formData.category)?.label || 'Other',
-        priority: formData.priority,
-        description: formData.description,
-        status: 'Open',
-        createdAt: new Date().toISOString(),
-      };
-      
-      setComplaints([newComplaint, ...complaints]);
-      setFormData({ category: '', priority: '', description: '' });
-      setIsSubmitting(false);
-    }, 600);
+    createComplaintMutation.mutate({
+      category: CATEGORIES.find(c => c.id === formData.category)?.label || 'Other',
+      intensity: formData.priority,
+      description: formData.description,
+    }, {
+      onSuccess: () => {
+        setFormData({ category: '', priority: '', description: '' });
+      }
+    });
   };
 
   const selectedCategory = CATEGORIES.find(c => c.id === formData.category);
 
   return (
-    <div className="space-y-6 flex flex-col w-full max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300 p-2 lg:p-6">
-      
+    <div className="space-y-6 flex flex-col w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">File a Complaint</h1>
+        <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
+          <AlertTriangle className="w-6 h-6 text-zinc-500" />
+          Your Complaint
+        </h1>
         <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mt-1">
           Report maintenance issues, internet problems, or other concerns.
         </p>
@@ -217,11 +199,13 @@ export default function StudentComplaintForm() {
                 <textarea
                   required
                   rows={4}
+                  maxLength={80}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe what's wrong and when you noticed it..."
+                  placeholder="Describe what's wrong (max 80 chars)..."
                   className="w-full px-4 py-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
                 />
+                <span className="text-[10px] text-zinc-500 text-right">{formData.description.length}/80</span>
               </div>
 
               {/* Submit Button */}
@@ -269,7 +253,7 @@ export default function StudentComplaintForm() {
                   complaints.map((complaint) => {
                     const matchedCat = CATEGORIES.find(c => c.label === complaint.category) || CATEGORIES[7];
                     const Icon = matchedCat.icon;
-                    const prioDetails = PRIORITIES.find(p => p.id === complaint.priority) || PRIORITIES[1];
+                    const prioDetails = PRIORITIES.find(p => p.id === complaint.intensity) || PRIORITIES[1];
                     const PrioIcon = prioDetails.icon;
 
                     return (
@@ -300,9 +284,21 @@ export default function StudentComplaintForm() {
                           <p className="text-[13px] text-zinc-700 dark:text-zinc-400 leading-relaxed line-clamp-2">
                             "{complaint.description}"
                           </p>
-                          <div className="flex items-center gap-1.5 mt-2">
-                            <PrioIcon className={`w-3.5 h-3.5 ${prioDetails.color}`} />
-                            <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">{complaint.priority} Priority</span>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold ${prioDetails.color} ${prioDetails.bg} px-2 py-0.5 rounded`}>
+                              <PrioIcon className="w-3 h-3" />
+                              {complaint.intensity} Priority
+                            </span>
+                            {complaint.status === 'Open' && (
+                              <button
+                                onClick={() => deleteComplaintMutation.mutate(complaint._id)}
+                                disabled={deleteComplaintMutation.isPending}
+                                className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-500/10 hover:bg-red-500/20 px-2 py-0.5 rounded transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                Cancel
+                              </button>
+                            )}
                           </div>
                         </div>
                       </motion.div>
