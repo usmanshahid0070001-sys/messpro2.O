@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { Download, FileText, ChevronRight, X, IndianRupee, Loader2 } from "lucide-react";
+import { Download, FileText, ChevronRight, X, IndianRupee, Loader2, Receipt } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrentBills, useMonthlyBill } from "../../../hooks/queries/useStudentQueries";
 
@@ -114,9 +114,13 @@ export default function ActualBills() {
   };
 
   return (
-    <div>
-      {/* Toggle */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <div className="flex flex-col gap-6">
+      {/* Header and Toggle */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h3 className="text-sm uppercase tracking-widest text-[#737373] dark:text-[#a0a0a0] font-medium flex items-center gap-2">
+          <Receipt className="w-4 h-4" />
+          Actual Bills
+        </h3>
         <div className="relative flex p-1 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
           <button
             onClick={() => setView("current")}
@@ -155,78 +159,82 @@ export default function ActualBills() {
             <span className="relative z-20">History</span>
           </button>
         </div>
-        
-        {view === "history" && (
-          <input
-            type="month"
-            value={historyMonth}
-            onChange={(e) => setHistoryMonth(e.target.value)}
-            className="text-sm rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a0a0a] text-[#111111] dark:text-white px-4 py-2 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
-          />
-        )}
       </div>
 
-      {isLoading ? (
-        <div className="py-20 flex justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-black/50 dark:text-white/50" />
-        </div>
-      ) : bills.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
-            <FileText className="w-5 h-5 text-[#a3a3a3] dark:text-[#555]" />
+      <div className="bg-[#fafafa] dark:bg-[#0a0a0a] p-4 sm:p-6 rounded-xl border border-black/5 dark:border-white/5">
+        {view === "history" && (
+          <div className="flex justify-end mb-6">
+            <input
+              type="month"
+              value={historyMonth}
+              onChange={(e) => setHistoryMonth(e.target.value)}
+              className="text-sm rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a0a0a] text-[#111111] dark:text-white px-4 py-2 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
+            />
           </div>
-          <h4 className="text-lg font-medium text-[#111111] dark:text-white mb-2">No finalized bills</h4>
-          <p className="text-[#737373] dark:text-[#a0a0a0] max-w-sm">
-            {view === "current" 
-              ? "At the end of each billing cycle, your official invoice will appear here." 
-              : "No bills found for the selected month."}
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-6">
-          {bills.map((bill) => (
-            <div
-              key={bill._id}
-              onClick={() => setSelectedBill(bill)}
-              className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 sm:p-8 rounded-xl border border-black/5 dark:border-white/5 hover:border-black/10 dark:hover:border-white/10 hover:bg-[#fafafa] dark:hover:bg-[#0a0a0a] transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white outline-none"
-              tabIndex={0}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
-                <div className="text-sm font-medium text-[#737373] dark:text-[#a0a0a0] w-28">
-                  {format(parseISO(bill.createdAt), 'MMM dd, yyyy')}
-                </div>
-                <div className="w-px h-10 bg-black/5 dark:bg-white/5 hidden sm:block"></div>
-                <div>
-                  <h4 className="text-xl font-medium tracking-tight text-[#111111] dark:text-white group-hover:underline decoration-black/20 dark:decoration-white/20 underline-offset-4">
-                    {format(parseISO(bill.billingPeriod.endDate), 'MMMM yyyy')} Invoice
-                  </h4>
-                  <p className="text-sm text-[#737373] dark:text-[#a0a0a0] mt-1 font-mono text-xs">{bill._id}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-10 mt-6 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-0 border-black/5 dark:border-white/5">
-                <div className="text-left sm:text-right">
-                  <div className="font-medium text-2xl tracking-tight text-[#111111] dark:text-white tabular-nums">
-                    ₹{bill.total.toFixed(2)}
-                  </div>
-                  <div className={`text-[10px] font-bold uppercase tracking-widest mt-1.5 ${
-                    bill.status.toLowerCase() === 'paid' 
-                      ? "text-green-600 dark:text-green-400" 
-                      : bill.status.toLowerCase() === 'unpaid'
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-amber-600 dark:text-amber-400"
-                  }`}>
-                    {bill.status}
-                  </div>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-white dark:bg-[#111111] shadow-sm border border-black/5 dark:border-white/5 flex items-center justify-center group-hover:scale-105 group-hover:bg-[#111111] group-hover:border-[#111111] dark:group-hover:bg-white dark:group-hover:border-white transition-all">
-                  <ChevronRight className="w-5 h-5 text-[#111111] dark:text-white group-hover:text-white dark:group-hover:text-black transition-colors" />
-                </div>
-              </div>
+        )}
+
+        {isLoading ? (
+          <div className="py-20 flex justify-center">
+            <Loader2 className="w-6 h-6 animate-spin text-black/50 dark:text-white/50" />
+          </div>
+        ) : bills.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
+              <FileText className="w-5 h-5 text-[#a3a3a3] dark:text-[#555]" />
             </div>
-          ))}
-        </div>
-      )}
+            <h4 className="text-lg font-medium text-[#111111] dark:text-white mb-2">No finalized bills</h4>
+            <p className="text-[#737373] dark:text-[#a0a0a0] max-w-sm">
+              {view === "current" 
+                ? "At the end of each billing cycle, your official invoice will appear here." 
+                : "No bills found for the selected month."}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            {bills.map((bill) => (
+              <div
+                key={bill._id}
+                onClick={() => setSelectedBill(bill)}
+                className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 sm:p-8 rounded-xl border border-black/5 dark:border-white/5 hover:border-black/10 dark:hover:border-white/10 hover:bg-white dark:hover:bg-[#1a1a1a] transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white outline-none"
+                tabIndex={0}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+                  <div className="text-sm font-medium text-[#737373] dark:text-[#a0a0a0] w-28">
+                    {format(parseISO(bill.createdAt), 'MMM dd, yyyy')}
+                  </div>
+                  <div className="w-px h-10 bg-black/5 dark:bg-white/5 hidden sm:block"></div>
+                  <div>
+                    <h4 className="text-xl font-medium tracking-tight text-[#111111] dark:text-white group-hover:underline decoration-black/20 dark:decoration-white/20 underline-offset-4">
+                      {format(parseISO(bill.billingPeriod.endDate), 'MMMM yyyy')} Invoice
+                    </h4>
+                    <p className="text-sm text-[#737373] dark:text-[#a0a0a0] mt-1 font-mono text-xs">{bill._id}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-10 mt-6 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-0 border-black/5 dark:border-white/5">
+                  <div className="text-left sm:text-right">
+                    <div className="font-medium text-2xl tracking-tight text-[#111111] dark:text-white tabular-nums">
+                      ₹{bill.total.toFixed(2)}
+                    </div>
+                    <div className={`text-[10px] font-bold uppercase tracking-widest mt-1.5 ${
+                      bill.status.toLowerCase() === 'paid' 
+                        ? "text-green-600 dark:text-green-400" 
+                        : bill.status.toLowerCase() === 'unpaid'
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-amber-600 dark:text-amber-400"
+                    }`}>
+                      {bill.status}
+                    </div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-white dark:bg-[#111111] shadow-sm border border-black/5 dark:border-white/5 flex items-center justify-center group-hover:scale-105 group-hover:bg-[#111111] group-hover:border-[#111111] dark:group-hover:bg-white dark:group-hover:border-white transition-all">
+                    <ChevronRight className="w-5 h-5 text-[#111111] dark:text-white group-hover:text-white dark:group-hover:text-black transition-colors" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <AnimatePresence>
         {selectedBill && renderInvoiceModal()}

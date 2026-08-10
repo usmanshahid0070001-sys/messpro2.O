@@ -93,13 +93,7 @@ export default function MealHistoryDashboard() {
 
         {/* Right Column: Actual Bills */}
         <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6 lg:sticky lg:top-8">
-          <h3 className="text-sm uppercase tracking-widest text-[#737373] dark:text-[#a0a0a0] font-medium flex items-center gap-2">
-            <Receipt className="w-4 h-4" />
-            Actual Bills
-          </h3>
-          <div className="bg-[#fafafa] dark:bg-[#0a0a0a] p-4 sm:p-6 rounded-xl border border-black/5 dark:border-white/5">
-            <ActualBills />
-          </div>
+          <ActualBills />
         </div>
       </div>
 

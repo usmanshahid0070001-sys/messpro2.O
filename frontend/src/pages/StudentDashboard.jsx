@@ -14,8 +14,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Feature Components
-import WeeklyMealSelection from "../features/student/WeeklyMealSelection";
-import MealHistoryDashboard from "../features/mealHistory/MealHistoryDashboard";
+import WeeklyMealSelection from "../features/meals/WeeklyMealSelection";
+import MealHistoryDashboard from "../features/meals/MealHistoryDashboard";
 import ManageUsers from "../features/users/ManageUsers";
 import ManageRooms from "../features/residence/ManageRooms";
 import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
