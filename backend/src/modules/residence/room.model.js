@@ -28,6 +28,10 @@ const roomSchema = new mongoose.Schema(
       enum: ['Available', 'Full', 'Maintenance'],
       default: 'Available',
     },
+    cleaningDates: {
+      type: [Date],
+      default: [],
+    },
   },
   { timestamps: true }
 );

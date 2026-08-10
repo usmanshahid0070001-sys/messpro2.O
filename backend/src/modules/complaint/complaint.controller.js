@@ -1,17 +1,14 @@
 import { catchAsync } from '../../utils/catchAsync.js';
 import * as complaintService from './complaint.service.js';
+import { createComplaintSchema, updateComplaintStatusSchema } from './complaint.validation.js';
 
 export const createComplaint = catchAsync(async (req, res) => {
-  if (req.user.role !== 'student') {
-    const error = new Error('Only students can file complaints');
-    error.statusCode = 403;
-    throw error;
-  }
+  const validatedData = createComplaintSchema.parse(req.body);
 
   const complaintData = {
-    ...req.body,
+    ...validatedData,
     hostelid: req.user.hostelId,
-    roomid: req.user.room,
+    roomid: req.user.room ? req.user.room : null, // Must be null or ObjectId, not string
     roll_number: req.user.id,
   };
   const complaint = await complaintService.createComplaint(complaintData);
@@ -40,6 +37,7 @@ export const deleteComplaint = catchAsync(async (req, res) => {
 });
 
 export const updateComplaintStatus = catchAsync(async (req, res) => {
-  const complaint = await complaintService.updateComplaintStatus(req.params.id, req.body.status);
+  const { status } = updateComplaintStatusSchema.parse(req.body);
+  const complaint = await complaintService.updateComplaintStatus(req.params.id, status);
   res.send(complaint);
 });

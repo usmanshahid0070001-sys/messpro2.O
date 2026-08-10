@@ -9,3 +9,11 @@ export const useRooms = () => {
     queryFn: residenceApi.getRooms,
   });
 };
+
+export const useMyRoom = () => {
+  return useQuery({
+    queryKey: ['my-room'],
+    queryFn: residenceApi.getMyRoom,
+    retry: false, // Don't retry on 404
+  });
+};

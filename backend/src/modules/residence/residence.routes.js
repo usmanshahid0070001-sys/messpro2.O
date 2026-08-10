@@ -5,7 +5,9 @@ import {
   assignRoom, 
   removeStudentFromRoom, 
   swapRoom, 
-  removeRoom 
+  removeRoom,
+  getMyRoomDetails,
+  markRoomCleaning
 } from './residence.controller.js';
 import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
@@ -14,11 +16,15 @@ const router = express.Router();
 // 1. Lock down the entire router - You must be logged in
 router.use(protect);
 
-// 2. ADMIN ONLY ROUTES (Building and Destroying)
+// 2. STUDENT ROUTES (My Room)
+router.get('/my-room', getMyRoomDetails);
+router.post('/my-room/cleaning', markRoomCleaning);
+
+// 3. ADMIN ONLY ROUTES (Building and Destroying)
 router.post('/', requirePermission('residence_management'), buildNewRoom);
 router.delete('/:id', requirePermission('residence_management'), removeRoom);
 
-// 3. ADMIN & MANAGER ROUTES (Day-to-day operations)
+// 4. ADMIN & MANAGER ROUTES (Day-to-day operations)
 router.get('/', requirePermission('residence_management'), fetchAllRooms);
 router.post('/allote', requirePermission('residence_management'), assignRoom);
 router.post('/disallote', requirePermission('residence_management'), removeStudentFromRoom);

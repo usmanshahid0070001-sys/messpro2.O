@@ -29,5 +29,15 @@ export const residenceApi = {
   swapRoom: async (swapData) => {
     const response = await api.post('/api/residence/change', swapData);
     return response.data;
+  },
+
+  getMyRoom: async () => {
+    const response = await api.get('/api/residence/my-room');
+    return response.data;
+  },
+
+  markRoomCleaning: async () => {
+    const response = await api.post('/api/residence/my-room/cleaning');
+    return response.data;
   }
 };

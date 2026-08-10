@@ -1,43 +1,18 @@
 import express from 'express';
-import { protect, requirePermission } from '../../middlewares/auth.middleware.js';
-import validateRequest from '../../middlewares/validateRequest.middleware.js';
-import { createComplaintSchema, updateComplaintStatusSchema } from './complaint.validation.js';
+import { protect, requirePermission, restrictTo } from '../../middlewares/auth.middleware.js';
 import * as complaintController from './complaint.controller.js';
 
 const router = express.Router();
 
-// All routes require authentication
 router.use(protect);
+//for student 
+router.post('/',restrictTo('student'), complaintController.createComplaint);
+router.get('/student',restrictTo('student'),complaintController.getStudentComplaints);
+router.delete('/:id',restrictTo('student'),complaintController.deleteComplaint);
 
-// Student routes
-router.post(
-  '/',
-  validateRequest(createComplaintSchema),
-  complaintController.createComplaint
-);
+//for admin, permissions are inplemented
+router.get('/',requirePermission('complaint_management'),complaintController.getComplaints);
 
-router.get(
-  '/student',
-  complaintController.getStudentComplaints
-);
-
-router.delete(
-  '/:id',
-  complaintController.deleteComplaint
-);
-
-// Admin / Management routes
-router.get(
-  '/',
-  requirePermission('complaint_management'), // Assuming you have a role/permission like this
-  complaintController.getComplaints
-);
-
-router.patch(
-  '/:id/status',
-  requirePermission('complaint_management'),
-  validateRequest(updateComplaintStatusSchema),
-  complaintController.updateComplaintStatus
-);
+router.patch('/:id/status',requirePermission('complaint_management'),complaintController.updateComplaintStatus);
 
 export default router;

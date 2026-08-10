@@ -86,3 +86,18 @@ export const useSwapRoom = () => {
     }
   });
 };
+
+export const useMarkRoomCleaning = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => residenceApi.markRoomCleaning(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-room'] });
+      toast.success('Cleaning attendance marked for today!');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || error.message || 'Failed to mark cleaning attendance');
+    }
+  });
+};

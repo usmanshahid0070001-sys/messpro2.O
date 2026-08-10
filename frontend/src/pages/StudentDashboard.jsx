@@ -22,6 +22,7 @@ import ManageMealSettings from "../features/mealSetting/ManageMealSettings";
 import LoadingScreen from "../features/ui/LoadingScreen";
 import ServiceManagement from "../features/services/ServiceManagement";
 import StudentComplaintForm from "../features/services/StudentComplaintForm";
+import StudentRoomService from "../features/residence/StudentRoomService";
 import StudentQRAttendance from "../features/attendance/StudentQRAttendance";
 import BillGeneration from "../features/billing/BillGeneration";
 
@@ -106,6 +107,7 @@ export default function StudentDashboard() {
   
   const canFileComplaint = enabledFeatures.some(f => f.name === "Complaint Management" && f.isEnabled);
   const hasQRAttendance = enabledFeatures.some(f => f.name === "QR Attendance" && f.isEnabled);
+  const hasResidenceFeature = enabledFeatures.some(f => f.name === "Residence Management" && f.isEnabled);
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -119,6 +121,7 @@ export default function StudentDashboard() {
     hasQRAttendance && { id: "qr-attendance", label: "QR Attendance", icon: QrCode },
     
     // Conditionally added features based on permissions AND hostel plan
+    hasResidenceFeature && { id: "room-service", label: "Room Service", icon: Home },
     hasPermission("meal_settings") && { id: "menu", label: "Meal Management", icon: Utensils },
     hasPermission("user_management") && { id: "users", label: "User Management", icon: Users },
     hasPermission("residence_management") && { id: "rooms", label: "Residence Management", icon: Home },
@@ -179,6 +182,8 @@ export default function StudentDashboard() {
           {activeTab === "bills" && <BillGeneration />}
 
           {activeTab === "file-complaint" && <StudentComplaintForm />}
+
+          {activeTab === "room-service" && hasResidenceFeature && <StudentRoomService />}
 
           {activeTab === "qr-attendance" && (
             <div className="w-full max-w-4xl mx-auto">
