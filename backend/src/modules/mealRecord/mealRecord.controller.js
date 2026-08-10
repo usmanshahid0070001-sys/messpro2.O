@@ -40,6 +40,22 @@ export const getStudentSelections = catchAsync(async (req, res, next) => {
   });
 });
 
+export const getStudentMonthlyRecords = catchAsync(async (req, res, next) => {
+  const { month } = req.query; // YYYY-MM
+  const student = req.user;
+  
+  if (!month) {
+    return res.status(400).json({ status: 'error', message: 'month (YYYY-MM) is required' });
+  }
+
+  const records = await mealRecordService.getStudentMonthlyRecords(student.id, student.hostelId, month);
+
+  res.status(200).json({
+    status: 'success',
+    data: records
+  });
+});
+
 
 // ==========================================
 // 2. MANAGER FEATURES: FETCH & BULK SAVE

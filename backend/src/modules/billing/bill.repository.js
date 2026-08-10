@@ -2,6 +2,12 @@ import Bill from './bill.model.js';
 
 class BillRepository {
   
+  async findBills(query) {
+    return await Bill.find(query)
+      .populate('studentId', 'name id email')
+      .sort({ 'billingPeriod.endDate': -1, createdAt: -1 });
+  }
+
   // 1. The Collision Checker: Finds if a bill already exists for this exact date range
   async findExistingBill(hostelId, rollNumber, startDate, endDate) {
     return await Bill.findOne({

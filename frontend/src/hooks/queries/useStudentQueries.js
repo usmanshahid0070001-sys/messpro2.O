@@ -36,3 +36,20 @@ export const useMonthlyBill = (month) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+
+export const useStudentMonthlyRecords = (month) => {
+  return useQuery({
+    queryKey: ['studentMonthlyRecords', month],
+    queryFn: () => mealApi.getMonthlyRecords(month),
+    enabled: !!month,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useCurrentBills = () => {
+  return useQuery({
+    queryKey: ['currentBills'],
+    queryFn: () => billingApi.getCurrentBills(),
+    staleTime: 5 * 60 * 1000,
+  });
+};

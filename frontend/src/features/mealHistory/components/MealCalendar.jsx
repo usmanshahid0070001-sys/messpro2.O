@@ -1,8 +1,5 @@
-import { useState } from "react";
 import {
   format,
-  addMonths,
-  subMonths,
   startOfMonth,
   endOfMonth,
   startOfWeek,
@@ -10,15 +7,9 @@ import {
   isSameMonth,
   addDays
 } from "date-fns";
-import { ChevronLeft, ChevronRight, CheckCircle2, CircleDashed } from "lucide-react";
-import { mockMeals } from "../data/mockData";
+import { CheckCircle2, CircleDashed } from "lucide-react";
 
-export default function MealCalendar() {
-  const [currentDate, setCurrentDate] = useState(new Date("2026-07-20")); // Defaulting to July 2026 to match mock data
-
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
-
+export default function MealCalendar({ currentDate, records }) {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
@@ -26,47 +17,11 @@ export default function MealCalendar() {
 
   const getMealsForDay = (date) => {
     const formattedDate = format(date, "yyyy-MM-dd");
-    return mockMeals.filter((meal) => meal.date === formattedDate);
+    return records.filter((meal) => meal.date === formattedDate);
   };
 
-  const stats = {
-    consumed: mockMeals.filter(m => m.status === 'Consumed').length,
-    total: new Set(mockMeals.map(m => m.date)).size
-  };
-
-  const renderHeader = () => (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 sm:gap-0 mb-8 sm:mb-12">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-4">
-          <h3 className="text-3xl sm:text-4xl font-medium tracking-tight text-[#111111] dark:text-white">
-            {format(currentDate, 'MMMM')}
-          </h3>
-          <span className="text-xl sm:text-2xl text-[#a3a3a3] dark:text-[#737373] font-light">
-            {format(currentDate, 'yyyy')}
-          </span>
-        </div>
-        <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">
-          {stats.consumed} meals consumed out of {stats.total} logged days
-        </p>
-      </div>
-      <div className="flex gap-2">
-        <button
-          onClick={prevMonth}
-          className="p-2 border border-black/10 dark:border-white/10 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-[0.98] transition-all"
-          aria-label="Previous Month"
-        >
-          <ChevronLeft className="w-4 h-4 text-[#111111] dark:text-white" />
-        </button>
-        <button
-          onClick={nextMonth}
-          className="p-2 border border-black/10 dark:border-white/10 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-[0.98] transition-all"
-          aria-label="Next Month"
-        >
-          <ChevronRight className="w-4 h-4 text-[#111111] dark:text-white" />
-        </button>
-      </div>
-    </div>
-  );
+  const consumedCount = records.filter(m => m.attendance?.hasEaten).reduce((acc, m) => acc + m.attendance.count, 0);
+  const totalDays = new Set(records.map(m => m.date)).size;
 
   const renderDays = () => {
     const days = [];
@@ -97,7 +52,7 @@ export default function MealCalendar() {
 
         days.push(
           <div
-            key={day}
+            key={day.toString()}
             className={`min-h-[100px] sm:min-h-[120px] p-2 flex flex-col gap-2 rounded-xl transition-all ${
               !isCurrentMonth ? "opacity-30" : ""
             } hover:bg-black/5 dark:hover:bg-white/5`}
@@ -106,33 +61,43 @@ export default function MealCalendar() {
               {formattedDate}
             </div>
             <div className="flex flex-col gap-1.5">
-              {currentDayMeals.map((meal, idx) => (
-                <div
-                  key={idx}
-                  className={`flex items-center justify-between px-2 py-1.5 text-[10px] sm:text-xs rounded-lg ${
-                    meal.status === "Consumed"
-                      ? "bg-[#111111] dark:bg-white text-white dark:text-[#111111]"
-                      : "bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#737373] dark:text-[#a0a0a0]"
-                  }`}
-                  title={`${meal.type}: ₹${meal.price}`}
-                >
-                  <span className="hidden xl:inline truncate font-medium">{meal.type}</span>
-                  <span className="inline xl:hidden font-medium leading-none">{meal.type.charAt(0)}</span>
-                  
-                  {meal.status === "Consumed" ? (
-                    <CheckCircle2 className="w-3 h-3 flex-shrink-0 opacity-80" />
-                  ) : (
-                    <div className="w-1.5 h-1.5 rounded-full bg-current opacity-40"></div>
-                  )}
-                </div>
-              ))}
+              {currentDayMeals.map((meal, idx) => {
+                const consumed = meal.attendance?.hasEaten;
+                const count = meal.attendance?.count || meal.selection?.count || 1;
+                const showCount = count > 1 ? ` (x${count})` : '';
+
+                return (
+                  <div
+                    key={idx}
+                    className={`flex items-center justify-between px-2 py-1.5 text-[10px] sm:text-xs rounded-lg ${
+                      consumed
+                        ? "bg-[#111111] dark:bg-white text-white dark:text-[#111111]"
+                        : "bg-[#f5f5f5] dark:bg-[#1a1a1a] text-[#737373] dark:text-[#a0a0a0]"
+                    }`}
+                    title={`${meal.mealType}: ₹${meal.mealInfo?.price || 0} x ${count}`}
+                  >
+                    <span className="hidden xl:inline truncate font-medium">
+                      {meal.mealType}{showCount}
+                    </span>
+                    <span className="inline xl:hidden font-medium leading-none">
+                      {meal.mealType.charAt(0)}{count > 1 ? count : ''}
+                    </span>
+                    
+                    {consumed ? (
+                      <CheckCircle2 className="w-3 h-3 flex-shrink-0 opacity-80" />
+                    ) : (
+                      <div className="w-1.5 h-1.5 rounded-full bg-current opacity-40"></div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
         day = addDays(day, 1);
       }
       rows.push(
-        <div className="grid grid-cols-7" key={day}>
+        <div className="grid grid-cols-7" key={day.toString()}>
           {days}
         </div>
       );
@@ -142,21 +107,42 @@ export default function MealCalendar() {
   };
 
   return (
-    <div className="flex flex-col">
-      {renderHeader()}
-      {renderDays()}
-      {renderCells()}
-      
-      {/* Legend */}
-      <div className="mt-8 flex flex-wrap items-center gap-6 text-xs font-medium">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-[#111111] dark:bg-white"></div>
-          <span className="text-[#111111] dark:text-white">Consumed</span>
+    <div className="flex flex-col gap-6">
+      {/* Top Stats & Legend in Containers */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-[#0a0a0a] p-4 rounded-xl border border-black/5 dark:border-white/10 flex items-center justify-between">
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-widest text-[#737373] dark:text-[#a0a0a0] font-semibold mb-1">Consumption</span>
+            <span className="text-sm font-medium text-[#111111] dark:text-white">
+              <span className="text-2xl font-bold">{consumedCount}</span> meals
+            </span>
+          </div>
+          <div className="text-right flex flex-col">
+            <span className="text-[10px] uppercase tracking-widest text-[#737373] dark:text-[#a0a0a0] font-semibold mb-1">Active Days</span>
+            <span className="text-sm font-medium text-[#111111] dark:text-white">
+              <span className="text-2xl font-bold">{totalDays}</span> days
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-[#f5f5f5] dark:bg-[#1a1a1a]"></div>
-          <span className="text-[#737373] dark:text-[#a0a0a0]">Pending / Skipped</span>
+
+        <div className="bg-white dark:bg-[#0a0a0a] p-4 rounded-xl border border-black/5 dark:border-white/10 flex flex-col justify-center gap-3">
+          <span className="text-[10px] uppercase tracking-widest text-[#737373] dark:text-[#a0a0a0] font-semibold">Legend</span>
+          <div className="flex flex-wrap items-center gap-4 text-xs font-medium">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-[#111111] dark:bg-white"></div>
+              <span className="text-[#111111] dark:text-white">Consumed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-[#f5f5f5] dark:bg-[#1a1a1a] border border-black/5 dark:border-white/5"></div>
+              <span className="text-[#737373] dark:text-[#a0a0a0]">Selected / Skipped</span>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="bg-white dark:bg-[#0a0a0a] p-4 sm:p-6 rounded-xl border border-black/5 dark:border-white/10">
+        {renderDays()}
+        {renderCells()}
       </div>
     </div>
   );

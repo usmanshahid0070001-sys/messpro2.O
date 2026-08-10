@@ -12,6 +12,11 @@ export const billingApi = {
     return response.data;
   },
   
+  getCurrentBills: async () => {
+    const response = await api.get(`/api/billing?demand=current`);
+    return response.data;
+  },
+  
   payBill: async (billId) => {
     const response = await api.post(`/api/billing/${billId}/pay`);
     return response.data;

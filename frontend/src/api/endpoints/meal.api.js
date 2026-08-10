@@ -9,5 +9,10 @@ export const mealApi = {
   updateMealSchedule: async (data) => {
     const response = await api.put('/api/meal-schedule', data);
     return response.data;
+  },
+  
+  getMonthlyRecords: async (month) => {
+    const response = await api.get(`/api/attendance/monthly?month=${month}`);
+    return response.data;
   }
 };

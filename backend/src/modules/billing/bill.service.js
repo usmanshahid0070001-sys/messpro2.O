@@ -22,14 +22,24 @@ class BillService {
     return hostel.settings;
   }
 
-  async getBills(user, month, status) {
+  async getBills(user, month, status, demand) {
     const query = { hostelId: user.hostelId };
 
     if (user.role === 'student') {
       query.studentId = user._id;
     }
 
-    if (month) {
+    if (demand === 'current') {
+      const today = new Date();
+      const currentMonth = today.toISOString().substring(0, 7);
+      const prevDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const prevMonth = prevDate.toISOString().substring(0, 7);
+      
+      query['billingPeriod.endDate'] = { 
+        $gte: `${prevMonth}-01`, 
+        $lte: `${currentMonth}-31` 
+      };
+    } else if (month) {
       if (!/^\d{4}-\d{2}$/.test(month)) {
         throw Object.assign(new Error('Month must use the YYYY-MM format.'), { statusCode: 400 });
       }
@@ -43,16 +53,15 @@ class BillService {
       }
     }
 
-    if (status === 'unpaid') {
-      query.status = { $in: ['Unpaid', 'Adjusted in Balance'] };
-    } else if (status) {
-      query.status = status;
+    if (demand !== 'current') {
+      if (status === 'unpaid') {
+        query.status = { $in: ['Unpaid', 'Adjusted in Balance'] };
+      } else if (status) {
+        query.status = status;
+      }
     }
 
-    return mongoose.model('Bill')
-      .find(query)
-      .populate('studentId', 'name id email')
-      .sort({ 'billingPeriod.endDate': -1, createdAt: -1 });
+    return await billRepository.findBills(query);
   }
 
   async findBillForPayment(hostelId, billId) {

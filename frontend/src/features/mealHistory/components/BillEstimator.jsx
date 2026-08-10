@@ -1,19 +1,23 @@
 import { useState, useMemo } from "react";
-import { Plus, X, IndianRupee } from "lucide-react";
-import { mockMeals, initialMockSubcharges } from "../data/mockData";
+import { Plus, X } from "lucide-react";
 
-export default function BillEstimator() {
-  const [subcharges, setSubcharges] = useState(initialMockSubcharges);
+export default function BillEstimator({ records = [], month = "" }) {
+  const [subcharges, setSubcharges] = useState([]);
   const [newSubcharge, setNewSubcharge] = useState({ name: "", type: "fixed", value: "" });
   const [isAdding, setIsAdding] = useState(false);
 
-  // Filter consumed meals for the estimation (assuming all pending eventually get consumed or we calculate based on consumed)
-  // For estimator, let's include all to project the full month, or just consumed. Let's include all for projected cost.
-  const baseMealsCost = useMemo(() => {
-    return mockMeals.reduce((acc, meal) => acc + meal.price, 0);
-  }, []);
-
-  const mealCount = mockMeals.length;
+  // Calculate base meal cost from the records
+  const { baseMealsCost, mealCount } = useMemo(() => {
+    let cost = 0;
+    let count = 0;
+    records.forEach(r => {
+      if (r.attendance?.hasEaten) {
+        cost += (r.mealInfo?.price || 0) * (r.attendance.count || 1);
+        count += (r.attendance.count || 1);
+      }
+    });
+    return { baseMealsCost: cost, mealCount: count };
+  }, [records]);
 
   const totalCalculated = useMemo(() => {
     let total = baseMealsCost;
@@ -64,7 +68,7 @@ export default function BillEstimator() {
           <div className="flex justify-between items-end mb-4">
             <div>
               <h3 className="text-base font-medium text-[#111111] dark:text-white">Base Meal Cost</h3>
-              <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Meals tracked this month: {mealCount}</p>
+              <p className="text-sm text-[#737373] dark:text-[#a0a0a0]">Meals consumed in {month}: {mealCount}</p>
             </div>
             <div className="text-xl font-medium tracking-tight text-[#111111] dark:text-white tabular-nums">
               ₹{baseMealsCost.toFixed(2)}
@@ -85,18 +89,18 @@ export default function BillEstimator() {
         </div>
 
         {isAdding && (
-          <form onSubmit={handleAddSubcharge} className="bg-[#f5f5f5] dark:bg-[#1a1a1a] p-4 rounded-xl mb-6 flex flex-col gap-3">
+          <form onSubmit={handleAddSubcharge} className="bg-[#f5f5f5] dark:bg-[#1a1a1a] p-4 rounded-xl mb-6 flex flex-col gap-3 border border-black/5 dark:border-white/5 shadow-sm">
             <input
               type="text"
               placeholder="Charge Name (e.g. Fine)"
-              className="w-full text-sm rounded-lg border-0 bg-white dark:bg-[#0a0a0a] text-[#111111] dark:text-white placeholder-[#a3a3a3] px-4 py-2.5 focus:ring-1 focus:ring-[#111111] dark:focus:ring-white transition-shadow"
+              className="w-full text-sm rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a0a0a] text-[#111111] dark:text-white placeholder-[#a3a3a3] px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-colors"
               value={newSubcharge.name}
               onChange={(e) => setNewSubcharge({ ...newSubcharge, name: e.target.value })}
               required
             />
             <div className="flex gap-3">
               <select
-                className="w-1/2 text-sm rounded-lg border-0 bg-white dark:bg-[#0a0a0a] text-[#111111] dark:text-white px-4 py-2.5 focus:ring-1 focus:ring-[#111111] dark:focus:ring-white transition-shadow"
+                className="w-1/2 text-sm rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a0a0a] text-[#111111] dark:text-white px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-colors"
                 value={newSubcharge.type}
                 onChange={(e) => setNewSubcharge({ ...newSubcharge, type: e.target.value })}
               >
@@ -107,7 +111,7 @@ export default function BillEstimator() {
               <input
                 type="number"
                 placeholder="Value"
-                className="w-1/2 text-sm rounded-lg border-0 bg-white dark:bg-[#0a0a0a] text-[#111111] dark:text-white placeholder-[#a3a3a3] px-4 py-2.5 focus:ring-1 focus:ring-[#111111] dark:focus:ring-white transition-shadow"
+                className="w-1/2 text-sm rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a0a0a] text-[#111111] dark:text-white placeholder-[#a3a3a3] px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white transition-colors"
                 value={newSubcharge.value}
                 onChange={(e) => setNewSubcharge({ ...newSubcharge, value: e.target.value })}
                 required
@@ -117,7 +121,7 @@ export default function BillEstimator() {
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 mt-2 bg-[#111111] dark:bg-white text-white dark:text-[#111111] text-sm font-medium rounded-lg hover:bg-black dark:hover:bg-gray-100 active:scale-[0.98] transition-all"
+              className="w-full py-2.5 mt-2 bg-[#111111] dark:bg-white text-white dark:text-[#111111] text-sm font-medium rounded-lg hover:opacity-90 active:scale-[0.98] transition-all"
             >
               Confirm
             </button>
@@ -145,7 +149,7 @@ export default function BillEstimator() {
             </div>
           ))}
           {subcharges.length === 0 && (
-            <div className="text-sm text-[#737373] dark:text-[#a0a0a0] py-2">
+            <div className="text-sm text-[#737373] dark:text-[#a0a0a0] py-2 italic opacity-60">
               No additional charges applied.
             </div>
           )}
@@ -154,7 +158,7 @@ export default function BillEstimator() {
 
       {/* Bottom: Summary Card (Receipt style) */}
       <div className="w-full mt-2 relative">
-        <div className="bg-[#111111] dark:bg-white text-white dark:text-[#111111] rounded-2xl p-6 sm:p-8">
+        <div className="bg-[#111111] dark:bg-white text-white dark:text-[#111111] rounded-xl p-6 sm:p-8">
           <div className="flex flex-col gap-6">
             <div>
               <p className="text-xs uppercase tracking-widest opacity-60 font-medium mb-1">Projected Total</p>
@@ -186,5 +190,3 @@ export default function BillEstimator() {
     </div>
   );
 }
-
-

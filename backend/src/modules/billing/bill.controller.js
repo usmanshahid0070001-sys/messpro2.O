@@ -59,7 +59,7 @@ export const updateMealPrices = catchAsync(async (req, res) => {
 });
 
 export const getBills = catchAsync(async (req, res) => {
-  const bills = await billService.getBills(req.user, req.query.month, req.query.status);
+  const bills = await billService.getBills(req.user, req.query.month, req.query.status, req.query.demand);
 
   res.status(200).json({
     success: true,
@@ -69,7 +69,7 @@ export const getBills = catchAsync(async (req, res) => {
 });
 
 export const getMonthlyBill = catchAsync(async (req, res) => {
-  const bills = await billService.getBills(req.user, req.query.month, req.query.status);
+  const bills = await billService.getBills(req.user, req.query.month, req.query.status, req.query.demand);
 
   res.status(200).json({
     success: true,
