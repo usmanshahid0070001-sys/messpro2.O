@@ -1,10 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { ComplaintManagement } from './ComplaintManagement';
 import { CleaningManagement } from './CleaningManagement';
-import { mockComplaintsData, mockCleaningData, mockRooms } from './mockData';
 import { useAuth } from '../../context/AuthContext';
 import { useMyHostel } from '../../hooks/queries/useHostelQueries';
-import { useComplaints } from '../../hooks/queries/useComplaints';
 import { Wrench } from 'lucide-react';
 
 export const ServiceManagement = () => {
@@ -28,10 +26,6 @@ export const ServiceManagement = () => {
 
   const showCleaning = hasFeatureAndPermission("Service Management", "service_management");
   const showComplaints = hasFeatureAndPermission("Complaint Management", "complaint_management");
-  const [cleaningData, setCleaningData] = useState(mockCleaningData);
-
-  // Fetch all active complaints for cleaning management
-  const { data: allComplaints = [] } = useComplaints('all');
 
   return (
     <div className="space-y-4 flex flex-col w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -64,11 +58,7 @@ export const ServiceManagement = () => {
         {/* Bottom Half: Cleaning */}
         {showCleaning && (
           <div className="w-full">
-            <CleaningManagement 
-              rooms={mockRooms} 
-              cleaningData={cleaningData} 
-              complaints={allComplaints} 
-            />
+            <CleaningManagement />
           </div>
         )}
       </div>
