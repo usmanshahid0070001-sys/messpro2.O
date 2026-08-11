@@ -1,315 +1,315 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from'react';
+import { motion, AnimatePresence } from'framer-motion';
 import { 
-  AlertTriangle, 
-  Send, 
-  History, 
-  MessageSquare,
-  Clock,
-  ArrowUpRight,
-  ArrowRight,
-  ArrowDownRight,
-  CheckCircle2,
-  Wrench,
-  Zap,
-  Sparkles,
-  Wifi,
-  ShieldAlert,
-  UtensilsCrossed,
-  Sofa,
-  MoreHorizontal
-} from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import SectionCard from '../../features/ui/SectionCard';
-import { useStudentComplaints } from '../../hooks/queries/useComplaints';
-import { useCreateComplaint, useDeleteComplaint } from '../../hooks/mutations/useComplaintMutations';
-import { Loader2, Trash2 } from 'lucide-react';
+ AlertTriangle, 
+ Send, 
+ History, 
+ MessageSquare,
+ Clock,
+ ArrowUpRight,
+ ArrowRight,
+ ArrowDownRight,
+ CheckCircle2,
+ Wrench,
+ Zap,
+ Sparkles,
+ Wifi,
+ ShieldAlert,
+ UtensilsCrossed,
+ Sofa,
+ MoreHorizontal
+} from'lucide-react';
+import { useAuth } from'../../context/AuthContext';
+import SectionCard from'../../features/ui/SectionCard';
+import { useStudentComplaints } from'../../hooks/queries/useComplaints';
+import { useCreateComplaint, useDeleteComplaint } from'../../hooks/mutations/useComplaintMutations';
+import { Loader2, Trash2 } from'lucide-react';
 
 const CATEGORIES = [
-  { id: 'electrical', label: 'Electrical', icon: Zap, defaultPriority: 'High' },
-  { id: 'plumbing', label: 'Plumbing', icon: Wrench, defaultPriority: 'High' },
-  { id: 'furniture', label: 'Furniture', icon: Sofa, defaultPriority: 'Low' },
-  { id: 'cleaning', label: 'Cleaning', icon: Sparkles, defaultPriority: 'Medium' },
-  { id: 'internet', label: 'Internet/WiFi', icon: Wifi, defaultPriority: 'Medium' },
-  { id: 'security', label: 'Security', icon: ShieldAlert, defaultPriority: 'Urgent' },
-  { id: 'mess', label: 'Mess/Food', icon: UtensilsCrossed, defaultPriority: 'High' },
-  { id: 'other', label: 'Other', icon: MoreHorizontal, defaultPriority: 'Medium' }
+ { id:'electrical', label:'Electrical', icon: Zap, defaultPriority:'High'},
+ { id:'plumbing', label:'Plumbing', icon: Wrench, defaultPriority:'High'},
+ { id:'furniture', label:'Furniture', icon: Sofa, defaultPriority:'Low'},
+ { id:'cleaning', label:'Cleaning', icon: Sparkles, defaultPriority:'Medium'},
+ { id:'internet', label:'Internet/WiFi', icon: Wifi, defaultPriority:'Medium'},
+ { id:'security', label:'Security', icon: ShieldAlert, defaultPriority:'Urgent'},
+ { id:'mess', label:'Mess/Food', icon: UtensilsCrossed, defaultPriority:'High'},
+ { id:'other', label:'Other', icon: MoreHorizontal, defaultPriority:'Medium'}
 ];
 
 const PRIORITIES = [
-  { id: 'Low', icon: ArrowDownRight, color: 'text-sky-500', bg: 'bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20', border: 'border-sky-200 dark:border-sky-500/20' },
-  { id: 'Medium', icon: ArrowRight, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20', border: 'border-amber-200 dark:border-amber-500/20' },
-  { id: 'High', icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20', border: 'border-rose-200 dark:border-rose-500/20' },
-  { id: 'Urgent', icon: AlertTriangle, color: 'text-red-600 dark:text-red-500', bg: 'bg-red-100 dark:bg-red-500/20 hover:bg-red-200 dark:hover:bg-red-500/30', border: 'border-red-300 dark:border-red-500/30' }
+ { id:'Low', icon: ArrowDownRight, color:'text-sky-500', bg:'bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20', border:'border-sky-200 dark:border-sky-500/20'},
+ { id:'Medium', icon: ArrowRight, color:'text-amber-500', bg:'bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20', border:'border-amber-200 dark:border-amber-500/20'},
+ { id:'High', icon: ArrowUpRight, color:'text-rose-500', bg:'bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20', border:'border-rose-200 dark:border-rose-500/20'},
+ { id:'Urgent', icon: AlertTriangle, color:'text-red-600 dark:text-red-500', bg:'bg-red-100 dark:bg-red-500/20 hover:bg-red-200 dark:hover:bg-red-500/30', border:'border-red-300 dark:border-red-500/30'}
 ];
 
 const getStatusBadge = (status) => {
-  switch (status) {
-    case 'Open':
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-zinc-100 text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"><AlertTriangle className="w-3 h-3" /> Open</span>;
-    case 'Assigned':
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20"><Clock className="w-3 h-3" /> Assigned</span>;
-    case 'In Progress':
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20"><Clock className="w-3 h-3" /> In Progress</span>;
-    case 'Resolved':
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20"><CheckCircle2 className="w-3 h-3" /> Resolved</span>;
-    default:
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-zinc-100 text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">{status}</span>;
-  }
+ switch (status) {
+ case'Open':
+ return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-zinc-100 text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"><AlertTriangle className="w-3 h-3"/> Open</span>;
+ case'Assigned':
+ return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20"><Clock className="w-3 h-3"/> Assigned</span>;
+ case'In Progress':
+ return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20"><Clock className="w-3 h-3"/> In Progress</span>;
+ case'Resolved':
+ return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20"><CheckCircle2 className="w-3 h-3"/> Resolved</span>;
+ default:
+ return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-zinc-100 text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">{status}</span>;
+ }
 };
 
 export default function StudentComplaintForm() {
-  const { user } = useAuth();
-  
-  // Using user room if populated, else fallback
-  const roomNumber = typeof user?.room === 'object' ? user?.room?.roomNumber : (user?.room || 'Unknown Room');
+ const { user } = useAuth();
+ 
+ // Using user room if populated, else fallback
+ const roomNumber = typeof user?.room ==='object'? user?.room?.roomNumber : (user?.room ||'Unknown Room');
 
-  const [formData, setFormData] = useState({
-    category: '',
-    priority: '',
-    description: ''
-  });
+ const [formData, setFormData] = useState({
+ category:'',
+ priority:'',
+ description:''
+ });
 
-  const { data: complaints = [], isLoading } = useStudentComplaints();
-  const createComplaintMutation = useCreateComplaint();
-  const deleteComplaintMutation = useDeleteComplaint();
+ const { data: complaints = [], isLoading } = useStudentComplaints();
+ const createComplaintMutation = useCreateComplaint();
+ const deleteComplaintMutation = useDeleteComplaint();
 
-  const isSubmitting = createComplaintMutation.isPending;
+ const isSubmitting = createComplaintMutation.isPending;
 
-  // Auto-update priority when category changes
-  const handleCategorySelect = (categoryId) => {
-    const selectedCat = CATEGORIES.find(c => c.id === categoryId);
-    setFormData({
-      ...formData,
-      category: categoryId,
-      priority: selectedCat ? selectedCat.defaultPriority : 'Medium'
-    });
-  };
+ // Auto-update priority when category changes
+ const handleCategorySelect = (categoryId) => {
+ const selectedCat = CATEGORIES.find(c => c.id === categoryId);
+ setFormData({
+ ...formData,
+ category: categoryId,
+ priority: selectedCat ? selectedCat.defaultPriority :'Medium'
+ });
+ };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.category || !formData.description || !formData.priority) return;
-    
-    createComplaintMutation.mutate({
-      category: CATEGORIES.find(c => c.id === formData.category)?.label || 'Other',
-      intensity: formData.priority,
-      description: formData.description,
-    }, {
-      onSuccess: () => {
-        setFormData({ category: '', priority: '', description: '' });
-      }
-    });
-  };
+ const handleSubmit = (e) => {
+ e.preventDefault();
+ if (!formData.category || !formData.description || !formData.priority) return;
+ 
+ createComplaintMutation.mutate({
+ category: CATEGORIES.find(c => c.id === formData.category)?.label ||'Other',
+ intensity: formData.priority,
+ description: formData.description,
+ }, {
+ onSuccess: () => {
+ setFormData({ category:'', priority:'', description:''});
+ }
+ });
+ };
 
-  const selectedCategory = CATEGORIES.find(c => c.id === formData.category);
+ const selectedCategory = CATEGORIES.find(c => c.id === formData.category);
 
-  return (
-    <div className="space-y-6 flex flex-col w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
-          <AlertTriangle className="w-6 h-6 text-zinc-500" />
-          Your Complaint
-        </h1>
-        <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mt-1">
-          Report maintenance issues, internet problems, or other concerns.
-        </p>
-      </div>
+ return (
+ <div className="space-y-6 flex flex-col w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+ {/* Header */}
+ <div>
+ <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
+ <AlertTriangle className="w-6 h-6 text-zinc-500"/>
+ Your Complaint
+ </h1>
+ <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mt-1">
+ Report maintenance issues, internet problems, or other concerns.
+ </p>
+ </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 xl:gap-8">
-        
-        {/* Left Column: Complaint Form */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
-          <SectionCard title="Issue Details" subtitle="Describe the problem accurately for a faster response">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-2">
-              
-              {/* Room Number (Read-only) */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Your Room</label>
-                <div className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-400 cursor-not-allowed flex items-center justify-between">
-                  <span>{roomNumber}</span>
-                  <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 px-2 py-0.5 bg-white dark:bg-zinc-800 rounded shadow-sm border border-zinc-200 dark:border-zinc-700">Auto-filled</span>
-                </div>
-              </div>
+ <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 xl:gap-8">
+ 
+ {/* Left Column: Complaint Form */}
+ <div className="lg:col-span-3 flex flex-col gap-6">
+ <SectionCard title="Issue Details"subtitle="Describe the problem accurately for a faster response">
+ <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-2">
+ 
+ {/* Room Number (Read-only) */}
+ <div className="flex flex-col gap-1.5">
+ <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Your Room</label>
+ <div className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-400 cursor-not-allowed flex items-center justify-between">
+ <span>{roomNumber}</span>
+ <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 px-2 py-0.5 bg-white dark:bg-zinc-800 rounded shadow-sm border border-zinc-200 dark:border-zinc-700">Auto-filled</span>
+ </div>
+ </div>
 
-              {/* Category Selection */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Category <span className="text-red-500">*</span></label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {CATEGORIES.map(cat => {
-                    const isSelected = formData.category === cat.id;
-                    const Icon = cat.icon;
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => handleCategorySelect(cat.id)}
-                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${
-                          isSelected 
-                            ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-400 shadow-sm' 
-                            : 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
-                        }`}
-                      >
-                        <Icon className={`w-5 h-5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-500 dark:text-zinc-500'}`} />
-                        <span className="text-[11px] font-bold text-center leading-tight">{cat.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+ {/* Category Selection */}
+ <div className="flex flex-col gap-2">
+ <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Category <span className="text-red-500">*</span></label>
+ <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+ {CATEGORIES.map(cat => {
+ const isSelected = formData.category === cat.id;
+ const Icon = cat.icon;
+ return (
+ <button
+ key={cat.id}
+ type="button"
+ onClick={() => handleCategorySelect(cat.id)}
+ className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${
+ isSelected 
+ ?'bg-blue-50 dark:bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-400 shadow-sm'
+ :'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
+ }`}
+ >
+ <Icon className={`w-5 h-5 ${isSelected ?'text-blue-600 dark:text-blue-400':'text-zinc-500 dark:text-zinc-500'}`} />
+ <span className="text-[11px] font-bold text-center leading-tight">{cat.label}</span>
+ </button>
+ );
+ })}
+ </div>
+ </div>
 
-              {/* Priority Selection */}
-              <AnimatePresence mode="popLayout">
-                {formData.category && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex flex-col gap-2 overflow-hidden"
-                  >
-                    <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Priority Level <span className="text-[10px] lowercase normal-case font-medium ml-1">(auto-suggested)</span></label>
-                    <div className="flex flex-wrap gap-2">
-                      {PRIORITIES.map(prio => {
-                        const isSelected = formData.priority === prio.id;
-                        const PrioIcon = prio.icon;
-                        return (
-                          <button
-                            key={prio.id}
-                            type="button"
-                            onClick={() => setFormData({ ...formData, priority: prio.id })}
-                            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border transition-all duration-200 flex-1 min-w-[100px] justify-center ${
-                              isSelected 
-                                ? `${prio.bg} ${prio.border} shadow-sm ring-1 ring-inset ${prio.color.replace('text-', 'ring-')}` 
-                                : 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
-                            }`}
-                          >
-                            <PrioIcon className={`w-4 h-4 ${isSelected ? prio.color : 'text-zinc-400'}`} />
-                            <span className={`text-[13px] font-bold ${isSelected ? prio.color : ''}`}>{prio.id}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+ {/* Priority Selection */}
+ <AnimatePresence mode="popLayout">
+ {formData.category && (
+ <motion.div 
+ initial={{ opacity: 0, height: 0 }}
+ animate={{ opacity: 1, height:'auto'}}
+ exit={{ opacity: 0, height: 0 }}
+ className="flex flex-col gap-2 overflow-hidden"
+ >
+ <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Priority Level <span className="text-[10px] lowercase normal-case font-medium ml-1">(auto-suggested)</span></label>
+ <div className="flex flex-wrap gap-2">
+ {PRIORITIES.map(prio => {
+ const isSelected = formData.priority === prio.id;
+ const PrioIcon = prio.icon;
+ return (
+ <button
+ key={prio.id}
+ type="button"
+ onClick={() => setFormData({ ...formData, priority: prio.id })}
+ className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border transition-all duration-200 flex-1 min-w-[100px] justify-center ${
+ isSelected 
+ ? `${prio.bg} ${prio.border} shadow-sm ring-1 ring-inset ${prio.color.replace('text-','ring-')}` 
+ :'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
+ }`}
+ >
+ <PrioIcon className={`w-4 h-4 ${isSelected ? prio.color :'text-zinc-400'}`} />
+ <span className={`text-[13px] font-bold ${isSelected ? prio.color :''}`}>{prio.id}</span>
+ </button>
+ );
+ })}
+ </div>
+ </motion.div>
+ )}
+ </AnimatePresence>
 
-              {/* Description */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Description <span className="text-red-500">*</span></label>
-                <textarea
-                  required
-                  rows={4}
-                  maxLength={80}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe what's wrong (max 80 chars)..."
-                  className="w-full px-4 py-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
-                />
-                <span className="text-[10px] text-zinc-500 text-right">{formData.description.length}/80</span>
-              </div>
+ {/* Description */}
+ <div className="flex flex-col gap-1.5">
+ <label className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Description <span className="text-red-500">*</span></label>
+ <textarea
+ required
+ rows={4}
+ maxLength={80}
+ value={formData.description}
+ onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+ placeholder="Describe what's wrong (max 80 chars)..."
+ className="w-full px-4 py-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+ />
+ <span className="text-[10px] text-zinc-500 text-right">{formData.description.length}/80</span>
+ </div>
 
-              {/* Submit Button */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={!formData.category || !formData.description || isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-xl text-sm font-bold shadow-md hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  {isSubmitting ? (
-                    <div className="w-5 h-5 border-2 border-white/20 dark:border-black/20 border-t-white dark:border-t-black rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Submit Complaint
-                    </>
-                  )}
-                </button>
-              </div>
+ {/* Submit Button */}
+ <div className="pt-2">
+ <button
+ type="submit"
+ disabled={!formData.category || !formData.description || isSubmitting}
+ className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-xl text-sm font-bold shadow-md hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+ >
+ {isSubmitting ? (
+ <div className="w-5 h-5 border-2 border-white/20 dark:border-black/20 border-t-white dark:border-t-black rounded-full animate-spin"/>
+ ) : (
+ <>
+ <Send className="w-4 h-4"/>
+ Submit Complaint
+ </>
+ )}
+ </button>
+ </div>
 
-            </form>
-          </SectionCard>
-        </div>
+ </form>
+ </SectionCard>
+ </div>
 
-        {/* Right Column: History & Status */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <SectionCard 
-            title="My Complaints" 
-            subtitle="Recent issues and their current status"
-            action={<History className="w-4 h-4 text-zinc-400" />}
-          >
-            <div className="flex flex-col gap-3 pt-2">
-              <AnimatePresence mode="popLayout">
-                {complaints.length === 0 ? (
-                  <motion.div 
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }} 
-                    className="flex flex-col items-center justify-center py-10 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-center"
-                  >
-                    <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-3" />
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">All clear!</h3>
-                    <p className="text-[13px] text-zinc-500 mt-1">You haven't reported any issues.</p>
-                  </motion.div>
-                ) : (
-                  complaints.map((complaint) => {
-                    const matchedCat = CATEGORIES.find(c => c.label === complaint.category) || CATEGORIES[7];
-                    const Icon = matchedCat.icon;
-                    const prioDetails = PRIORITIES.find(p => p.id === complaint.intensity) || PRIORITIES[1];
-                    const PrioIcon = prioDetails.icon;
+ {/* Right Column: History & Status */}
+ <div className="lg:col-span-2 flex flex-col gap-6">
+ <SectionCard 
+ title="My Complaints"
+ subtitle="Recent issues and their current status"
+ action={<History className="w-4 h-4 text-zinc-400"/>}
+ >
+ <div className="flex flex-col gap-3 pt-2">
+ <AnimatePresence mode="popLayout">
+ {complaints.length === 0 ? (
+ <motion.div 
+ initial={{ opacity: 0 }} 
+ animate={{ opacity: 1 }} 
+ className="flex flex-col items-center justify-center py-10 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-center"
+ >
+ <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-3"/>
+ <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">All clear!</h3>
+ <p className="text-[13px] text-zinc-500 mt-1">You haven't reported any issues.</p>
+ </motion.div>
+ ) : (
+ complaints.map((complaint) => {
+ const matchedCat = CATEGORIES.find(c => c.label === complaint.category) || CATEGORIES[7];
+ const Icon = matchedCat.icon;
+ const prioDetails = PRIORITIES.find(p => p.id === complaint.intensity) || PRIORITIES[1];
+ const PrioIcon = prioDetails.icon;
 
-                    return (
-                      <motion.div
-                        layout
-                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        key={complaint.id}
-                        className="flex flex-col gap-3 p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-900/50 flex items-center justify-center">
-                              <Icon className="w-4 h-4 text-zinc-700 dark:text-zinc-400" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-50 leading-tight">{complaint.category}</span>
-                              <span className="text-[11px] text-zinc-500">
-                                {new Date(complaint.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                              </span>
-                            </div>
-                          </div>
-                          {getStatusBadge(complaint.status)}
-                        </div>
-                        
-                        <div className="pl-10">
-                          <p className="text-[13px] text-zinc-700 dark:text-zinc-400 leading-relaxed line-clamp-2">
-                            "{complaint.description}"
-                          </p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold ${prioDetails.color} ${prioDetails.bg} px-2 py-0.5 rounded`}>
-                              <PrioIcon className="w-3 h-3" />
-                              {complaint.intensity} Priority
-                            </span>
-                            {complaint.status === 'Open' && (
-                              <button
-                                onClick={() => deleteComplaintMutation.mutate(complaint._id)}
-                                disabled={deleteComplaintMutation.isPending}
-                                className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-500/10 hover:bg-red-500/20 px-2 py-0.5 rounded transition-colors"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                                Cancel
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })
-                )}
-              </AnimatePresence>
-            </div>
-          </SectionCard>
-        </div>
-      </div>
-    </div>
-  );
+ return (
+ <motion.div
+ layout
+ initial={{ opacity: 0, scale: 0.95, y: 10 }}
+ animate={{ opacity: 1, scale: 1, y: 0 }}
+ transition={{ duration: 0.2 }}
+ key={complaint.id}
+ className="flex flex-col gap-3 p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm"
+ >
+ <div className="flex justify-between items-start">
+ <div className="flex items-center gap-2.5">
+ <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-900/50 flex items-center justify-center">
+ <Icon className="w-4 h-4 text-zinc-700 dark:text-zinc-400"/>
+ </div>
+ <div className="flex flex-col">
+ <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-50 leading-tight">{complaint.category}</span>
+ <span className="text-[11px] text-zinc-500">
+ {new Date(complaint.createdAt).toLocaleDateString(undefined, { month:'short', day:'numeric'})}
+ </span>
+ </div>
+ </div>
+ {getStatusBadge(complaint.status)}
+ </div>
+ 
+ <div className="pl-10">
+ <p className="text-[13px] text-zinc-700 dark:text-zinc-400 leading-relaxed line-clamp-2">
+"{complaint.description}"
+ </p>
+ <div className="flex items-center gap-2 mt-2">
+ <span className={`inline-flex items-center gap-1 text-[10px] font-bold ${prioDetails.color} ${prioDetails.bg} px-2 py-0.5 rounded`}>
+ <PrioIcon className="w-3 h-3"/>
+ {complaint.intensity} Priority
+ </span>
+ {complaint.status ==='Open'&& (
+ <button
+ onClick={() => deleteComplaintMutation.mutate(complaint._id)}
+ disabled={deleteComplaintMutation.isPending}
+ className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-500/10 hover:bg-red-500/20 px-2 py-0.5 rounded transition-colors"
+ >
+ <Trash2 className="w-3 h-3"/>
+ Cancel
+ </button>
+ )}
+ </div>
+ </div>
+ </motion.div>
+ );
+ })
+ )}
+ </AnimatePresence>
+ </div>
+ </SectionCard>
+ </div>
+ </div>
+ </div>
+ );
 }

@@ -1,21 +1,21 @@
-import { useMutation } from '@tanstack/react-query';
-import { authApi } from '../../api/endpoints/auth.api';
+import { useMutation } from'@tanstack/react-query';
+import { authApi } from'../../api/endpoints/auth.api';
 
 export const useLoginMutation = () => {
-  return useMutation({
-    mutationFn: (credentials) => authApi.login(credentials),
-  });
+ return useMutation({
+ mutationFn: (credentials) => authApi.login(credentials),
+ });
 };
 
 export const useLogoutMutation = () => {
-  return useMutation({
-    mutationFn: () => authApi.logout(),
-  });
+ return useMutation({
+ mutationFn: () => authApi.logout(),
+ });
 };
 
 export const useSignAgreementMutation = () => {
-  return useMutation({
-    mutationFn: () => authApi.signAgreement(),
-  });
+ return useMutation({
+ mutationFn: () => authApi.signAgreement(),
+ });
 };
 

@@ -1,24 +1,24 @@
-import api from '../client';
+import api from'../client';
 
 export const authApi = {
-  login: async (credentials) => {
-    const response = await api.post('/api/auth/login', credentials);
-    return response.data;
-  },
-  
-  logout: async () => {
-    const response = await api.post('/api/auth/logout');
-    return response.data;
-  },
+ login: async (credentials) => {
+ const response = await api.post('/api/auth/login', credentials);
+ return response.data;
+ },
+ 
+ logout: async () => {
+ const response = await api.post('/api/auth/logout');
+ return response.data;
+ },
 
-  verify: async () => {
-    const response = await api.get('/api/auth/verify');
-    return response.data;
-  },
+ verify: async () => {
+ const response = await api.get('/api/auth/verify');
+ return response.data;
+ },
 
-  signAgreement: async () => {
-    const response = await api.post('/api/users/sign-agreement');
-    return response.data;
-  },
+ signAgreement: async () => {
+ const response = await api.post('/api/users/sign-agreement');
+ return response.data;
+ },
 };
 

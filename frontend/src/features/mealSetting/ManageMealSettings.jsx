@@ -1,507 +1,507 @@
-import { useState, useEffect } from 'react';
-import { Plus, Save, Info, AlertTriangle, UtensilsCrossed } from 'lucide-react';
-import MealCard from './MealCard';
-import WeeklyMenuGrid from './WeeklyMenuGrid';
-import { useAuth } from '../../context/AuthContext';
-import { useMealSchedule } from '../../hooks/queries/useMealQueries';
-import { useUpdateMealSchedule } from '../../hooks/mutations/useMealMutations';
-import useUIStore from '../../store/useUIStore';
+import { useState, useEffect } from'react';
+import { Plus, Save, Info, AlertTriangle, UtensilsCrossed } from'lucide-react';
+import MealCard from'./MealCard';
+import WeeklyMenuGrid from'./WeeklyMenuGrid';
+import { useAuth } from'../../context/AuthContext';
+import { useMealSchedule } from'../../hooks/queries/useMealQueries';
+import { useUpdateMealSchedule } from'../../hooks/mutations/useMealMutations';
+import useUIStore from'../../store/useUIStore';
 
-const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS_OF_WEEK = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
 export default function ManageMealSettings() {
-  const { user } = useAuth();
-  const isManager = user?.role === 'manager';
+ const { user } = useAuth();
+ const isManager = user?.role ==='manager';
 
-  const { data: scheduleData, isLoading, isError, refetch } = useMealSchedule();
-  const updateScheduleMutation = useUpdateMealSchedule();
+ const { data: scheduleData, isLoading, isError, refetch } = useMealSchedule();
+ const updateScheduleMutation = useUpdateMealSchedule();
 
-  const [status, setStatus] = useState("Active");
-  const [maxMealSelection, setMaxMealSelection] = useState(1);
-  const [meals, setMeals] = useState([]);
-  const [menu, setMenu] = useState({});
-  const [mealToRemove, setMealToRemove] = useState(null);
+ const [status, setStatus] = useState("Active");
+ const [maxMealSelection, setMaxMealSelection] = useState(1);
+ const [meals, setMeals] = useState([]);
+ const [menu, setMenu] = useState({});
+ const [mealToRemove, setMealToRemove] = useState(null);
 
-  // Swap State
-  const [isSwapMode, setIsSwapMode] = useState(false);
-  const [swapSelection, setSwapSelection] = useState([]);
+ // Swap State
+ const [isSwapMode, setIsSwapMode] = useState(false);
+ const [swapSelection, setSwapSelection] = useState([]);
 
-  // Track if there are unsaved changes
-  const [isDirty, setIsDirty] = useState(false);
-  
-  const { setHasUnsavedChanges, discardTrigger } = useUIStore();
+ // Track if there are unsaved changes
+ const [isDirty, setIsDirty] = useState(false);
+ 
+ const { setHasUnsavedChanges, discardTrigger } = useUIStore();
 
-  useEffect(() => {
-    setHasUnsavedChanges(isDirty);
-    return () => setHasUnsavedChanges(false);
-  }, [isDirty, setHasUnsavedChanges]);
+ useEffect(() => {
+ setHasUnsavedChanges(isDirty);
+ return () => setHasUnsavedChanges(false);
+ }, [isDirty, setHasUnsavedChanges]);
 
-  const loadFromServer = () => {
-    if (scheduleData && scheduleData.data) {
-      const parsed = scheduleData.data;
+ const loadFromServer = () => {
+ if (scheduleData && scheduleData.data) {
+ const parsed = scheduleData.data;
 
-      setStatus(parsed.status === 'inactive' ? 'Inactive' : 'Active');
-      setMaxMealSelection(parsed.maxMealSelection || 1);
+ setStatus(parsed.status ==='inactive'?'Inactive':'Active');
+ setMaxMealSelection(parsed.maxMealSelection || 1);
 
-      const loadedMeals = (parsed.mealNames || []).map((name, idx) => ({
-        id: idx.toString(),
-        name: name,
-        endTime: (parsed.selectionTiming || [])[idx] || ''
-      }));
-      setMeals(loadedMeals);
+ const loadedMeals = (parsed.mealNames || []).map((name, idx) => ({
+ id: idx.toString(),
+ name: name,
+ endTime: (parsed.selectionTiming || [])[idx] ||''
+ }));
+ setMeals(loadedMeals);
 
-      const loadedMenu = parsed.menu || {};
-      const safeMenu = {};
-      DAYS_OF_WEEK.forEach(day => {
-        const dayArray = loadedMenu[day] || [];
-        const dayObj = {};
-        loadedMeals.forEach((meal, idx) => {
-          const item = dayArray[idx];
-          dayObj[meal.id] = {
-            foodName: item?.meal === 'none' ? '' : (item?.meal || ''),
-            price: item?.price || 0
-          };
-        });
-        safeMenu[day] = dayObj;
-      });
-      setMenu(safeMenu);
-    } else if (!isLoading) {
-      initializeEmptyMenu();
-    }
-  };
+ const loadedMenu = parsed.menu || {};
+ const safeMenu = {};
+ DAYS_OF_WEEK.forEach(day => {
+ const dayArray = loadedMenu[day] || [];
+ const dayObj = {};
+ loadedMeals.forEach((meal, idx) => {
+ const item = dayArray[idx];
+ dayObj[meal.id] = {
+ foodName: item?.meal ==='none'?'': (item?.meal ||''),
+ price: item?.price || 0
+ };
+ });
+ safeMenu[day] = dayObj;
+ });
+ setMenu(safeMenu);
+ } else if (!isLoading) {
+ initializeEmptyMenu();
+ }
+ };
 
-  // Listen to global discard trigger
-  useEffect(() => {
-    if (discardTrigger > 0) {
-      sessionStorage.removeItem('mealSettingsDraft');
-      setIsDirty(false);
-      loadFromServer();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [discardTrigger]);
+ // Listen to global discard trigger
+ useEffect(() => {
+ if (discardTrigger > 0) {
+ sessionStorage.removeItem('mealSettingsDraft');
+ setIsDirty(false);
+ loadFromServer();
+ }
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [discardTrigger]);
 
-  // Load from sessionStorage OR backend data
-  useEffect(() => {
-    const draftData = sessionStorage.getItem('mealSettingsDraft');
+ // Load from sessionStorage OR backend data
+ useEffect(() => {
+ const draftData = sessionStorage.getItem('mealSettingsDraft');
 
-    if (draftData) {
-      // If we have a draft, load it and skip the backend data for now
-      try {
-        const parsed = JSON.parse(draftData);
-        setStatus(parsed.status || "Active");
-        setMaxMealSelection(parsed.maxMealSelection || 1);
-        setMeals(parsed.meals || []);
-        setMenu(parsed.menu || {});
-        setIsDirty(true);
-        return; // Skip loading from backend
-      } catch (e) {
-        console.error("Failed to parse draft data", e);
-        sessionStorage.removeItem('mealSettingsDraft');
-      }
-    }
+ if (draftData) {
+ // If we have a draft, load it and skip the backend data for now
+ try {
+ const parsed = JSON.parse(draftData);
+ setStatus(parsed.status ||"Active");
+ setMaxMealSelection(parsed.maxMealSelection || 1);
+ setMeals(parsed.meals || []);
+ setMenu(parsed.menu || {});
+ setIsDirty(true);
+ return; // Skip loading from backend
+ } catch (e) {
+ console.error("Failed to parse draft data", e);
+ sessionStorage.removeItem('mealSettingsDraft');
+ }
+ }
 
-    if (!isDirty) {
-      loadFromServer();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scheduleData, isLoading]);
+ if (!isDirty) {
+ loadFromServer();
+ }
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [scheduleData, isLoading]);
 
-  // Save to draft whenever state changes and it's dirty
-  useEffect(() => {
-    if (isDirty) {
-      sessionStorage.setItem('mealSettingsDraft', JSON.stringify({ status, maxMealSelection, meals, menu }));
-    }
-  }, [status, maxMealSelection, meals, menu, isDirty]);
+ // Save to draft whenever state changes and it's dirty
+ useEffect(() => {
+ if (isDirty) {
+ sessionStorage.setItem('mealSettingsDraft', JSON.stringify({ status, maxMealSelection, meals, menu }));
+ }
+ }, [status, maxMealSelection, meals, menu, isDirty]);
 
-  const initializeEmptyMenu = () => {
-    const defaultMenu = {};
-    DAYS_OF_WEEK.forEach(day => {
-      defaultMenu[day] = {};
-    });
-    setMenu(defaultMenu);
-  };
+ const initializeEmptyMenu = () => {
+ const defaultMenu = {};
+ DAYS_OF_WEEK.forEach(day => {
+ defaultMenu[day] = {};
+ });
+ setMenu(defaultMenu);
+ };
 
-  const sortedMeals = [...meals].sort((a, b) => {
-    if (!a.endTime && !b.endTime) return 0;
-    if (!a.endTime) return 1;
-    if (!b.endTime) return -1;
-    return a.endTime.localeCompare(b.endTime);
-  });
+ const sortedMeals = [...meals].sort((a, b) => {
+ if (!a.endTime && !b.endTime) return 0;
+ if (!a.endTime) return 1;
+ if (!b.endTime) return -1;
+ return a.endTime.localeCompare(b.endTime);
+ });
 
-  const handleSaveData = (customData = null) => {
-    const dataToSave = customData || { status, maxMealSelection, meals: sortedMeals, menu };
+ const handleSaveData = (customData = null) => {
+ const dataToSave = customData || { status, maxMealSelection, meals: sortedMeals, menu };
 
-    // Transform frontend format to backend format
-    const transformedMenu = {};
-    Object.keys(dataToSave.menu).forEach(day => {
-      transformedMenu[day] = [];
-      dataToSave.meals.forEach((meal) => {
-        const cell = dataToSave.menu[day][meal.id];
-        transformedMenu[day].push({
-          meal: cell && cell.foodName ? cell.foodName.trim() : "none",
-          price: cell && cell.price ? Number(cell.price) : 0
-        });
-      });
-    });
+ // Transform frontend format to backend format
+ const transformedMenu = {};
+ Object.keys(dataToSave.menu).forEach(day => {
+ transformedMenu[day] = [];
+ dataToSave.meals.forEach((meal) => {
+ const cell = dataToSave.menu[day][meal.id];
+ transformedMenu[day].push({
+ meal: cell && cell.foodName ? cell.foodName.trim() :"none",
+ price: cell && cell.price ? Number(cell.price) : 0
+ });
+ });
+ });
 
-    const finalData = {
-      status: dataToSave.status.toLowerCase(),
-      maxMealSelection: dataToSave.maxMealSelection,
-      numberOfMeals: dataToSave.meals.length,
-      mealNames: dataToSave.meals.map(m => m.name),
-      selectionTiming: dataToSave.meals.map(m => m.endTime),
-      menu: transformedMenu
-    };
+ const finalData = {
+ status: dataToSave.status.toLowerCase(),
+ maxMealSelection: dataToSave.maxMealSelection,
+ numberOfMeals: dataToSave.meals.length,
+ mealNames: dataToSave.meals.map(m => m.name),
+ selectionTiming: dataToSave.meals.map(m => m.endTime),
+ menu: transformedMenu
+ };
 
-    updateScheduleMutation.mutate(finalData, {
-      onSuccess: () => {
-        setIsDirty(false);
-        sessionStorage.removeItem('mealSettingsDraft');
-      }
-    });
-  };
+ updateScheduleMutation.mutate(finalData, {
+ onSuccess: () => {
+ setIsDirty(false);
+ sessionStorage.removeItem('mealSettingsDraft');
+ }
+ });
+ };
 
-  const handleSaveMenu = () => {
-    handleSaveData();
-  };
+ const handleSaveMenu = () => {
+ handleSaveData();
+ };
 
-  const handleToggleStatus = () => {
-    const newStatus = status === 'Active' ? 'Inactive' : 'Active';
-    setStatus(newStatus);
-    setIsDirty(true);
-  };
+ const handleToggleStatus = () => {
+ const newStatus = status ==='Active'?'Inactive':'Active';
+ setStatus(newStatus);
+ setIsDirty(true);
+ };
 
-  const handleAddMeal = () => {
-    setIsDirty(true);
-    const newMealId = Date.now().toString();
-    const newMeals = [...meals, { id: newMealId, name: '', endTime: '' }];
-    setMeals(newMeals);
+ const handleAddMeal = () => {
+ setIsDirty(true);
+ const newMealId = Date.now().toString();
+ const newMeals = [...meals, { id: newMealId, name:'', endTime:''}];
+ setMeals(newMeals);
 
-    const updatedMenu = { ...menu };
-    DAYS_OF_WEEK.forEach(day => {
-      if (!updatedMenu[day]) updatedMenu[day] = {};
-      updatedMenu[day][newMealId] = { foodName: '', price: '' };
-    });
-    setMenu(updatedMenu);
-  };
+ const updatedMenu = { ...menu };
+ DAYS_OF_WEEK.forEach(day => {
+ if (!updatedMenu[day]) updatedMenu[day] = {};
+ updatedMenu[day][newMealId] = { foodName:'', price:''};
+ });
+ setMenu(updatedMenu);
+ };
 
-  const confirmRemoveMeal = () => {
-    if (!mealToRemove) return;
-    setIsDirty(true);
-    const updatedMeals = meals.filter(m => m.id !== mealToRemove);
-    setMeals(updatedMeals);
+ const confirmRemoveMeal = () => {
+ if (!mealToRemove) return;
+ setIsDirty(true);
+ const updatedMeals = meals.filter(m => m.id !== mealToRemove);
+ setMeals(updatedMeals);
 
-    const updatedMenu = { ...menu };
-    DAYS_OF_WEEK.forEach(day => {
-      if (updatedMenu[day] && updatedMenu[day][mealToRemove]) {
-        delete updatedMenu[day][mealToRemove];
-      }
-    });
-    setMenu(updatedMenu);
-    setMealToRemove(null);
-  };
+ const updatedMenu = { ...menu };
+ DAYS_OF_WEEK.forEach(day => {
+ if (updatedMenu[day] && updatedMenu[day][mealToRemove]) {
+ delete updatedMenu[day][mealToRemove];
+ }
+ });
+ setMenu(updatedMenu);
+ setMealToRemove(null);
+ };
 
-  const capitalizeText = (str) => {
-    if (!str) return str;
-    return str.split(' ').map(word => word ? word.charAt(0).toUpperCase() + word.slice(1) : '').join(' ');
-  };
+ const capitalizeText = (str) => {
+ if (!str) return str;
+ return str.split('').map(word => word ? word.charAt(0).toUpperCase() + word.slice(1) :'').join('');
+ };
 
-  const updateMeal = (id, field, value) => {
-    setIsDirty(true);
-    let finalValue = value;
-    if (field === 'name') finalValue = capitalizeText(value);
-    setMeals(meals.map(m => m.id === id ? { ...m, [field]: finalValue } : m));
-  };
+ const updateMeal = (id, field, value) => {
+ setIsDirty(true);
+ let finalValue = value;
+ if (field ==='name') finalValue = capitalizeText(value);
+ setMeals(meals.map(m => m.id === id ? { ...m, [field]: finalValue } : m));
+ };
 
-  const updateMenuCell = (day, mealId, field, value) => {
-    setIsDirty(true);
-    let finalValue = value;
-    if (field === 'foodName') finalValue = capitalizeText(value);
-    setMenu(prev => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        [mealId]: {
-          ...prev[day][mealId],
-          [field]: finalValue
-        }
-      }
-    }));
-  };
+ const updateMenuCell = (day, mealId, field, value) => {
+ setIsDirty(true);
+ let finalValue = value;
+ if (field ==='foodName') finalValue = capitalizeText(value);
+ setMenu(prev => ({
+ ...prev,
+ [day]: {
+ ...prev[day],
+ [mealId]: {
+ ...prev[day][mealId],
+ [field]: finalValue
+ }
+ }
+ }));
+ };
 
-  const handleToggleSwapMode = () => {
-    setIsSwapMode(!isSwapMode);
-    setSwapSelection([]);
-  };
+ const handleToggleSwapMode = () => {
+ setIsSwapMode(!isSwapMode);
+ setSwapSelection([]);
+ };
 
-  const handleSelectForSwap = (day, mealId) => {
-    if (!isSwapMode) return;
-    
-    // Check if already selected
-    const alreadySelectedIdx = swapSelection.findIndex(s => s.day === day && s.mealId === mealId);
-    
-    if (alreadySelectedIdx >= 0) {
-      // Deselect
-      setSwapSelection(prev => prev.filter((_, idx) => idx !== alreadySelectedIdx));
-      return;
-    }
+ const handleSelectForSwap = (day, mealId) => {
+ if (!isSwapMode) return;
+ 
+ // Check if already selected
+ const alreadySelectedIdx = swapSelection.findIndex(s => s.day === day && s.mealId === mealId);
+ 
+ if (alreadySelectedIdx >= 0) {
+ // Deselect
+ setSwapSelection(prev => prev.filter((_, idx) => idx !== alreadySelectedIdx));
+ return;
+ }
 
-    const newSelection = [...swapSelection, { day, mealId }];
-    
-    if (newSelection.length === 2) {
-      // Execute swap
-      const [first, second] = newSelection;
-      
-      const firstCell = menu[first.day]?.[first.mealId] || { foodName: '', price: '' };
-      const secondCell = menu[second.day]?.[second.mealId] || { foodName: '', price: '' };
+ const newSelection = [...swapSelection, { day, mealId }];
+ 
+ if (newSelection.length === 2) {
+ // Execute swap
+ const [first, second] = newSelection;
+ 
+ const firstCell = menu[first.day]?.[first.mealId] || { foodName:'', price:''};
+ const secondCell = menu[second.day]?.[second.mealId] || { foodName:'', price:''};
 
-      setMenu(prev => ({
-        ...prev,
-        [first.day]: {
-          ...prev[first.day],
-          [first.mealId]: { foodName: secondCell.foodName, price: secondCell.price }
-        },
-        [second.day]: {
-          ...prev[second.day],
-          [second.mealId]: { foodName: firstCell.foodName, price: firstCell.price }
-        }
-      }));
-      
-      setIsDirty(true);
-      setIsSwapMode(false);
-      setSwapSelection([]);
-    } else {
-      setSwapSelection(newSelection);
-    }
-  };
+ setMenu(prev => ({
+ ...prev,
+ [first.day]: {
+ ...prev[first.day],
+ [first.mealId]: { foodName: secondCell.foodName, price: secondCell.price }
+ },
+ [second.day]: {
+ ...prev[second.day],
+ [second.mealId]: { foodName: firstCell.foodName, price: firstCell.price }
+ }
+ }));
+ 
+ setIsDirty(true);
+ setIsSwapMode(false);
+ setSwapSelection([]);
+ } else {
+ setSwapSelection(newSelection);
+ }
+ };
 
-  if (isLoading && !isDirty) {
-    return (
-      <div className="space-y-6 w-full max-w-[1600px] mx-auto animate-pulse">
-        {/* Header Skeleton */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between px-4 lg:px-0">
-          <div className="space-y-3">
-            <div className="h-8 bg-black/5 dark:bg-white/5 rounded-lg w-64"></div>
-            <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-96 max-w-full"></div>
-          </div>
-          <div className="flex flex-col sm:items-end lg:flex-row lg:items-center gap-4 w-full sm:w-auto">
-            <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full lg:w-40"></div>
-            <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full lg:w-40"></div>
-          </div>
-        </div>
+ if (isLoading && !isDirty) {
+ return (
+ <div className="space-y-6 w-full max-w-[1600px] mx-auto animate-pulse">
+ {/* Header Skeleton */}
+ <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between px-4 lg:px-0">
+ <div className="space-y-3">
+ <div className="h-8 bg-black/5 dark:bg-white/5 rounded-lg w-64"></div>
+ <div className="h-4 bg-black/5 dark:bg-white/5 rounded-lg w-96 max-w-full"></div>
+ </div>
+ <div className="flex flex-col sm:items-end lg:flex-row lg:items-center gap-4 w-full sm:w-auto">
+ <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full lg:w-40"></div>
+ <div className="h-10 bg-black/5 dark:bg-white/5 rounded-xl w-full lg:w-40"></div>
+ </div>
+ </div>
 
-        {/* Daily Meals Skeleton */}
-        <div className="px-4 lg:px-0 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="h-6 bg-black/5 dark:bg-zinc-50/5 rounded-lg w-32"></div>
-            <div className="h-9 bg-black/5 dark:bg-zinc-50/5 rounded-lg w-28"></div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-40 bg-zinc-50 dark:bg-zinc-950 border border-black/5 dark:border-zinc-50/5 rounded-2xl shadow-sm"></div>
-            ))}
-          </div>
-        </div>
+ {/* Daily Meals Skeleton */}
+ <div className="px-4 lg:px-0 space-y-4">
+ <div className="flex items-center justify-between">
+ <div className="h-6 bg-black/5 dark:bg-zinc-50/5 rounded-lg w-32"></div>
+ <div className="h-9 bg-black/5 dark:bg-zinc-50/5 rounded-lg w-28"></div>
+ </div>
+ <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+ {[1, 2, 3].map((i) => (
+ <div key={i} className="h-40 bg-zinc-50 dark:bg-zinc-950 border border-border dark:border-zinc-50/5 rounded-2xl shadow-sm"></div>
+ ))}
+ </div>
+ </div>
 
-        {/* Weekly Menu Skeleton */}
-        <div className="px-4 lg:px-0 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="h-6 bg-black/5 dark:bg-zinc-50/5 rounded-lg w-48"></div>
-          </div>
-          <div className="h-[400px] bg-zinc-50 dark:bg-zinc-950 border border-black/5 dark:border-zinc-50/5 rounded-2xl shadow-sm"></div>
-        </div>
-      </div>
-    );
-  }
+ {/* Weekly Menu Skeleton */}
+ <div className="px-4 lg:px-0 space-y-4">
+ <div className="flex items-center justify-between">
+ <div className="h-6 bg-black/5 dark:bg-zinc-50/5 rounded-lg w-48"></div>
+ </div>
+ <div className="h-[400px] bg-zinc-50 dark:bg-zinc-950 border border-border dark:border-zinc-50/5 rounded-2xl shadow-sm"></div>
+ </div>
+ </div>
+ );
+ }
 
-  if (isError && !isDirty) {
-    return (
-      <div>
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 rounded-lg flex items-center justify-between gap-4">
-          <span>Failed to load meal schedule. Please try again.</span>
-          <button
-            onClick={() => refetch()}
-            className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-md border border-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+ if (isError && !isDirty) {
+ return (
+ <div>
+ <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 rounded-lg flex items-center justify-between gap-4">
+ <span>Failed to load meal schedule. Please try again.</span>
+ <button
+ onClick={() => refetch()}
+ className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-md border border-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+ >
+ Retry
+ </button>
+ </div>
+ </div>
+ );
+ }
 
-  return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
-            <UtensilsCrossed className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
-            Meal Settings
-          </h1>
-          <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-            Configure global meal timings, pricing, and weekly schedule.
-          </p>
-        </div>
-        <div className="flex flex-col sm:items-end lg:flex-row lg:items-center gap-4 w-full sm:w-auto">
-          <div className="flex items-center justify-between lg:justify-start gap-3 px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm w-full lg:w-auto">
-            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Module Status</span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleToggleStatus}
-                disabled={isManager || updateScheduleMutation.isPending}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${status === 'Active' ? 'bg-blue-600' : 'bg-zinc-200 dark:bg-zinc-700'
-                  } ${(isManager || updateScheduleMutation.isPending) ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-zinc-50 transition-transform ${status === 'Active' ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                />
-              </button>
-              <span className={`text-xs font-bold ${status === 'Active' ? 'text-blue-600' : 'text-zinc-500'}`}>
-                {status}
-              </span>
-            </div>
-          </div>
+ return (
+ <div className="space-y-8">
+ {/* Header */}
+ <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+ <div>
+ <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-3">
+ <UtensilsCrossed className="w-6 h-6 text-zinc-500 dark:text-zinc-400"/>
+ Meal Settings
+ </h1>
+ <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+ Configure global meal timings, pricing, and weekly schedule.
+ </p>
+ </div>
+ <div className="flex flex-col sm:items-end lg:flex-row lg:items-center gap-4 w-full sm:w-auto">
+ <div className="flex items-center justify-between lg:justify-start gap-3 px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm w-full lg:w-auto">
+ <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Module Status</span>
+ <div className="flex items-center gap-2">
+ <button
+ onClick={handleToggleStatus}
+ disabled={isManager || updateScheduleMutation.isPending}
+ className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${status ==='Active'?'bg-blue-600':'bg-zinc-200 dark:bg-zinc-700'
+ } ${(isManager || updateScheduleMutation.isPending) ?'opacity-50 cursor-not-allowed':''}`}
+ >
+ <span
+ className={`inline-block h-4 w-4 transform rounded-full bg-zinc-50 transition-transform ${status ==='Active'?'translate-x-6':'translate-x-1'
+ }`}
+ />
+ </button>
+ <span className={`text-xs font-bold ${status ==='Active'?'text-blue-600':'text-zinc-500'}`}>
+ {status}
+ </span>
+ </div>
+ </div>
 
-          <div className="flex items-center justify-between lg:justify-start gap-3 px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm w-full lg:w-auto">
-            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Max Selections</span>
-            <input
-              type="number"
-              min="1"
-              value={maxMealSelection}
-              onChange={(e) => {
-                setMaxMealSelection(parseInt(e.target.value) || 1);
-                setIsDirty(true);
-              }}
-              disabled={isManager || updateScheduleMutation.isPending}
-              className="w-16 h-7 text-center text-sm font-bold bg-zinc-100 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-50 border-transparent rounded-md focus:border-blue-500 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          </div>
+ <div className="flex items-center justify-between lg:justify-start gap-3 px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm w-full lg:w-auto">
+ <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Max Selections</span>
+ <input
+ type="number"
+ min="1"
+ value={maxMealSelection}
+ onChange={(e) => {
+ setMaxMealSelection(parseInt(e.target.value) || 1);
+ setIsDirty(true);
+ }}
+ disabled={isManager || updateScheduleMutation.isPending}
+ className="w-16 h-7 text-center text-sm font-bold bg-zinc-100 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-50 border-transparent rounded-md focus:border-blue-500 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
+ />
+ </div>
 
-          <div className="flex flex-col items-start sm:items-end gap-1 w-full lg:w-auto">
-            <div className="flex items-center gap-2 w-full">
-              <button
-                onClick={handleSaveMenu}
-                disabled={updateScheduleMutation.isPending || !isDirty}
-                className="flex items-center justify-center gap-2 bg-black dark:bg-white text-white dark:text-black rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black disabled:opacity-50 disabled:cursor-not-allowed w-full lg:w-auto"
-              >
-                {updateScheduleMutation.isPending ? (
-                  <div className="w-4 h-4 border-2 border-white/20 dark:border-black/20 border-t-white dark:border-t-black rounded-full animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                Save Configuration
-              </button>
-            </div>
-            {isDirty && (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                Unsaved Draft Present
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+ <div className="flex flex-col items-start sm:items-end gap-1 w-full lg:w-auto">
+ <div className="flex items-center gap-2 w-full">
+ <button
+ onClick={handleSaveMenu}
+ disabled={updateScheduleMutation.isPending || !isDirty}
+ className="flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black disabled:opacity-50 disabled:cursor-not-allowed w-full lg:w-auto"
+ >
+ {updateScheduleMutation.isPending ? (
+ <div className="w-4 h-4 border-2 border-white/20 dark:border-black/20 border-t-white dark:border-t-black rounded-full animate-spin"/>
+ ) : (
+ <Save className="w-4 h-4"/>
+ )}
+ Save Configuration
+ </button>
+ </div>
+ {isDirty && (
+ <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+ Unsaved Draft Present
+ </span>
+ )}
+ </div>
+ </div>
+ </div>
 
-      {status === 'Inactive' && (
-        <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 rounded-xl border border-amber-200 dark:border-amber-800/30">
-          <Info className="w-5 h-5 shrink-0" />
-          <p className="text-sm font-medium">
-            Meal module is currently inactive. This hostel does not serve meals or utilize mess features.
-          </p>
-        </div>
-      )}
+ {status ==='Inactive'&& (
+ <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 rounded-xl border border-amber-200 dark:border-amber-800/30">
+ <Info className="w-5 h-5 shrink-0"/>
+ <p className="text-sm font-medium">
+ Meal module is currently inactive. This hostel does not serve meals or utilize mess features.
+ </p>
+ </div>
+ )}
 
-      {/* Meals Configuration */}
-      <div className={`space-y-4 ${status === 'Inactive' ? 'opacity-50 pointer-events-none' : ''}`}>
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Daily Meals</h2>
-          {!isManager && (
-            <button
-              onClick={handleAddMeal}
-              className="flex items-center gap-2 bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-400 rounded-lg px-4 py-2 text-sm font-bold hover:bg-blue-600/20 dark:hover:bg-blue-600/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-            >
-              <Plus className="w-4 h-4" />
-              Add Meal
-            </button>
-          )}
-        </div>
+ {/* Meals Configuration */}
+ <div className={`space-y-4 ${status ==='Inactive'?'opacity-50 pointer-events-none':''}`}>
+ <div className="flex items-center justify-between">
+ <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Daily Meals</h2>
+ {!isManager && (
+ <button
+ onClick={handleAddMeal}
+ className="flex items-center gap-2 bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-400 rounded-lg px-4 py-2 text-sm font-bold hover:bg-blue-600/20 dark:hover:bg-blue-600/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+ >
+ <Plus className="w-4 h-4"/>
+ Add Meal
+ </button>
+ )}
+ </div>
 
-        {meals.length === 0 ? (
-          <div className="p-8 text-center border border-dashed border-zinc-200 dark:border-zinc-700 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50">
-            <p className="text-sm font-medium text-zinc-500">
-              {isManager ? "No meals have been configured by the admin yet." : "No meals configured. Click \"Add Meal\" to get started."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sortedMeals.map((meal) => (
-              <MealCard
-                key={meal.id}
-                meal={meal}
-                onUpdate={updateMeal}
-                onRemove={setMealToRemove}
-                isManager={isManager}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+ {meals.length === 0 ? (
+ <div className="p-8 text-center border border-dashed border-zinc-200 dark:border-zinc-700 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50">
+ <p className="text-sm font-medium text-zinc-500">
+ {isManager ?"No meals have been configured by the admin yet.":"No meals configured. Click \"Add Meal\"to get started."}
+ </p>
+ </div>
+ ) : (
+ <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+ {sortedMeals.map((meal) => (
+ <MealCard
+ key={meal.id}
+ meal={meal}
+ onUpdate={updateMeal}
+ onRemove={setMealToRemove}
+ isManager={isManager}
+ />
+ ))}
+ </div>
+ )}
+ </div>
 
-      {/* Weekly Menu Schedule */}
-      <div className={`space-y-4 ${status === 'Inactive' || meals.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Weekly Menu Configuration</h2>
-          {!isManager && meals.length > 0 && (
-            <button
-              onClick={handleToggleSwapMode}
-              className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 ${isSwapMode ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
-            >
-              {isSwapMode ? "Cancel Swap" : "Swap Meals"}
-            </button>
-          )}
-        </div>
+ {/* Weekly Menu Schedule */}
+ <div className={`space-y-4 ${status ==='Inactive'|| meals.length === 0 ?'opacity-50 pointer-events-none':''}`}>
+ <div className="flex items-center justify-between">
+ <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Weekly Menu Configuration</h2>
+ {!isManager && meals.length > 0 && (
+ <button
+ onClick={handleToggleSwapMode}
+ className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 ${isSwapMode ?'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400':'bg-zinc-100 text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+ >
+ {isSwapMode ?"Cancel Swap":"Swap Meals"}
+ </button>
+ )}
+ </div>
 
-        {meals.length > 0 && (
-          <WeeklyMenuGrid
-            meals={sortedMeals}
-            menu={menu}
-            onUpdateCell={updateMenuCell}
-            isSwapMode={isSwapMode}
-            swapSelection={swapSelection}
-            onSelectForSwap={handleSelectForSwap}
-          />
-        )}
-      </div>
+ {meals.length > 0 && (
+ <WeeklyMenuGrid
+ meals={sortedMeals}
+ menu={menu}
+ onUpdateCell={updateMenuCell}
+ isSwapMode={isSwapMode}
+ swapSelection={swapSelection}
+ onSelectForSwap={handleSelectForSwap}
+ />
+ )}
+ </div>
 
-      {/* Remove Confirmation Modal */}
-      {mealToRemove && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-            <div className="flex items-center gap-3 mb-2">
-              <AlertTriangle className="w-6 h-6 text-red-500" />
-              <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-50">Remove Meal?</h3>
-            </div>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-              Are you sure you want to remove this meal? This will delete all associated weekly menu configurations from the grid.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={() => setMealToRemove(null)}
-                className="px-4 py-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmRemoveMeal}
-                className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+ {/* Remove Confirmation Modal */}
+ {mealToRemove && (
+ <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+ <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+ <div className="flex items-center gap-3 mb-2">
+ <AlertTriangle className="w-6 h-6 text-red-500"/>
+ <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-50">Remove Meal?</h3>
+ </div>
+ <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+ Are you sure you want to remove this meal? This will delete all associated weekly menu configurations from the grid.
+ </p>
+ <div className="flex items-center justify-end gap-3">
+ <button
+ onClick={() => setMealToRemove(null)}
+ className="px-4 py-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900"
+ >
+ Cancel
+ </button>
+ <button
+ onClick={confirmRemoveMeal}
+ className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+ >
+ Remove
+ </button>
+ </div>
+ </div>
+ </div>
+ )}
+ </div>
+ );
 }

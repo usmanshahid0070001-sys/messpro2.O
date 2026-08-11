@@ -1,61 +1,61 @@
-import api from '../client';
+import api from'../client';
 
 export const billingApi = {
-  generateBills: async (data) => {
-    const response = await api.post('/api/billing/generate', data);
-    return response.data;
-  },
+ generateBills: async (data) => {
+ const response = await api.post('/api/billing/generate', data);
+ return response.data;
+ },
 
-  getAllBills: async (status) => {
-    const queryParams = status ? `?status=${status}` : '';
-    const response = await api.get(`/api/billing${queryParams}`);
-    return response.data;
-  },
-  
-  getCurrentBills: async () => {
-    const response = await api.get(`/api/billing?demand=current`);
-    return response.data;
-  },
-  
-  payBill: async (billId) => {
-    const response = await api.post(`/api/billing/${billId}/pay`);
-    return response.data;
-  },
-  
-  partialPayBill: async (billId, amount) => {
-    const response = await api.post(`/api/billing/${billId}/partial-pay`, { amount });
-    return response.data;
-  },
+ getAllBills: async (status) => {
+ const queryParams = status ? `?status=${status}` :'';
+ const response = await api.get(`/api/billing${queryParams}`);
+ return response.data;
+ },
+ 
+ getCurrentBills: async () => {
+ const response = await api.get(`/api/billing?demand=current`);
+ return response.data;
+ },
+ 
+ payBill: async (billId) => {
+ const response = await api.post(`/api/billing/${billId}/pay`);
+ return response.data;
+ },
+ 
+ partialPayBill: async (billId, amount) => {
+ const response = await api.post(`/api/billing/${billId}/partial-pay`, { amount });
+ return response.data;
+ },
 
-  getMonthlyBill: async (month, status) => {
-    let queryParams = `?month=${month}`;
-    if (status) queryParams += `&status=${status}`;
-    const response = await api.get(`/api/billing/monthly${queryParams}`);
-    return response.data;
-  },
+ getMonthlyBill: async (month, status) => {
+ let queryParams = `?month=${month}`;
+ if (status) queryParams += `&status=${status}`;
+ const response = await api.get(`/api/billing/monthly${queryParams}`);
+ return response.data;
+ },
 
-  updateBill: async (billId, customCharges) => {
-    const response = await api.put(`/api/billing/${billId}`, { customCharges });
-    return response.data;
-  },
+ updateBill: async (billId, customCharges) => {
+ const response = await api.put(`/api/billing/${billId}`, { customCharges });
+ return response.data;
+ },
 
-  getMealPricesForBilling: async (startDate, endDate) => {
-    const response = await api.get(`/api/billing/meal-prices?startDate=${startDate}&endDate=${endDate}`);
-    return response.data;
-  },
+ getMealPricesForBilling: async (startDate, endDate) => {
+ const response = await api.get(`/api/billing/meal-prices?startDate=${startDate}&endDate=${endDate}`);
+ return response.data;
+ },
 
-  updateMealPrices: async (updates) => {
-    const response = await api.put('/api/billing/meal-prices', { updates });
-    return response.data;
-  },
+ updateMealPrices: async (updates) => {
+ const response = await api.put('/api/billing/meal-prices', { updates });
+ return response.data;
+ },
 
-  getBillingSettings: async () => {
-    const response = await api.get('/api/billing/settings');
-    return response.data;
-  },
+ getBillingSettings: async () => {
+ const response = await api.get('/api/billing/settings');
+ return response.data;
+ },
 
-  updateBillingSettings: async (customCharges, isDynamicBillingEnabled) => {
-    const response = await api.put('/api/billing/settings', { customCharges, isDynamicBillingEnabled });
-    return response.data;
-  }
+ updateBillingSettings: async (customCharges, isDynamicBillingEnabled) => {
+ const response = await api.put('/api/billing/settings', { customCharges, isDynamicBillingEnabled });
+ return response.data;
+ }
 };
