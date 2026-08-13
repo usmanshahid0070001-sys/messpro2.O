@@ -8,7 +8,6 @@ const router = express.Router();
 // Both routes require the user to be logged in
 router.use(protect);
 
-// The endpoint paths exactly match your teammate's requirements
 router.get('/', restrictTo('admin', 'manager', 'student'), mealController.getMealSchedule);
 router.put('/', requirePermission('meal_settings'), mealController.updateMealSchedule);
 
