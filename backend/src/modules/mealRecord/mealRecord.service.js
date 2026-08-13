@@ -148,6 +148,20 @@ class MealRecordService {
     return records;
   }
 
+  async getStudentMonthlyRecords(rollNumber, hostelId, month) {
+    // month is expected to be 'YYYY-MM'
+    const startDate = `${month}-01`;
+    const endDate = `${month}-31`; // Simple string matching, handles up to 31st
+
+    const records = await mealRecordRepository.getStudentMonthlyRecords({
+      rollNumber,
+      hostelId,
+      date: { $gte: startDate, $lte: endDate }
+    });
+
+    return records;
+  }
+
   // ==========================================
   // 2. MANAGER FEATURE: FETCH & BULK UPSERT
   // =l=========================================

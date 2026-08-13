@@ -45,3 +45,26 @@ export const removeRoom = catchAsync(async (req, res) => {
   
   res.status(200).json({ success: true, message: result.message });
 });
+
+// Student specific endpoints
+export const getMyRoomDetails = catchAsync(async (req, res) => {
+  if (req.user.role !== 'student') {
+    const error = new Error('Only students can access this endpoint.');
+    error.statusCode = 403;
+    throw error;
+  }
+  
+  const roomDetails = await residenceService.getMyRoom(req.user._id);
+  res.status(200).json({ success: true, data: roomDetails });
+});
+
+export const markRoomCleaning = catchAsync(async (req, res) => {
+  if (req.user.role !== 'student') {
+    const error = new Error('Only students can mark room cleaning.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const cleaningDates = await residenceService.markCleaningAttendance(req.user._id);
+  res.status(200).json({ success: true, message: 'Cleaning attendance marked successfully.', data: cleaningDates });
+});

@@ -6,6 +6,10 @@ class MealRecordRepository {
     return await MealRecord.findOne(query);
   }
 
+  async getStudentMonthlyRecords(query) {
+    return await MealRecord.find(query).select('date mealType mealInfo selection attendance isGuest');
+  }
+
   async getPopulatedAttendance(query) {
     return await MealRecord.find(query).populate('studentId', 'name email id role');
   }

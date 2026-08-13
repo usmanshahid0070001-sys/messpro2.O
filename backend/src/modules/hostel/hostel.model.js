@@ -1,5 +1,14 @@
 import mongoose from "mongoose";
 
+const customChargeSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  type: { type: String, required: true },
+  value: { type: Number, default: null },
+  linkedFieldId: { type: String, default: null },
+  included: { type: Boolean, default: true }
+}, { _id: false });
+
 const hostelSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -35,7 +44,9 @@ const hostelSchema = new mongoose.Schema({
     // THE SNAPSHOT: The exact limits copied from the Plan at the time of creation
     limits: {
       maxStudents: { type: Number, required: true },
-      maxManagers: { type: Number, required: true }
+      maxManagers: { type: Number, required: true },
+      students: { type: Number, default: 0 },
+      managers: { type: Number, default: 0 }
     },
     features: [{
       name: { type: String, required: true },
@@ -76,33 +87,15 @@ const hostelSchema = new mongoose.Schema({
   },
 
   settings: {
-    authMethod: {
-      type: String,
-      enum: ['Email', 'RollNumber'],
-    },
-    attendanceMethod: {
-      type: String,
-      enum: ['Manual', 'QR', 'Biometric'],
-      default: 'Manual'
-    },
-    autoVerification: {
-      type: Boolean,
-      default: false
-    },
-    billingModel: {
-      type: String,
-      enum: ['Prepaid', 'Postpaid', 'FlatRate'],
-      default: 'Prepaid'
-    },
     autoMealVerification: {
       type: Boolean,
       default: true
     },
-    // 👇 3. NEW: The dynamic limit for how many plates a student can select!
-    maxMealSelection: {
-      type: Number,
-      default: 4 // Admin can change this from their dashboard
-    }
+    isDynamicBillingEnabled: {
+      type: Boolean,
+      default: true
+    },
+    customCharges: [customChargeSchema]
   }
 }, { timestamps: true });
 

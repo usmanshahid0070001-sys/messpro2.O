@@ -35,7 +35,9 @@ const customChargeSchema = new mongoose.Schema({
 const billSchema = new mongoose.Schema({
   // Core Identifiers
   hostelId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hostel', required: true, index: true },
-  studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true }, // Null if it's a guest
+  rollNumber: { type: String, required: true, index: true },
+  isGuest: { type: Boolean, default: false },
 
   // The Collision Shield: The date range this bill covers
   billingPeriod: {

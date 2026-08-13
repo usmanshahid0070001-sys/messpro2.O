@@ -2,23 +2,46 @@ import Bill from './bill.model.js';
 
 class BillRepository {
   
+  async findBills(query) {
+    return await Bill.find(query)
+      .populate('studentId', 'name id email')
+      .sort({ 'billingPeriod.endDate': -1, createdAt: -1 });
+  }
+
   // 1. The Collision Checker: Finds if a bill already exists for this exact date range
-  async findExistingBill(hostelId, studentId, startDate, endDate) {
+  async findExistingBill(hostelId, rollNumber, startDate, endDate) {
     return await Bill.findOne({
       hostelId,
-      studentId,
+      rollNumber,
       'billingPeriod.startDate': startDate,
       'billingPeriod.endDate': endDate
     });
   }
 
-  // 2. The Arrears Hunter: Finds all unpaid or partially paid bills for a student
-  async findUnpaidBills(hostelId, studentId) {
+  // Bulk Collision Checker
+  async findExistingBillsBulk(hostelId, startDate, endDate) {
     return await Bill.find({
       hostelId,
-      studentId,
-      status: { $in: ['Unpaid', 'Adjusted in Balance'] }
+      'billingPeriod.startDate': startDate,
+      'billingPeriod.endDate': endDate
+    }).select('rollNumber');
+  }
+
+  // 2. The Arrears Hunter: Finds all unpaid or partially paid bills for a student
+  async findUnpaidBills(hostelId, rollNumber) {
+    return await Bill.find({
+      hostelId,
+      rollNumber,
+      status: 'Unpaid'
     });
+  }
+
+  // Bulk Arrears Hunter
+  async findUnpaidBillsBulk(hostelId) {
+    return await Bill.find({
+      hostelId,
+      status: 'Unpaid'
+    }).select('_id rollNumber remainingBill');
   }
 
   // 3. Save the newly generated bill

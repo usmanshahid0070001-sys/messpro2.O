@@ -11,7 +11,8 @@ import {
   getDailyOverview,
   getManagerLiveOverview,
   bulkSelectMeals,
-  getStudentSelections
+  getStudentSelections,
+  getStudentMonthlyRecords
 } from './mealRecord.controller.js';
 import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
@@ -31,6 +32,7 @@ router.post('/qr/scan-manager', scanManagerQR);
 router.post('/qr/request-permission', requestGuestPermission);
 router.post('/selections', bulkSelectMeals);
 router.get('/selections', getStudentSelections);
+router.get('/monthly', getStudentMonthlyRecords);
 
 // Main attendance endpoints
 router

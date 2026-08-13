@@ -145,6 +145,78 @@ class ResidenceService {
     await Room.deleteOne({ _id: roomId });
     return { message: 'Room deleted and users disalloted successfully.' };
   }
+  // 7. GET MY ROOM (For Student Dashboard)
+  async getMyRoom(studentId) {
+    const student = await User.findById(studentId);
+    if (!student || !student.room) {
+      const error = new Error('You do not have a room allotted yet. Please contact your admin or staff member.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const room = await Room.findById(student.room).lean();
+    if (!room) {
+      const error = new Error('Room not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Fetch roommates (including the student themselves)
+    const roommates = await User.find({ room: student.room }, 'name id role').lean();
+    
+    // Add the roommates to the returned room object
+    room.roommates = roommates;
+    return room;
+  }
+
+  // 8. MARK CLEANING ATTENDANCE (Student logs that room was cleaned)
+  async markCleaningAttendance(studentId) {
+    const student = await User.findById(studentId);
+    if (!student || !student.room) {
+      const error = new Error('You must be allotted a room to mark cleaning attendance.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of day for comparison
+
+    const room = await Room.findById(student.room);
+    if (!room) {
+      const error = new Error('Room not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Check if already marked today
+    const alreadyMarkedToday = room.cleaningDates.some(date => {
+      const markDate = new Date(date);
+      markDate.setHours(0, 0, 0, 0);
+      return markDate.getTime() === today.getTime();
+    });
+
+    if (alreadyMarkedToday) {
+      const error = new Error('Cleaning attendance is already marked for today.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Atomically push the new date and keep only the last 15 elements using $slice
+    const updatedRoom = await Room.findByIdAndUpdate(
+      student.room,
+      {
+        $push: {
+          cleaningDates: {
+            $each: [new Date()],
+            $slice: -15 // Keep only the most recent 15 elements
+          }
+        }
+      },
+      { new: true }
+    );
+
+    return updatedRoom.cleaningDates;
+  }
 }
 
 export default new ResidenceService();

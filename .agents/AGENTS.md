@@ -149,3 +149,145 @@ npx expo install expo-image               # All remote image rendering
 npx expo install react-native-gesture-handler  # Swipe/gesture interactions
 npx expo install react-native-reanimated  # Complex animations (plugin already wired)
 ```
+
+## 8. Frontend Development Rulebook — Performance-First Upgrades
+**Project:** Hostel Management System (multi-feature, low-end mobile users)
+**Purpose:** Rules for any developer/agent making frontend changes — UI library upgrades (shadcn/ui or otherwise), new features, redesigns, or refactors.
+
+---
+
+## 8.0 Core Principle
+
+> **Never load more than the current screen needs.**
+> Every byte of JS/CSS shipped to a hostelite on a low-end Android phone costs them real time and battery. Default to "load nothing, load late, load only what's used."
+
+Before writing code, the agent must ask: *"Does this page/component need this right now, or can it wait/split/skip?"*
+
+---
+
+## 8.1 No Full-Site Loading
+
+- [ ] **Never bundle the entire app into one JS file.** Every route/page must be its own chunk.
+- [ ] Use route-based code splitting (`React.lazy` + `Suspense`, or framework-native routing like Next.js App Router / dynamic imports) for **every** page-level component.
+- [ ] Shared layout (navbar, footer, auth wrapper) can be in the main bundle — everything else is lazy-loaded per route.
+- [ ] Verify with a bundle analyzer after every major feature: no single route chunk should silently pull in unrelated feature code (e.g., "Room Booking" page must not include "Admin Reports" code).
+
+**Check command (whatever bundler is used):**
+```bash
+# Example for Vite/webpack — must be run before merging any large feature
+npx vite-bundle-visualizer   # or webpack-bundle-analyzer
+```
+
+---
+
+## 8.2 Component-Level Lazy Loading
+
+- [ ] Heavy/interactive components (modals, dialogs, command palettes, rich tables, charts, calendars, carousels) must be **lazy-loaded**, not imported at the top of the file, even if used on that page.
+  ```js
+  // ❌ Don't
+  import { Dialog } from "@/components/ui/dialog";
+
+  // ✅ Do — load only when the user actually opens it
+  const Dialog = React.lazy(() => import("@/components/ui/dialog"));
+  ```
+- [ ] If a component only appears after a user action (click "Book Room", open "Edit Profile"), it must NOT be in the initial page bundle.
+- [ ] Static/presentational components (Card, Badge, Avatar, Table row, Typography) are fine to import normally — they're cheap.
+
+---
+
+## 8.3 shadcn/ui-Specific Rules
+
+- [ ] Only run `npx shadcn add <component>` for components actually used on a page being built **right now**. No pre-adding "just in case."
+- [ ] Before adding a component, check if a simpler custom Tailwind element can do the job (e.g., a static badge doesn't need the full shadcn Badge primitive machinery if a plain `<span>` with Tailwind classes works).
+- [ ] Mark shadcn components as `"use client"` **only** where interactivity is required. Static usages (e.g., Card as a layout wrapper) should stay server-rendered if the framework supports it (Next.js RSC).
+- [ ] Radix primitives (which shadcn wraps) should not be imported redundantly across files — reuse the shared component in `components/ui/`, don't recreate variants.
+- [ ] Audit `components/ui/` folder monthly — delete any component file no longer referenced anywhere (`grep -r "ComponentName"` across `src/`).
+
+---
+
+## 8.4 Images & Media
+
+- [ ] All images must be served in modern formats (WebP/AVIF) with fallbacks, and lazy-loaded (`loading="lazy"`) unless above the fold.
+- [ ] Use responsive `srcset`/`sizes` — never ship a 1200px desktop image to a 360px mobile screen.
+- [ ] No auto-playing videos/GIFs on load. Defer until user interaction.
+- [ ] Icons: use `lucide-react` with **named imports only**, never `import * as Icons`.
+  ```js
+  // ✅
+  import { Bed, User } from "lucide-react";
+  // ❌
+  import * as Icons from "lucide-react";
+  ```
+
+---
+
+## 8.5 CSS Rules
+
+- [ ] Tailwind's purge/content config must include every file path where classes are used — verify no unused CSS ships to production (`npx tailwindcss --minify` output size check).
+- [ ] No duplicate global CSS files across features. One source of design tokens (colors, spacing, radius) shared app-wide.
+- [ ] Avoid deeply nested custom CSS-in-JS unless necessary — prefer Tailwind utility classes for consistency and smaller runtime cost.
+
+---
+
+## 8.6 JavaScript Bundle Discipline
+
+- [ ] Every new dependency added to `package.json` must be justified: check its size on [bundlephobia.com](https://bundlephobia.com) before installing.
+- [ ] Prefer native browser APIs over libraries where reasonable (e.g., `Intl.DateTimeFormat` instead of a large date library, unless already using one project-wide).
+- [ ] No duplicate libraries doing the same job (e.g., don't have both `date-fns` and `moment` in the project).
+- [ ] Tree-shake-friendly imports only — never `import _ from "lodash"`; use `import debounce from "lodash/debounce"` or a lighter alternative.
+
+---
+
+## 8.7 Low-End Device Targets (Mandatory Testing)
+
+Before marking any feature "done," test on:
+- [ ] Chrome DevTools **4x CPU throttle** + **Slow 4G** network
+- [ ] A real low-end Android device if available (or a similarly throttled emulator)
+- [ ] Confirm: page becomes interactive in a reasonable time even under these constraints (agent should note actual measured time in PR/commit description)
+
+Performance budget per page load (throttled conditions) — treat as a hard ceiling to flag, not silently exceed:
+- JS shipped per route: keep as small as reasonably possible; flag any route that grows noticeably vs. its previous size
+- Total page weight (JS+CSS+images) on first load: flag anything unusually heavy for a hostel-management page
+- Time to Interactive: should feel usable on a throttled connection, not sluggish
+
+*(Exact numeric budgets should be set once a baseline is measured — the rule is: measure, record, and don't silently regress.)*
+
+---
+
+## 8.8 Data & API Loading
+
+- [ ] Never fetch data for tabs/sections the user hasn't opened yet. Fetch on-demand (e.g., "Payment History" tab fetches only when clicked, not on page load).
+- [ ] Paginate or virtualize any long list (student lists, room lists, complaint logs) — never render hundreds of DOM rows at once. Use pagination or a virtualized list (e.g., `react-window`) for anything over ~50 rows.
+- [ ] Debounce search/filter inputs (300ms minimum) to avoid firing requests on every keystroke.
+- [ ] Cache repeated API responses client-side (React Query / SWR or equivalent) so re-navigating doesn't re-fetch unchanged data.
+
+---
+
+## 8.9 Progressive Enhancement / Skeletons
+
+- [ ] Every async section shows a lightweight skeleton/placeholder, not a blank screen or full-page spinner.
+- [ ] Critical content (e.g., "your room number," "fee due date") should render first; secondary widgets (announcements, charts) load after.
+
+---
+
+## 8.10 Pre-Merge Checklist (Agent Must Confirm Before Any Frontend PR)
+
+```
+[ ] New route is code-split (not in main bundle)
+[ ] No unused shadcn/Radix components imported
+[ ] Images optimized + lazy-loaded
+[ ] No new heavy dependency without bundlephobia check
+[ ] Long lists paginated/virtualized
+[ ] Tested under 4x CPU + Slow 4G throttle
+[ ] Bundle analyzer shows no unexpected size jump for touched routes
+[ ] No data fetched before it's needed on screen
+[ ] Skeleton/loading state present for async content
+```
+
+---
+
+## 8.11 Migration Strategy Note (for the shadcn Rollout Specifically)
+
+- Do **not** redesign the whole site at once.
+- Roll out page by page, starting with highest-traffic pages (login, dashboard, room booking, complaints).
+- Each migrated page must pass the Section 10 checklist before moving to the next.
+- Old and new design systems can coexist temporarily — don't rush parallel-run cleanup at the cost of shipping bloat.
