@@ -2,14 +2,11 @@
 
 import * as React from "react"
 import {
-  AudioWaveform,
   BookOpen,
   Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
+  Globe,
+  Shield,
+  FileText,
   Settings2,
   SquareTerminal,
 } from "lucide-react"
@@ -17,7 +14,7 @@ import {
 import { NavMain } from "@/features/app/components/nav-main"
 import { NavProjects } from "@/features/app/components/nav-projects"
 import { NavUser } from "@/features/app/components/nav-user"
-import { TeamSwitcher } from "@/features/app/components/team-switcher"
+import { AppBrand } from "@/features/app/components/app-brand"
 import {
   Sidebar,
   SidebarContent,
@@ -36,13 +33,11 @@ const AppLogo = ({ className }: { className?: string }) => (
 
 // This is sample data.
 const data = {
-  teams: [
-    {
-      name: "MessPro",
-      logo: AppLogo,
-      plan: "Management",
-    },
-  ],
+  brand: {
+    name: "MessPro",
+    logo: AppLogo,
+    plan: "Management",
+  },
   navMain: [
     {
       title: "Playground",
@@ -89,25 +84,25 @@ const data = {
     },
   ],
   projects: [
-    { name: "Design Engineering", url: "#", icon: Frame },
-    { name: "Sales & Marketing", url: "#", icon: PieChart },
-    { name: "Travel", url: "#", icon: Map },
+    { name: "Landing Page", url: "https://messprouet.vercel.app", icon: Globe },
+    { name: "Terms & Policy", url: "https://messprouet.vercel.app", icon: Shield },
+    { name: "Legal Doc", url: "https://messprouet.vercel.app", icon: FileText },
   ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useSelector((state: RootState) => state.auth)
-  
+
   const displayUser = {
     name: user?.name || "Guest",
-    email: user?.email || "",
-    avatar: "/avatars/default.jpg",
+    email: user?.email || "guest@messpro.com",
+    avatar: `https://api.dicebear.com/9.x/shapes/svg?seed=${user?.name || "Guest"}`,
   }
 
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <AppBrand brand={data.brand} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
