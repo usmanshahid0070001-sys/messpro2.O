@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./features/app/AppLayout";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/context/ThemeProvider";
 
 const App = () => {
   return (

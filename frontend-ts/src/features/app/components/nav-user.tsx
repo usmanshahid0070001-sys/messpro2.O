@@ -11,7 +11,7 @@ import {
   Sun,
 } from "lucide-react"
 
-import { useTheme } from "@/components/theme-provider"
+import { useTheme } from "@/context/ThemeProvider"
 
 import {
   Avatar,
