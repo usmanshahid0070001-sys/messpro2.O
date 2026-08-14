@@ -25,29 +25,22 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/store"
+
+import logoUrl from "@/assets/pwa-512x512.png"
+
+const AppLogo = ({ className }: { className?: string }) => (
+  <img src={logoUrl} alt="MessPro Logo" className={className} />
+)
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
+      name: "MessPro",
+      logo: AppLogo,
+      plan: "Management",
     },
   ],
   navMain: [
@@ -103,6 +96,14 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useSelector((state: RootState) => state.auth)
+  
+  const displayUser = {
+    name: user?.name || "Guest",
+    email: user?.email || "",
+    avatar: "/avatars/default.jpg",
+  }
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -113,7 +114,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={displayUser} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

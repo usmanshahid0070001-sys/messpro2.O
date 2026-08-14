@@ -12,6 +12,10 @@ import {
 } from "lucide-react"
 
 import { useTheme } from "@/context/ThemeProvider"
+import { useDispatch } from "react-redux"
+import { logout } from "@/store/slices/AuthSlice"
+import { useLogoutMutation } from "@/hooks/mutations/useAuthMutations"
+import { toast } from "sonner"
 
 import {
   Avatar,
@@ -45,6 +49,21 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { theme, setTheme } = useTheme()
+  const dispatch = useDispatch()
+  const logoutMutation = useLogoutMutation()
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync()
+      toast.success("Logged out successfully")
+    } catch (error) {
+      console.error("Failed to logout from backend", error)
+      toast.error("Logout failed. Please try again.")
+    } finally {
+      // Always clear the frontend state even if the backend call fails
+      dispatch(logout())
+    }
+  }
 
   return (
     <SidebarMenu>
@@ -111,9 +130,9 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} disabled={logoutMutation.isPending}>
               <LogOut />
-              Log out
+              {logoutMutation.isPending ? "Logging out..." : "Log out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
