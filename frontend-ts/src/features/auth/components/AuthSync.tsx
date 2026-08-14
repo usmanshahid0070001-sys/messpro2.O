@@ -7,38 +7,34 @@ import { toast } from 'sonner';
 
 export function AuthSync({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, token } = useSelector((state: RootState) => state.auth);
 
-  // The verify query will run on mount if the user is not authenticated in Redux
-  // (e.g. they just refreshed the page, or are returning from Google OAuth)
-  const { data, error, isLoading, isSuccess } = useVerifySession();
+  // Check if we have an active session or an OAuth callback query param
+  const hasTokenOrOAuth = Boolean(
+    token || (typeof window !== 'undefined' && (localStorage.getItem('token') || window.location.search.includes('auth=')))
+  );
+
+  // Verify session with the backend whenever an authenticated session is active or OAuth returned
+  const { data, error, isSuccess } = useVerifySession({
+    enabled: hasTokenOrOAuth && isAuthenticated,
+  });
 
   useEffect(() => {
-    // If the verify endpoint returned valid user data and a token, save it to Redux
-    if (isSuccess && data) {
-      dispatch(setCredentials({ user: data.user, token: data.token }));
+    // Only sync if user is currently authenticated and verified data was returned
+    if (isSuccess && data && isAuthenticated) {
+      dispatch(setCredentials({ user: data.user, token: data.token || token || '' }));
     }
-  }, [isSuccess, data, dispatch]);
+  }, [isSuccess, data, dispatch, isAuthenticated]);
 
   useEffect(() => {
-    // If the verify endpoint specifically failed (e.g. token expired, no cookie), 
-    // and we thought we were authenticated, we should probably clear the Redux state.
+    // If the token is invalid or expired on backend, log the user out cleanly
     if (error && isAuthenticated) {
       dispatch(logout());
-      toast.info("Session expired. Please log in again.");
+      toast.info('Session expired. Please log in again.');
     }
   }, [error, isAuthenticated, dispatch]);
 
-  // While we are checking the session on initial load, we might want to show a loading state
-  // or just render the children. Rendering children is fine if the routes are protected,
-  // because the protected routes will wait for isAuthenticated to be true anyway.
-  if (isLoading && !isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
   return <>{children}</>;
 }
+
+

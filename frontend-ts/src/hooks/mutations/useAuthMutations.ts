@@ -36,7 +36,8 @@ export const useLogoutMutation = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.resetQueries({ queryKey: ['auth', 'verify'] });
+      // Clear the entire React Query cache on logout so no stale queries or verify data remain
+      queryClient.clear();
     }
   });
 };

@@ -8,7 +8,7 @@ import { useGetMyHostel } from "@/hooks/queries/useHostelQueries"
 import { useNavigation } from "@/hooks/useNavigation"
 
 import { NavMain } from "@/features/app/components/nav-main"
-import { NavProjects } from "@/features/app/components/nav-projects"
+import { NavLinks } from "@/features/app/components/nav-links"
 import { NavUser } from "@/features/app/components/nav-user"
 import { AppBrand } from "@/features/app/components/app-brand"
 import {
@@ -68,7 +68,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const displayUser = {
     name: user?.name || "Guest",
     email: user?.email || "guest@messpro.com",
-    avatar: user?.avatar || `https://api.dicebear.com/9.x/shapes/svg?seed=${user?.name || "Guest"}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf,ffd5dc`,
+    avatar: `https://api.dicebear.com/9.x/shapes/svg?seed=${user?.name || "Guest"}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf,ffd5dc`,
   }
 
   return (
@@ -78,7 +78,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         {isLoading ? <NavSkeleton /> : <NavMain items={navMain} />}
-        <NavProjects projects={projects} />
+        <NavLinks projects={projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={displayUser} />

@@ -6,10 +6,12 @@ import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
 import { PublicRoute } from "./features/auth/components/PublicRoute";
 import { AuthSync } from "./features/auth/components/AuthSync";
 import { Toaster } from "@/components/ui/sonner";
+import { StorageWarningModal } from "@/components/StorageWarningModal";
 
 const App = () => {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <StorageWarningModal />
       <BrowserRouter>
         <AuthSync>
           <Routes>

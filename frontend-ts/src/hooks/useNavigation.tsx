@@ -6,30 +6,123 @@ import {
   FileText,
   Settings2,
   SquareTerminal,
-  Building,
+  Building2,
   Users,
   Utensils,
   MessageSquareWarning,
   BedDouble,
   DollarSign,
-  PieChart
+  PieChart,
+  LayoutDashboard,
+  FileTextIcon,
+  Settings2Icon
 } from 'lucide-react';
 import type { RootState } from '@/store';
-import { url } from 'zod';
+import type { PlanFeature } from '@/store/slices/HostelSlice';
 
-const EMPTY_ARRAY: string[] = [];
+const EMPTY_PERMISSIONS: string[] = [];
+const EMPTY_FEATURES: PlanFeature[] = [];
 
 export function useNavigation() {
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const { currentHostel } = useSelector((state: RootState) => state.hostel);
 
   const role = user?.role;
-  const permissions = user?.permissions;
-  const features = currentHostel?.features || EMPTY_ARRAY;
+  const perms = user?.permissions || EMPTY_PERMISSIONS;
+  const features: PlanFeature[] = currentHostel?.plan?.features || EMPTY_FEATURES;
+  console.log(features);
+
+  const hasFeature = (featureName: string): boolean => {
+    const feature = features.find(
+      (f) => f.name.toLowerCase().replace(/\s+/g, '_') === featureName
+    );
+    return feature?.isEnabled === true;
+  };
+
+  const GetPermittedAdminFeatures = (adminNav: any[]) => {
+    // Safety guard: ensure the first item has an items array
+    if (!adminNav[0]?.items) return;
+
+    if (perms.includes('user_management')) {
+      adminNav[0].items.push({ title: "User Management", url: "#" });
+    }
+
+    if (perms.includes("residence_management") && perms.includes('service_management')) {
+      adminNav.push({
+        title: "Residence",
+        icon: Building2,
+        url: '#',
+        items: [
+          { title: 'Room Allocation', url: '#' },
+          { title: 'Room Services', url: '#' }
+        ]
+      });
+    } else if (perms.includes("residence_management")) {
+      adminNav.push({
+        title: "Residence",
+        icon: Building2,
+        url: '#',
+        items: [{ title: 'Room Allocation', url: '#' }]
+      });
+    }
+
+    if (perms.includes('meal_settings') && perms.includes('meal_control')) {
+      adminNav.push({
+        title: "Mess Meals & Schedule",
+        icon: Utensils,
+        url: '#',
+        items: [
+          { title: 'Weekly Schedule', url: '#' },
+          ...(role === 'manager' ? [{ title: "Meal Overview", url: '#' }] : []),
+          { title: 'Meal Control', url: '#' }
+        ]
+      });
+    } else if (perms.includes("meal_settings")) {
+      adminNav.push({
+        title: "Mess Meals & Schedule",
+        icon: Utensils,
+        url: '#',
+        items: role === 'manager'
+          ? [{ title: 'Weekly Schedule', url: '#' }, { title: 'Meal Overview', url: '#' }]
+          : [{ title: 'Weekly Schedule', url: '#' }]
+      });
+    }
+
+    if (perms.includes('bill_management') && perms.includes('bill_generation')) {
+      adminNav.push({
+        title: "Finance & Dues",
+        icon: FileTextIcon,
+        url: '#',
+        items: [
+          { title: 'Manage Hostel Dues', url: '#' },
+          { title: 'Generate Bills', url: '#' }
+        ]
+      });
+    } else if (perms.includes("bill_management")) {
+      adminNav.push({ title: "Finance & Dues", icon: FileTextIcon, url: '#' });
+    }
+
+    if (perms.includes('complaint_management')) {
+      adminNav[0].items.push({ title: "Complaints", url: "#" });
+    }
+    if (perms.includes("manual_attendance")) {
+      adminNav.push({ title: "Manual Attendance", url: '#', icon: Settings2Icon });
+    }
+    if (perms.includes("qr_attendance")) {
+      adminNav.push({ title: "QR Attendance", url: '#', icon: Settings2Icon });
+    }
+    if (perms.includes("biometric_attendance")) {
+      adminNav.push({ title: "Biometric Attendance", url: '#', icon: Settings2Icon });
+    }
+    if (perms.includes("hostel_configuration")) {
+      adminNav.push({ title: "Hostel Configuration", url: '#', icon: Settings2Icon });
+    }
+  };
 
   const navMain = useMemo(() => {
     if (!role || !isAuthenticated) return [];
 
+    // ── Superadmin ──────────────────────────────────────────────────────────
     if (role === 'superadmin') {
       return [
         {
@@ -43,7 +136,7 @@ export function useNavigation() {
         },
         {
           title: "Manage Hostels",
-          icon: Building,
+          icon: Building2,
           isActive: true,
           items: [
             { title: "All Hostels", url: "#" },
@@ -55,116 +148,90 @@ export function useNavigation() {
           url: "#",
           icon: Settings2,
           isActive: true,
-          items: [
-            { title: "Manage Plans", url: "#" }
-          ]
+          items: [{ title: "Manage Plans", url: "#" }]
         },
       ];
     }
 
+    // ── Admin ───────────────────────────────────────────────────────────────
     if (role === 'admin') {
-      const perms = permissions || EMPTY_ARRAY;
-
       const adminNav: any[] = [
         {
-          title: "Dashboard",
-          url: "/app",
-          icon: SquareTerminal,
+          title: "Hostel Overview",
+          icon: LayoutDashboard,
           isActive: true,
+          items: [{ title: "Dashboard", url: "/app" }]
         }
       ];
-
-      if (perms.includes('residents') || perms.includes('user_management')) {
-        adminNav.push({
-          title: "Residents",
-          url: "#",
-          icon: Users,
-        });
-      }
-
-      if (perms.includes('rooms') || perms.includes('room_management')) {
-        adminNav.push({
-          title: "Rooms",
-          url: "#",
-          icon: BedDouble,
-        });
-      }
-
-      // Conditionally add features if they exist for this hostel AND user has permission
-      if (features.includes('mess') && (perms.includes('mess') || perms.includes('mess_management'))) {
-        adminNav.push({
-          title: "Mess Management",
-          url: "#",
-          icon: Utensils,
-        });
-      }
-
-      if (features.includes('complaints') && (perms.includes('complaints') || perms.includes('complaint_management'))) {
-        adminNav.push({
-          title: "Complaints",
-          url: "#",
-          icon: MessageSquareWarning,
-        });
-      }
-
-      if (features.includes('billing') && (perms.includes('billing') || perms.includes('billing_management'))) {
-        adminNav.push({
-          title: "Billing",
-          url: "#",
-          icon: DollarSign,
-        });
-      }
-
-      if (perms.includes('settings') || perms.includes('hostel_settings')) {
-        adminNav.push({
-          title: "Hostel Settings",
-          url: "#",
-          icon: Settings2,
-        });
-      }
-
+      GetPermittedAdminFeatures(adminNav);
       return adminNav;
     }
 
+    // ── Manager ─────────────────────────────────────────────────────────────
+    if (role === 'manager') {
+      const managerNav: any[] = [
+        {
+          title: "Hostel Overview",
+          url: "#",
+          icon: LayoutDashboard,
+          isActive: true,
+          items: [{ title: "Dashboard", url: "/app" }]
+        }
+      ];
+      GetPermittedAdminFeatures(managerNav);
+      return managerNav;
+    }
+
+    // ── Student ─────────────────────────────────────────────────────────────
     if (role === 'student') {
+      // Build overview items first so we can safely push into them
+      const overviewItems: any[] = [{ title: "Dashboard", url: "/app" }];
+
+      // Complaints live in the overview section for students
+      if (hasFeature('complaint_management')) {
+        overviewItems.push({ title: "My Complaints", url: "#" });
+      }
+
       const studentNav: any[] = [
         {
-          title: "My Room",
+          title: "My Overview",
           url: "#",
-          icon: BedDouble,
+          icon: LayoutDashboard,
           isActive: true,
+          items: overviewItems,
         }
       ];
 
-      if (features.includes('mess')) {
+      // Mess section — driven by the hostel plan feature, not user permissions
+      if (hasFeature('meal_settings')) {
+        const messItems: any[] = [
+          { title: "Weekly Schedule", url: "#" },
+          { title: "Meal History", url: "#" },
+        ];
+        // Mark Attendance appears inside Mess when QR attendance is also enabled
+        if (hasFeature('qr_attendance')) {
+          messItems.push({ title: "Mark Attendance", url: '#' });
+        }
+        studentNav.push({ title: "Mess", icon: Utensils, items: messItems });
+      } else if (hasFeature('qr_attendance')) {
+        // Standalone attendance section when there's no mess feature
         studentNav.push({
-          title: "Mess Menu",
-          url: "#",
-          icon: Utensils,
+          title: "Attendance",
+          icon: Settings2Icon,
+          items: [{ title: "Mark Attendance", url: '#' }],
         });
       }
 
-      if (features.includes('complaints')) {
-        studentNav.push({
-          title: "My Complaints",
-          url: "#",
-          icon: MessageSquareWarning,
-        });
-      }
-      
-      if (features.includes('billing')) {
-        studentNav.push({
-          title: "My Bills",
-          url: "#",
-          icon: DollarSign,
-        });
+      // My Room — only when residence management is enabled for this hostel
+      if (hasFeature('residence_management')) {
+        studentNav.push({ title: "My Room", icon: BedDouble, url: '#' });
       }
 
       return studentNav;
     }
 
     return [];
-  }, [role, features, permissions]);
+  }, [role, isAuthenticated, features, perms]);
 
   const projects = [
     { name: "Landing Page", url: "https://messprouet.vercel.app", icon: Globe },

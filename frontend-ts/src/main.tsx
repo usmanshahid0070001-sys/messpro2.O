@@ -11,6 +11,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 15, // 15 minutes default stale time
+      refetchOnWindowFocus: false, // Prevent the app from refreshing/refetching on tab switch
       retry: (failureCount, error: any) => {
         // Don't retry on 401/403/404 errors
         if (error?.response?.status && [401, 403, 404].includes(error.response.status)) {

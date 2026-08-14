@@ -364,11 +364,9 @@ class HostelService {
   }
 
   async updateHostelSettings(hostelId, newSettingsData) {
-    // Basic settings updater remains the same
     const updatedHostel = await hostelRepository.updateHostel(hostelId, newSettingsData);
 
     if (updatedHostel && updatedHostel.plan && updatedHostel.plan.features) {
-      // Sync in case features were toggled
       await this._syncAdminPermissions(hostelId, updatedHostel.plan.features);
     }
 
@@ -461,8 +459,14 @@ class HostelService {
       .filter(f => f.isEnabled)
       .map(f => normalize(f.name));
 
-    // Update all admins belonging to this hostel
+    // Update all admins belonging to this hostel in User model
     await User.updateMany(
+      { hostelId: hostelId.toString(), role: 'admin' },
+      { $set: { permissions: activePermissions } }
+    );
+    
+    // Also update PlainUser model so logins fetch the correct permissions
+    await PlainUser.updateMany(
       { hostelId: hostelId.toString(), role: 'admin' },
       { $set: { permissions: activePermissions } }
     );

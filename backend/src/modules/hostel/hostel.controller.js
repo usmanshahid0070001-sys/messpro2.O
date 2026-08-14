@@ -74,7 +74,6 @@ export const updateMyHostelSettings = catchAsync(async (req, res) => {
   const hostelId = req.user.hostelId;
 
   // 2. We reuse your existing updateHostelSettings service!
-  // (Remember, your service already handles the "change the plan" logic perfectly)
   const updatedHostel = await hostelService.updateHostelSettings(hostelId, req.body);
 
   res.status(200).json({ 

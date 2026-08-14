@@ -178,6 +178,7 @@ export const verifyUser = async (req) => {
 
   return {
     user: user.toPublicJSON(),
+    token,
   };
 };
 

@@ -13,7 +13,9 @@ import {
 
 import { useTheme } from "@/context/ThemeProvider"
 import { useDispatch } from "react-redux"
+import { useNavigate } from "react-router-dom"
 import { logout } from "@/store/slices/AuthSlice"
+import { clearHostel } from "@/store/slices/HostelSlice"
 import { useLogoutMutation } from "@/hooks/mutations/useAuthMutations"
 import { toast } from "sonner"
 
@@ -50,6 +52,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { theme, setTheme } = useTheme()
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const logoutMutation = useLogoutMutation()
 
   const handleLogout = async () => {
@@ -60,8 +63,10 @@ export function NavUser({
       console.error("Failed to logout from backend", error)
       toast.error("Logout failed. Please try again.")
     } finally {
-      // Always clear the frontend state even if the backend call fails
-      dispatch(logout())
+      // Always clear the frontend state and redirect even if the backend call fails
+      await dispatch(logout())
+      dispatch(clearHostel())
+      navigate("/login", { replace: true })
     }
   }
 

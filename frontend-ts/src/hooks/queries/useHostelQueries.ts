@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/api/client';
 
 const fetchMyHostel = async () => {
-  const response = await apiClient.get('/hostel/my-hostel');
-  return response.data;
+  const response = await apiClient.get('/hostels/my-hostel');
+  // API returns { success: true, data: hostelObject } — unwrap the inner data
+  return response.data.data;
 };
 
 export const useGetMyHostel = (role: string | undefined) => {
