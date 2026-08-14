@@ -1,10 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/AuthSlice';
+import hostelReducer from './slices/HostelSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    // other slices can go here
+    hostel: hostelReducer,
   },
 });
 

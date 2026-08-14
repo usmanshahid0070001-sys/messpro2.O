@@ -10,7 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes default stale time
+      staleTime: 1000 * 60 * 15, // 15 minutes default stale time
       retry: (failureCount, error: any) => {
         // Don't retry on 401/403/404 errors
         if (error?.response?.status && [401, 403, 404].includes(error.response.status)) {

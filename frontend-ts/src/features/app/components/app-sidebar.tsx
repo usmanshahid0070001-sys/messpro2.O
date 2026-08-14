@@ -1,15 +1,11 @@
 "use client"
 
 import * as React from "react"
-import {
-  BookOpen,
-  Bot,
-  Globe,
-  Shield,
-  FileText,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react"
+import { useDispatch, useSelector } from "react-redux"
+import type { RootState } from "@/store"
+import { setHostel } from "@/store/slices/HostelSlice"
+import { useGetMyHostel } from "@/hooks/queries/useHostelQueries"
+import { useNavigation } from "@/hooks/useNavigation"
 
 import { NavMain } from "@/features/app/components/nav-main"
 import { NavProjects } from "@/features/app/components/nav-projects"
@@ -21,9 +17,12 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useSelector } from "react-redux"
-import type { RootState } from "@/store"
+import { Skeleton } from "@/components/ui/skeleton"
 
 import logoUrl from "@/assets/pwa-512x512.png"
 
@@ -31,82 +30,55 @@ const AppLogo = ({ className }: { className?: string }) => (
   <img src={logoUrl} alt="MessPro Logo" className={className} />
 )
 
-// This is sample data.
-const data = {
-  brand: {
-    name: "MessPro",
-    logo: AppLogo,
-    plan: "Management",
-  },
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        { title: "History", url: "#" },
-        { title: "Starred", url: "#" },
-        { title: "Settings", url: "#" },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        { title: "Genesis", url: "#" },
-        { title: "Explorer", url: "#" },
-        { title: "Quantum", url: "#" },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        { title: "Introduction", url: "#" },
-        { title: "Get Started", url: "#" },
-        { title: "Tutorials", url: "#" },
-        { title: "Changelog", url: "#" },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        { title: "General", url: "#" },
-        { title: "Team", url: "#" },
-        { title: "Billing", url: "#" },
-        { title: "Limits", url: "#" },
-      ],
-    },
-  ],
-  projects: [
-    { name: "Landing Page", url: "https://messprouet.vercel.app", icon: Globe },
-    { name: "Terms & Policy", url: "https://messprouet.vercel.app", icon: Shield },
-    { name: "Legal Doc", url: "https://messprouet.vercel.app", icon: FileText },
-  ],
+const brandData = {
+  name: "MessPro",
+  logo: AppLogo,
+  plan: "Management",
+}
+
+function NavSkeleton() {
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>Menu</SidebarGroupLabel>
+      <SidebarMenu>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SidebarMenuItem key={i} className="py-1">
+            <Skeleton className="h-8 w-full rounded-md" />
+          </SidebarMenuItem>
+        ))}
+      </SidebarMenu>
+    </SidebarGroup>
+  )
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const dispatch = useDispatch()
   const { user } = useSelector((state: RootState) => state.auth)
+  const { navMain, projects } = useNavigation()
+
+  // Fetch hostel data for non-superadmins
+  const { data: myHostel, isLoading } = useGetMyHostel(user?.role)
+
+  React.useEffect(() => {
+    if (myHostel) {
+      dispatch(setHostel(myHostel))
+    }
+  }, [myHostel, dispatch])
 
   const displayUser = {
     name: user?.name || "Guest",
     email: user?.email || "guest@messpro.com",
-    avatar: `https://api.dicebear.com/9.x/shapes/svg?seed=${user?.name || "Guest"}`,
+    avatar: user?.avatar || `https://api.dicebear.com/9.x/shapes/svg?seed=${user?.name || "Guest"}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf,ffd5dc`,
   }
 
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <AppBrand brand={data.brand} />
+        <AppBrand brand={brandData} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {isLoading ? <NavSkeleton /> : <NavMain items={navMain} />}
+        <NavProjects projects={projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={displayUser} />
