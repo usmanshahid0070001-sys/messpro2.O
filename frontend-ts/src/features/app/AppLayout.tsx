@@ -1,19 +1,148 @@
+import * as React from "react"
+import { Outlet, useLocation } from "react-router-dom"
 import { AppSidebar } from "@/features/app/components/app-sidebar"
-
 import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { Bell } from "lucide-react"
+import { GlobalSearch } from "@/features/app/components/global-search"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { useNavigation } from "@/hooks/useNavigation"
+import logoUrl from "@/assets/pwa-512x512.png"
 
 export default function AppLayout() {
+  const location = useLocation()
+  const { navMain } = useNavigation()
+
+  // Resolve breadcrumbs dynamically based on active route and navigation items
+  const breadcrumbs = React.useMemo(() => {
+    const pathname = location.pathname
+
+    for (const group of navMain) {
+      if (group.items && group.items.length > 0) {
+        for (const item of group.items) {
+          if (
+            item.url !== "#" &&
+            (pathname === item.url || (item.url !== "/app" && pathname.startsWith(item.url)))
+          ) {
+            return {
+              parent: group.title,
+              current: item.title,
+            }
+          }
+        }
+      } else if (group.url && group.url !== "#") {
+        if (
+          pathname === group.url ||
+          (group.url !== "/app" && pathname.startsWith(group.url))
+        ) {
+          return {
+            parent: null,
+            current: group.title,
+          }
+        }
+      }
+    }
+
+    // Default for /app
+    if (pathname === "/app" || pathname === "/app/") {
+      return {
+        parent: "System Overview",
+        current: "Dashboard",
+      }
+    }
+
+    // Fallback: format URL path segments
+    const cleanPath = pathname.replace(/^\/app\/?/, "")
+    const segments = cleanPath.split("/").filter(Boolean)
+
+    const formatSegment = (text: string) =>
+      text
+        .split(/[-_]/)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+
+    if (segments.length === 0) {
+      return { parent: null, current: "Dashboard" }
+    }
+
+    if (segments.length === 1) {
+      return { parent: null, current: formatSegment(segments[0]) }
+    }
+
+    return {
+      parent: formatSegment(segments[0]),
+      current: formatSegment(segments.slice(1).join(" ")),
+    }
+  }, [location.pathname, navMain])
+
   return (
     <SidebarProvider>
       <AppSidebar side="left" variant="sidebar" collapsible="icon" />
-      
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex items-center justify-between h-12 w-full sticky top-0 z-10 bg-background border-b border-border/40 px-1">
+          <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
+
+            {/* Mobile / Small screen: Logo & Brand Name */}
+            <div className="flex items-center gap-2 md:hidden">
+              <img
+                src={logoUrl}
+                alt="MessPro Logo"
+                className="h-6 w-6 rounded-md object-contain"
+              />
+              <span className="font-semibold text-sm tracking-tight text-foreground">
+                MessPro
+              </span>
+            </div>
+
+            {/* Medium & Larger screens: Page Heading / Breadcrumb */}
+            <div className="hidden md:flex items-center gap-2">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  {breadcrumbs.parent && (
+                    <>
+                      <BreadcrumbItem className="text-muted-foreground font-normal">
+                        {breadcrumbs.parent}
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator />
+                    </>
+                  )}
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="font-medium text-foreground">
+                      {breadcrumbs.current}
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <GlobalSearch targetContainerId="main-page-content" />
+            <button
+              type="button"
+              aria-label="Notifications"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Bell className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-      
+
+        <div id="main-page-content" className="flex-1 overflow-auto">
+          {/* Main content — Dashboard, All Hostels, etc. */}
+          <Outlet />
+        </div>
+      </div>
     </SidebarProvider>
   )
 }

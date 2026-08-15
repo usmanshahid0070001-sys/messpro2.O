@@ -7,13 +7,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu"
 
 export function AppBrand({
   brand,

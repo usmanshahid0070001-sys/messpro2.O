@@ -156,3 +156,32 @@ body {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+/* In-Page Global Search Highlights */
+mark.page-search-mark {
+  background-color: oklch(0.88 0.16 85 / 35%);
+  color: inherit;
+  padding: 0.05em 0.2em;
+  border-radius: 0.25rem;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: all 0.15s ease;
+}
+
+.dark mark.page-search-mark {
+  background-color: oklch(0.75 0.18 85 / 30%);
+  color: oklch(0.985 0 0);
+}
+
+mark.page-search-mark-active {
+  background-color: oklch(0.78 0.19 75) !important;
+  color: oklch(0.1 0 0) !important;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px oklch(0.78 0.19 75 / 50%);
+}
+
+.dark mark.page-search-mark-active {
+  background-color: oklch(0.82 0.18 75) !important;
+  color: oklch(0.1 0 0) !important;
+  box-shadow: 0 0 0 2px oklch(0.82 0.18 75 / 60%);
+}

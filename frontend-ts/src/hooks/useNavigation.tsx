@@ -5,13 +5,9 @@ import {
   Shield,
   FileText,
   Settings2,
-  SquareTerminal,
   Building2,
-  Users,
   Utensils,
-  MessageSquareWarning,
   BedDouble,
-  DollarSign,
   PieChart,
   LayoutDashboard,
   FileTextIcon,
@@ -30,7 +26,6 @@ export function useNavigation() {
   const role = user?.role;
   const perms = user?.permissions || EMPTY_PERMISSIONS;
   const features: PlanFeature[] = currentHostel?.plan?.features || EMPTY_FEATURES;
-  console.log(features);
 
   const hasFeature = (featureName: string): boolean => {
     const feature = features.find(
