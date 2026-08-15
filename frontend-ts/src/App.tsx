@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./features/app/AppLayout";
+import Dashboard from "./features/app/Dashboard";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import LoginForm from "./features/auth/LoginForm";
 import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
@@ -23,7 +24,7 @@ const App = () => {
             {/* Protected Routes (Accessible only if logged in) */}
             <Route element={<ProtectedRoute />}>
               <Route path="/app" element={<AppLayout />}>
-                {/* Nested routes under /app go here, e.g., <Route index element={<Dashboard />} /> */}
+                <Route index element={<Dashboard />} />
               </Route>
             </Route>
 
