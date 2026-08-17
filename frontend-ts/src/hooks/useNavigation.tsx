@@ -45,14 +45,18 @@ export function useNavigation() {
       adminNav[0].items.push({ title: "Manage Users", url: "/app/users" });
     }
 
+    if (role === 'manager' && hasFeature('residence_management')) {
+      adminNav[0].items.push({ title: "My Room", url: "/app/my-room" });
+    }
+
     if (perms.includes("residence_management") && perms.includes('service_management')) {
       adminNav.push({
         title: "Residence",
         icon: Building2,
         url: '#',
         items: [
-          { title: 'Room Allocation', url: '#' },
-          { title: 'Room Services', url: '#' }
+          { title: 'Room Allocation', url: '/app/residence/allocation' },
+          { title: 'Room Services', url: '/app/residence/services' }
         ]
       });
     } else if (perms.includes("residence_management")) {
@@ -60,7 +64,14 @@ export function useNavigation() {
         title: "Residence",
         icon: Building2,
         url: '#',
-        items: [{ title: 'Room Allocation', url: '#' }]
+        items: [{ title: 'Room Allocation', url: '/app/residence/allocation' }]
+      });
+    } else if (perms.includes("service_management")) {
+      adminNav.push({
+        title: "Residence",
+        icon: Building2,
+        url: '#',
+        items: [{ title: 'Room Services', url: '/app/residence/services' }]
       });
     }
 
@@ -101,7 +112,7 @@ export function useNavigation() {
     }
 
     if (perms.includes('complaint_management')) {
-      adminNav[0].items.push({ title: "Complaints", url: "#" });
+      adminNav[0].items.push({ title: "Complaints", url: "/app/complaints" });
     }
 
     // ── Attendance Methods: Group if 2+, single button if 1 ──
@@ -206,7 +217,7 @@ export function useNavigation() {
 
       // Complaints live in the overview section for students
       if (hasFeature('complaint_management')) {
-        overviewItems.push({ title: "My Complaints", url: "#" });
+        overviewItems.push({ title: "My Complaints", url: "/app/complaints" });
       }
 
       const studentNav: any[] = [
@@ -239,10 +250,15 @@ export function useNavigation() {
         });
       }
 
-      // My Room — only when residence management is enabled for this hostel
+      // My Room — dedicated residence section
       if (hasFeature('residence_management')) {
-        studentNav.push({ title: "My Room", icon: BedDouble, url: '#' });
+        studentNav.push({
+          title: "My Room",
+          icon: BedDouble,
+          url: "/app/my-room",
+        });
       }
+      GetPermittedAdminFeatures(studentNav);
 
       return studentNav;
     }
