@@ -45,7 +45,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Add, edit, or manage user access',
     icon: Users,
     color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-    hoverBg: 'group-hover:bg-blue-600 dark:group-hover:bg-blue-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-blue-600 dark:group-hover:bg-blue-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
     borderHover: 'hover:border-blue-500/40',
   },
@@ -55,7 +55,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Assign and manage resident rooms',
     icon: BedDouble,
     color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
-    hoverBg: 'group-hover:bg-teal-600 dark:group-hover:bg-teal-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-teal-600 dark:group-hover:bg-teal-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-teal-600 dark:group-hover:text-teal-400',
     borderHover: 'hover:border-teal-500/40',
   },
@@ -63,7 +63,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Track room maintenance and services',
     icon: Building2,
     color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
-    hoverBg: 'group-hover:bg-teal-600 dark:group-hover:bg-teal-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-teal-600 dark:group-hover:bg-teal-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-teal-600 dark:group-hover:text-teal-400',
     borderHover: 'hover:border-teal-500/40',
   },
@@ -71,7 +71,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'View your room details & roommates',
     icon: BedDouble,
     color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
-    hoverBg: 'group-hover:bg-teal-600 dark:group-hover:bg-teal-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-teal-600 dark:group-hover:bg-teal-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-teal-600 dark:group-hover:text-teal-400',
     borderHover: 'hover:border-teal-500/40',
   },
@@ -81,7 +81,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Configure weekly dining menu',
     icon: Utensils,
     color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
     borderHover: 'hover:border-emerald-500/40',
   },
@@ -89,7 +89,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Live meal counts and session overview',
     icon: Utensils,
     color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
     borderHover: 'hover:border-emerald-500/40',
   },
@@ -97,7 +97,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Manage meal access and restrictions',
     icon: Utensils,
     color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
     borderHover: 'hover:border-emerald-500/40',
   },
@@ -105,7 +105,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Review your past meal consumption',
     icon: Utensils,
     color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
     borderHover: 'hover:border-emerald-500/40',
   },
@@ -115,7 +115,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Track student fees and receipts',
     icon: CreditCard,
     color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
-    hoverBg: 'group-hover:bg-purple-600 dark:group-hover:bg-purple-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-purple-600 dark:group-hover:bg-purple-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-purple-600 dark:group-hover:text-purple-400',
     borderHover: 'hover:border-purple-500/40',
   },
@@ -123,7 +123,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Issue new monthly invoices & dues',
     icon: FileText,
     color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
-    hoverBg: 'group-hover:bg-purple-600 dark:group-hover:bg-purple-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-purple-600 dark:group-hover:bg-purple-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-purple-600 dark:group-hover:text-purple-400',
     borderHover: 'hover:border-purple-500/40',
   },
@@ -133,7 +133,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Log manual attendance records',
     icon: Settings2Icon,
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white',
+    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
     borderHover: 'hover:border-slate-500/40',
   },
@@ -141,7 +141,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Manage QR code meal scanning',
     icon: QrCode,
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white',
+    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
     borderHover: 'hover:border-slate-500/40',
   },
@@ -149,7 +149,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Sync biometric attendance records',
     icon: Activity,
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white',
+    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
     borderHover: 'hover:border-slate-500/40',
   },
@@ -157,7 +157,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Configure hostel settings and rules',
     icon: Settings2,
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white',
+    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
     borderHover: 'hover:border-slate-500/40',
   },
@@ -165,7 +165,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Scan QR code at the mess counter',
     icon: QrCode,
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white',
+    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
     borderHover: 'hover:border-slate-500/40',
   },
@@ -175,7 +175,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Review and resolve resident issues',
     icon: AlertCircle,
     color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-    hoverBg: 'group-hover:bg-amber-600 dark:group-hover:bg-amber-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-amber-600 dark:group-hover:bg-amber-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-amber-600 dark:group-hover:text-amber-400',
     borderHover: 'hover:border-amber-500/40',
   },
@@ -183,7 +183,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
     desc: 'Submit and track maintenance issues',
     icon: AlertCircle,
     color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-    hoverBg: 'group-hover:bg-amber-600 dark:group-hover:bg-amber-500 group-hover:text-white',
+    hoverBg: 'group-hover:bg-amber-600 dark:group-hover:bg-amber-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-amber-600 dark:group-hover:text-amber-400',
     borderHover: 'hover:border-amber-500/40',
   },
@@ -229,7 +229,7 @@ function extractQuickActions(navItems: any[]): QuickActionItem[] {
             desc: `Access ${subItem.title} module`,
             icon: section.icon || ChevronRight,
             color: 'bg-muted text-foreground border-border',
-            hoverBg: 'group-hover:bg-primary group-hover:text-primary-foreground',
+            hoverBg: 'group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:text-primary-foreground',
             hoverText: 'group-hover:text-primary',
             borderHover: 'hover:border-primary/40',
           }
@@ -258,7 +258,7 @@ function extractQuickActions(navItems: any[]): QuickActionItem[] {
         desc: `Access ${section.title} module`,
         icon: section.icon || ChevronRight,
         color: 'bg-muted text-foreground border-border',
-        hoverBg: 'group-hover:bg-primary group-hover:text-primary-foreground',
+        hoverBg: 'group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:text-primary-foreground',
         hoverText: 'group-hover:text-primary',
         borderHover: 'hover:border-primary/40',
       }
@@ -693,7 +693,7 @@ function AdminManagerDashboard({
                       <div
                         className={`h-9 w-9 rounded-lg flex items-center justify-center border transition-colors ${action.color} ${action.hoverBg}`}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-4 w-4 transition-colors group-hover:text-white dark:group-hover:text-white" />
                       </div>
                       <ChevronRight className={`h-4 w-4 text-muted-foreground ${action.hoverText} group-hover:translate-x-0.5 transition-all`} />
                     </div>
@@ -971,7 +971,7 @@ function StudentDashboard({
                       <div
                         className={`h-8 w-8 rounded-lg flex items-center justify-center border transition-colors ${s.color} ${s.hoverBg}`}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-4 w-4 transition-colors group-hover:text-white dark:group-hover:text-white" />
                       </div>
                       <div>
                         <div className={`text-xs font-semibold text-foreground ${s.hoverText} transition-colors`}>

@@ -291,3 +291,29 @@ Performance budget per page load (throttled conditions) — treat as a hard ceil
 - Roll out page by page, starting with highest-traffic pages (login, dashboard, room booking, complaints).
 - Each migrated page must pass the Section 10 checklist before moving to the next.
 - Old and new design systems can coexist temporarily — don't rush parallel-run cleanup at the cost of shipping bloat.
+
+---
+
+## 9. Frontend UI Design Tokens, Color Hierarchy & Layout Standards
+
+To maintain visual cohesion, clarity, and scannability across all web pages and dashboards:
+
+### 9.1 Semantic Category Color Mapping
+Never use a single default color (e.g. blue) on all cards or icons. Map colors strictly by functional domain:
+- **People & Access:** Brand Blue (`bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20`, hover: `group-hover:bg-blue-600`)
+- **Residence & Rooms:** Teal / Cyan (`bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20`, hover: `group-hover:bg-teal-600`)
+- **Food & Meals:** Emerald Green (`bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20`, hover: `group-hover:bg-emerald-600`)
+- **Finance & Dues:** Purple / Violet (`bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20`, hover: `group-hover:bg-purple-600`)
+- **Attendance & System Config:** Neutral Slate (`bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20`, hover: `group-hover:bg-slate-700`)
+- **Alerts & Complaints:** Warm Amber (`bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20`, hover: `group-hover:bg-amber-600`)
+
+### 9.2 Typographic Hierarchy & Contrast Scale
+- **Label / Category:** `text-[13px] font-medium text-muted-foreground`
+- **Metric / Primary Value:** `text-3xl font-bold tracking-tight text-foreground` (crisp and high-contrast)
+- **Subtext / Helper Text:** `text-[11px] font-normal text-muted-foreground/80`
+
+### 9.3 Layout & Padding Consistency
+- **Uniform Card Padding:** Standardize cards and interactive tiles to `p-5` (20px).
+- **Asymmetric Grids:** Use `items-start` on multi-column grid layouts with sticky side widgets (`lg:sticky lg:top-16`) to prevent vertical stretching or container cutoffs.
+- **Outer vs Inner Padding:** Let the layout shell handle outer margin/padding; do not apply duplicate large margins/padding in child page containers.
+
