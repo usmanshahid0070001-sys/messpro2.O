@@ -442,17 +442,20 @@ class HostelService {
 
     const password = crypto.randomBytes(8).toString('base64url');
     const user = await User.create({
+      id: userData.id ? userData.id.toLowerCase().trim() : undefined,
       name: userData.name,
       email: userData.email.toLowerCase().trim(),
       role: userData.role,
       hostelId: hostelId.toString(),
       password,
       permissions: userData.permissions || [],
+      additionalInfo: Array.isArray(userData.additionalInfo) ? userData.additionalInfo : [],
     });
 
     await PlainUser.findOneAndUpdate(
       { email: userData.email.toLowerCase().trim() },
       { 
+        id: userData.id ? userData.id.toLowerCase().trim() : undefined,
         password, 
         role: userData.role, 
         name: userData.name, 

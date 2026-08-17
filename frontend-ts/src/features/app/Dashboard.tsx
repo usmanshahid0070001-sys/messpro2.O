@@ -44,7 +44,7 @@ export interface ActionMeta {
 
 const ACTION_METADATA: Record<string, ActionMeta> = {
   // ── People / Access ── (Brand Blue)
-  'User Management': {
+  'Manage Users': {
     desc: 'Add, edit, or manage user access',
     icon: Users,
     color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',

@@ -42,7 +42,7 @@ export function useNavigation() {
     if (!adminNav[0]?.items) return;
 
     if (perms.includes('user_management')) {
-      adminNav[0].items.push({ title: "User Management", url: "/app/users" });
+      adminNav[0].items.push({ title: "Manage Users", url: "/app/users" });
     }
 
     if (perms.includes("residence_management") && perms.includes('service_management')) {
@@ -157,7 +157,7 @@ export function useNavigation() {
           isActive: true,
           items: [
             { title: "All Hostels", url: "#" },
-            { title: "Hostel Users", url: "/app/users" },
+            { title: "Manage Users", url: "/app/users" },
           ],
         },
         {
