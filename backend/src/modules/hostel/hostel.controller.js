@@ -73,8 +73,11 @@ export const updateMyHostelSettings = catchAsync(async (req, res) => {
   // 1. Grab the hostel ID from the logged-in Admin
   const hostelId = req.user.hostelId;
 
-  // 2. We reuse your existing updateHostelSettings service!
-  const updatedHostel = await hostelService.updateHostelSettings(hostelId, req.body);
+  // 2. Validate input against schema
+  const validatedData = updateSettingsSchema.parse(req.body);
+
+  // 3. Update hostel settings
+  const updatedHostel = await hostelService.updateHostelSettings(hostelId, validatedData);
 
   res.status(200).json({ 
     success: true, 

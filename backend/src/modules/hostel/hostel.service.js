@@ -364,7 +364,53 @@ class HostelService {
   }
 
   async updateHostelSettings(hostelId, newSettingsData) {
-    const updatedHostel = await hostelRepository.updateHostel(hostelId, newSettingsData);
+    const updatePayload = { ...newSettingsData };
+
+    if (newSettingsData.planFeatures && !newSettingsData['plan.features']) {
+      updatePayload['plan.features'] = newSettingsData.planFeatures;
+      delete updatePayload.planFeatures;
+    } else if (newSettingsData.plan && typeof newSettingsData.plan === 'object' && Array.isArray(newSettingsData.plan.features)) {
+      updatePayload['plan.features'] = newSettingsData.plan.features;
+      delete updatePayload.plan;
+    }
+
+    if (updatePayload['plan.features']) {
+      const hostel = await hostelRepository.findById(hostelId);
+      if (!hostel) throw new Error('Hostel not found.');
+
+      const existingFeatures = hostel.plan?.features || [];
+      const incomingFeatures = updatePayload['plan.features'];
+
+      const CORE_FEATURE_NAMES = [
+        'user_management',
+        'hostel_configuration',
+        'bill_management',
+        'bill_generation',
+        'residence_management',
+      ];
+      const normalize = (name) => (name || '').toLowerCase().replace(/[\s-]+/g, '_');
+      const isCore = (name) => CORE_FEATURE_NAMES.includes(normalize(name));
+
+      // Map existing features: only change the isEnabled boolean, prevent addition/deletion
+      const mergedFeatures = existingFeatures.map((existing) => {
+        const incoming = incomingFeatures.find(
+          (f) => normalize(f.name) === normalize(existing.name)
+        );
+
+        if (isCore(existing.name)) {
+          return { name: existing.name, isEnabled: true };
+        }
+
+        return {
+          name: existing.name,
+          isEnabled: incoming ? Boolean(incoming.isEnabled) : existing.isEnabled,
+        };
+      });
+
+      updatePayload['plan.features'] = mergedFeatures;
+    }
+
+    const updatedHostel = await hostelRepository.updateHostel(hostelId, updatePayload);
 
     if (updatedHostel && updatedHostel.plan && updatedHostel.plan.features) {
       await this._syncAdminPermissions(hostelId, updatedHostel.plan.features);

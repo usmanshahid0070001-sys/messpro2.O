@@ -11,7 +11,10 @@ import {
   PieChart,
   LayoutDashboard,
   FileTextIcon,
-  Settings2Icon
+  UserCheck,
+  QrCode,
+  Fingerprint,
+  ClipboardCheck,
 } from 'lucide-react';
 import type { RootState } from '@/store';
 import type { PlanFeature } from '@/store/slices/HostelSlice';
@@ -39,7 +42,7 @@ export function useNavigation() {
     if (!adminNav[0]?.items) return;
 
     if (perms.includes('user_management')) {
-      adminNav[0].items.push({ title: "User Management", url: "#" });
+      adminNav[0].items.push({ title: "User Management", url: "/app/users" });
     }
 
     if (perms.includes("residence_management") && perms.includes('service_management')) {
@@ -100,17 +103,36 @@ export function useNavigation() {
     if (perms.includes('complaint_management')) {
       adminNav[0].items.push({ title: "Complaints", url: "#" });
     }
+
+    // ── Attendance Methods: Group if 2+, single button if 1 ──
+    const attendanceItems: { title: string; url: string; icon: any }[] = [];
     if (perms.includes("manual_attendance")) {
-      adminNav.push({ title: "Manual Attendance", url: '#', icon: Settings2Icon });
+      attendanceItems.push({ title: "Manual Attendance", url: '#', icon: UserCheck });
     }
     if (perms.includes("qr_attendance")) {
-      adminNav.push({ title: "QR Attendance", url: '#', icon: Settings2Icon });
+      attendanceItems.push({ title: "QR Attendance", url: '#', icon: QrCode });
     }
     if (perms.includes("biometric_attendance")) {
-      adminNav.push({ title: "Biometric Attendance", url: '#', icon: Settings2Icon });
+      attendanceItems.push({ title: "Biometric Attendance", url: '#', icon: Fingerprint });
     }
+
+    if (attendanceItems.length >= 2) {
+      adminNav.push({
+        title: "Attendance",
+        icon: ClipboardCheck,
+        url: '#',
+        items: attendanceItems.map(item => ({ title: item.title, url: item.url }))
+      });
+    } else if (attendanceItems.length === 1) {
+      adminNav.push({
+        title: attendanceItems[0].title,
+        url: attendanceItems[0].url,
+        icon: attendanceItems[0].icon,
+      });
+    }
+
     if (perms.includes("hostel_configuration")) {
-      adminNav.push({ title: "Hostel Configuration", url: '#', icon: Settings2Icon });
+      adminNav.push({ title: "Hostel Configuration", url: '/app/hostel-configuration', icon: Settings2 });
     }
   };
 
@@ -135,7 +157,7 @@ export function useNavigation() {
           isActive: true,
           items: [
             { title: "All Hostels", url: "#" },
-            { title: "Hostel Users", url: "#" },
+            { title: "Hostel Users", url: "/app/users" },
           ],
         },
         {
@@ -212,7 +234,7 @@ export function useNavigation() {
         // Standalone attendance section when there's no mess feature
         studentNav.push({
           title: "Attendance",
-          icon: Settings2Icon,
+          icon: QrCode,
           items: [{ title: "Mark Attendance", url: '#' }],
         });
       }

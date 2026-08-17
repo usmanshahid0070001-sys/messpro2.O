@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./features/app/AppLayout";
 import Dashboard from "./features/app/Dashboard";
+import ManageUsers from "./features/managerUsers/ManageUsers";
+import HostelConfiguration from "./features/hostel/HostelConfiguration";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import LoginForm from "./features/auth/LoginForm";
 import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
@@ -25,6 +27,8 @@ const App = () => {
             <Route element={<ProtectedRoute />}>
               <Route path="/app" element={<AppLayout />}>
                 <Route index element={<Dashboard />} />
+                <Route path="users" element={<ManageUsers />} />
+                <Route path="hostel-configuration" element={<HostelConfiguration />} />
               </Route>
             </Route>
 

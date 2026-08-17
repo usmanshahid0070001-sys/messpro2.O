@@ -131,7 +131,10 @@ export function NavUser({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                 {theme === "dark" ? <Sun /> : <Moon />}
-                Toggle theme
+                <span>Toggle theme</span>
+                <kbd className="ml-auto pointer-events-none inline-flex h-4.5 select-none items-center rounded border border-border bg-muted/60 px-1 font-mono text-[9px] font-medium text-muted-foreground">
+                  Ctrl+M
+                </kbd>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

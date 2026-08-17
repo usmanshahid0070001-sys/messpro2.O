@@ -1,4 +1,5 @@
 import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import {
   Building2,
   Users,
@@ -20,7 +21,9 @@ import {
   ChevronRight,
   Plus,
   Settings2,
-  Settings2Icon
+  UserCheck,
+  Fingerprint,
+  ClipboardCheck
 } from 'lucide-react'
 import type { RootState } from '@/store'
 import type { PlanFeature } from '@/store/slices/HostelSlice'
@@ -129,9 +132,17 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
   },
 
   // ── Attendance & Configuration ── (Slate / Neutral Tone)
+  'Attendance': {
+    desc: 'Manage and review student attendance',
+    icon: ClipboardCheck,
+    color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
+    hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
+    borderHover: 'hover:border-slate-500/40',
+  },
   'Manual Attendance': {
     desc: 'Log manual attendance records',
-    icon: Settings2Icon,
+    icon: UserCheck,
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
     hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
@@ -147,7 +158,7 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
   },
   'Biometric Attendance': {
     desc: 'Sync biometric attendance records',
-    icon: Activity,
+    icon: Fingerprint,
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
     hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
@@ -484,6 +495,7 @@ function AdminManagerDashboard({
   isLoading: boolean
   navMain: any[]
 }) {
+  const navigate = useNavigate()
   const role = user?.role
   const perms: string[] = user?.permissions || []
 
@@ -634,7 +646,7 @@ function AdminManagerDashboard({
             <span>{hostel?.location || 'Campus Residence'}</span>
             <span>•</span>
             <span>
-              Subdomain: <strong className="text-foreground">{hostel?.subdomain || 'hostel'}</strong>.messpro.app
+              Subdomain: <strong className="text-foreground">{hostel?.subdomain || 'hostel'}</strong>
             </span>
           </p>
         </div>
@@ -687,6 +699,11 @@ function AdminManagerDashboard({
                 return (
                   <div
                     key={i}
+                    onClick={() => {
+                      if (action.url && action.url !== '#') {
+                        navigate(action.url)
+                      }
+                    }}
                     className={`p-5 rounded-xl bg-card border border-border ${action.borderHover} hover:bg-muted/20 transition-all cursor-pointer group flex flex-col justify-between gap-3 shadow-xs`}
                   >
                     <div className="flex items-center justify-between">
@@ -799,6 +816,7 @@ function StudentDashboard({
   hostel: any
   navMain: any[]
 }) {
+  const navigate = useNavigate()
   const roomNumber = user?.room || 'Room 204'
   const hostelName = hostel?.name || 'Campus Residence'
 
@@ -965,6 +983,11 @@ function StudentDashboard({
                 return (
                   <div
                     key={idx}
+                    onClick={() => {
+                      if (s.url && s.url !== '#') {
+                        navigate(s.url)
+                      }
+                    }}
                     className={`p-3.5 rounded-xl border border-border ${s.borderHover} hover:bg-muted/40 transition-colors cursor-pointer flex items-center justify-between gap-3 group`}
                   >
                     <div className="flex items-center gap-3">

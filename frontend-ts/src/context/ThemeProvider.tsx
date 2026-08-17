@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react"
+import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut"
 
 type Theme = "dark" | "light" | "system"
 
@@ -47,6 +48,23 @@ export function ThemeProvider({
 
     root.classList.add(theme)
   }, [theme])
+
+  // Global keybinding: Ctrl+M to toggle theme
+  useKeyboardShortcut(['ctrl', 'm'], () => {
+    setTheme((prevTheme) => {
+      let nextTheme: Theme = 'light'
+      if (prevTheme === 'light') {
+        nextTheme = 'dark'
+      } else if (prevTheme === 'dark') {
+        nextTheme = 'light'
+      } else {
+        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        nextTheme = isSystemDark ? 'light' : 'dark'
+      }
+      localStorage.setItem(storageKey, nextTheme)
+      return nextTheme
+    })
+  })
 
   const value = {
     theme,
