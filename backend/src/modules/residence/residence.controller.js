@@ -46,10 +46,10 @@ export const removeRoom = catchAsync(async (req, res) => {
   res.status(200).json({ success: true, message: result.message });
 });
 
-// Student specific endpoints
+// Student / Manager room endpoints
 export const getMyRoomDetails = catchAsync(async (req, res) => {
-  if (req.user.role !== 'student') {
-    const error = new Error('Only students can access this endpoint.');
+  if (!['student', 'manager'].includes(req.user.role)) {
+    const error = new Error('Only residents (students or managers) can access this endpoint.');
     error.statusCode = 403;
     throw error;
   }
@@ -59,8 +59,8 @@ export const getMyRoomDetails = catchAsync(async (req, res) => {
 });
 
 export const markRoomCleaning = catchAsync(async (req, res) => {
-  if (req.user.role !== 'student') {
-    const error = new Error('Only students can mark room cleaning.');
+  if (!['student', 'manager'].includes(req.user.role)) {
+    const error = new Error('Only residents (students or managers) can mark room cleaning.');
     error.statusCode = 403;
     throw error;
   }

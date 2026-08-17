@@ -17,17 +17,17 @@ const router = express.Router();
 router.use(protect);
 
 // 2. STUDENT ROUTES (My Room)
-router.get('/my-room', getMyRoomDetails);
-router.post('/my-room/cleaning', markRoomCleaning);
+router.get('/my-room', restrictTo('student', 'manager'), getMyRoomDetails);
+router.post('/my-room/cleaning', restrictTo('student', 'manager'), markRoomCleaning);
 
-// 3. ADMIN ONLY ROUTES (Building and Destroying)
+// Permitted Routes to admin, permitted manager and student
+// 3. Room Allocation
 router.post('/', requirePermission('residence_management'), buildNewRoom);
 router.delete('/:id', requirePermission('residence_management'), removeRoom);
-
-// 4. ADMIN & MANAGER ROUTES (Day-to-day operations)
-router.get('/', requirePermission('residence_management'), fetchAllRooms);
 router.post('/allote', requirePermission('residence_management'), assignRoom);
 router.post('/disallote', requirePermission('residence_management'), removeStudentFromRoom);
 router.post('/change', requirePermission('residence_management'), swapRoom);
+// Room allocation + Room Service section to show the cleaning records
+router.get('/', requirePermission('residence_management'), fetchAllRooms);
 
 export default router;
