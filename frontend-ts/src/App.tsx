@@ -3,6 +3,10 @@ import AppLayout from "./features/app/AppLayout";
 import Dashboard from "./features/app/Dashboard";
 import ManageUsers from "./features/managerUsers/ManageUsers";
 import HostelConfiguration from "./features/hostel/HostelConfiguration";
+import ComplaintIndex from "./features/complain/ComplaintIndex";
+import RoomAllocation from "./features/Residence/RoomAllocation";
+import RoomService from "./features/Residence/RoomService";
+import MyRoom from "./features/Residence/MyRoom";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import LoginForm from "./features/auth/LoginForm";
 import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
@@ -29,6 +33,10 @@ const App = () => {
                 <Route index element={<Dashboard />} />
                 <Route path="users" element={<ManageUsers />} />
                 <Route path="hostel-configuration" element={<HostelConfiguration />} />
+                <Route path="complaints" element={<ComplaintIndex />} />
+                <Route path="residence/allocation" element={<RoomAllocation />} />
+                <Route path="residence/services" element={<RoomService />} />
+                <Route path="my-room" element={<MyRoom />} />
               </Route>
             </Route>
 

@@ -87,9 +87,9 @@ export default function AppLayout() {
     <SidebarProvider>
       <AppSidebar side="left" variant="sidebar" collapsible="icon" />
 
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-w-0 max-w-full">
         <div className="flex items-center justify-between h-12 w-full sticky top-0 z-10 bg-background border-b border-border/40 px-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <SidebarTrigger className="-ml-1" />
 
             {/* Mobile / Small screen: Logo & Brand Name */}
@@ -105,7 +105,7 @@ export default function AppLayout() {
             </div>
 
             {/* Medium & Larger screens: Page Heading / Breadcrumb */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 min-w-0">
               <Breadcrumb>
                 <BreadcrumbList>
                   {breadcrumbs.parent && (
@@ -117,7 +117,7 @@ export default function AppLayout() {
                     </>
                   )}
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="font-medium text-foreground">
+                    <BreadcrumbPage className="font-medium text-foreground truncate">
                       {breadcrumbs.current}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
@@ -126,7 +126,7 @@ export default function AppLayout() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <GlobalSearch targetContainerId="main-page-content" />
             <button
               type="button"
@@ -138,7 +138,7 @@ export default function AppLayout() {
           </div>
         </div>
 
-        <div id="main-page-content" className="flex-1 overflow-auto">
+        <div id="main-page-content" className="flex-1 min-w-0 max-w-full overflow-x-hidden">
           {/* Main content — Dashboard, All Hostels, etc. */}
           <Outlet />
         </div>

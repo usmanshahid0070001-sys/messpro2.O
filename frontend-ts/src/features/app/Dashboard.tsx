@@ -640,7 +640,7 @@ function AdminManagerDashboard({
             )}
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {getGreeting()}, {user?.name}
+            {getGreeting()}, {user?.name || (role === 'admin' ? 'Administrator' : 'Manager')}
           </h1>
           <p className="text-xs text-muted-foreground flex items-center gap-2">
             <span>{hostel?.location || 'Campus Residence'}</span>
@@ -856,7 +856,7 @@ function StudentDashboard({
             )}
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {getGreeting()}, {user?.name?.split(' ')[0] || 'Student'}!
+            {getGreeting()}, {user?.name || 'Student'}
           </h1>
           <p className="text-xs text-muted-foreground">
             Resident of <strong className="text-foreground">{hostelName}</strong> • Roll No / ID:{' '}
