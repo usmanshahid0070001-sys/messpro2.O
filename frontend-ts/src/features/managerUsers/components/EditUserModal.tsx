@@ -204,7 +204,7 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
       additionalInfo: additionalInfoPayload,
     }
 
-    if (user.role === 'manager') {
+    if (user.role === 'manager' || user.role === 'student') {
       payload.permissions = permissions
     }
 
@@ -321,16 +321,18 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
             </div>
           )}
 
-          {/* Manager Permissions */}
-          {user.role === 'manager' && toggleablePermissions.length > 0 && (
+          {/* Permissions Section (Managers & Permitted Students) */}
+          {(user.role === 'manager' || user.role === 'student') && toggleablePermissions.length > 0 && (
             <div className="space-y-3 pt-1 border-t border-border/60">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-                    Manager Permissions
+                    {user.role === 'student' ? 'Student Administrative Permissions' : 'Manager Permissions'}
                   </span>
                   <p className="text-[11px] text-muted-foreground">
-                    Customize granted feature gates for this manager.
+                    {user.role === 'student'
+                      ? 'Grant administrative privileges to this student (e.g. Mess Secretary, Residence Proctor, Attendance Monitor).'
+                      : 'Customize granted feature gates for this manager.'}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs">
@@ -363,7 +365,6 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
                   return (
                     <label
                       key={permKey}
-                      onClick={() => handleTogglePermission(permKey)}
                       className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
                         isChecked
                           ? 'border-purple-500/40 bg-purple-500/5 ring-1 ring-purple-500/20'
@@ -373,10 +374,10 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
                       <input
                         type="checkbox"
                         checked={isChecked}
-                        onChange={() => {}}
-                        className="mt-0.5 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                        onChange={() => handleTogglePermission(permKey)}
+                        className="mt-0.5 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600"
                       />
-                      <div className="min-w-0">
+                      <div className="min-w-0 select-none">
                         <span className="text-xs font-semibold text-foreground block leading-tight">
                           {info.label}
                         </span>

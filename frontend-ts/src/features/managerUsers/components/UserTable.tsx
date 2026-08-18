@@ -171,10 +171,21 @@ export default function UserTable({
 
                   {/* Role Badge */}
                   <td className="px-5 py-3.5">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${roleConfig.badge}`}>
-                      <RoleIcon className="h-3 w-3" />
-                      <span>{roleConfig.label}</span>
-                    </span>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${roleConfig.badge}`}>
+                        <RoleIcon className="h-3 w-3" />
+                        <span>{roleConfig.label}</span>
+                      </span>
+                      {user.role === 'student' && user.permissions && user.permissions.length > 0 && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20"
+                          title={`Assigned permissions: ${user.permissions.join(', ')}`}
+                        >
+                          <ShieldCheck className="h-2.5 w-2.5" />
+                          <span>+{user.permissions.length} Admin Perms</span>
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Roll Number */}
@@ -297,10 +308,21 @@ export default function UserTable({
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${roleConfig.badge}`}>
-                    <RoleIcon className="h-3 w-3" />
-                    <span>{roleConfig.label}</span>
-                  </span>
+                  <div className="flex flex-col gap-1 items-end">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${roleConfig.badge}`}>
+                      <RoleIcon className="h-3 w-3" />
+                      <span>{roleConfig.label}</span>
+                    </span>
+                    {user.role === 'student' && user.permissions && user.permissions.length > 0 && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20"
+                        title={`Assigned permissions: ${user.permissions.join(', ')}`}
+                      >
+                        <ShieldCheck className="h-2 w-2" />
+                        <span>+{user.permissions.length} Perms</span>
+                      </span>
+                    )}
+                  </div>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

@@ -147,13 +147,11 @@ export default function AddUserModal({ isOpen, onClose, currentRole, hostel }: A
 
   const handleRoleChange = (newRole: 'student' | 'manager' | 'admin') => {
     setRole(newRole)
-    if (newRole === 'manager') {
+    if (newRole === 'manager' && permissions.length === 0) {
       const defaultPerms: string[] = []
       if (toggleablePermissions.includes('meal_settings')) defaultPerms.push('meal_settings')
       if (toggleablePermissions.includes('qr_attendance')) defaultPerms.push('qr_attendance')
       setPermissions(defaultPerms)
-    } else {
-      setPermissions([])
     }
   }
 
@@ -223,6 +221,9 @@ export default function AddUserModal({ isOpen, onClose, currentRole, hostel }: A
 
     if (role === 'student') {
       payload.id = rollNumber.trim()
+      if (permissions.length > 0) {
+        payload.permissions = permissions
+      }
     } else if (role === 'manager') {
       payload.permissions = permissions
     }
@@ -409,16 +410,18 @@ export default function AddUserModal({ isOpen, onClose, currentRole, hostel }: A
             </div>
           )}
 
-          {/* ── 4. Manager Permissions Section ── */}
-          {role === 'manager' && toggleablePermissions.length > 0 && (
+          {/* ── 4. Permissions Section (Managers & Permitted Students) ── */}
+          {(role === 'manager' || role === 'student') && toggleablePermissions.length > 0 && (
             <div className="space-y-3 pt-1 border-t border-border/60">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-                    Manager Permissions
+                    {role === 'student' ? 'Student Administrative Permissions' : 'Manager Permissions'}
                   </span>
                   <p className="text-[11px] text-muted-foreground">
-                    Grant administrative capabilities to this manager.
+                    {role === 'student'
+                      ? 'Optional: Grant administrative capabilities to this student (e.g. Mess Secretary, Proctor).'
+                      : 'Grant administrative capabilities to this manager.'}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs">
@@ -451,7 +454,6 @@ export default function AddUserModal({ isOpen, onClose, currentRole, hostel }: A
                   return (
                     <label
                       key={permKey}
-                      onClick={() => handleTogglePermission(permKey)}
                       className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
                         isChecked
                           ? 'border-purple-500/40 bg-purple-500/5 ring-1 ring-purple-500/20'
@@ -461,10 +463,10 @@ export default function AddUserModal({ isOpen, onClose, currentRole, hostel }: A
                       <input
                         type="checkbox"
                         checked={isChecked}
-                        onChange={() => {}}
-                        className="mt-0.5 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                        onChange={() => handleTogglePermission(permKey)}
+                        className="mt-0.5 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600"
                       />
-                      <div className="min-w-0">
+                      <div className="min-w-0 select-none">
                         <span className="text-xs font-semibold text-foreground block leading-tight">
                           {info.label}
                         </span>

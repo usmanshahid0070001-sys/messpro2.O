@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Users, ShieldCheck, UserCheck, GraduationCap, Gauge, ArrowUpRight } from 'lucide-react'
+import { Users, ShieldCheck, UserCheck, GraduationCap, Gauge } from 'lucide-react'
 import type { ManageableUser } from '@/hooks/queries/useUserQueries'
 
 interface MetricsHeaderProps {
