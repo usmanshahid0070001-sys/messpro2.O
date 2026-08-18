@@ -350,6 +350,9 @@ export default function StudentMealSelector({
 
   const maxTotalWeekSlots = weekDays.length * mealNames.length
 
+  // Cutoff Info modal state
+  const [showCutoffModal, setShowCutoffModal] = useState(false)
+
   // Filter visible days
   const visibleDays =
     selectedDayIndex === 'all'
@@ -357,16 +360,27 @@ export default function StudentMealSelector({
       : weekDays.filter((d) => d.offsetIndex === selectedDayIndex)
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* ── 1. Hero Overview Card ── */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-xs">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              Hostel Dining Plan
-            </span>
+    <div className="space-y-4 pb-20">
+      {/* ── 1. Compact Unified Top Bar (Mobile-First & Zero Clutter) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-xs">
+        <div className="flex items-center justify-between sm:justify-start gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Utensils className="h-4 w-4" />
+            </div>
+            <div>
+              <h1 className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-tight">
+                Weekly Meal Plan
+              </h1>
+              <p className="text-[11px] text-muted-foreground">
+                {totalWeekSelectedMeals} of {maxTotalWeekSlots} meals reserved this week
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 ml-auto sm:ml-2">
             <span
-              className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${
+              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                 !isInactive
                   ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                   : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
@@ -377,76 +391,31 @@ export default function StudentMealSelector({
                   !isInactive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
                 }`}
               />
-              {!isInactive ? 'Pre-orders Open' : 'Menu View Only'}
+              {!isInactive ? 'Open' : 'Locked'}
             </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Weekly Meal Selection
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Plan and pre-order your meals from today through the week. Max {maxAllowed} portion
-            {maxAllowed > 1 ? 's' : ''} per meal.
-          </p>
-        </div>
 
-        {/* Quick Summary Pill on Right */}
-        <div className="flex items-center gap-3 self-start md:self-auto bg-muted/40 border border-border/80 p-3 rounded-xl">
-          <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-            <Utensils className="h-4 w-4" />
-          </div>
-          <div className="text-xs">
-            <span className="font-bold text-foreground block">
-              {totalWeekSelectedMeals} of {maxTotalWeekSlots} Meals
-            </span>
-            <span className="text-[11px] text-muted-foreground">Reserved this week</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Inactive Alert Banner */}
-      {isInactive && (
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-          <div>
-            <span className="font-semibold">Pre-orders are currently closed:</span> The hostel
-            administration has locked meal selections. You can review the daily menu below.
-          </div>
-        </div>
-      )}
-
-      {/* ── 2. Today's Live Status Highlight ── */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-card to-teal-500/10 border border-emerald-500/20 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
-            <ShoppingBag className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-foreground">Today's Dining Status</h3>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                {todayInfo.formattedLabel}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {todaySelectedCount > 0
-                ? `You have reserved ${todaySelectedCount} meal portion${
-                    todaySelectedCount > 1 ? 's' : ''
-                  } for today (${todaySelectedNames.join(', ')}).`
-                : 'No meals selected for today yet.'}
-            </p>
+            <button
+              type="button"
+              onClick={() => setShowCutoffModal(true)}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              title="View Cutoff Rules & Timing Info"
+            >
+              <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </button>
           </div>
         </div>
 
+        {/* Quick Batch Actions */}
         {!isInactive && (
-          <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-border/40 sm:self-center">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleSelectAllToday}
-              className="h-8 text-xs rounded-xl border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer font-medium"
+              className="h-7 px-2.5 text-[11px] font-semibold rounded-lg border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
             >
-              <Check className="h-3.5 w-3.5 mr-1" />
+              <Check className="h-3 w-3 mr-1" />
               <span>Select Today</span>
             </Button>
             <Button
@@ -454,102 +423,89 @@ export default function StudentMealSelector({
               variant="outline"
               size="sm"
               onClick={handleSelectAllWeek}
-              className="h-8 text-xs rounded-xl border-border hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer font-medium"
+              className="h-7 px-2.5 text-[11px] font-semibold rounded-lg border-border hover:bg-emerald-500/10 hover:text-emerald-600 cursor-pointer"
             >
-              <CheckCheck className="h-3.5 w-3.5 mr-1" />
-              <span>Select All Week</span>
+              <CheckCheck className="h-3 w-3 mr-1" />
+              <span>Select Week</span>
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={handleClearAllWeek}
-              className="h-8 text-xs rounded-xl text-muted-foreground hover:text-rose-500 cursor-pointer"
+              className="h-7 px-2 text-[11px] text-muted-foreground hover:text-rose-500 cursor-pointer"
             >
-              Clear Week
+              Clear
             </Button>
           </div>
         )}
       </div>
 
-      {/* ── 3. Interactive Horizontal Day Selector Strip ── */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Jump to Day
-          </span>
-          <button
-            type="button"
-            onClick={() => setSelectedDayIndex('all')}
-            className={`text-xs font-medium transition-colors cursor-pointer ${
-              selectedDayIndex === 'all'
-                ? 'text-emerald-600 dark:text-emerald-400 font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {selectedDayIndex === 'all' ? '• Viewing All 7 Days' : 'Show All Days'}
-          </button>
+      {/* Inactive Notice (Only when pre-orders are locked) */}
+      {isInactive && (
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs flex items-center gap-2 font-medium">
+          <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+          <span>Pre-orders are currently closed by admin. You can view the menu below.</span>
         </div>
+      )}
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setSelectedDayIndex('all')}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-bold shrink-0 transition-all cursor-pointer border flex items-center gap-1.5 ${
-              selectedDayIndex === 'all'
-                ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Layers className="h-3.5 w-3.5" />
-            <span>Full Week</span>
-          </button>
+      {/* ── 2. Instant Horizontal Day Selector Strip ── */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-0.5">
+        <button
+          type="button"
+          onClick={() => setSelectedDayIndex('all')}
+          className={`px-3 py-2 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer border flex items-center gap-1.5 ${
+            selectedDayIndex === 'all'
+              ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+              : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground'
+          }`}
+        >
+          <Layers className="h-3.5 w-3.5" />
+          <span>Full Week</span>
+        </button>
 
-          {weekDays.map((d) => {
-            const isSelectedTab = selectedDayIndex === d.offsetIndex
-            const daySelectedCount = mealNames.filter(
-              (name) => (selectionsMap[`${d.isoDate}_${name}`] || 0) > 0
-            ).length
+        {weekDays.map((d) => {
+          const isSelectedTab = selectedDayIndex === d.offsetIndex
+          const daySelectedCount = mealNames.filter(
+            (name) => (selectionsMap[`${d.isoDate}_${name}`] || 0) > 0
+          ).length
 
-            return (
-              <button
-                key={d.isoDate}
-                type="button"
-                onClick={() => setSelectedDayIndex(d.offsetIndex)}
-                className={`px-4 py-2 rounded-2xl text-xs shrink-0 transition-all cursor-pointer border flex flex-col items-center gap-1 min-w-[84px] ${
-                  isSelectedTab
-                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 shadow-xs'
-                    : 'bg-card text-muted-foreground border-border hover:bg-muted/80 hover:text-foreground'
+          return (
+            <button
+              key={d.isoDate}
+              type="button"
+              onClick={() => setSelectedDayIndex(d.offsetIndex)}
+              className={`px-3 py-1.5 rounded-xl text-xs shrink-0 transition-all cursor-pointer border flex items-center gap-2 ${
+                isSelectedTab
+                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 font-bold shadow-xs'
+                  : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <div className="flex items-center gap-1">
+                {d.isToday && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+                <span>{d.isToday ? 'Today' : d.shortDay}</span>
+                <span className="text-[10px] text-muted-foreground/80">{d.dayOfMonth}</span>
+              </div>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-md font-semibold ${
+                  daySelectedCount === mealNames.length
+                    ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                    : daySelectedCount > 0
+                    ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-foreground text-xs">{d.shortDay}</span>
-                  <span className="text-[11px] text-muted-foreground">{d.dayOfMonth}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  {d.isToday && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  )}
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-md font-semibold ${
-                      daySelectedCount === mealNames.length
-                        ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                        : daySelectedCount > 0
-                        ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {daySelectedCount}/{mealNames.length}
-                  </span>
-                </div>
-              </button>
-            )
-          })}
-        </div>
+                {daySelectedCount}/{mealNames.length}
+              </span>
+            </button>
+          )
+        })}
       </div>
 
-      {/* ── 4. 7-Day Interactive Meal Schedule Feed ── */}
-      <div className="space-y-6">
+      {/* ── 3. Interactive Meals Grid (Directly Visible Above Fold) ── */}
+      <div className="space-y-4">
         {visibleDays.map((day) => {
           const daySelectedCount = mealNames.filter(
             (name) => (selectionsMap[`${day.isoDate}_${name}`] || 0) > 0
@@ -566,45 +522,43 @@ export default function StudentMealSelector({
             >
               {/* Day Section Header */}
               <div
-                className={`px-5 py-3.5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                className={`px-4 py-2.5 border-b border-border flex items-center justify-between gap-2 ${
                   day.isToday ? 'bg-emerald-500/10' : 'bg-muted/30'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   <Calendar
-                    className={`h-4 w-4 ${
+                    className={`h-3.5 w-3.5 ${
                       day.isToday
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-muted-foreground'
                     }`}
                   />
-                  <span className="text-sm font-bold text-foreground">
+                  <span className="text-xs sm:text-sm font-bold text-foreground">
                     {day.dayName}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-[11px] text-muted-foreground">
                     ({day.formattedLabel})
                   </span>
                   {day.isToday && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-white animate-pulse">
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-500 text-white animate-pulse">
                       TODAY
                     </span>
                   )}
                   {day.isTomorrow && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                       Tomorrow
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground font-medium">
-                    {daySelectedCount} of {mealNames.length} meals selected
-                  </span>
-                </div>
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  {daySelectedCount}/{mealNames.length} selected
+                </span>
               </div>
 
               {/* Day Meals Grid */}
-              <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              <div className="p-3.5 sm:p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {mealNames.map((mealType, slotIdx) => {
                   const key = `${day.isoDate}_${mealType}`
                   const currentCount = selectionsMap[key] || 0
@@ -620,7 +574,7 @@ export default function StudentMealSelector({
                   return (
                     <div
                       key={mealType}
-                      className={`p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${
+                      className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between gap-2.5 ${
                         isSelected
                           ? 'bg-emerald-500/10 border-emerald-500/35 shadow-xs'
                           : isLocked
@@ -629,8 +583,8 @@ export default function StudentMealSelector({
                       }`}
                     >
                       {/* Slot Header */}
-                      <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-border/50">
+                        <div className="flex items-center gap-1.5">
                           <div
                             className={`p-1.5 rounded-lg border ${
                               isSelected
@@ -646,24 +600,42 @@ export default function StudentMealSelector({
                         </div>
 
                         {isLocked ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                          <span
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                            title={`Selection cutoff was ${cutoff}. Orders for this meal are locked.`}
+                          >
                             <Lock className="h-2.5 w-2.5" />
-                            Cutoff Passed
+                            Passed ({cutoff})
                           </span>
                         ) : cutoff ? (
-                          <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
-                            <Clock className="h-3 w-3 text-muted-foreground" />
-                            Cutoff: {cutoff}
+                          <span
+                            className={`text-[10px] flex items-center gap-1 font-semibold px-2 py-0.5 rounded-full border ${
+                              day.isToday
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                : 'bg-muted text-muted-foreground border-border/60'
+                            }`}
+                            title={`You can select or change this meal until ${cutoff} ${
+                              day.isToday ? 'today' : `on ${day.dayName}`
+                            }`}
+                          >
+                            <Clock
+                              className={`h-2.5 w-2.5 ${
+                                day.isToday
+                                  ? 'text-emerald-600 dark:text-emerald-400 animate-pulse'
+                                  : 'text-muted-foreground'
+                              }`}
+                            />
+                            Until {cutoff}
                           </span>
                         ) : null}
                       </div>
 
                       {/* Dish & Price */}
-                      <div className="space-y-1">
-                        <h4 className="text-sm font-semibold text-foreground leading-snug">
+                      <div className="space-y-0.5">
+                        <h4 className="text-xs sm:text-sm font-semibold text-foreground leading-snug line-clamp-2">
                           {dish.foodName || 'No menu listed'}
                         </h4>
-                        <div className="text-xs text-muted-foreground font-medium">
+                        <div className="text-[11px] text-muted-foreground font-medium">
                           {dish.price > 0 ? (
                             <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                               Rs. {dish.price}
@@ -675,16 +647,16 @@ export default function StudentMealSelector({
                       </div>
 
                       {/* Stepper & Action Controls */}
-                      <div className="pt-2 flex items-center justify-between gap-2 border-t border-border/50">
+                      <div className="pt-1.5 flex items-center justify-between gap-2 border-t border-border/50">
                         {isLocked || isInactive ? (
-                          <div className="text-xs text-muted-foreground flex items-center gap-1 py-1">
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-1 py-1">
                             {isSelected ? (
                               <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                <Check className="h-3.5 w-3.5" />
+                                <Check className="h-3 w-3" />
                                 {currentCount} portion{currentCount > 1 ? 's' : ''} reserved
                               </span>
                             ) : (
-                              <span>Not ordered</span>
+                              <span className="text-muted-foreground/70">Not ordered</span>
                             )}
                           </div>
                         ) : (
@@ -705,7 +677,7 @@ export default function StudentMealSelector({
 
                             {/* Quantity Stepper (if maxAllowed > 1) */}
                             {maxAllowed > 1 && (
-                              <div className="flex items-center gap-1.5 bg-card border border-border p-1 rounded-xl">
+                              <div className="flex items-center gap-1 bg-card border border-border p-0.5 rounded-xl">
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -717,7 +689,7 @@ export default function StudentMealSelector({
                                 >
                                   <Minus className="h-3 w-3" />
                                 </button>
-                                <span className="font-mono text-xs font-bold text-foreground px-1 min-w-[18px] text-center">
+                                <span className="font-mono text-xs font-bold text-foreground px-1 min-w-[16px] text-center">
                                   {currentCount}
                                 </span>
                                 <button
@@ -745,12 +717,73 @@ export default function StudentMealSelector({
         })}
       </div>
 
+      {/* ── 4. On-Demand Cutoff & Guidelines Modal ── */}
+      {showCutoffModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-card border border-border rounded-2xl p-5 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <Clock className="h-4 w-4" />
+                </div>
+                <h3 className="text-sm font-bold text-foreground">Cutoff Times & Rules</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCutoffModal(false)}
+                className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-muted-foreground leading-relaxed">
+              <p>
+                <strong className="text-foreground font-semibold">What is Cutoff Time?</strong>
+                <br />
+                The cutoff time is the deadline by which you can select, modify, or cancel a meal portion. You can change your choices freely anytime <strong className="text-foreground">before this time arrives</strong>.
+              </p>
+              <p>
+                Once cutoff passes, that slot is locked so the kitchen staff can prepare the exact number of meals.
+              </p>
+
+              {selectionTiming.length > 0 && (
+                <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-1.5">
+                  <span className="font-semibold text-foreground text-[11px] uppercase tracking-wider block">
+                    Daily Deadlines:
+                  </span>
+                  {mealNames.map((name, i) => (
+                    <div key={name} className="flex justify-between items-center text-xs">
+                      <span className="font-medium text-foreground">{name}:</span>
+                      <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                        {selectionTiming[i] || 'No cutoff'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setShowCutoffModal(false)}
+                className="h-8 px-4 text-xs font-semibold rounded-xl"
+              >
+                Got it
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 5. Sticky Floating Save Bar (When Unsaved Changes) ── */}
       {isDirty && !isInactive && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-xl p-4 rounded-2xl bg-card/95 backdrop-blur-md border border-emerald-500/40 shadow-2xl flex items-center justify-between gap-4 animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md p-3.5 rounded-2xl bg-card/95 backdrop-blur-md border border-emerald-500/40 shadow-2xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
           <div className="flex items-center gap-2 text-xs">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-semibold text-foreground">You have unsaved meal selections</span>
+            <span className="font-semibold text-foreground">Unsaved selections</span>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -760,7 +793,7 @@ export default function StudentMealSelector({
               onClick={handleDiscard}
               className="h-8 text-xs rounded-xl cursor-pointer"
             >
-              <RotateCcw className="h-3.5 w-3.5 mr-1" />
+              <RotateCcw className="h-3 w-3 mr-1" />
               <span>Discard</span>
             </Button>
             <Button
@@ -770,8 +803,8 @@ export default function StudentMealSelector({
               disabled={bulkSelectMutation.isPending}
               className="h-8 px-4 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm"
             >
-              <Save className="h-3.5 w-3.5 mr-1" />
-              <span>{bulkSelectMutation.isPending ? 'Saving...' : 'Save Selections'}</span>
+              <Save className="h-3 w-3 mr-1" />
+              <span>{bulkSelectMutation.isPending ? 'Saving...' : 'Save'}</span>
             </Button>
           </div>
         </div>
