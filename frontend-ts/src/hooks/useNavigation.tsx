@@ -104,7 +104,8 @@ export function useNavigation() {
         url: '#',
         items: [
           { title: 'Manage Hostel Dues', url: '#' },
-          { title: 'Generate Bills', url: '#' }
+          { title: 'Generate Bills', url: '/app/finance/generate-bills' },
+          { title: 'Edit Meal Prices', url: '/app/finance/meal-prices' }
         ]
       });
     } else if (perms.includes("bill_management")) {
@@ -238,7 +239,7 @@ export function useNavigation() {
         if (hasFeature('qr_attendance')) {
           messItems.push({ title: "Mark Attendance", url: '#' });
         }
-        studentNav.push({ title: "Mess", icon: Utensils, items: messItems });
+        studentNav.push({ title: "Mess", icon: Utensils, items: messItems, isActive: true });
       } else if (hasFeature('qr_attendance')) {
         studentNav.push({
           title: "Attendance",
@@ -253,6 +254,13 @@ export function useNavigation() {
           title: "My Room",
           icon: BedDouble,
           url: "/app/my-room",
+        });
+      }
+      if (hasFeature('bill_management')) {
+        studentNav.push({
+          title: "My Bills",
+          icon: FileTextIcon,
+          url: "/app/my-bills",
         });
       }
 
@@ -288,6 +296,7 @@ export function useNavigation() {
       }
       if (perms.includes('bill_generation')) {
         adminFeatureItems.push({ title: "Generate Bills", url: "#" });
+        adminFeatureItems.push({ title: "Edit Meal Prices", url: "/app/finance/meal-prices" });
       }
       if (perms.includes('complaint_management')) {
         adminFeatureItems.push({ title: "All Complaints", url: "/app/complaints" });
@@ -300,7 +309,7 @@ export function useNavigation() {
         studentNav.push({
           title: "Admin Features",
           icon: Shield,
-          isActive: true,
+          isActive: false,
           items: adminFeatureItems,
         });
       }

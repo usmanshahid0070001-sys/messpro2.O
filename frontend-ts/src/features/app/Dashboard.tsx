@@ -28,6 +28,7 @@ import {
   MapPin,
   Globe,
   BellRing,
+  DollarSign,
 } from 'lucide-react'
 import type { RootState } from '@/store'
 import type { PlanFeature } from '@/store/slices/HostelSlice'
@@ -159,7 +160,17 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
   'Generate Bills': {
     desc: 'Generate monthly invoices and custom fee statements',
     icon: FileText,
-    defaultUrl: '/app/finance/bills',
+    defaultUrl: '/app/finance/generate-bills',
+    color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+    badgeColor: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
+    hoverBg: 'group-hover:bg-purple-600 dark:group-hover:bg-purple-500 group-hover:text-white dark:group-hover:text-white',
+    hoverText: 'group-hover:text-purple-600 dark:group-hover:text-purple-400',
+    borderHover: 'hover:border-purple-500/40',
+  },
+  'Edit Meal Prices': {
+    desc: 'Review consumed meals, adjust rates & recalculate totals',
+    icon: DollarSign,
+    defaultUrl: '/app/finance/meal-prices',
     color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
     badgeColor: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
     hoverBg: 'group-hover:bg-purple-600 dark:group-hover:bg-purple-500 group-hover:text-white dark:group-hover:text-white',

@@ -19,16 +19,19 @@ export const generateMonthlyBills = catchAsync(async (req, res) => {
   const hostelId = req.user.hostelId;
 
   // 2. Run the math engine
-  const bills = await billService.generateBills(
-    hostelId, 
-    validatedData.billingPeriod, 
-    validatedData.customCharges
-  );
+  const { bills, totalCount, studentBillsCount, guestBillsCount } =
+    await billService.generateBills(
+      hostelId,
+      validatedData.billingPeriod,
+      validatedData.customCharges
+    );
 
   res.status(201).json({
     status: 'success',
-    message: `Successfully generated ${bills.length} new bills.`,
-    results: bills.length,
+    message: `Successfully generated ${totalCount} bills (${studentBillsCount} enrolled students, ${guestBillsCount} dining guests).`,
+    results: totalCount,
+    studentBillsCount,
+    guestBillsCount,
     data: bills
   });
 });
