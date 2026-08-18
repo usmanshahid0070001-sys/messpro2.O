@@ -1,6 +1,6 @@
 import { useState, useMemo, useDeferredValue } from 'react'
 import { useSelector } from 'react-redux'
-import { Plus } from 'lucide-react'
+import { Plus, Users, UserPlus } from 'lucide-react'
 import type { RootState } from '@/store'
 import { useGetUsers } from '@/hooks/queries/useUserQueries'
 import { useGetMyHostel } from '@/hooks/queries/useHostelQueries'
@@ -18,7 +18,7 @@ import EditUserModal from './components/EditUserModal'
 export default function ManageUsers() {
   const { user: currentUser } = useSelector((s: RootState) => s.auth)
   const currentRole = currentUser?.role || 'student'
-  
+
   const { data: users = [], isLoading: usersLoading } = useGetUsers()
   const { data: hostel, isLoading: hostelLoading } = useGetMyHostel(currentRole)
 
@@ -37,14 +37,25 @@ export default function ManageUsers() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<any | null>(null)
 
+  // Counts for tabs
+  const counts = useMemo(() => {
+    const res = { total: users.length, admin: 0, manager: 0, student: 0 }
+    users.forEach((u) => {
+      if (u.role === 'admin') res.admin++
+      else if (u.role === 'manager') res.manager++
+      else if (u.role === 'student') res.student++
+    })
+    return res
+  }, [users])
+
   // Filter list
   const filteredUsers = useMemo(() => {
-    return users.filter(u => {
+    return users.filter((u) => {
       const matchSearch =
         u.name.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
         u.email.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
         (u.id && u.id.toLowerCase().includes(deferredSearchTerm.toLowerCase()))
-      
+
       const matchRole = roleFilter === 'all' || u.role === roleFilter
       return matchSearch && matchRole
     })
@@ -68,13 +79,13 @@ export default function ManageUsers() {
     return sortedUsers.slice(start, start + itemsPerPage)
   }, [sortedUsers, currentPage])
 
-  // Get dynamic custom registration fields configured for this hostel
+  // Dynamic custom registration fields configured for this hostel
   const customFieldConfigs = useMemo(() => {
     return hostel?.customRegistrationFields || []
   }, [hostel])
 
   const handleToggleSort = () => {
-    setSortOrder(current => {
+    setSortOrder((current) => {
       if (current === 'none') return 'asc'
       if (current === 'asc') return 'desc'
       return 'none'
@@ -93,7 +104,7 @@ export default function ManageUsers() {
 
     const csvRows = [allHeaders.join(',')]
 
-    sortedUsers.forEach(user => {
+    sortedUsers.forEach((user) => {
       const customFieldValues = customFieldConfigs.slice(0, 2).map((config: any) => {
         const field = (user.additionalInfo || []).find((f: any) => f.key === config.name)
         return field?.value || ''
@@ -105,7 +116,7 @@ export default function ManageUsers() {
         `"${user.role}"`,
         `"${user.id || ''}"`,
         ...customFieldValues.map((v: string) => `"${v.replace(/"/g, '""')}"`),
-        `"${user.room ? user.room.roomName : ''}"`
+        `"${user.room ? user.room.roomName : ''}"`,
       ]
       csvRows.push(row.join(','))
     })
@@ -114,7 +125,7 @@ export default function ManageUsers() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.setAttribute('href', url)
-    link.setAttribute('download', `Hostel_Users_${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute('download', `Hostel_Members_${new Date().toISOString().split('T')[0]}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -128,56 +139,80 @@ export default function ManageUsers() {
 
   if (usersLoading || hostelLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         <div className="flex items-center justify-between pb-4 border-b border-border/60">
           <div className="space-y-2">
-            <Skeleton className="h-7 w-48" />
-            <Skeleton className="h-4 w-80" />
+            <Skeleton className="h-7 w-48 rounded-xl" />
+            <Skeleton className="h-4 w-80 rounded-xl" />
           </div>
-          <Skeleton className="h-9 w-28" />
+          <Skeleton className="h-9 w-32 rounded-xl" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(n => <Skeleton key={n} className="h-24 rounded-xl" />)}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((n) => (
+            <Skeleton key={n} className="h-28 rounded-2xl" />
+          ))}
         </div>
-        <Skeleton className="h-96 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 pb-12 w-full max-w-full min-w-0">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/60">
-        <div className="space-y-1">
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            Manage Users
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            View, invite, and configure permissions for the hostel administrative team and residents.
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+            <Users className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
+              Manage Members & Staff
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Oversee hostel residents, operational managers, and role permissions.
+            </p>
+          </div>
         </div>
-        <Button onClick={() => setIsAddOpen(true)} className="gap-1.5 self-start sm:self-center" size="sm">
-          <Plus className="h-4 w-4" />
-          Add User
+
+        <Button
+          onClick={() => setIsAddOpen(true)}
+          size="sm"
+          className="gap-1.5 self-start sm:self-auto h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-xs cursor-pointer rounded-xl"
+        >
+          <UserPlus className="h-4 w-4" />
+          <span>Add Member</span>
         </Button>
       </div>
 
       {/* Metrics Row */}
-      <MetricsHeader users={users} currentRole={currentRole} maxStudents={hostel?.plan?.limits?.maxStudents} />
+      <MetricsHeader
+        users={users}
+        currentRole={currentRole}
+        maxStudents={hostel?.plan?.limits?.maxStudents}
+      />
 
       {/* Search and Tab Filter Section */}
       <FilterSection
         searchTerm={searchTerm}
-        onSearchChange={val => { setSearchTerm(val); setCurrentPage(1) }}
+        onSearchChange={(val) => {
+          setSearchTerm(val)
+          setCurrentPage(1)
+        }}
         roleFilter={roleFilter}
-        onRoleFilterChange={val => { setRoleFilter(val); setCurrentPage(1) }}
+        onRoleFilterChange={(val) => {
+          setRoleFilter(val)
+          setCurrentPage(1)
+        }}
         currentRole={currentRole}
         sortOrder={sortOrder}
         onToggleSort={handleToggleSort}
         onExport={handleExportCSV}
+        counts={counts}
       />
 
-      {/* Main Directory Table */}
+      {/* Main Directory Table / Mobile Card List */}
       <UserTable
         paginatedUsers={paginatedUsers}
         currentPage={currentPage}
@@ -199,7 +234,10 @@ export default function ManageUsers() {
       {/* Edit User/Permissions Modal */}
       <EditUserModal
         isOpen={isEditOpen}
-        onClose={() => { setIsEditOpen(false); setSelectedUser(null) }}
+        onClose={() => {
+          setIsEditOpen(false)
+          setSelectedUser(null)
+        }}
         user={selectedUser}
         hostel={hostel}
       />
