@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setCredentials, logout } from '../../../store/slices/AuthSlice';
+import { clearHostel } from '../../../store/slices/HostelSlice';
 import { useVerifySession } from '../../../hooks/queries/useAuthQueries';
 import type { RootState } from '../../../store';
 import { toast } from 'sonner';
@@ -30,6 +31,7 @@ export function AuthSync({ children }: { children: React.ReactNode }) {
     // If the token is invalid or expired on backend, log the user out cleanly
     if (error && isAuthenticated) {
       dispatch(logout());
+      dispatch(clearHostel());
       toast.info('Session expired. Please log in again.');
     }
   }, [error, isAuthenticated, dispatch]);

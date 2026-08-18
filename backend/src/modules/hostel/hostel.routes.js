@@ -14,7 +14,7 @@ const router = express.Router();
 
 // Tenant routes for current hostel
 router.get('/my-hostel', protect, restrictTo('admin', 'manager', 'student'), getMyHostel);
-router.patch('/my-hostel/settings', protect, restrictTo('admin'), updateMyHostelSettings);
+router.patch('/my-hostel/settings', protect, requirePermission('hostel_configuration'), updateMyHostelSettings);
 
 // Super admin routes
 router.route('/')

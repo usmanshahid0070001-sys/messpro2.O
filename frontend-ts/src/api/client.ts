@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { store } from '../store';
 import { logout } from '../store/slices/AuthSlice';
+import { clearHostel } from '../store/slices/HostelSlice';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api', 
@@ -50,6 +51,7 @@ apiClient.interceptors.response.use(
           // Only dispatch logout for 401s from protected API routes.
           // Auth-route 401s (verify, login) are expected and handled by their own hooks.
           store.dispatch(logout());
+          store.dispatch(clearHostel());
         } else if (status >= 500) {
           toast.error('Server Error', {
             description: 'Something went wrong on our end. Please try again later.',

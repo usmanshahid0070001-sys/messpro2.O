@@ -23,7 +23,11 @@ import {
   Settings2,
   UserCheck,
   Fingerprint,
-  ClipboardCheck
+  ClipboardCheck,
+  TrendingUp,
+  MapPin,
+  Globe,
+  BellRing,
 } from 'lucide-react'
 import type { RootState } from '@/store'
 import type { PlanFeature } from '@/store/slices/HostelSlice'
@@ -32,11 +36,13 @@ import { useNavigation } from '@/hooks/useNavigation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 
-// ── Metadata with semantic category color-coding ────────────────────────
+// ── Metadata with semantic category color-coding (AGENTS.md 9.1) ───────────
 export interface ActionMeta {
   desc: string
   icon: any
+  defaultUrl: string
   color: string
+  badgeColor: string
   hoverBg: string
   hoverText: string
   borderHover: string
@@ -45,9 +51,11 @@ export interface ActionMeta {
 const ACTION_METADATA: Record<string, ActionMeta> = {
   // ── People / Access ── (Brand Blue)
   'Manage Users': {
-    desc: 'Add, edit, or manage user access',
+    desc: 'Add, edit, or configure user permissions & records',
     icon: Users,
+    defaultUrl: '/app/users',
     color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    badgeColor: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20',
     hoverBg: 'group-hover:bg-blue-600 dark:group-hover:bg-blue-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
     borderHover: 'hover:border-blue-500/40',
@@ -55,127 +63,167 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
 
   // ── Residence / Rooms ── (Teal / Cyan)
   'Room Allocation': {
-    desc: 'Assign and manage resident rooms',
+    desc: 'Allot rooms, handle shifts, and track occupancy',
     icon: BedDouble,
+    defaultUrl: '/app/residence/allocation',
     color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
+    badgeColor: 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20',
     hoverBg: 'group-hover:bg-teal-600 dark:group-hover:bg-teal-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-teal-600 dark:group-hover:text-teal-400',
     borderHover: 'hover:border-teal-500/40',
   },
   'Room Services': {
-    desc: 'Track room maintenance and services',
+    desc: 'Monitor daily room sanitation and cleaning logs',
     icon: Building2,
+    defaultUrl: '/app/residence/services',
     color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
+    badgeColor: 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20',
     hoverBg: 'group-hover:bg-teal-600 dark:group-hover:bg-teal-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-teal-600 dark:group-hover:text-teal-400',
     borderHover: 'hover:border-teal-500/40',
   },
   'My Room': {
-    desc: 'View your room details & roommates',
+    desc: 'View your allotted room, roommates & cleaning log',
     icon: BedDouble,
+    defaultUrl: '/app/my-room',
     color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
+    badgeColor: 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20',
     hoverBg: 'group-hover:bg-teal-600 dark:group-hover:bg-teal-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-teal-600 dark:group-hover:text-teal-400',
     borderHover: 'hover:border-teal-500/40',
   },
 
   // ── Food / Meals ── (Emerald Green)
-  'Weekly Schedule': {
-    desc: 'Configure weekly dining menu',
+  'Manage Weekly Menu': {
+    desc: 'Configure weekly dining menu, dishes & pricing',
     icon: Utensils,
+    defaultUrl: '/app/meals/manage-schedule',
     color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    badgeColor: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
+    hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:text-white',
+    hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
+    borderHover: 'hover:border-emerald-500/40',
+  },
+  'Weekly Schedule': {
+    desc: 'View weekly dining schedule & select meals',
+    icon: Utensils,
+    defaultUrl: '/app/meals/schedule',
+    color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    badgeColor: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
     hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
     borderHover: 'hover:border-emerald-500/40',
   },
   'Meal Overview': {
-    desc: 'Live meal counts and session overview',
+    desc: 'Real-time dining counts and session attendance',
     icon: Utensils,
+    defaultUrl: '/app/meals/overview',
     color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    badgeColor: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
     hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
     borderHover: 'hover:border-emerald-500/40',
   },
   'Meal Control': {
-    desc: 'Manage meal access and restrictions',
+    desc: 'Configure dining restrictions and auto-verification',
     icon: Utensils,
+    defaultUrl: '/app/meals/control',
     color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    badgeColor: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
     hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
     borderHover: 'hover:border-emerald-500/40',
   },
   'Meal History': {
-    desc: 'Review your past meal consumption',
+    desc: 'Review past dining consumption and records',
     icon: Utensils,
+    defaultUrl: '/app/meals/history',
     color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    badgeColor: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
     hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
     borderHover: 'hover:border-emerald-500/40',
   },
 
-  // ── Finance ── (Purple)
+  // ── Finance & Dues ── (Purple / Violet)
   'Manage Hostel Dues': {
-    desc: 'Track student fees and receipts',
+    desc: 'Track resident dues, fees, and payments',
     icon: CreditCard,
+    defaultUrl: '/app/finance/dues',
     color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+    badgeColor: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
     hoverBg: 'group-hover:bg-purple-600 dark:group-hover:bg-purple-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-purple-600 dark:group-hover:text-purple-400',
     borderHover: 'hover:border-purple-500/40',
   },
   'Generate Bills': {
-    desc: 'Issue new monthly invoices & dues',
+    desc: 'Generate monthly invoices and custom fee statements',
     icon: FileText,
+    defaultUrl: '/app/finance/bills',
     color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+    badgeColor: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
     hoverBg: 'group-hover:bg-purple-600 dark:group-hover:bg-purple-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-purple-600 dark:group-hover:text-purple-400',
     borderHover: 'hover:border-purple-500/40',
   },
 
-  // ── Attendance & Configuration ── (Slate / Neutral Tone)
+  // ── Attendance & Configuration ── (Neutral Slate)
   'Attendance': {
-    desc: 'Manage and review student attendance',
+    desc: 'Manage and review student attendance registers',
     icon: ClipboardCheck,
+    defaultUrl: '/app/attendance',
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+    badgeColor: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
     hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
     borderHover: 'hover:border-slate-500/40',
   },
   'Manual Attendance': {
-    desc: 'Log manual attendance records',
+    desc: 'Log manual attendance entries and waivers',
     icon: UserCheck,
+    defaultUrl: '/app/attendance/manual',
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+    badgeColor: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
     hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
     borderHover: 'hover:border-slate-500/40',
   },
   'QR Attendance': {
-    desc: 'Manage QR code meal scanning',
+    desc: 'Manage dynamic QR attendance and scanner points',
     icon: QrCode,
+    defaultUrl: '/app/attendance/qr',
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+    badgeColor: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
     hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
     borderHover: 'hover:border-slate-500/40',
   },
   'Biometric Attendance': {
-    desc: 'Sync biometric attendance records',
+    desc: 'Sync fingerprint and biometric gate terminals',
     icon: Fingerprint,
+    defaultUrl: '/app/attendance/biometric',
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
-    hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
-    borderHover: 'hover:border-slate-500/40',
-  },
-  'Hostel Configuration': {
-    desc: 'Configure hostel settings and rules',
-    icon: Settings2,
-    color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+    badgeColor: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
     hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
     borderHover: 'hover:border-slate-500/40',
   },
   'Mark Attendance': {
-    desc: 'Scan QR code at the mess counter',
+    desc: 'Scan live QR code at the counter for meal check-in',
     icon: QrCode,
+    defaultUrl: '/app/attendance/mark',
     color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+    badgeColor: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
+    hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
+    hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
+    borderHover: 'hover:border-slate-500/40',
+  },
+  'Hostel Configuration': {
+    desc: 'Configure hostel settings, custom fields & rules',
+    icon: Settings2,
+    defaultUrl: '/app/hostel-configuration',
+    color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+    badgeColor: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
     hoverBg: 'group-hover:bg-slate-700 dark:group-hover:bg-slate-600 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-slate-700 dark:group-hover:text-slate-300',
     borderHover: 'hover:border-slate-500/40',
@@ -183,20 +231,56 @@ const ACTION_METADATA: Record<string, ActionMeta> = {
 
   // ── Alerts & Complaints ── (Warm Amber)
   'Complaints': {
-    desc: 'Review and resolve resident issues',
+    desc: 'Review, triage, and resolve maintenance tickets',
     icon: AlertCircle,
+    defaultUrl: '/app/complaints',
     color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+    badgeColor: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
     hoverBg: 'group-hover:bg-amber-600 dark:group-hover:bg-amber-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-amber-600 dark:group-hover:text-amber-400',
     borderHover: 'hover:border-amber-500/40',
   },
   'My Complaints': {
-    desc: 'Submit and track maintenance issues',
+    desc: 'File maintenance issues and track resolution status',
     icon: AlertCircle,
+    defaultUrl: '/app/complaints',
     color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+    badgeColor: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
     hoverBg: 'group-hover:bg-amber-600 dark:group-hover:bg-amber-500 group-hover:text-white dark:group-hover:text-white',
     hoverText: 'group-hover:text-amber-600 dark:group-hover:text-amber-400',
     borderHover: 'hover:border-amber-500/40',
+  },
+
+  // ── Superadmin Portals ──
+  'All Hostels': {
+    desc: 'Manage tenant directories, licenses, and subdomains',
+    icon: Building2,
+    defaultUrl: '/app/superadmin/hostels',
+    color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    badgeColor: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20',
+    hoverBg: 'group-hover:bg-blue-600 dark:group-hover:bg-blue-500 group-hover:text-white dark:group-hover:text-white',
+    hoverText: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
+    borderHover: 'hover:border-blue-500/40',
+  },
+  'System Health': {
+    desc: 'Real-time telemetry, cluster nodes, and error logs',
+    icon: Activity,
+    defaultUrl: '/app/system-health',
+    color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
+    badgeColor: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20',
+    hoverBg: 'group-hover:bg-cyan-600 dark:group-hover:bg-cyan-500 group-hover:text-white dark:group-hover:text-white',
+    hoverText: 'group-hover:text-cyan-600 dark:group-hover:text-cyan-400',
+    borderHover: 'hover:border-cyan-500/40',
+  },
+  'Manage Plans': {
+    desc: 'Configure subscription packages, quotas, and pricing',
+    icon: Layers,
+    defaultUrl: '/app/superadmin/plans',
+    color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+    badgeColor: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
+    hoverBg: 'group-hover:bg-purple-600 dark:group-hover:bg-purple-500 group-hover:text-white dark:group-hover:text-white',
+    hoverText: 'group-hover:text-purple-600 dark:group-hover:text-purple-400',
+    borderHover: 'hover:border-purple-500/40',
   },
 }
 
@@ -222,6 +306,7 @@ export interface QuickActionItem {
   icon: any
   desc: string
   color: string
+  badgeColor: string
   hoverBg: string
   hoverText: string
   borderHover: string
@@ -239,17 +324,20 @@ function extractQuickActions(navItems: any[]): QuickActionItem[] {
           const meta = ACTION_METADATA[subItem.title] || {
             desc: `Access ${subItem.title} module`,
             icon: section.icon || ChevronRight,
+            defaultUrl: subItem.url || '#',
             color: 'bg-muted text-foreground border-border',
+            badgeColor: 'bg-muted text-foreground border-border',
             hoverBg: 'group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:text-primary-foreground',
             hoverText: 'group-hover:text-primary',
             borderHover: 'hover:border-primary/40',
           }
           actions.push({
             title: subItem.title,
-            url: subItem.url || '#',
+            url: subItem.url && subItem.url !== '#' ? subItem.url : meta.defaultUrl,
             icon: meta.icon,
             desc: meta.desc,
             color: meta.color,
+            badgeColor: meta.badgeColor,
             hoverBg: meta.hoverBg,
             hoverText: meta.hoverText,
             borderHover: meta.borderHover,
@@ -268,17 +356,20 @@ function extractQuickActions(navItems: any[]): QuickActionItem[] {
       const meta = ACTION_METADATA[section.title] || {
         desc: `Access ${section.title} module`,
         icon: section.icon || ChevronRight,
+        defaultUrl: section.url || '#',
         color: 'bg-muted text-foreground border-border',
+        badgeColor: 'bg-muted text-foreground border-border',
         hoverBg: 'group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:text-primary-foreground',
         hoverText: 'group-hover:text-primary',
         borderHover: 'hover:border-primary/40',
       }
       actions.push({
         title: section.title,
-        url: section.url || '#',
+        url: section.url && section.url !== '#' ? section.url : meta.defaultUrl,
         icon: meta.icon,
         desc: meta.desc,
         color: meta.color,
+        badgeColor: meta.badgeColor,
         hoverBg: meta.hoverBg,
         hoverText: meta.hoverText,
         borderHover: meta.borderHover,
@@ -291,6 +382,8 @@ function extractQuickActions(navItems: any[]): QuickActionItem[] {
 
 // ── Superadmin Dashboard ────────────────────────────────────────────────
 function SuperadminDashboard({ user }: { user: any }) {
+  const navigate = useNavigate()
+
   const stats = [
     {
       label: 'Total Hostels',
@@ -299,6 +392,7 @@ function SuperadminDashboard({ user }: { user: any }) {
       isPositive: true,
       icon: Building2,
       color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
+      actionUrl: '/app/superadmin/hostels',
     },
     {
       label: 'Active Students',
@@ -307,6 +401,7 @@ function SuperadminDashboard({ user }: { user: any }) {
       isPositive: true,
       icon: Users,
       color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+      actionUrl: '/app/users',
     },
     {
       label: 'Active Plans',
@@ -315,6 +410,7 @@ function SuperadminDashboard({ user }: { user: any }) {
       isPositive: null,
       icon: Layers,
       color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20',
+      actionUrl: '/app/superadmin/plans',
     },
     {
       label: 'System Health',
@@ -323,63 +419,81 @@ function SuperadminDashboard({ user }: { user: any }) {
       isPositive: true,
       icon: Activity,
       color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20',
+      actionUrl: '/app/system-health',
     },
   ]
 
   const recentHostels = [
-    { name: 'Al-Razi Boys Hostel', subdomain: 'al-razi', students: 240, plan: 'Enterprise', status: 'Active' },
-    { name: 'Iqbal Hall Residence', subdomain: 'iqbal-hall', students: 480, plan: 'Pro', status: 'Active' },
-    { name: 'Fatima Girls Hostel', subdomain: 'fatima-hall', students: 310, plan: 'Enterprise', status: 'Active' },
-    { name: 'Jinnah Executive Hostel', subdomain: 'jinnah-exec', students: 160, plan: 'Standard', status: 'Trial' },
+    { name: 'Al-Razi Boys Hostel', subdomain: 'al-razi', students: 240, plan: 'Enterprise', status: 'Active', color: 'emerald' },
+    { name: 'Iqbal Hall Residence', subdomain: 'iqbal-hall', students: 480, plan: 'Pro', status: 'Active', color: 'emerald' },
+    { name: 'Fatima Girls Hostel', subdomain: 'fatima-hall', students: 310, plan: 'Enterprise', status: 'Active', color: 'emerald' },
+    { name: 'Jinnah Executive Hostel', subdomain: 'jinnah-exec', students: 160, plan: 'Standard', status: 'Trial', color: 'amber' },
+  ]
+
+  const superAdminActions = [
+    ACTION_METADATA['All Hostels'],
+    ACTION_METADATA['Manage Users'],
+    ACTION_METADATA['Manage Plans'],
+    ACTION_METADATA['System Health'],
   ]
 
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-card border border-border shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
               Superadmin Portal
             </span>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
               Live Infrastructure
             </span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             {getGreeting()}, {user?.name || 'Administrator'}
           </h1>
           <p className="text-xs text-muted-foreground">
-            Multi-tenant system monitoring and global host governance.
+            Multi-tenant governance, global subscription health, and cluster infrastructure monitoring.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" className="gap-1.5 shadow-sm font-medium">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            onClick={() => navigate('/app/superadmin/hostels')}
+            size="sm"
+            className="gap-1.5 shadow-sm font-medium cursor-pointer"
+          >
             <Plus className="h-4 w-4" />
             New Hostel Tenant
           </Button>
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid with 20px padding */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => {
           const Icon = stat.icon
           return (
             <div
               key={i}
-              className="p-5 rounded-xl bg-card border border-border hover:border-border/80 transition-colors flex flex-col justify-between gap-3 shadow-xs"
+              onClick={() => navigate(stat.actionUrl)}
+              className="p-5 rounded-2xl bg-card border border-border/80 hover:border-blue-500/40 transition-all flex flex-col justify-between gap-3 shadow-xs cursor-pointer group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[13px] font-medium text-muted-foreground">{stat.label}</span>
-                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${stat.color}`}>
+                <span className="text-[13px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  {stat.label}
+                </span>
+                <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${stat.color} group-hover:scale-105 transition-transform`}>
                   <Icon className="h-4 w-4" />
                 </div>
               </div>
               <div>
-                <div className="text-3xl font-bold tracking-tight text-foreground">{stat.value}</div>
-                <p className={`text-[11px] mt-1 ${stat.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/80'}`}>
+                <div className="text-3xl font-bold tracking-tight text-foreground font-mono">
+                  {stat.value}
+                </div>
+                <p className={`text-[11px] mt-1 flex items-center gap-1 ${stat.isPositive ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-muted-foreground/80'}`}>
+                  {stat.isPositive && <TrendingUp className="h-3 w-3" />}
                   {stat.change}
                 </p>
               </div>
@@ -388,46 +502,82 @@ function SuperadminDashboard({ user }: { user: any }) {
         })}
       </div>
 
+      {/* Quick Launch Cards */}
+      <div className="space-y-3">
+        <h2 className="text-base font-semibold text-foreground">Global Control Centers</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {superAdminActions.map((action, idx) => {
+            const Icon = action.icon
+            const title = Object.keys(ACTION_METADATA).find((k) => ACTION_METADATA[k] === action) || 'Action'
+            return (
+              <div
+                key={idx}
+                onClick={() => navigate(action.defaultUrl)}
+                className={`p-5 rounded-2xl bg-card border border-border/80 ${action.borderHover} hover:bg-muted/20 transition-all cursor-pointer group flex flex-col justify-between gap-3 shadow-xs`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center border transition-colors ${action.color} ${action.hoverBg}`}>
+                    <Icon className="h-4 w-4 transition-colors group-hover:text-white dark:group-hover:text-white" />
+                  </div>
+                  <ChevronRight className={`h-4 w-4 text-muted-foreground ${action.hoverText} group-hover:translate-x-0.5 transition-all`} />
+                </div>
+                <div>
+                  <h3 className={`text-sm font-semibold text-foreground ${action.hoverText} transition-colors`}>
+                    {title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{action.desc}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Tenants Table & Platform Status */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 rounded-xl bg-card border border-border p-5 space-y-4 shadow-xs">
-          <div className="flex items-center justify-between pb-3">
+        <div className="lg:col-span-2 rounded-2xl bg-card border border-border/80 p-5 space-y-4 shadow-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-border/60">
             <div>
               <h2 className="text-base font-semibold text-foreground">Registered Tenants</h2>
-              <p className="text-xs text-muted-foreground">Recent hostel onboarding and subscription health</p>
+              <p className="text-xs text-muted-foreground">Recent hostel onboarding & tenant subscription status</p>
             </div>
-            <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground hover:text-foreground">
-              View All <ArrowUpRight className="h-3.5 w-3.5" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/app/superadmin/hostels')}
+              className="text-xs gap-1 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 cursor-pointer"
+            >
+              Directory <ArrowUpRight className="h-3.5 w-3.5" />
             </Button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2.5 font-medium">Hostel Name</th>
-                  <th className="pb-2.5 font-medium">Subdomain</th>
-                  <th className="pb-2.5 font-medium">Residents</th>
-                  <th className="pb-2.5 font-medium">Plan</th>
-                  <th className="pb-2.5 font-medium">Status</th>
+                <tr className="border-b border-border text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">
+                  <th className="pb-3 font-semibold">Hostel Name</th>
+                  <th className="pb-3 font-semibold">Subdomain</th>
+                  <th className="pb-3 font-semibold">Residents</th>
+                  <th className="pb-3 font-semibold">Plan</th>
+                  <th className="pb-3 font-semibold text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {recentHostels.map((h, idx) => (
                   <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                    <td className="py-3 font-medium text-foreground">{h.name}</td>
-                    <td className="py-3 text-muted-foreground">{h.subdomain}.messpro.app</td>
-                    <td className="py-3 text-foreground font-mono">{h.students}</td>
+                    <td className="py-3 font-semibold text-foreground">{h.name}</td>
+                    <td className="py-3 text-muted-foreground font-mono">{h.subdomain}.messpro.app</td>
+                    <td className="py-3 text-foreground font-mono font-medium">{h.students}</td>
                     <td className="py-3">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-foreground border border-border">
                         {h.plan}
                       </span>
                     </td>
-                    <td className="py-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                    <td className="py-3 text-right">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                         h.status === 'Active'
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                       }`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${h.status === 'Active' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                         {h.status}
@@ -441,40 +591,40 @@ function SuperadminDashboard({ user }: { user: any }) {
         </div>
 
         {/* Global System Diagnostics */}
-        <div className="rounded-xl bg-card border border-border p-5 space-y-4 shadow-xs">
+        <div className="rounded-2xl bg-card border border-border/80 p-5 space-y-4 shadow-xs">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Global Services</h2>
-            <p className="text-xs text-muted-foreground">Live cluster and communication health</p>
+            <h2 className="text-base font-semibold text-foreground">Global Cluster Health</h2>
+            <p className="text-xs text-muted-foreground">Live cluster node telemetry</p>
           </div>
 
           <div className="space-y-2.5 text-xs">
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/60 flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-muted/30 border border-border/60 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span className="font-medium text-foreground">Authentication Server</span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="font-medium text-foreground">Auth & Token Service</span>
               </div>
-              <span className="text-muted-foreground font-mono">18ms</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">14ms</span>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/60 flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-muted/30 border border-border/60 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span className="font-medium text-foreground">WebSocket Event Bus</span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="font-medium text-foreground">Real-time WebSocket Bus</span>
               </div>
-              <span className="text-muted-foreground font-mono">Operational</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">Active</span>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/60 flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-muted/30 border border-border/60 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span className="font-medium text-foreground">Database Shards</span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="font-medium text-foreground">MongoDB Replica Sets</span>
               </div>
-              <span className="text-muted-foreground font-mono">Healthy</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">Healthy</span>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/60 flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-muted/30 border border-border/60 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span className="font-medium text-foreground">Cloudinary Asset Store</span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="font-medium text-foreground">Media CDN Storage</span>
               </div>
-              <span className="text-muted-foreground font-mono">99.9%</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">99.9%</span>
             </div>
           </div>
         </div>
@@ -505,6 +655,7 @@ function AdminManagerDashboard({
   const planName = hostel?.plan?.name || 'Standard Plan'
   const maxCapacity = hostel?.plan?.limits?.maxStudents || 300
   const activeResidents = 184
+  const occupancyPct = Math.min(100, Math.round((activeResidents / maxCapacity) * 100))
 
   // Permission Checks for Admin & Manager
   const hasResidencePerm = perms.includes('residence_management')
@@ -517,16 +668,19 @@ function AdminManagerDashboard({
     perms.includes('qr_attendance') ||
     perms.includes('biometric_attendance')
 
-  // Dynamic Statistics with distinct category tints
+  // Dynamic Statistics with distinct category tints (AGENTS.md 9.1)
   const stats = []
 
   if (hasResidencePerm) {
     stats.push({
       label: 'Resident Capacity',
       value: `${activeResidents} / ${maxCapacity}`,
-      subtext: `${Math.round((activeResidents / maxCapacity) * 100)}% occupied`,
-      icon: Users,
+      subtext: `${occupancyPct}% occupied`,
+      icon: BedDouble,
       color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20',
+      actionUrl: '/app/residence/allocation',
+      progress: occupancyPct,
+      progressColor: occupancyPct >= 90 ? 'bg-rose-500' : 'bg-teal-500',
     })
   }
 
@@ -537,6 +691,7 @@ function AdminManagerDashboard({
       subtext: 'Lunch attendance logged',
       icon: Utensils,
       color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+      actionUrl: '/app/meals/manage-schedule',
     })
   }
 
@@ -547,6 +702,7 @@ function AdminManagerDashboard({
       subtext: '2 maintenance, 1 mess',
       icon: AlertCircle,
       color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+      actionUrl: '/app/complaints',
     })
   }
 
@@ -554,19 +710,21 @@ function AdminManagerDashboard({
     stats.push({
       label: 'Monthly Fee Collection',
       value: '88%',
-      subtext: '16 pending invoices',
+      subtext: '16 pending dues invoices',
       icon: CreditCard,
       color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20',
+      actionUrl: '/app/finance/dues',
     })
   }
 
   if (hasUserPerm && stats.length < 4) {
     stats.push({
-      label: 'Staff & Members',
+      label: 'Directory Members',
       value: '18',
       subtext: 'Active management staff',
       icon: Users,
       color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
+      actionUrl: '/app/users',
     })
   }
 
@@ -577,6 +735,7 @@ function AdminManagerDashboard({
       subtext: `${planName}`,
       icon: Building2,
       color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
+      actionUrl: '/app/hostel-configuration',
     })
   }
 
@@ -584,9 +743,9 @@ function AdminManagerDashboard({
   const quickActions = extractQuickActions(navMain)
 
   const todaysMeals = [
-    { name: 'Breakfast', time: '07:30 AM – 09:30 AM', menu: 'Omelette, Paratha, Tea & Milk', status: 'Completed' },
-    { name: 'Lunch', time: '12:30 PM – 02:30 PM', menu: 'Chicken Biryani, Raita, Fresh Salad', status: 'Serving' },
-    { name: 'Dinner', time: '07:30 PM – 09:30 PM', menu: 'Daal Makhni, Roti, Kheer Dessert', status: 'Upcoming' },
+    { name: 'Breakfast', time: '07:30 AM – 09:30 AM', menu: 'Omelette, Crispy Paratha, Karak Chai', status: 'Completed' },
+    { name: 'Lunch', time: '12:30 PM – 02:30 PM', menu: 'Special Chicken Biryani, Mint Raita & Salad', status: 'Serving' },
+    { name: 'Dinner', time: '07:30 PM – 09:30 PM', menu: 'Daal Makhni, Fresh Tandoori Roti & Dessert', status: 'Upcoming' },
   ]
 
   if (isLoading) {
@@ -594,10 +753,10 @@ function AdminManagerDashboard({
       <div className="space-y-6">
         <Skeleton className="h-32 w-full rounded-2xl" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Skeleton className="h-28 rounded-xl" />
-          <Skeleton className="h-28 rounded-xl" />
-          <Skeleton className="h-28 rounded-xl" />
-          <Skeleton className="h-28 rounded-xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
         </div>
       </div>
     )
@@ -607,7 +766,7 @@ function AdminManagerDashboard({
     <div className="space-y-6">
       {/* Expiration Banner if applicable */}
       {isExpired && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <div className="text-xs">
             <span className="font-semibold">Subscription Expired:</span> Your current hostel subscription plan has ended.
@@ -617,8 +776,8 @@ function AdminManagerDashboard({
       )}
 
       {/* Hostel Brand Header */}
-      <div className="p-6 rounded-2xl bg-card border border-border flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-xs">
-        <div className="space-y-1.5">
+      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-xs">
+        <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary text-primary-foreground">
               {hostel?.name || 'Hostel Operations'}
@@ -639,16 +798,20 @@ function AdminManagerDashboard({
               </span>
             )}
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             {getGreeting()}, {user?.name || (role === 'admin' ? 'Administrator' : 'Manager')}
           </h1>
-          <p className="text-xs text-muted-foreground flex items-center gap-2">
-            <span>{hostel?.location || 'Campus Residence'}</span>
-            <span>•</span>
-            <span>
-              Subdomain: <strong className="text-foreground">{hostel?.subdomain || 'hostel'}</strong>
+          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-2">
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-muted-foreground" />
+              {hostel?.location || 'Campus Residence'}
             </span>
-          </p>
+            <span>•</span>
+            <span className="flex items-center gap-1 font-mono">
+              <Globe className="h-3 w-3 text-muted-foreground" />
+              {hostel?.subdomain ? `${hostel.subdomain}.messpro.app` : 'hostel.messpro.app'}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 self-start md:self-auto">
@@ -666,17 +829,34 @@ function AdminManagerDashboard({
           return (
             <div
               key={idx}
-              className="p-5 rounded-xl bg-card border border-border hover:border-border/80 transition-colors flex flex-col justify-between gap-3 shadow-xs"
+              onClick={() => {
+                if (stat.actionUrl && stat.actionUrl !== '#') {
+                  navigate(stat.actionUrl)
+                }
+              }}
+              className="p-5 rounded-2xl bg-card border border-border/80 hover:border-blue-500/40 transition-all flex flex-col justify-between gap-3 shadow-xs cursor-pointer group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[13px] font-medium text-muted-foreground">{stat.label}</span>
-                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${stat.color}`}>
+                <span className="text-[13px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  {stat.label}
+                </span>
+                <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${stat.color} group-hover:scale-105 transition-transform`}>
                   <Icon className="h-4 w-4" />
                 </div>
               </div>
               <div>
-                <div className="text-3xl font-bold tracking-tight text-foreground">{stat.value}</div>
+                <div className="text-3xl font-bold tracking-tight text-foreground font-mono">
+                  {stat.value}
+                </div>
                 <div className="text-[11px] text-muted-foreground/80 font-normal mt-0.5">{stat.subtext}</div>
+                {stat.progress !== undefined && (
+                  <div className="h-1.5 w-full bg-muted rounded-full mt-2.5 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${stat.progressColor || 'bg-teal-500'}`}
+                      style={{ width: `${stat.progress}%` }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )
@@ -688,8 +868,8 @@ function AdminManagerDashboard({
         {/* Quick Launch Actions (derived from navMain) */}
         <div className={`${hasMealPerm ? 'lg:col-span-2' : 'w-full'} space-y-4`}>
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-foreground">Quick Management Actions</h2>
-            <span className="text-xs text-muted-foreground">Permitted feature shortcuts</span>
+            <h2 className="text-base font-semibold text-foreground">Operational Shortcuts</h2>
+            <span className="text-xs text-muted-foreground">Permitted feature control</span>
           </div>
 
           {quickActions.length > 0 ? (
@@ -704,11 +884,11 @@ function AdminManagerDashboard({
                         navigate(action.url)
                       }
                     }}
-                    className={`p-5 rounded-xl bg-card border border-border ${action.borderHover} hover:bg-muted/20 transition-all cursor-pointer group flex flex-col justify-between gap-3 shadow-xs`}
+                    className={`p-5 rounded-2xl bg-card border border-border/80 ${action.borderHover} hover:bg-muted/20 transition-all cursor-pointer group flex flex-col justify-between gap-3 shadow-xs`}
                   >
                     <div className="flex items-center justify-between">
                       <div
-                        className={`h-9 w-9 rounded-lg flex items-center justify-center border transition-colors ${action.color} ${action.hoverBg}`}
+                        className={`h-9 w-9 rounded-xl flex items-center justify-center border transition-colors ${action.color} ${action.hoverBg}`}
                       >
                         <Icon className="h-4 w-4 transition-colors group-hover:text-white dark:group-hover:text-white" />
                       </div>
@@ -725,26 +905,31 @@ function AdminManagerDashboard({
               })}
             </div>
           ) : (
-            <div className="p-8 rounded-xl bg-card border border-border text-center text-muted-foreground text-xs">
-              No management shortcuts assigned to your role.
+            <div className="p-8 rounded-2xl bg-card border border-border text-center text-muted-foreground text-xs">
+              No management shortcuts assigned to your active permissions.
             </div>
           )}
 
-          {/* Attendance Automation Banner: for Admin ONLY with attendance permissions */}
+          {/* Attendance Automation Banner */}
           {role === 'admin' && hasAttendancePerm && (
-            <div className="p-4 rounded-xl bg-muted/40 border border-border/80 flex items-center justify-between gap-3 mt-4">
+            <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 flex items-center justify-between gap-3 mt-4">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <div className="text-xs">
                   <span className="font-semibold text-foreground">Attendance Automation:</span>
                   <span className="text-muted-foreground ml-1.5">
-                    Automated attendance verification is active for your hostel.
+                    Automated QR & biometric check-in engine active.
                   </span>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" className="text-xs h-7 shrink-0 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/app/attendance')}
+                className="text-xs h-8 shrink-0 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 cursor-pointer"
+              >
                 Configure
               </Button>
             </div>
@@ -753,17 +938,17 @@ function AdminManagerDashboard({
 
         {/* Today's Mess Schedule: Shown ONLY if user.permissions includes meal_settings */}
         {hasMealPerm && (
-          <div className="rounded-xl bg-card border border-border p-5 space-y-4 shadow-xs lg:sticky lg:top-16">
+          <div className="rounded-2xl bg-card border border-border/80 p-5 space-y-4 shadow-xs lg:sticky lg:top-16">
             <div className="space-y-3.5">
-              <div className="flex items-center justify-between pb-1">
+              <div className="flex items-center justify-between pb-2 border-b border-border/60">
                 <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                    <Utensils className="h-3.5 w-3.5" />
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <Utensils className="h-4 w-4" />
                   </div>
                   <h2 className="text-base font-semibold text-foreground">Today's Menu</h2>
                 </div>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                  Live Schedule
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                  Live Mess
                 </span>
               </div>
 
@@ -771,7 +956,7 @@ function AdminManagerDashboard({
                 {todaysMeals.map((meal, index) => (
                   <div
                     key={index}
-                    className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1.5"
+                    className="p-3.5 rounded-xl border border-border/70 bg-muted/20 space-y-1.5 hover:bg-muted/40 transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-foreground">{meal.name}</span>
@@ -817,7 +1002,7 @@ function StudentDashboard({
   navMain: any[]
 }) {
   const navigate = useNavigate()
-  const roomNumber = user?.room || 'Room 204'
+  const roomNumber = user?.room?.roomName || user?.room || 'Unassigned Room'
   const hostelName = hostel?.name || 'Campus Residence'
 
   // Student features driven strictly by hostel.plan.features
@@ -833,9 +1018,9 @@ function StudentDashboard({
   const hasQrFeature = hasFeature('qr_attendance')
 
   const mealsToday = [
-    { title: 'Breakfast', time: '07:30 AM – 09:30 AM', item: 'Boiled Eggs, Paratha & Chai', status: 'Consumed' },
-    { title: 'Lunch', time: '12:30 PM – 02:30 PM', item: 'Chicken Biryani with Mint Raita', status: 'Active Now' },
-    { title: 'Dinner', time: '07:30 PM – 09:30 PM', item: 'Daal Mash & Hot Tandoori Naan', status: 'Upcoming' },
+    { title: 'Breakfast', time: '07:30 AM – 09:30 AM', item: 'Boiled Eggs, Crispy Paratha & Hot Chai', status: 'Consumed' },
+    { title: 'Lunch', time: '12:30 PM – 02:30 PM', item: 'Special Chicken Biryani with Mint Raita', status: 'Active Now' },
+    { title: 'Dinner', time: '07:30 PM – 09:30 PM', item: 'Daal Makhni & Fresh Tandoori Roti', status: 'Upcoming' },
   ]
 
   const studentShortcuts = extractQuickActions(navMain)
@@ -843,31 +1028,36 @@ function StudentDashboard({
   return (
     <div className="space-y-6">
       {/* Student Welcome Header */}
-      <div className="p-6 rounded-2xl bg-card border border-border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
-        <div className="space-y-1.5">
+      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+        <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary text-primary-foreground">
               Student Resident
             </span>
             {hasResidenceFeature && (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground border border-border">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+                <BedDouble className="h-3 w-3" />
                 {roomNumber}
               </span>
             )}
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             {getGreeting()}, {user?.name || 'Student'}
           </h1>
           <p className="text-xs text-muted-foreground">
-            Resident of <strong className="text-foreground">{hostelName}</strong> • Roll No / ID:{' '}
-            <span className="font-mono text-foreground">{user?.id || user?._id || 'STD-8841'}</span>
+            Resident of <strong className="text-foreground">{hostelName}</strong> • Roll / ID:{' '}
+            <span className="font-mono text-foreground font-semibold">{user?.id || user?._id || 'STD-8841'}</span>
           </p>
         </div>
 
         {/* QR attendance button only if qr_attendance feature is enabled */}
         {hasQrFeature && (
-          <div className="flex items-center gap-2">
-            <Button size="sm" className="gap-2 shadow-sm font-medium">
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            <Button
+              size="sm"
+              onClick={() => navigate('/app/attendance/mark')}
+              className="gap-2 shadow-sm font-medium cursor-pointer"
+            >
               <QrCode className="h-4 w-4" />
               Mark Mess Attendance
             </Button>
@@ -878,10 +1068,15 @@ function StudentDashboard({
       {/* Status Highlights with 20px padding */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {hasMealFeature && (
-          <div className="p-5 rounded-xl bg-card border border-border space-y-2 shadow-xs">
+          <div
+            onClick={() => navigate('/app/meals/schedule')}
+            className="p-5 rounded-2xl bg-card border border-border/80 hover:border-emerald-500/40 transition-all space-y-2 shadow-xs cursor-pointer group"
+          >
             <div className="flex items-center justify-between">
-              <span className="text-[13px] font-medium text-muted-foreground">Mess Subscription</span>
-              <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <span className="text-[13px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                Mess Subscription
+              </span>
+              <div className="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 group-hover:scale-105 transition-transform">
                 <CheckCircle2 className="h-4 w-4" />
               </div>
             </div>
@@ -892,10 +1087,15 @@ function StudentDashboard({
           </div>
         )}
 
-        <div className="p-5 rounded-xl bg-card border border-border space-y-2 shadow-xs">
+        <div
+          onClick={() => navigate('/app/finance/dues')}
+          className="p-5 rounded-2xl bg-card border border-border/80 hover:border-purple-500/40 transition-all space-y-2 shadow-xs cursor-pointer group"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-medium text-muted-foreground">Monthly Dues</span>
-            <div className="h-8 w-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+            <span className="text-[13px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+              Monthly Dues
+            </span>
+            <div className="h-8 w-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/20 group-hover:scale-105 transition-transform">
               <ShieldCheck className="h-4 w-4" />
             </div>
           </div>
@@ -906,10 +1106,15 @@ function StudentDashboard({
         </div>
 
         {hasComplaintFeature && (
-          <div className="p-5 rounded-xl bg-card border border-border space-y-2 shadow-xs">
+          <div
+            onClick={() => navigate('/app/complaints')}
+            className="p-5 rounded-2xl bg-card border border-border/80 hover:border-amber-500/40 transition-all space-y-2 shadow-xs cursor-pointer group"
+          >
             <div className="flex items-center justify-between">
-              <span className="text-[13px] font-medium text-muted-foreground">Active Complaints</span>
-              <div className="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <span className="text-[13px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                Active Complaints
+              </span>
+              <div className="h-8 w-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/20 group-hover:scale-105 transition-transform">
                 <AlertCircle className="h-4 w-4" />
               </div>
             </div>
@@ -925,14 +1130,19 @@ function StudentDashboard({
       <div className={`grid grid-cols-1 ${hasMealFeature ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-6 items-start`}>
         {/* Today's Meals */}
         {hasMealFeature && (
-          <div className="lg:col-span-2 rounded-xl bg-card border border-border p-5 space-y-4 shadow-xs">
-            <div className="flex items-center justify-between">
+          <div className="lg:col-span-2 rounded-2xl bg-card border border-border/80 p-5 space-y-4 shadow-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-border/60">
               <div>
-                <h2 className="text-base font-semibold text-foreground">Today's Meals</h2>
-                <p className="text-xs text-muted-foreground">Daily mess dining schedule</p>
+                <h2 className="text-base font-semibold text-foreground">Today's Dining Schedule</h2>
+                <p className="text-xs text-muted-foreground">Daily fresh hostel mess meals</p>
               </div>
-              <Button variant="ghost" size="sm" className="text-xs gap-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
-                Full Week Menu <ArrowUpRight className="h-3.5 w-3.5" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/app/meals/schedule')}
+                className="text-xs gap-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
+              >
+                Full Menu <ArrowUpRight className="h-3.5 w-3.5" />
               </Button>
             </div>
 
@@ -940,7 +1150,7 @@ function StudentDashboard({
               {mealsToday.map((m, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl border border-border bg-muted/20 flex flex-col justify-between gap-3"
+                  className="p-4 rounded-xl border border-border/70 bg-muted/20 flex flex-col justify-between gap-3 hover:bg-muted/40 transition-colors"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
@@ -974,7 +1184,7 @@ function StudentDashboard({
         )}
 
         {/* Student Shortcuts */}
-        <div className="rounded-xl bg-card border border-border p-5 space-y-3.5 shadow-xs">
+        <div className="rounded-2xl bg-card border border-border/80 p-5 space-y-3.5 shadow-xs">
           <h2 className="text-base font-semibold text-foreground">Resident Portal</h2>
           {studentShortcuts.length > 0 ? (
             <div className="space-y-2">
@@ -988,7 +1198,7 @@ function StudentDashboard({
                         navigate(s.url)
                       }
                     }}
-                    className={`p-3.5 rounded-xl border border-border ${s.borderHover} hover:bg-muted/40 transition-colors cursor-pointer flex items-center justify-between gap-3 group`}
+                    className={`p-3.5 rounded-xl border border-border/80 ${s.borderHover} hover:bg-muted/40 transition-colors cursor-pointer flex items-center justify-between gap-3 group`}
                   >
                     <div className="flex items-center gap-3">
                       <div

@@ -7,6 +7,8 @@ import ComplaintIndex from "./features/complain/ComplaintIndex";
 import RoomAllocation from "./features/Residence/RoomAllocation";
 import RoomService from "./features/Residence/RoomService";
 import MyRoom from "./features/Residence/MyRoom";
+import WeeklySchedule from "./features/Mess/WeeklySchedule";
+import ManageMealSchedule from "./features/Mess/ManageMealSchedule";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import LoginForm from "./features/auth/LoginForm";
 import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
@@ -37,6 +39,8 @@ const App = () => {
                 <Route path="residence/allocation" element={<RoomAllocation />} />
                 <Route path="residence/services" element={<RoomService />} />
                 <Route path="my-room" element={<MyRoom />} />
+                <Route path="meals/schedule" element={<WeeklySchedule />} />
+                <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
               </Route>
             </Route>
 
