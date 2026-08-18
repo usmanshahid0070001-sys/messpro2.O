@@ -81,7 +81,7 @@ export function useNavigation() {
         icon: Utensils,
         url: '#',
         items: [
-          { title: 'Weekly Schedule', url: '#' },
+          { title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' },
           ...(role === 'manager' ? [{ title: "Meal Overview", url: '#' }] : []),
           { title: 'Meal Control', url: '#' }
         ]
@@ -92,8 +92,8 @@ export function useNavigation() {
         icon: Utensils,
         url: '#',
         items: role === 'manager'
-          ? [{ title: 'Weekly Schedule', url: '#' }, { title: 'Meal Overview', url: '#' }]
-          : [{ title: 'Weekly Schedule', url: '#' }]
+          ? [{ title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' }, { title: 'Meal Overview', url: '#' }]
+          : [{ title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' }]
       });
     }
 
@@ -212,10 +212,9 @@ export function useNavigation() {
 
     // ── Student ─────────────────────────────────────────────────────────────
     if (role === 'student') {
-      // Build overview items first so we can safely push into them
+      // 1. Resident Standard Overview items
       const overviewItems: any[] = [{ title: "Dashboard", url: "/app" }];
 
-      // Complaints live in the overview section for students
       if (hasFeature('complaint_management')) {
         overviewItems.push({ title: "My Complaints", url: "/app/complaints" });
       }
@@ -230,19 +229,17 @@ export function useNavigation() {
         }
       ];
 
-      // Mess section — driven by the hostel plan feature, not user permissions
+      // 2. Student Resident Mess section
       if (hasFeature('meal_settings')) {
         const messItems: any[] = [
-          { title: "Weekly Schedule", url: "#" },
+          { title: "Weekly Schedule", url: "/app/meals/schedule" },
           { title: "Meal History", url: "#" },
         ];
-        // Mark Attendance appears inside Mess when QR attendance is also enabled
         if (hasFeature('qr_attendance')) {
           messItems.push({ title: "Mark Attendance", url: '#' });
         }
         studentNav.push({ title: "Mess", icon: Utensils, items: messItems });
       } else if (hasFeature('qr_attendance')) {
-        // Standalone attendance section when there's no mess feature
         studentNav.push({
           title: "Attendance",
           icon: QrCode,
@@ -250,7 +247,7 @@ export function useNavigation() {
         });
       }
 
-      // My Room — dedicated residence section
+      // 3. Student Resident Room section
       if (hasFeature('residence_management')) {
         studentNav.push({
           title: "My Room",
@@ -258,7 +255,55 @@ export function useNavigation() {
           url: "/app/my-room",
         });
       }
-      GetPermittedAdminFeatures(studentNav);
+
+      // 4. Special Admin Features for Permitted Students (Separated Section!)
+      const adminFeatureItems: { title: string; url: string }[] = [];
+
+      if (perms.includes('user_management')) {
+        adminFeatureItems.push({ title: "Manage Users", url: "/app/users" });
+      }
+      if (perms.includes('meal_settings')) {
+        adminFeatureItems.push({ title: "Manage Weekly Menu", url: "/app/meals/manage-schedule" });
+      }
+      if (perms.includes('meal_control')) {
+        adminFeatureItems.push({ title: "Meal Control", url: "#" });
+      }
+      if (perms.includes('residence_management')) {
+        adminFeatureItems.push({ title: "Room Allocation", url: "/app/residence/allocation" });
+      }
+      if (perms.includes('service_management')) {
+        adminFeatureItems.push({ title: "Room Services", url: "/app/residence/services" });
+      }
+      if (perms.includes('manual_attendance')) {
+        adminFeatureItems.push({ title: "Manual Attendance", url: "#" });
+      }
+      if (perms.includes('qr_attendance')) {
+        adminFeatureItems.push({ title: "QR Attendance", url: "#" });
+      }
+      if (perms.includes('biometric_attendance')) {
+        adminFeatureItems.push({ title: "Biometric Attendance", url: "#" });
+      }
+      if (perms.includes('bill_management')) {
+        adminFeatureItems.push({ title: "Manage Hostel Dues", url: "#" });
+      }
+      if (perms.includes('bill_generation')) {
+        adminFeatureItems.push({ title: "Generate Bills", url: "#" });
+      }
+      if (perms.includes('complaint_management')) {
+        adminFeatureItems.push({ title: "All Complaints", url: "/app/complaints" });
+      }
+      if (perms.includes('hostel_configuration')) {
+        adminFeatureItems.push({ title: "Hostel Configuration", url: "/app/hostel-configuration" });
+      }
+
+      if (adminFeatureItems.length > 0) {
+        studentNav.push({
+          title: "Admin Features",
+          icon: Shield,
+          isActive: true,
+          items: adminFeatureItems,
+        });
+      }
 
       return studentNav;
     }
