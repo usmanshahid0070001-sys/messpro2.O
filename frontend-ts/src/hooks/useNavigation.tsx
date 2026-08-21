@@ -249,7 +249,7 @@ export function useNavigation() {
       if (hasFeature('meal_settings')) {
         const messItems: any[] = [
           { title: "Weekly Schedule", url: "/app/meals/schedule" },
-          { title: "Meal History", url: "#" },
+          { title: "Meal History", url: "/app/meals/history" },
         ];
         if (hasFeature('qr_attendance')) {
           messItems.push({ title: "Mark Attendance", url: '#' });

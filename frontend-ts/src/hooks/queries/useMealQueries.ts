@@ -69,3 +69,45 @@ export const useGetStudentSelections = (startDate: string, endDate: string, enab
     staleTime: 1000 * 60 * 2, // 2 minutes
   })
 }
+
+export interface StudentMonthlyMealRecord {
+  _id: string
+  date: string
+  mealType: string
+  mealInfo: {
+    name: string
+    price: number
+  }
+  selection?: {
+    hasSelected: boolean
+    count: number
+  }
+  attendance?: {
+    hasEaten: boolean
+    count: number
+    method?: string
+  }
+  isGuest?: boolean
+}
+
+export interface StudentMonthlyRecordsResponse {
+  status: string
+  data: StudentMonthlyMealRecord[]
+}
+
+// ── 3. Get Student's Monthly Meal Records for History & Billing ─────────
+export const useGetStudentMonthlyRecords = (month: string, enabled: boolean = true) => {
+  return useQuery<StudentMonthlyMealRecord[]>({
+    queryKey: ['studentMonthlyRecords', month],
+    queryFn: async () => {
+      if (!month) return []
+      const { data } = await apiClient.get<StudentMonthlyRecordsResponse>(
+        `/attendance/monthly?month=${month}`
+      )
+      return data.data || []
+    },
+    enabled: Boolean(month && enabled),
+    staleTime: 1000 * 60 * 2, // 2 minutes cache
+  })
+}
+
