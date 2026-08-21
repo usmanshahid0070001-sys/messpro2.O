@@ -11,6 +11,7 @@ import WeeklySchedule from "./features/Mess/WeeklySchedule";
 import ManageMealSchedule from "./features/Mess/ManageMealSchedule";
 import MealPricesPage from "./features/Finance/MealPrices/MealPricesPage";
 import BillGenerationPage from "./features/Finance/BillGeneration/BillGenerationPage";
+import BillManagementPage from "./features/Finance/BillManagement/BillManagementPage";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import LoginForm from "./features/auth/LoginForm";
 import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
@@ -43,6 +44,8 @@ const App = () => {
                 <Route path="my-room" element={<MyRoom />} />
                 <Route path="meals/schedule" element={<WeeklySchedule />} />
                 <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
+                <Route path="finance/bills" element={<BillManagementPage />} />
+                <Route path="finance/manage-bills" element={<Navigate to="/app/finance/bills" replace />} />
                 <Route path="finance/meal-prices" element={<MealPricesPage />} />
                 <Route path="finance/generate-bills" element={<BillGenerationPage />} />
                 <Route path="finance/bills/generate" element={<Navigate to="/app/finance/generate-bills" replace />} />

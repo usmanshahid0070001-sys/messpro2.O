@@ -131,3 +131,92 @@ export const useGenerateBills = () => {
     },
   })
 }
+
+export interface PayBillPayload {
+  billId: string
+  amount: number
+}
+
+export interface PayBillResponse {
+  status: string
+  message: string
+  data: any
+}
+
+/**
+ * Mutation to record a full or partial payment against a bill.
+ */
+export const usePayBill = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ billId, amount }: PayBillPayload) => {
+      const response = await apiClient.post<PayBillResponse>(
+        `/billing/${billId}/pay`,
+        { paidAmount: Number(amount) }
+      )
+      return response.data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['bills'] })
+      queryClient.invalidateQueries({ queryKey: ['billing-stats'] })
+      toast.success('Payment Recorded', {
+        description: data.message || 'Payment updated successfully.',
+      })
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to record payment.'
+      toast.error('Payment Failed', {
+        description: message,
+      })
+    },
+  })
+}
+
+export interface UpdateBillChargesPayload {
+  billId: string
+  customCharges: Array<{
+    name: string
+    chargeType?: string
+    value?: number
+    target?: string
+    calculatedAmount: number
+  }>
+}
+
+export interface UpdateBillChargesResponse {
+  status: string
+  message: string
+  data: any
+}
+
+/**
+ * Mutation to update custom charges directly on a specific bill.
+ */
+export const useUpdateBillCharges = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ billId, customCharges }: UpdateBillChargesPayload) => {
+      const response = await apiClient.put<UpdateBillChargesResponse>(
+        `/billing/${billId}`,
+        { customCharges }
+      )
+      return response.data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['bills'] })
+      queryClient.invalidateQueries({ queryKey: ['billing-stats'] })
+      toast.success('Bill Updated', {
+        description: data.message || 'Custom charges updated successfully.',
+      })
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to update bill charges.'
+      toast.error('Update Failed', {
+        description: message,
+      })
+    },
+  })
+}
+

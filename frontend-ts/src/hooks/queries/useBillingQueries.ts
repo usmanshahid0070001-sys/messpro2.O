@@ -70,6 +70,48 @@ export const useGetMealPricesForBilling = (
   })
 }
 
+export interface CustomChargeItem {
+  name: string
+  chargeType: 'addition' | 'multiple' | 'percentage' | string
+  value: number
+  target: 'mess_bill' | 'unpaid_bill' | 'none' | string
+  calculatedAmount: number
+}
+
+export interface StudentReference {
+  _id: string
+  id: string
+  name: string
+  email?: string
+}
+
+export interface Bill {
+  _id: string
+  hostelId: string
+  studentId: StudentReference | null
+  rollNumber: string
+  isGuest: boolean
+  billingPeriod: {
+    startDate: string
+    endDate: string
+  }
+  baseMessBill: number
+  previousUnpaidArrears: number
+  customCharges: CustomChargeItem[]
+  total: number
+  paidBill: number
+  remainingBill: number
+  status: 'Paid' | 'Adjusted in Balance' | 'Unpaid' | string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface BillsResponse {
+  success: boolean
+  results: number
+  data: Bill[]
+}
+
 /**
  * Fetch billing settings including custom charge methods from the hostel configuration.
  */
@@ -83,3 +125,39 @@ export const useGetBillingSettings = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   })
 }
+
+export interface UseGetBillsParams {
+  month?: string | null
+  demand?: 'current' | null
+  status?: string | null
+}
+
+/**
+ * Fetch bills with support for current cycle or monthly archive, and status filtering.
+ */
+export const useGetBills = (params?: UseGetBillsParams, enabled: boolean = true) => {
+  const { month, demand, status } = params || {}
+
+  return useQuery<Bill[]>({
+    queryKey: ['bills', { month, demand, status }],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams()
+      if (demand) {
+        searchParams.append('demand', demand)
+      } else if (month) {
+        searchParams.append('month', month)
+      }
+      if (status && status !== 'all') {
+        searchParams.append('status', status)
+      }
+
+      const queryString = searchParams.toString()
+      const url = `/billing${queryString ? `?${queryString}` : ''}`
+      const response = await apiClient.get<BillsResponse>(url)
+      return response.data?.data || []
+    },
+    enabled,
+    staleTime: 1000 * 60 * 2, // 2 minutes cache
+  })
+}
+

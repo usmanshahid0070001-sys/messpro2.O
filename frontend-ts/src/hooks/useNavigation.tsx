@@ -103,13 +103,28 @@ export function useNavigation() {
         icon: FileTextIcon,
         url: '#',
         items: [
-          { title: 'Manage Hostel Dues', url: '#' },
+          { title: 'Manage Hostel Dues', url: '/app/finance/bills' },
           { title: 'Generate Bills', url: '/app/finance/generate-bills' },
           { title: 'Edit Meal Prices', url: '/app/finance/meal-prices' }
         ]
       });
     } else if (perms.includes("bill_management")) {
-      adminNav.push({ title: "Finance & Dues", icon: FileTextIcon, url: '#' });
+      adminNav.push({
+        title: "Finance & Dues",
+        icon: FileTextIcon,
+        url: '#',
+        items: [{ title: 'Manage Hostel Dues', url: '/app/finance/bills' }]
+      });
+    } else if (perms.includes("bill_generation")) {
+      adminNav.push({
+        title: "Finance & Dues",
+        icon: FileTextIcon,
+        url: '#',
+        items: [
+          { title: 'Generate Bills', url: '/app/finance/generate-bills' },
+          { title: 'Edit Meal Prices', url: '/app/finance/meal-prices' }
+        ]
+      });
     }
 
     if (perms.includes('complaint_management')) {
@@ -292,10 +307,10 @@ export function useNavigation() {
         adminFeatureItems.push({ title: "Biometric Attendance", url: "#" });
       }
       if (perms.includes('bill_management')) {
-        adminFeatureItems.push({ title: "Manage Hostel Dues", url: "#" });
+        adminFeatureItems.push({ title: "Manage Hostel Dues", url: "/app/finance/bills" });
       }
       if (perms.includes('bill_generation')) {
-        adminFeatureItems.push({ title: "Generate Bills", url: "#" });
+        adminFeatureItems.push({ title: "Generate Bills", url: "/app/finance/generate-bills" });
         adminFeatureItems.push({ title: "Edit Meal Prices", url: "/app/finance/meal-prices" });
       }
       if (perms.includes('complaint_management')) {
