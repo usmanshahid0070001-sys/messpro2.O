@@ -8,11 +8,30 @@ import {
   RotateCcw,
   SlidersHorizontal,
   PlusCircle,
+  ArrowUpDown,
+  ChevronDown,
+  Check,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 
 export type ViewMode = 'current' | 'monthly'
 export type StatusFilter = 'all' | 'Unpaid' | 'Paid' | 'Adjusted in Balance'
+export type SortOrder =
+  | 'name-asc'
+  | 'name-desc'
+  | 'roll-asc'
+  | 'total-desc'
+  | 'total-asc'
+  | 'remaining-desc'
 
 interface BillManagementHeaderProps {
   viewMode: ViewMode
@@ -23,11 +42,29 @@ interface BillManagementHeaderProps {
   onSearchChange: (query: string) => void
   statusFilter: StatusFilter
   onStatusFilterChange: (status: StatusFilter) => void
+  sortOrder: SortOrder
+  onSortOrderChange: (sort: SortOrder) => void
   onExportExcel: () => void
   isExporting?: boolean
   totalBillsCount: number
   onResetFilters: () => void
   hasActiveFilters: boolean
+}
+
+const STATUS_LABELS: Record<StatusFilter, { label: string; dotColor: string }> = {
+  all: { label: 'All Statuses', dotColor: 'bg-muted-foreground' },
+  Unpaid: { label: 'Unpaid / Arrears', dotColor: 'bg-amber-500' },
+  Paid: { label: 'Fully Paid', dotColor: 'bg-emerald-500' },
+  'Adjusted in Balance': { label: 'Adjusted in Balance', dotColor: 'bg-slate-400' },
+}
+
+const SORT_LABELS: Record<SortOrder, string> = {
+  'name-asc': 'Name (A → Z)',
+  'name-desc': 'Name (Z → A)',
+  'roll-asc': 'Roll Number',
+  'total-desc': 'Highest Total',
+  'total-asc': 'Lowest Total',
+  'remaining-desc': 'Highest Remaining',
 }
 
 export default function BillManagementHeader({
@@ -39,6 +76,8 @@ export default function BillManagementHeader({
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
+  sortOrder,
+  onSortOrderChange,
   onExportExcel,
   isExporting = false,
   totalBillsCount,
@@ -95,86 +134,164 @@ export default function BillManagementHeader({
       </div>
 
       {/* Filter & View Mode Controls Bar */}
-      <div className="bg-card border border-border p-4 rounded-2xl shadow-xs space-y-3">
+      <div className="bg-card border border-border p-3 sm:p-4 rounded-2xl shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          {/* View Mode Toggle Pill */}
-          <div className="flex items-center p-1 bg-muted/60 rounded-xl border border-border/60 self-start">
-            <button
-              type="button"
-              onClick={() => onViewModeChange('current')}
-              className={`px-3.5 py-1.5 text-xs md:text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                viewMode === 'current'
-                  ? 'bg-card text-purple-600 dark:text-purple-400 shadow-xs border border-border/80'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <span>Current Cycle</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            </button>
+          {/* Left Group: View Mode Toggle Pill & Month Picker */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center p-1 bg-muted/60 rounded-xl border border-border/60">
+              <button
+                type="button"
+                onClick={() => onViewModeChange('current')}
+                className={`px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+                  viewMode === 'current'
+                    ? 'bg-card text-purple-600 dark:text-purple-400 shadow-xs border border-border/80'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span>Current Cycle</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              </button>
 
-            <button
-              type="button"
-              onClick={() => onViewModeChange('monthly')}
-              className={`px-3.5 py-1.5 text-xs md:text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                viewMode === 'monthly'
-                  ? 'bg-card text-purple-600 dark:text-purple-400 shadow-xs border border-border/80'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Monthly Archive</span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => onViewModeChange('monthly')}
+                className={`px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+                  viewMode === 'monthly'
+                    ? 'bg-card text-purple-600 dark:text-purple-400 shadow-xs border border-border/80'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Monthly Archive</span>
+              </button>
+            </div>
 
-          {/* Search, Month Picker & Status Selector */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Month Picker (Only active when in monthly archive mode) */}
+            {/* Month Picker (When monthly archive mode is active) */}
             {viewMode === 'monthly' && (
-              <div className="flex items-center gap-1.5 bg-background border border-border px-3 py-1.5 rounded-xl text-xs md:text-sm font-medium shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-muted/40 border border-border/80 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium shadow-2xs">
                 <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
                 <input
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => onMonthChange(e.target.value)}
-                  className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer"
+                  className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer text-xs sm:text-sm"
                 />
               </div>
             )}
+          </div>
 
+          {/* Right Group: Search, Status Dropdown, Sort Dropdown & Reset */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 flex-1 lg:flex-initial lg:justify-end">
             {/* Search Input */}
-            <div className="relative min-w-[220px] flex-1 sm:flex-initial">
+            <div className="relative flex-1 sm:flex-initial sm:min-w-[220px]">
               <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search by student name or roll..."
+                placeholder="Search resident or roll..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs md:text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-foreground placeholder:text-muted-foreground shadow-2xs"
+                className="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm bg-muted/40 border border-border/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-foreground placeholder:text-muted-foreground shadow-2xs"
               />
             </div>
 
-            {/* Status Filter */}
-            <div className="flex items-center gap-1.5 bg-background border border-border px-2.5 py-1.5 rounded-xl text-xs md:text-sm shadow-2xs">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-              <select
-                value={statusFilter}
-                onChange={(e) => onStatusFilterChange(e.target.value as StatusFilter)}
-                className="bg-transparent text-foreground font-medium text-xs md:text-sm focus:outline-none cursor-pointer"
-              >
-                <option value="all">All Statuses</option>
-                <option value="Unpaid">Unpaid / Arrears</option>
-                <option value="Paid">Fully Paid</option>
-                <option value="Adjusted in Balance">Adjusted in Balance</option>
-              </select>
-            </div>
+            {/* 1. Shadcn Status Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-muted/40 border border-border/80 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer min-w-[130px]"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_LABELS[statusFilter].dotColor}`} />
+                    <span className="truncate">{STATUS_LABELS[statusFilter].label}</span>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                  Filter by Payment Status
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={statusFilter}
+                  onValueChange={(val) => onStatusFilterChange(val as StatusFilter)}
+                >
+                  <DropdownMenuRadioItem value="all" className="text-xs flex items-center gap-2 cursor-pointer">
+                    <span className="w-2 h-2 rounded-full bg-muted-foreground shrink-0" />
+                    <span>All Statuses</span>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="Unpaid" className="text-xs flex items-center gap-2 cursor-pointer">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                    <span>Unpaid / Arrears</span>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="Paid" className="text-xs flex items-center gap-2 cursor-pointer">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span>Fully Paid</span>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem
+                    value="Adjusted in Balance"
+                    className="text-xs flex items-center gap-2 cursor-pointer"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                    <span>Adjusted in Balance</span>
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            {/* Reset Filters */}
+            {/* 2. Shadcn Sort Order Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-muted/40 border border-border/80 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer min-w-[135px]"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                    <span className="truncate">{SORT_LABELS[sortOrder]}</span>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                  Sort Ledger Records
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={sortOrder}
+                  onValueChange={(val) => onSortOrderChange(val as SortOrder)}
+                >
+                  <DropdownMenuRadioItem value="name-asc" className="text-xs cursor-pointer">
+                    Name (A → Z)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="name-desc" className="text-xs cursor-pointer">
+                    Name (Z → A)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="roll-asc" className="text-xs cursor-pointer">
+                    Roll Number
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="total-desc" className="text-xs cursor-pointer">
+                    Highest Total Bill
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="total-asc" className="text-xs cursor-pointer">
+                    Lowest Total Bill
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="remaining-desc" className="text-xs cursor-pointer">
+                    Highest Remaining Dues
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Reset Filters Shortcut */}
             {hasActiveFilters && (
               <button
                 type="button"
                 onClick={onResetFilters}
-                className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                title="Reset Filters"
+                className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border border-border/80 shadow-2xs"
+                title="Reset Filters & Search"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>

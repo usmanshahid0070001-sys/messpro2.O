@@ -88,7 +88,7 @@ export default function AppLayout() {
       <AppSidebar side="left" variant="sidebar" collapsible="icon" />
 
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-w-0 max-w-full">
-        <div className="flex items-center justify-between h-12 w-full sticky top-0 z-10 bg-background border-b border-border/40 px-1">
+        <div className="flex items-center justify-between h-12 w-full sticky top-0 z-30 bg-background/95 backdrop-blur-xs border-b border-border/40 px-1">
           <div className="flex items-center gap-2 min-w-0">
             <SidebarTrigger className="-ml-1" />
 

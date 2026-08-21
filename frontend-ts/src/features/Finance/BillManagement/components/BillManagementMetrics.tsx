@@ -1,11 +1,9 @@
 import React from 'react'
 import {
-  TrendingUp,
+  Wallet,
   CheckCircle2,
   AlertCircle,
   Users,
-  Wallet,
-  ArrowUpRight,
 } from 'lucide-react'
 
 interface BillManagementMetricsProps {
@@ -17,7 +15,7 @@ interface BillManagementMetricsProps {
   unpaidBillsCount: number
 }
 
-export default function BillManagementMetrics({
+function BillManagementMetrics({
   totalRevenue,
   totalPaid,
   totalRemaining,
@@ -28,89 +26,92 @@ export default function BillManagementMetrics({
   const collectionRate = totalRevenue > 0 ? Math.round((totalPaid / totalRevenue) * 100) : 0
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {/* 1. Total Expected Revenue (Purple Palette) */}
-      <div className="bg-card border border-border p-5 rounded-2xl shadow-xs relative overflow-hidden group hover:border-purple-500/30 transition-all">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
-              <Wallet className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span>Total Expected Revenue</span>
-            </p>
-            <div className="mt-2 flex items-baseline gap-2">
-              <h3 className="text-3xl font-bold tracking-tight text-foreground">
-                Rs. {totalRevenue.toLocaleString()}
-              </h3>
-            </div>
-            <p className="text-[11px] font-normal text-muted-foreground/80 mt-1">
-              From {totalBillsCount} generated resident & guest {totalBillsCount === 1 ? 'bill' : 'bills'}
-            </p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
+      {/* 1. Total Invoiced Revenue (Finance & Dues / Purple) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col justify-between gap-3 min-w-0 hover:border-purple-500/40 transition-all group">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5 whitespace-nowrap min-w-0">
+            <Wallet className="h-4 w-4 text-purple-500 shrink-0" />
+            <span className="truncate">Total Invoiced</span>
+          </span>
+          <div className="p-1 px-2 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-semibold shrink-0">
+            All Dues
           </div>
-
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 shadow-2xs group-hover:bg-purple-600 group-hover:text-white transition-colors">
-            <TrendingUp className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-mono truncate">
+            Rs. {Math.round(totalRevenue).toLocaleString('en-PK')}
+          </div>
+          <div className="text-[11px] text-muted-foreground/80 font-normal mt-0.5 truncate">
+            Total expected billing revenue
           </div>
         </div>
       </div>
 
-      {/* 2. Total Collected Payments (Emerald Green Accent) */}
-      <div className="bg-card border border-border p-5 rounded-2xl shadow-xs relative overflow-hidden group hover:border-emerald-500/30 transition-all">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 pr-2">
-            <p className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Total Collected</span>
-            </p>
-            <div className="mt-2 flex items-baseline gap-2">
-              <h3 className="text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-                Rs. {totalPaid.toLocaleString()}
-              </h3>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                {collectionRate}% Collected
-              </span>
-            </div>
-
-            {/* Collection Progress Bar */}
-            <div className="mt-2.5 w-full bg-muted rounded-full h-1.5 overflow-hidden">
-              <div
-                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(collectionRate, 100)}%` }}
-              />
-            </div>
-            <p className="text-[11px] font-normal text-muted-foreground/80 mt-1">
-              {paidBillsCount} {paidBillsCount === 1 ? 'bill' : 'bills'} fully settled
-            </p>
+      {/* 2. Total Collected Payments (Emerald) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col justify-between gap-3 min-w-0 hover:border-emerald-500/40 transition-all group">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5 whitespace-nowrap min-w-0">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+            <span className="truncate">Total Collected</span>
+          </span>
+          <div className="p-1 px-2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold shrink-0">
+            {collectionRate}% Paid
           </div>
-
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-2xs group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-            <ArrowUpRight className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono truncate">
+            Rs. {Math.round(totalPaid).toLocaleString('en-PK')}
+          </div>
+          <div className="text-[11px] text-muted-foreground/80 font-normal mt-0.5 truncate">
+            {paidBillsCount} {paidBillsCount === 1 ? 'bill' : 'bills'} fully settled
           </div>
         </div>
       </div>
 
-      {/* 3. Outstanding Balance / Unpaid (Amber/Rose Accent) */}
-      <div className="bg-card border border-border p-5 rounded-2xl shadow-xs relative overflow-hidden group hover:border-amber-500/30 transition-all">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span>Outstanding Dues</span>
-            </p>
-            <div className="mt-2 flex items-baseline gap-2">
-              <h3 className="text-3xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
-                Rs. {totalRemaining.toLocaleString()}
-              </h3>
-            </div>
-            <p className="text-[11px] font-normal text-muted-foreground/80 mt-1">
-              {unpaidBillsCount} {unpaidBillsCount === 1 ? 'account' : 'accounts'} with pending balance
-            </p>
+      {/* 3. Outstanding Arrears / Balance (Amber) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col justify-between gap-3 min-w-0 hover:border-amber-500/40 transition-all group">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5 whitespace-nowrap min-w-0">
+            <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+            <span className="truncate">Outstanding Dues</span>
+          </span>
+          <div className="p-1 px-2 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-semibold shrink-0">
+            {unpaidBillsCount} Pending
           </div>
+        </div>
+        <div>
+          <div className="text-2xl sm:text-3xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono truncate">
+            Rs. {Math.round(totalRemaining).toLocaleString('en-PK')}
+          </div>
+          <div className="text-[11px] text-muted-foreground/80 font-normal mt-0.5 truncate">
+            Remaining uncollected balance
+          </div>
+        </div>
+      </div>
 
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-2xs group-hover:bg-amber-600 group-hover:text-white transition-colors">
-            <Users className="w-5 h-5" />
+      {/* 4. Total Billed Accounts (People & Access / Blue) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border shadow-xs flex flex-col justify-between gap-3 min-w-0 hover:border-blue-500/40 transition-all group">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5 whitespace-nowrap min-w-0">
+            <Users className="h-4 w-4 text-blue-500 shrink-0" />
+            <span className="truncate">Billed Accounts</span>
+          </span>
+          <div className="p-1 px-2 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-semibold shrink-0">
+            Ledger
+          </div>
+        </div>
+        <div>
+          <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-mono truncate">
+            {totalBillsCount}
+          </div>
+          <div className="text-[11px] text-muted-foreground/80 font-normal mt-0.5 truncate">
+            Residents & dining guests
           </div>
         </div>
       </div>
     </div>
   )
 }
+
+export default React.memo(BillManagementMetrics)

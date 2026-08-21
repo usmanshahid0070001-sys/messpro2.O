@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
-  Sparkles,
 } from 'lucide-react'
 import type { Bill } from '@/hooks/queries/useBillingQueries'
 
@@ -32,7 +31,7 @@ export default function BillManagementTable({
 }: BillManagementTableProps) {
   if (bills.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-2xl p-12 text-center shadow-xs">
+      <div className="bg-card border border-border/80 rounded-2xl p-12 text-center shadow-xs">
         <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto text-muted-foreground mb-3">
           <Receipt className="w-6 h-6" />
         </div>
@@ -45,40 +44,78 @@ export default function BillManagementTable({
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl shadow-xs overflow-hidden">
+    <div className="bg-card border border-border/80 rounded-2xl shadow-xs overflow-hidden relative">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs">
+        <table className="w-full text-left border-separate border-spacing-0 text-xs">
           <thead>
-            <tr className="bg-muted/60 border-b border-border text-muted-foreground uppercase tracking-wider font-bold">
-              {/* Sticky Resident Column */}
-              <th className="py-3 px-4 sticky left-0 bg-muted/90 backdrop-blur-xs z-10 shadow-[1px_0_0_0_var(--color-border)]">
+            <tr className="bg-muted text-muted-foreground uppercase tracking-wider font-bold">
+              {/* 1. PINNED LEFT: Resident Info */}
+              <th
+                className="py-3 px-4 sticky left-0 bg-muted z-3 border-b border-r border-border/80 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.12)]"
+                style={{ width: '190px', minWidth: '190px', maxWidth: '190px' }}
+              >
                 Resident Details
               </th>
 
-              <th className="py-3 px-3.5 whitespace-nowrap">Mess Bill</th>
-              <th className="py-3 px-3.5 whitespace-nowrap">Prev Arrears</th>
+              {/* 2. SCROLLABLE MIDDLE: Mess Bill, Arrears, Dynamic Charges, Paid, Remaining */}
+              <th className="py-3 px-3.5 whitespace-nowrap min-w-[110px] border-b border-border/80 bg-muted">
+                Mess Bill
+              </th>
+              <th className="py-3 px-3.5 whitespace-nowrap min-w-[110px] border-b border-border/80 bg-muted">
+                Prev Arrears
+              </th>
 
-              {/* Dynamic Columns */}
               {dynamicColumns.map((col) => (
-                <th key={col.key} className="py-3 px-3.5 whitespace-nowrap">
+                <th
+                  key={col.key}
+                  className="py-3 px-3.5 whitespace-nowrap min-w-[120px] border-b border-border/80 bg-muted"
+                >
                   {col.label}
                 </th>
               ))}
 
-              <th className="py-3 px-3.5 border-l border-border whitespace-nowrap font-bold text-foreground">
-                Total
-              </th>
-              <th className="py-3 px-3.5 whitespace-nowrap font-bold text-emerald-600 dark:text-emerald-400">
+              <th className="py-3 px-3.5 whitespace-nowrap font-bold text-emerald-600 dark:text-emerald-400 min-w-[100px] border-b border-border/80 bg-muted">
                 Paid
               </th>
-              <th className="py-3 px-3.5 whitespace-nowrap font-bold text-amber-600 dark:text-amber-400">
+              <th className="py-3 px-3.5 whitespace-nowrap font-bold text-amber-600 dark:text-amber-400 min-w-[110px] border-b border-border/80 bg-muted">
                 Remaining
               </th>
 
-              <th className="py-3 px-3.5 text-center whitespace-nowrap">Status</th>
+              {/* 3. PINNED RIGHT: Total (Has the single left border & shadow for the entire right fixed block) */}
+              <th
+                className="py-3 px-3.5 whitespace-nowrap font-bold text-foreground sticky bg-muted z-3 border-b border-l border-border/80 shadow-[-3px_0_6px_-2px_rgba(0,0,0,0.12)]"
+                style={{
+                  right: '240px',
+                  width: '120px',
+                  minWidth: '120px',
+                  maxWidth: '120px',
+                }}
+              >
+                Total
+              </th>
 
-              {/* Sticky Action Column */}
-              <th className="py-3 px-4 text-right sticky right-0 bg-muted/90 backdrop-blur-xs z-10 shadow-[-1px_0_0_0_var(--color-border)]">
+              {/* 4. PINNED RIGHT: Status (No vertical border line) */}
+              <th
+                className="py-3 px-3 text-center whitespace-nowrap sticky bg-muted z-3 border-b border-border/80"
+                style={{
+                  right: '110px',
+                  width: '130px',
+                  minWidth: '130px',
+                  maxWidth: '130px',
+                }}
+              >
+                Status
+              </th>
+
+              {/* 5. PINNED RIGHT: Actions (No vertical border line) */}
+              <th
+                className="py-3 px-4 text-right whitespace-nowrap sticky right-0 bg-muted z-3 border-b border-border/80"
+                style={{
+                  width: '110px',
+                  minWidth: '110px',
+                  maxWidth: '110px',
+                }}
+              >
                 Actions
               </th>
             </tr>
@@ -94,14 +131,17 @@ export default function BillManagementTable({
               return (
                 <tr
                   key={bill._id}
-                  className="hover:bg-muted/30 transition-colors group"
+                  className="hover:bg-muted/40 transition-colors group"
                 >
-                  {/* Sticky Student Column */}
-                  <td className="py-3 px-4 sticky left-0 bg-card group-hover:bg-muted/30 transition-colors shadow-[1px_0_0_0_var(--color-border)] z-10">
+                  {/* 1. PINNED LEFT: Student Info */}
+                  <td
+                    className="py-3 px-4 sticky left-0 bg-card group-hover:bg-card transition-colors shadow-[2px_0_6px_-2px_rgba(0,0,0,0.12)] border-r border-b border-border/60 z-2"
+                    style={{ width: '190px', minWidth: '190px', maxWidth: '190px' }}
+                  >
                     <div className="font-bold text-foreground whitespace-nowrap flex items-center gap-1.5">
-                      <span>{studentName}</span>
+                      <span className="truncate max-w-[130px]">{studentName}</span>
                       {bill.isGuest && (
-                        <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                        <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
                           GUEST
                         </span>
                       )}
@@ -111,11 +151,11 @@ export default function BillManagementTable({
                     </div>
                   </td>
 
-                  {/* Mess Bill & Prev Arrears */}
-                  <td className="py-3 px-3.5 font-medium text-foreground font-mono">
+                  {/* 2. SCROLLABLE MIDDLE: Mess Bill, Arrears, Dynamic Charges, Paid, Remaining */}
+                  <td className="py-3 px-3.5 font-medium text-foreground font-mono whitespace-nowrap border-b border-border/60 bg-card group-hover:bg-muted/40">
                     Rs. {bill.baseMessBill.toLocaleString()}
                   </td>
-                  <td className="py-3 px-3.5 font-medium font-mono text-muted-foreground">
+                  <td className="py-3 px-3.5 font-medium font-mono text-muted-foreground whitespace-nowrap border-b border-border/60 bg-card group-hover:bg-muted/40">
                     {bill.previousUnpaidArrears > 0 ? (
                       <span className="text-amber-600 dark:text-amber-400 font-semibold">
                         Rs. {bill.previousUnpaidArrears.toLocaleString()}
@@ -129,20 +169,20 @@ export default function BillManagementTable({
                   {dynamicColumns.map((col) => {
                     const charge = bill.customCharges?.find((c) => c.name === col.key)
                     return (
-                      <td key={col.key} className="py-3 px-3.5 font-medium text-muted-foreground font-mono">
+                      <td
+                        key={col.key}
+                        className="py-3 px-3.5 font-medium text-muted-foreground font-mono whitespace-nowrap border-b border-border/60 bg-card group-hover:bg-muted/40"
+                      >
                         {charge ? `Rs. ${charge.calculatedAmount.toLocaleString()}` : '-'}
                       </td>
                     )
                   })}
 
-                  {/* Totals, Paid & Remaining */}
-                  <td className="py-3 px-3.5 font-bold text-foreground border-l border-border font-mono bg-muted/10">
-                    Rs. {bill.total.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-3.5 font-bold text-emerald-600 dark:text-emerald-400 font-mono bg-muted/10">
+                  {/* Movable Paid & Remaining */}
+                  <td className="py-3 px-3.5 font-bold text-emerald-600 dark:text-emerald-400 font-mono whitespace-nowrap border-b border-border/60 bg-card group-hover:bg-muted/40">
                     Rs. {bill.paidBill.toLocaleString()}
                   </td>
-                  <td className="py-3 px-3.5 font-bold font-mono bg-muted/10">
+                  <td className="py-3 px-3.5 font-bold font-mono whitespace-nowrap border-b border-border/60 bg-card group-hover:bg-muted/40">
                     <span
                       className={
                         bill.remainingBill === 0
@@ -154,8 +194,29 @@ export default function BillManagementTable({
                     </span>
                   </td>
 
-                  {/* Status Badge */}
-                  <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                  {/* 3. PINNED RIGHT: Total (Solid opaque bg-card, single left border) */}
+                  <td
+                    className="py-3 px-3.5 font-bold text-foreground font-mono sticky bg-card group-hover:bg-card transition-colors z-2 border-l border-b border-border/80 shadow-[-3px_0_6px_-2px_rgba(0,0,0,0.12)] whitespace-nowrap"
+                    style={{
+                      right: '240px',
+                      width: '120px',
+                      minWidth: '120px',
+                      maxWidth: '120px',
+                    }}
+                  >
+                    Rs. {bill.total.toLocaleString()}
+                  </td>
+
+                  {/* 4. PINNED RIGHT: Status (Solid opaque bg-card, NO internal vertical border) */}
+                  <td
+                    className="py-3 px-3 text-center sticky bg-card group-hover:bg-card transition-colors z-2 border-b border-border/60 whitespace-nowrap"
+                    style={{
+                      right: '110px',
+                      width: '130px',
+                      minWidth: '130px',
+                      maxWidth: '130px',
+                    }}
+                  >
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                         isPaid
@@ -166,44 +227,51 @@ export default function BillManagementTable({
                       }`}
                     >
                       {isPaid ? (
-                        <CheckCircle2 className="w-3 h-3" />
+                        <CheckCircle2 className="w-3 h-3 shrink-0" />
                       ) : isAdjusted ? (
-                        <Clock className="w-3 h-3" />
+                        <Clock className="w-3 h-3 shrink-0" />
                       ) : (
-                        <AlertCircle className="w-3 h-3" />
+                        <AlertCircle className="w-3 h-3 shrink-0" />
                       )}
-                      <span>{bill.status}</span>
+                      <span className="truncate">{bill.status}</span>
                     </span>
                   </td>
 
-                  {/* Sticky Actions Column */}
-                  <td className="py-3 px-4 text-right sticky right-0 bg-card group-hover:bg-muted/30 transition-colors shadow-[-1px_0_0_0_var(--color-border)] z-10">
-                    <div className="flex items-center justify-end gap-1.5">
+                  {/* 5. PINNED RIGHT: Actions (Solid opaque bg-card, NO internal vertical border) */}
+                  <td
+                    className="py-3 px-4 text-right sticky right-0 bg-card group-hover:bg-card transition-colors z-2 border-b border-border/60 whitespace-nowrap"
+                    style={{
+                      width: '110px',
+                      minWidth: '110px',
+                      maxWidth: '110px',
+                    }}
+                  >
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
                         onClick={() => onOpenDetails(bill)}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                         title="View Statement Receipt"
                       >
-                        <Receipt className="w-4 h-4" />
+                        <Receipt className="w-3.5 h-3.5" />
                       </button>
 
                       <button
                         type="button"
                         onClick={() => onOpenEditCharges(bill)}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-500/10 transition-colors"
+                        className="p-1 rounded-lg text-muted-foreground hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-500/10 transition-colors"
                         title="Adjust Custom Charges"
                       >
-                        <Edit3 className="w-4 h-4" />
+                        <Edit3 className="w-3.5 h-3.5" />
                       </button>
 
                       <button
                         type="button"
                         onClick={() => onOpenPayment(bill)}
                         disabled={bill.remainingBill === 0}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        <CreditCard className="w-3.5 h-3.5" />
+                        <CreditCard className="w-3 h-3" />
                         <span>Pay</span>
                       </button>
                     </div>

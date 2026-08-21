@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useDeferredValue } from 'react'
+import React, { useState, useEffect, useMemo, useDeferredValue } from 'react'
 import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 import {
@@ -15,10 +15,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import BillManagementHeader, {
   type ViewMode,
   type StatusFilter,
+  type SortOrder,
 } from './components/BillManagementHeader'
 import BillManagementMetrics from './components/BillManagementMetrics'
 import BillManagementTable from './components/BillManagementTable'
 import BillManagementCards from './components/BillManagementCards'
+import BillManagementPagination from './components/BillManagementPagination'
 import BillPaymentModal from './components/BillPaymentModal'
 import BillDetailsModal from './components/BillDetailsModal'
 import BillEditChargesModal from './components/BillEditChargesModal'
@@ -37,6 +39,9 @@ export default function BillManagementPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('name-asc')
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(10)
   const [isExporting, setIsExporting] = useState(false)
 
   // ── 2. Modals State ───────────────────────────────────────────────────
@@ -73,7 +78,7 @@ export default function BillManagementPage() {
   const payBillMutation = usePayBill()
   const updateChargesMutation = useUpdateBillCharges()
 
-  // ── 4. Client Search & Derivations ────────────────────────────────────
+  // ── 4. Client Search, Sorting & Pagination ────────────────────────────
   const filteredBills = useMemo(() => {
     const query = deferredSearchQuery.trim().toLowerCase()
     if (!query) return rawBills
@@ -84,6 +89,44 @@ export default function BillManagementPage() {
       return name.includes(query) || roll.includes(query)
     })
   }, [rawBills, deferredSearchQuery])
+
+  // Reset to page 1 whenever filters or search query changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [deferredSearchQuery, statusFilter, viewMode, selectedMonth, sortOrder, pageSize])
+
+  // A-Z Default Sorting
+  const sortedBills = useMemo(() => {
+    return [...filteredBills].sort((a, b) => {
+      const nameA = a.studentId?.name || (a.isGuest ? 'Dining Guest' : '')
+      const nameB = b.studentId?.name || (b.isGuest ? 'Dining Guest' : '')
+      const rollA = a.rollNumber || a.studentId?.id || ''
+      const rollB = b.rollNumber || b.studentId?.id || ''
+
+      switch (sortOrder) {
+        case 'name-asc':
+          return nameA.localeCompare(nameB)
+        case 'name-desc':
+          return nameB.localeCompare(nameA)
+        case 'roll-asc':
+          return rollA.localeCompare(rollB)
+        case 'total-desc':
+          return (b.total || 0) - (a.total || 0)
+        case 'total-asc':
+          return (a.total || 0) - (b.total || 0)
+        case 'remaining-desc':
+          return (b.remainingBill || 0) - (a.remainingBill || 0)
+        default:
+          return nameA.localeCompare(nameB)
+      }
+    })
+  }, [filteredBills, sortOrder])
+
+  // Paginated Slicing (Max 5, 10, 25 or 50 items rendered at once)
+  const paginatedBills = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return sortedBills.slice(start, start + pageSize)
+  }, [sortedBills, currentPage, pageSize])
 
   // Summaries
   const summaries = useMemo(() => {
@@ -167,15 +210,17 @@ export default function BillManagementPage() {
   const handleResetFilters = () => {
     setSearchQuery('')
     setStatusFilter('all')
+    setSortOrder('name-asc')
+    setCurrentPage(1)
   }
 
-  const hasActiveFilters = searchQuery.length > 0 || statusFilter !== 'all'
+  const hasActiveFilters = searchQuery.length > 0 || statusFilter !== 'all' || sortOrder !== 'name-asc'
 
   // ── 6. Excel Export ────────────────────────────────────────────────────
   const handleExportExcel = () => {
     try {
       setIsExporting(true)
-      const dataToExport = filteredBills.map((b) => {
+      const dataToExport = sortedBills.map((b) => {
         const row: Record<string, string | number> = {
           Name: b.studentId?.name || (b.isGuest ? 'Dining Guest' : 'Resident'),
           'Roll Number / ID': b.rollNumber || b.studentId?.id || 'N/A',
@@ -231,6 +276,8 @@ export default function BillManagementPage() {
         onSearchChange={setSearchQuery}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        sortOrder={sortOrder}
+        onSortOrderChange={setSortOrder}
         onExportExcel={handleExportExcel}
         isExporting={isExporting}
         totalBillsCount={filteredBills.length}
@@ -240,7 +287,8 @@ export default function BillManagementPage() {
 
       {/* 2. KPI Metrics Bar */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+          <Skeleton className="h-28 rounded-2xl" />
           <Skeleton className="h-28 rounded-2xl" />
           <Skeleton className="h-28 rounded-2xl" />
           <Skeleton className="h-28 rounded-2xl" />
@@ -269,7 +317,7 @@ export default function BillManagementPage() {
           {/* Desktop Table View (>= 1024px) */}
           <div className="hidden lg:block">
             <BillManagementTable
-              bills={filteredBills}
+              bills={paginatedBills}
               dynamicColumns={dynamicColumns}
               onOpenPayment={handleOpenPayment}
               onOpenEditCharges={handleOpenEditCharges}
@@ -280,12 +328,23 @@ export default function BillManagementPage() {
           {/* Mobile & Tablet Card View (< 1024px) */}
           <div className="lg:hidden">
             <BillManagementCards
-              bills={filteredBills}
+              bills={paginatedBills}
               onOpenPayment={handleOpenPayment}
               onOpenEditCharges={handleOpenEditCharges}
               onOpenDetails={handleOpenDetails}
             />
           </div>
+
+          {/* Pagination Controls */}
+          {sortedBills.length > 0 && (
+            <BillManagementPagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalItems={sortedBills.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            />
+          )}
         </>
       )}
 
@@ -315,3 +374,4 @@ export default function BillManagementPage() {
     </div>
   )
 }
+
