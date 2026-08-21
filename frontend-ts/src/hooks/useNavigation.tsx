@@ -252,14 +252,14 @@ export function useNavigation() {
           { title: "Meal History", url: "/app/meals/history" },
         ];
         if (hasFeature('qr_attendance')) {
-          messItems.push({ title: "Mark Attendance", url: '#' });
+          messItems.push({ title: "Mark Attendance", url: '/app/meals/attendance' });
         }
         studentNav.push({ title: "Mess", icon: Utensils, items: messItems, isActive: true });
       } else if (hasFeature('qr_attendance')) {
         studentNav.push({
           title: "Attendance",
           icon: QrCode,
-          items: [{ title: "Mark Attendance", url: '#' }],
+          items: [{ title: "Mark Attendance", url: '/app/meals/attendance' }],
         });
       }
 

@@ -10,6 +10,7 @@ import MyRoom from "./features/Residence/MyRoom";
 import WeeklySchedule from "./features/Mess/WeeklySchedule";
 import ManageMealSchedule from "./features/Mess/ManageMealSchedule";
 import MealHistoryPage from "./features/Mess/MealHistory/MealHistoryPage";
+import StudentAttendancePage from "./features/Mess/Attendance/StudentAttendancePage";
 import MealPricesPage from "./features/Finance/MealPrices/MealPricesPage";
 import BillGenerationPage from "./features/Finance/BillGeneration/BillGenerationPage";
 import BillManagementPage from "./features/Finance/BillManagement/BillManagementPage";
@@ -47,6 +48,8 @@ const App = () => {
                 <Route path="meals/schedule" element={<WeeklySchedule />} />
                 <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
                 <Route path="meals/history" element={<MealHistoryPage />} />
+                <Route path="meals/attendance" element={<StudentAttendancePage />} />
+                <Route path="attendance/mark" element={<Navigate to="/app/meals/attendance" replace />} />
                 <Route path="my-bills" element={<MyBillsPage />} />
                 <Route path="finance/my-bills" element={<Navigate to="/app/my-bills" replace />} />
                 <Route path="finance/bills" element={<BillManagementPage />} />
