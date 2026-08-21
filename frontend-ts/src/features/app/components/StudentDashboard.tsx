@@ -22,7 +22,7 @@ import { useGetStudentComplaints } from '@/hooks/queries/useComplaintQueries'
 import { useGetMyRoom } from '@/hooks/queries/useResidenceQueries'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { extractQuickActions, getGreeting } from './dashboard-types'
+import { extractQuickActions, getGreeting } from './dashboard-types.ts'
 
 interface StudentDashboardProps {
   user: any
