@@ -13,6 +13,7 @@ import MealHistoryPage from "./features/Mess/MealHistory/MealHistoryPage";
 import MealPricesPage from "./features/Finance/MealPrices/MealPricesPage";
 import BillGenerationPage from "./features/Finance/BillGeneration/BillGenerationPage";
 import BillManagementPage from "./features/Finance/BillManagement/BillManagementPage";
+import MyBillsPage from "./features/Finance/MyBills/MyBillsPage";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import LoginForm from "./features/auth/LoginForm";
 import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
@@ -46,6 +47,8 @@ const App = () => {
                 <Route path="meals/schedule" element={<WeeklySchedule />} />
                 <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
                 <Route path="meals/history" element={<MealHistoryPage />} />
+                <Route path="my-bills" element={<MyBillsPage />} />
+                <Route path="finance/my-bills" element={<Navigate to="/app/my-bills" replace />} />
                 <Route path="finance/bills" element={<BillManagementPage />} />
                 <Route path="finance/manage-bills" element={<Navigate to="/app/finance/bills" replace />} />
                 <Route path="finance/meal-prices" element={<MealPricesPage />} />
