@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import apiClient from '@/api/client'
 
 export interface MenuItem {
-  meal: string
+  meal?: string
+  name?: string
   price: number
 }
 
@@ -41,16 +42,19 @@ export interface StudentSelectionRecord {
     count: number
     method: string
   }
+  hasSelected?: boolean
+  count?: number
 }
 
 // ── 1. Get Hostel Meal Schedule ──────────────────────────────────────────
-export const useGetMealSchedule = () => {
+export const useGetMealSchedule = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['mealSchedule'],
     queryFn: async () => {
       const { data } = await apiClient.get<{ success: boolean; data: MealSchedule | null }>('/meal-schedule')
       return data.data
     },
+    enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
