@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Loader2, User, Lock } from 'lucide-react';
-import logoUrl from '@/assets/pwa-512x512.png';
+import logoUrl from '@/assets/pwa-192x192.png';
 
 const loginSchema = z.object({
     email: z

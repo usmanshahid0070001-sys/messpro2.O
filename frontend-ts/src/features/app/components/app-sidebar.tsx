@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 
-import logoUrl from "@/assets/pwa-512x512.png"
+import logoUrl from "@/assets/pwa-192x192.png"
 
 const AppLogo = ({ className }: { className?: string }) => (
   <img src={logoUrl} alt="MessPro Logo" className={className} />
