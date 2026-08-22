@@ -239,6 +239,7 @@ import User from '../auth/auth.model.js';
 import PlainUser from '../auth/plainUser.model.js';
 import Plan from '../plan/plan.model.js';
 import { sendEmail } from '../../utils/email.js';
+import { cache } from '../../config/cache.js';
 
 class HostelService {
   async registerHostel(data) {
@@ -348,6 +349,11 @@ class HostelService {
 
     const updatedHostel = await hostelRepository.updateHostel(hostelId, updateData);
 
+    // Invalidate cache immediately on update
+    if (hostelId) {
+      await cache.del(`hostel:config:${hostelId}`);
+    }
+
     if (updateData.plan && updateData.plan.features) {
       await this._syncAdminPermissions(hostelId, updateData.plan.features);
     }
@@ -358,7 +364,18 @@ class HostelService {
   async getAllHostels() { return await hostelRepository.findAll(); }
 
   async getHostelById(hostelId) {
-    const hostel = await hostelRepository.findById(hostelId);
+    if (!hostelId) throw new Error('Hostel not found.');
+    const cacheKey = `hostel:config:${hostelId}`;
+
+    const hostel = await cache.getOrSet(
+      cacheKey,
+      async () => {
+        return await hostelRepository.findById(hostelId);
+      },
+      1800,
+      300
+    );
+
     if (!hostel) throw new Error('Hostel not found.');
     return hostel;
   }
@@ -411,6 +428,11 @@ class HostelService {
     }
 
     const updatedHostel = await hostelRepository.updateHostel(hostelId, updatePayload);
+
+    // Invalidate cache immediately on update
+    if (hostelId) {
+      await cache.del(`hostel:config:${hostelId}`);
+    }
 
     if (updatedHostel && updatedHostel.plan && updatedHostel.plan.features) {
       await this._syncAdminPermissions(hostelId, updatedHostel.plan.features);

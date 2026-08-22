@@ -6,6 +6,7 @@ import Hostel from '../hostel/hostel.model.js';
 // 👇 Use the new Unified Models & Services
 import MealRecord from './mealRecord.model.js';
 import MealSchedule from '../meal/meal.model.js';
+import mealService from '../meal/meal.service.js';
 import mealRecordService from './mealRecord.service.js';
 import { getAttendanceSchema, saveAttendanceSchema } from './mealRecord.validation.js';
 
@@ -121,7 +122,7 @@ export const getLiveQRAttendance = catchAsync(async (req, res) => {
   const currentMealData = await mealRecordService.calculateCurrentMeal(hostelId);
   const activeDate = targetDate || currentMealData.date;
   
-  const schedule = await MealSchedule.findOne({ hostelId }).lean();
+  const schedule = await mealService.getScheduleByHostel(hostelId);
   const mealTypes = schedule ? schedule.mealNames : [];
 
   const attendances = await MealRecord.find({
@@ -174,7 +175,7 @@ export const getDailyOverview = catchAsync(async (req, res) => {
   const { hostelId } = req.user;
   const targetDate = req.query.date || new Date().toISOString().split('T')[0];
 
-  const schedule = await MealSchedule.findOne({ hostelId }).lean();
+  const schedule = await mealService.getScheduleByHostel(hostelId);
   const mealTypes = schedule ? schedule.mealNames : [];
 
   if (!mealTypes.length) {
@@ -237,7 +238,7 @@ export const getManagerLiveOverview = catchAsync(async (req, res) => {
   const { hostelId } = req.user;
   const targetDate = req.query.date || new Date().toISOString().split('T')[0];
 
-  const schedule = await MealSchedule.findOne({ hostelId }).lean();
+  const schedule = await mealService.getScheduleByHostel(hostelId);
   const mealTypes = schedule ? schedule.mealNames : [];
 
   if (!mealTypes.length) {

@@ -3,6 +3,8 @@ import { io } from '../../server.js';
 import User from '../auth/auth.model.js';
 import Hostel from '../hostel/hostel.model.js';
 import MealSchedule from '../meal/meal.model.js';
+import mealService from '../meal/meal.service.js';
+import hostelService from '../hostel/hostel.service.js';
 
 // 👇 Imported our new Repository instead of the raw Model
 import mealRecordRepository from './mealRecord.repository.js';
@@ -50,7 +52,7 @@ class MealRecordService {
   async bulkSelectMeals(student, hostelId, payload) {
     const { selections } = bulkSelectMealsSchema.parse(payload);
     
-    const schedule = await MealSchedule.findOne({ hostelId });
+    const schedule = await mealService.getScheduleByHostel(hostelId);
     if (!schedule) {
       const error = new Error('Meal schedule not found for this hostel.');
       error.statusCode = 404;
@@ -61,7 +63,8 @@ class MealRecordService {
       const error = new Error('Meal selection is currently inactive. You can only view the menu.');
       error.statusCode = 403;
       throw error;
-    }    const hostel = await Hostel.findById(hostelId).lean();
+    }
+    const hostel = await hostelService.getHostelById(hostelId);
     const timezone = hostel?.location || 'Asia/Karachi';
     const now = new Date();
 
@@ -307,7 +310,7 @@ class MealRecordService {
   // 3. STUDENT SCAN FEATURE (UNBREAKABLE QR LOGIC)
   // ==========================================
   async processStudentScan(student, hostelId, scannedSecret, studentLat, studentLng) {
-    const hostel = await Hostel.findById(hostelId);
+    const hostel = await hostelService.getHostelById(hostelId);
     if (!hostel) throw new Error('Hostel not found.');
 
     // 🛡️ SECURITY 1: Anti-Forgery (Matches the printed static string)
@@ -415,10 +418,10 @@ class MealRecordService {
   }
 
   async calculateCurrentMeal(hostelId) {
-    const hostel = await Hostel.findById(hostelId);
+    const hostel = await hostelService.getHostelById(hostelId);
     if (!hostel) throw new Error('Hostel not found');
 
-    const schedule = await MealSchedule.findOne({ hostelId });
+    const schedule = await mealService.getScheduleByHostel(hostelId);
     if (!schedule || !schedule.mealNames || schedule.mealNames.length === 0) {
       throw new Error('Meal schedule not configured for this hostel');
     }
@@ -504,8 +507,8 @@ class MealRecordService {
     const parsedData = processBiometricAttendanceSchema.parse(payload);
     const { records, unrecognizedStudentAction, duplicatePunchStrategy } = parsedData;
 
-    // 1. Fetch MealSchedule for the hostel
-    const schedule = await MealSchedule.findOne({ hostelId }).lean();
+    // 1. Fetch MealSchedule for the hostel (from memory cache)
+    const schedule = await mealService.getScheduleByHostel(hostelId);
     if (!schedule) {
       const error = new Error('Meal schedule not configured for this hostel.');
       error.statusCode = 404;
