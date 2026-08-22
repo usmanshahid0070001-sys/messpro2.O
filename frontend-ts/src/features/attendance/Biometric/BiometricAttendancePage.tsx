@@ -2,7 +2,6 @@ import React, { useState, useMemo, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import type { RootState } from '@/store'
-import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 import {
   Fingerprint,
@@ -210,11 +209,18 @@ export default function BiometricAttendancePage() {
 
     if (!uploadedFile) return
 
+    // Limit maximum file size to 5MB to prevent memory exhaustion / DoS
+    if (uploadedFile.size > 5 * 1024 * 1024) {
+      toast.error('File size exceeds 5MB limit. Please upload a smaller file.')
+      return
+    }
+
     setFile(uploadedFile)
     const reader = new FileReader()
 
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
+        const XLSX = await import('xlsx')
         const bstr = evt.target?.result
         const wb = XLSX.read(bstr, { type: 'binary', cellDates: true })
         const wsname = wb.SheetNames[0]

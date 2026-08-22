@@ -203,7 +203,11 @@ export default function LoginForm() {
                         <button
                             type="button"
                             disabled={busy}
-                            onClick={() => (window.location.href = `${import.meta.env.VITE_API_URL ?? 'http://localhost:5000'}/api/auth/google`)}
+                            onClick={() => {
+                                const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+                                const apiBase = rawApiUrl.replace(/\/api\/?$/, '');
+                                window.location.href = `${apiBase}/api/auth/google`;
+                            }}
                             className="w-full flex justify-center items-center gap-2 py-3 px-4 text-sm font-bold text-foreground bg-transparent rounded-xl border border-input hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                         >
                             <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
@@ -219,7 +223,7 @@ export default function LoginForm() {
                 </form>
 
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Register Hostel? <a href="https://messprouet.vercel.app/register" className="font-bold text-foreground hover:underline">Click here</a>
+                    Register Hostel? <a href="https://messprouet.vercel.app/register" target="_blank" rel="noopener noreferrer" className="font-bold text-foreground hover:underline">Click here</a>
                 </div>
             </div>
         </div>

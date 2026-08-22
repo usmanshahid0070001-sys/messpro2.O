@@ -18,7 +18,6 @@ import {
   FileSpreadsheet,
   X,
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 
 import { useGetMealSchedule } from '@/hooks/queries/useMealQueries';
@@ -319,33 +318,40 @@ export default function ManualAttendancePage() {
     );
   };
 
-  const exportToExcel = () => {
-    const dataToExport = [
-      ...filteredStudents.map((s) => ({
-        'Student Name': s.name,
-        'Roll Number': s.rollNumber,
-        Room: s.room?.roomName ? `Room ${s.room.roomName}` : 'Unassigned',
-        'Pre-Reserved Plates': s.reservedCount,
-        'Actual Meals Taken': s.count,
-        'Meal Status': s.count > 0 ? 'Served' : s.reservedCount > 0 ? 'Absence/Reserved' : 'Not Taken',
-      })),
-      ...mergedGuestsList.map((g) => ({
-        'Student Name': g.name,
-        'Roll Number': g.rollNumber,
-        Room: 'External / Guest',
-        'Pre-Reserved Plates': 0,
-        'Actual Meals Taken': g.count,
-        'Meal Status': 'Guest Entry',
-      })),
-    ];
+  const exportToExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      const dataToExport = [
+        ...filteredStudents.map((s) => ({
+          'Student Name': s.name,
+          'Roll Number': s.rollNumber,
+          Room: s.room?.roomName ? `Room ${s.room.roomName}` : 'Unassigned',
+          'Pre-Reserved Plates': s.reservedCount,
+          'Actual Meals Taken': s.count,
+          'Meal Status': s.count > 0 ? 'Served' : s.reservedCount > 0 ? 'Absence/Reserved' : 'Not Taken',
+        })),
+        ...mergedGuestsList.map((g) => ({
+          'Student Name': g.name,
+          'Roll Number': g.rollNumber,
+          Room: 'External / Guest',
+          'Pre-Reserved Plates': 0,
+          'Actual Meals Taken': g.count,
+          'Meal Status': 'Guest Entry',
+        })),
+      ];
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
 
-    const fileName = `Attendance_${selectedDate}_${selectedMeal?.type || 'Meal'}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-    toast.success(`Exported ${fileName}`);
+      const fileName = `Attendance_${selectedDate}_${selectedMeal?.type || 'Meal'}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      toast.success(`Exported ${fileName}`);
+    } catch (err: any) {
+      toast.error('Export Failed', {
+        description: err?.message || 'Could not generate Excel spreadsheet.',
+      });
+    }
   };
 
   // ── Loading Skeleton ─────────────────────────────────────────────────────

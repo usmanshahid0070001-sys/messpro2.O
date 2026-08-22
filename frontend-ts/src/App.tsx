@@ -41,31 +41,40 @@ const App = () => {
             {/* Protected Routes (Accessible only if logged in) */}
             <Route element={<ProtectedRoute />}>
               <Route path="/app" element={<AppLayout />}>
+                {/* General Authenticated Routes */}
                 <Route index element={<Dashboard />} />
-                <Route path="users" element={<ManageUsers />} />
-                <Route path="hostel-configuration" element={<HostelConfiguration />} />
                 <Route path="complaints" element={<ComplaintIndex />} />
-                <Route path="residence/allocation" element={<RoomAllocation />} />
-                <Route path="residence/services" element={<RoomService />} />
-                <Route path="my-room" element={<MyRoom />} />
                 <Route path="meals/schedule" element={<WeeklySchedule />} />
-                <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
                 <Route path="meals/history" element={<MealHistoryPage />} />
-                <Route path="meals/qr" element={<StudentAttendancePage />} />
-                <Route path="meals/attendance" element={<Navigate to="/app/meals/qr" replace />} />
-                <Route path="attendance/qr" element={<QRAttendancePage />} />
-                <Route path="attendance/manual" element={<ManualAttendancePage />} />
-                <Route path="attendance/biometric" element={<BiometricAttendancePage />} />
-                <Route path="meals/biometric" element={<Navigate to="/app/attendance/biometric" replace />} />
-                <Route path="attendance/mark" element={<Navigate to="/app/meals/qr" replace />} />
-                <Route path="meals/manual-attendance" element={<Navigate to="/app/attendance/manual" replace />} />
-                <Route path="my-bills" element={<MyBillsPage />} />
-                <Route path="finance/my-bills" element={<Navigate to="/app/my-bills" replace />} />
-                <Route path="finance/bills" element={<BillManagementPage />} />
-                <Route path="finance/manage-bills" element={<Navigate to="/app/finance/bills" replace />} />
-                <Route path="finance/meal-prices" element={<MealPricesPage />} />
-                <Route path="finance/generate-bills" element={<BillGenerationPage />} />
-                <Route path="finance/bills/generate" element={<Navigate to="/app/finance/generate-bills" replace />} />
+
+                {/* Staff / Admin / Management Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['superadmin', 'admin', 'manager']} />}>
+                  <Route path="users" element={<ManageUsers />} />
+                  <Route path="hostel-configuration" element={<HostelConfiguration />} />
+                  <Route path="residence/allocation" element={<RoomAllocation />} />
+                  <Route path="residence/services" element={<RoomService />} />
+                  <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
+                  <Route path="attendance/qr" element={<QRAttendancePage />} />
+                  <Route path="attendance/manual" element={<ManualAttendancePage />} />
+                  <Route path="attendance/biometric" element={<BiometricAttendancePage />} />
+                  <Route path="meals/biometric" element={<Navigate to="/app/attendance/biometric" replace />} />
+                  <Route path="meals/manual-attendance" element={<Navigate to="/app/attendance/manual" replace />} />
+                  <Route path="finance/bills" element={<BillManagementPage />} />
+                  <Route path="finance/manage-bills" element={<Navigate to="/app/finance/bills" replace />} />
+                  <Route path="finance/meal-prices" element={<MealPricesPage />} />
+                  <Route path="finance/generate-bills" element={<BillGenerationPage />} />
+                  <Route path="finance/bills/generate" element={<Navigate to="/app/finance/generate-bills" replace />} />
+                </Route>
+
+                {/* Resident / Student Accessible Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['student', 'manager', 'admin', 'superadmin']} />}>
+                  <Route path="my-room" element={<MyRoom />} />
+                  <Route path="meals/qr" element={<StudentAttendancePage />} />
+                  <Route path="meals/attendance" element={<Navigate to="/app/meals/qr" replace />} />
+                  <Route path="attendance/mark" element={<Navigate to="/app/meals/qr" replace />} />
+                  <Route path="my-bills" element={<MyBillsPage />} />
+                  <Route path="finance/my-bills" element={<Navigate to="/app/my-bills" replace />} />
+                </Route>
               </Route>
             </Route>
 

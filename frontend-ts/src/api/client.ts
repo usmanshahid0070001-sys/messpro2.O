@@ -8,6 +8,7 @@ const apiClient = axios.create({
   withCredentials: true, // Required to send/receive the HTTP-only auth cookies
   headers: {
     'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
   },
 });
 

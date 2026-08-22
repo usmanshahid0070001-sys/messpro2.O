@@ -30,7 +30,6 @@ import {
   ChevronRight,
   TrendingUp,
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 
 import {
@@ -301,33 +300,40 @@ export default function QRAttendancePage() {
     );
   }, [activeMealData, searchQuery]);
 
-  const exportOverviewExcel = () => {
+  const exportOverviewExcel = async () => {
     if (!dailyOverview?.data) {
       toast.error('No overview data available to export');
       return;
     }
 
-    const rows: any[] = [];
-    Object.entries(dailyOverview.data).forEach(([mType, mData]) => {
-      mData.data.forEach((s) => {
-        rows.push({
-          Date: selectedDate,
-          'Meal Slot': mType,
-          'Student Name': s.name,
-          'Roll Number': s.rollNumber,
-          Type: s.isGuest ? 'Guest / External' : 'Resident',
-          'Pre-Selected Portions': s.selectionCount,
-          'Portions Consumed': s.attendanceCount,
-          Status: s.hasAttended ? 'Served' : s.isSelected ? 'Pre-Selected (Absent)' : 'Not Attended',
+    try {
+      const XLSX = await import('xlsx');
+      const rows: any[] = [];
+      Object.entries(dailyOverview.data).forEach(([mType, mData]) => {
+        mData.data.forEach((s) => {
+          rows.push({
+            Date: selectedDate,
+            'Meal Slot': mType,
+            'Student Name': s.name,
+            'Roll Number': s.rollNumber,
+            Type: s.isGuest ? 'Guest / External' : 'Resident',
+            'Pre-Selected Portions': s.selectionCount,
+            'Portions Consumed': s.attendanceCount,
+            Status: s.hasAttended ? 'Served' : s.isSelected ? 'Pre-Selected (Absent)' : 'Not Attended',
+          });
         });
       });
-    });
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'QR_Attendance');
-    XLSX.writeFile(wb, `QR_Attendance_${selectedDate}.xlsx`);
-    toast.success(`Exported QR_Attendance_${selectedDate}.xlsx`);
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'QR_Attendance');
+      XLSX.writeFile(wb, `QR_Attendance_${selectedDate}.xlsx`);
+      toast.success(`Exported QR_Attendance_${selectedDate}.xlsx`);
+    } catch (err: any) {
+      toast.error('Export Failed', {
+        description: err?.message || 'Could not generate Excel spreadsheet.',
+      });
+    }
   };
 
   return (

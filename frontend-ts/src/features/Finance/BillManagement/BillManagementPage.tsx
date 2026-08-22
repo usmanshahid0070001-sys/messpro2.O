@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useDeferredValue } from 'react'
-import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 import {
   useGetBills,
@@ -217,7 +216,7 @@ export default function BillManagementPage() {
   const hasActiveFilters = searchQuery.length > 0 || statusFilter !== 'all' || sortOrder !== 'name-asc'
 
   // ── 6. Excel Export ────────────────────────────────────────────────────
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
       setIsExporting(true)
       const dataToExport = sortedBills.map((b) => {
@@ -244,6 +243,7 @@ export default function BillManagementPage() {
         return row
       })
 
+      const XLSX = await import('xlsx')
       const worksheet = XLSX.utils.json_to_sheet(dataToExport)
       const workbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Bills')
