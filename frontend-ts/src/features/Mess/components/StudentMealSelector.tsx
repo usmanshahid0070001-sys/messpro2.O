@@ -46,14 +46,22 @@ const STATIC_DAYS = [
 
 type DayOfWeek = (typeof STATIC_DAYS)[number]
 
-// ── Time & Date Helpers ──────────────────────────────────────────────────
-const hasTimePassed = (cutoffString: string): boolean => {
-  if (!cutoffString) return false
+const formatTimeRange = (range?: { start?: string; end?: string } | string) => {
+  if (!range) return '—'
+  if (typeof range === 'string') return range
+  if (range.start && range.end) return `${range.start} – ${range.end}`
+  return range.end || range.start || '—'
+}
+
+const hasTimePassed = (timing?: { start?: string; end?: string } | string): boolean => {
+  if (!timing) return false
+  const timeStr = typeof timing === 'object' && timing.end ? timing.end : (typeof timing === 'string' ? timing : '')
+  if (!timeStr) return false
   try {
     const now = new Date()
     const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
-    const match12 = cutoffString.match(/(\d+):(\d+)\s*(AM|PM)/i)
+    const match12 = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i)
     if (match12) {
       let hours = parseInt(match12[1], 10)
       const minutes = parseInt(match12[2], 10)
@@ -63,7 +71,7 @@ const hasTimePassed = (cutoffString: string): boolean => {
       return currentMinutes >= hours * 60 + minutes
     }
 
-    const match24 = cutoffString.match(/^(\d{1,2}):(\d{2})$/)
+    const match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/)
     if (match24) {
       const hours = parseInt(match24[1], 10)
       const minutes = parseInt(match24[2], 10)
@@ -159,22 +167,20 @@ export default function StudentMealSelector({
   isSelectionsLoading,
 }: StudentMealSelectorProps) {
   const bulkSelectMutation = useBulkSelectMeals()
-
   const maxAllowed = schedule?.maxMealSelection || 1
   const isInactive = schedule?.status === 'inactive'
   const mealNames = schedule?.mealNames || ['Breakfast', 'Lunch', 'Dinner']
   const selectionTiming = schedule?.selectionTiming || []
+  const servingTiming = schedule?.servingTiming || []
 
   const weekDays = useMemo(() => getWeekDaysFromToday(), [])
 
-  // View state: 'all' or specific day index (0..6)
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | 'all'>('all')
 
-  // selectionsMap: Record<isoDate_mealType, count: number>
   const [selectionsMap, setSelectionsMap] = useState<Record<string, number>>({})
   const [isDirty, setIsDirty] = useState(false)
+  const [showCutoffModal, setShowCutoffModal] = useState(false)
 
-  // Initialize selections from server data
   useEffect(() => {
     const initialMap: Record<string, number> = {}
     selections.forEach((rec) => {
@@ -185,7 +191,6 @@ export default function StudentMealSelector({
     setIsDirty(false)
   }, [selections])
 
-  // Helper to fetch dish details
   const getDishInfo = (dayName: string, slotIndex: number) => {
     const dayItems = (schedule?.menu as any)?.[dayName] || []
     const item = dayItems[slotIndex]
@@ -194,7 +199,6 @@ export default function StudentMealSelector({
     return { foodName, price }
   }
 
-  // Handle count updates
   const handleUpdateCount = (
     isoDate: string,
     mealType: string,
@@ -216,7 +220,6 @@ export default function StudentMealSelector({
     }
   }
 
-  // Quick 1-tap toggle (0 -> 1 -> 0)
   const handleToggle = (
     isoDate: string,
     mealType: string,
@@ -235,7 +238,6 @@ export default function StudentMealSelector({
     }))
   }
 
-  // ── Quick Bulk Actions ──
   const handleSelectAllWeek = () => {
     if (isInactive) return
     setIsDirty(true)
@@ -289,7 +291,6 @@ export default function StudentMealSelector({
     toast.info('Cleared all meal selections for this week')
   }
 
-  // Save selections to backend
   const handleSave = async () => {
     const payloadSelections: any[] = []
 
@@ -311,14 +312,15 @@ export default function StudentMealSelector({
       })
     })
 
-    await bulkSelectMutation.mutateAsync({
-      selections: payloadSelections,
-    })
-
-    setIsDirty(false)
+    try {
+      await bulkSelectMutation.mutateAsync({ selections: payloadSelections })
+      setIsDirty(false)
+      toast.success('Your weekly meal preferences have been saved!')
+    } catch (err: any) {
+      // Toast already handled by mutation hook
+    }
   }
 
-  // Revert changes
   const handleDiscard = () => {
     const initialMap: Record<string, number> = {}
     selections.forEach((rec) => {
@@ -328,16 +330,6 @@ export default function StudentMealSelector({
     setIsDirty(false)
     toast.info('Discarded changes')
   }
-
-  // ── Derived Weekly & Daily Metrics ──
-  const todayInfo = weekDays[0]
-  const todaySelectedCount = mealNames.reduce(
-    (acc, name) => acc + (selectionsMap[`${todayInfo.isoDate}_${name}`] || 0),
-    0
-  )
-  const todaySelectedNames = mealNames.filter(
-    (name) => (selectionsMap[`${todayInfo.isoDate}_${name}`] || 0) > 0
-  )
 
   const totalWeekSelectedMeals = weekDays.reduce((acc, d) => {
     return (
@@ -349,9 +341,6 @@ export default function StudentMealSelector({
   }, 0)
 
   const maxTotalWeekSlots = weekDays.length * mealNames.length
-
-  // Cutoff Info modal state
-  const [showCutoffModal, setShowCutoffModal] = useState(false)
 
   // Filter visible days
   const visibleDays =
@@ -594,18 +583,23 @@ export default function StudentMealSelector({
                           >
                             <SlotIcon className="h-3.5 w-3.5" />
                           </div>
-                          <span className="text-xs font-bold text-foreground">
-                            {mealType}
-                          </span>
+                          <div>
+                            <span className="text-xs font-bold text-foreground block">
+                              {mealType}
+                            </span>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-medium block">
+                              Serving: {formatTimeRange(servingTiming[slotIdx])}
+                            </span>
+                          </div>
                         </div>
 
                         {isLocked ? (
                           <span
                             className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                            title={`Selection cutoff was ${cutoff}. Orders for this meal are locked.`}
+                            title={`Selection cutoff was ${formatTimeRange(cutoff)}. Orders for this meal are locked.`}
                           >
                             <Lock className="h-2.5 w-2.5" />
-                            Passed ({cutoff})
+                            Passed
                           </span>
                         ) : cutoff ? (
                           <span
@@ -614,7 +608,7 @@ export default function StudentMealSelector({
                                 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
                                 : 'bg-muted text-muted-foreground border-border/60'
                             }`}
-                            title={`You can select or change this meal until ${cutoff} ${
+                            title={`You can select or change this meal until ${formatTimeRange(cutoff)} ${
                               day.isToday ? 'today' : `on ${day.dayName}`
                             }`}
                           >
@@ -625,7 +619,7 @@ export default function StudentMealSelector({
                                   : 'text-muted-foreground'
                               }`}
                             />
-                            Until {cutoff}
+                            Cutoff: {typeof cutoff === 'object' && cutoff?.end ? cutoff.end : (typeof cutoff === 'string' ? cutoff : '—')}
                           </span>
                         ) : null}
                       </div>
@@ -748,15 +742,20 @@ export default function StudentMealSelector({
               </p>
 
               {selectionTiming.length > 0 && (
-                <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-1.5">
+                <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-2">
                   <span className="font-semibold text-foreground text-[11px] uppercase tracking-wider block">
-                    Daily Deadlines:
+                    Hostel Meal Timings:
                   </span>
                   {mealNames.map((name, i) => (
-                    <div key={name} className="flex justify-between items-center text-xs">
-                      <span className="font-medium text-foreground">{name}:</span>
-                      <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                        {selectionTiming[i] || 'No cutoff'}
+                    <div key={name} className="flex justify-between items-center text-xs border-b border-border/40 pb-1.5 last:border-0 last:pb-0">
+                      <div>
+                        <span className="font-bold text-foreground block">{name}</span>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
+                          Serving: {formatTimeRange(servingTiming[i])}
+                        </span>
+                      </div>
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        Order Window: {formatTimeRange(selectionTiming[i])}
                       </span>
                     </div>
                   ))}

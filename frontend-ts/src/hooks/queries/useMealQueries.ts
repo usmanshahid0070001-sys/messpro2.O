@@ -7,13 +7,19 @@ export interface MenuItem {
   price: number
 }
 
+export interface TimeWindow {
+  start?: string
+  end?: string
+}
+
 export interface MealSchedule {
   _id?: string
   hostelId: string
   groupId?: string | null
   numberOfMeals: number
   mealNames: string[]
-  selectionTiming: string[]
+  selectionTiming: Array<TimeWindow | string>
+  servingTiming?: Array<TimeWindow>
   menu: {
     Monday: MenuItem[]
     Tuesday: MenuItem[]

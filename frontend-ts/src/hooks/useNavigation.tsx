@@ -140,7 +140,7 @@ export function useNavigation() {
       attendanceItems.push({ title: "QR Attendance", url: '/app/attendance/qr', icon: QrCode });
     }
     if (perms.includes("biometric_attendance")) {
-      attendanceItems.push({ title: "Biometric Attendance", url: '#', icon: Fingerprint });
+      attendanceItems.push({ title: "Biometric Attendance", url: '/app/attendance/biometric', icon: Fingerprint });
     }
 
     if (attendanceItems.length >= 2) {
@@ -304,7 +304,7 @@ export function useNavigation() {
         adminFeatureItems.push({ title: "QR Attendance", url: "/app/attendance/qr" });
       }
       if (perms.includes('biometric_attendance')) {
-        adminFeatureItems.push({ title: "Biometric Attendance", url: "#" });
+        adminFeatureItems.push({ title: "Biometric Attendance", url: "/app/attendance/biometric" });
       }
       if (perms.includes('bill_management')) {
         adminFeatureItems.push({ title: "Manage Hostel Dues", url: "/app/finance/bills" });

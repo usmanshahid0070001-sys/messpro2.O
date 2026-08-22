@@ -121,13 +121,13 @@ export const getLiveQRAttendance = catchAsync(async (req, res) => {
   const currentMealData = await mealRecordService.calculateCurrentMeal(hostelId);
   const activeDate = targetDate || currentMealData.date;
   
-  const schedule = await MealSchedule.findOne({ hostelId });
+  const schedule = await MealSchedule.findOne({ hostelId }).lean();
   const mealTypes = schedule ? schedule.mealNames : [];
 
   const attendances = await MealRecord.find({
     hostelId: hostelId,
     date: activeDate
-  }).populate('studentId', 'name id');
+  }).populate('studentId', 'name id').lean();
 
   const resultData = {};
   mealTypes.forEach(mt => {
@@ -174,7 +174,7 @@ export const getDailyOverview = catchAsync(async (req, res) => {
   const { hostelId } = req.user;
   const targetDate = req.query.date || new Date().toISOString().split('T')[0];
 
-  const schedule = await MealSchedule.findOne({ hostelId });
+  const schedule = await MealSchedule.findOne({ hostelId }).lean();
   const mealTypes = schedule ? schedule.mealNames : [];
 
   if (!mealTypes.length) {
@@ -191,7 +191,7 @@ export const getDailyOverview = catchAsync(async (req, res) => {
   const attendances = await MealRecord.find({
     hostelId: hostelId,
     date: targetDate
-  }).populate('studentId', 'name id');
+  }).populate('studentId', 'name id').lean();
 
   const resultData = {};
   mealTypes.forEach(mt => {
@@ -237,7 +237,7 @@ export const getManagerLiveOverview = catchAsync(async (req, res) => {
   const { hostelId } = req.user;
   const targetDate = req.query.date || new Date().toISOString().split('T')[0];
 
-  const schedule = await MealSchedule.findOne({ hostelId });
+  const schedule = await MealSchedule.findOne({ hostelId }).lean();
   const mealTypes = schedule ? schedule.mealNames : [];
 
   if (!mealTypes.length) {
@@ -252,13 +252,13 @@ export const getManagerLiveOverview = catchAsync(async (req, res) => {
   }
 
   // 1. Fetch ALL students for this hostel
-  const allStudents = await User.find({ hostelId, role: 'student' }).select('name id');
+  const allStudents = await User.find({ hostelId, role: 'student' }).select('name id').lean();
 
   // 2. Fetch MealRecords for this date
   const attendances = await MealRecord.find({
     hostelId: hostelId,
     date: targetDate
-  }).populate('studentId', 'name id');
+  }).populate('studentId', 'name id').lean();
 
   const resultData = {};
   mealTypes.forEach(mt => {
@@ -435,9 +435,11 @@ export const scanStudentQR = catchAsync(async (req, res) => {
   const student = await User.findOne({ id: studentRollNumber, role: 'student' });
   if (!student) throw Object.assign(new Error('Student not found.'), { statusCode: 404 });
 
+  // 1. Verify that a meal is actively being served right now
+  const mealData = await mealRecordService.calculateCurrentMeal(managerHostelId);
+
   if (student.hostelId.toString() === managerHostelId.toString()) {
     // Same hostel, force upsert
-    const mealData = await mealRecordService.calculateCurrentMeal(managerHostelId);
     const record = await MealRecord.findOneAndUpdate(
       { hostelId: managerHostelId, date: mealData.date, mealType: mealData.mealType, rollNumber: student.id },
       {
@@ -465,4 +467,13 @@ export const scanStudentQR = catchAsync(async (req, res) => {
       message: 'This student is from a different hostel. Accept as guest?'
     });
   }
+});
+
+// ==========================================
+// 5. BIOMETRIC HARDWARE ATTENDANCE CONTROLLER
+// ==========================================
+export const uploadBiometricAttendance = catchAsync(async (req, res) => {
+  const { hostelId } = req.user;
+  const result = await mealRecordService.processBiometricAttendance(hostelId, req.user, req.body);
+  return res.status(200).json(result);
 });

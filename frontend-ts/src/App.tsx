@@ -13,6 +13,7 @@ import MealHistoryPage from "./features/Mess/MealHistory/MealHistoryPage";
 import StudentAttendancePage from "./features/attendance/QR/StudentAttendancePage";
 import QRAttendancePage from "./features/attendance/QR/QRAttendancePage";
 import ManualAttendancePage from "./features/attendance/Manual/ManualAttendancePage";
+import BiometricAttendancePage from "./features/attendance/Biometric/BiometricAttendancePage";
 import MealPricesPage from "./features/Finance/MealPrices/MealPricesPage";
 import BillGenerationPage from "./features/Finance/BillGeneration/BillGenerationPage";
 import BillManagementPage from "./features/Finance/BillManagement/BillManagementPage";
@@ -54,6 +55,8 @@ const App = () => {
                 <Route path="meals/attendance" element={<Navigate to="/app/meals/qr" replace />} />
                 <Route path="attendance/qr" element={<QRAttendancePage />} />
                 <Route path="attendance/manual" element={<ManualAttendancePage />} />
+                <Route path="attendance/biometric" element={<BiometricAttendancePage />} />
+                <Route path="meals/biometric" element={<Navigate to="/app/attendance/biometric" replace />} />
                 <Route path="attendance/mark" element={<Navigate to="/app/meals/qr" replace />} />
                 <Route path="meals/manual-attendance" element={<Navigate to="/app/attendance/manual" replace />} />
                 <Route path="my-bills" element={<MyBillsPage />} />

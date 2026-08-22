@@ -117,6 +117,8 @@ export const useGetLiveQRAttendance = (date?: string, enabled: boolean = true) =
     },
     enabled,
     refetchInterval: 1000 * 5, // Auto-poll every 5 seconds for live dining counter
+    refetchIntervalInBackground: false, // Do not poll when tab is inactive to preserve battery & data
+    placeholderData: (previousData) => previousData,
   });
 };
 
@@ -138,6 +140,7 @@ export const useGetDailyOverview = (date?: string, enabled: boolean = true) => {
       return data.data;
     },
     enabled,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 1000 * 30, // 30 seconds
+    placeholderData: (previousData) => previousData,
   });
 };

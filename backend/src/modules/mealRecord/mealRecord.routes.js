@@ -12,7 +12,8 @@ import {
   getManagerLiveOverview,
   bulkSelectMeals,
   getStudentSelections,
-  getStudentMonthlyRecords
+  getStudentMonthlyRecords,
+  uploadBiometricAttendance
 } from './mealRecord.controller.js';
 import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
@@ -26,6 +27,7 @@ router.get('/qr/live', requirePermission('qr_attendance'), getLiveQRAttendance);
 router.get('/daily-overview', requirePermission('manual_attendance'), getDailyOverview);
 router.post('/qr/scan-student', requirePermission('qr_attendance'), scanStudentQR);
 router.post('/qr/respond-permission', requirePermission('qr_attendance'), respondGuestPermission);
+router.post('/biometric/upload', requirePermission('biometric_attendance'), uploadBiometricAttendance);
 
 // Student endpoints (students do not need take_attendance permission to scan)
 router.post('/qr/scan-manager', scanManagerQR);

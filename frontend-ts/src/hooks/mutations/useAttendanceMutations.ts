@@ -132,3 +132,55 @@ export const useRespondGuestPermission = () => {
     },
   });
 };
+
+// ── 4. Biometric Attendance Batch Import ───────────────────────────────────
+export interface BiometricAttendanceItem {
+  rollNumber: string;
+  date: string;
+  mealType: string;
+  count?: number;
+  punchTime?: string;
+}
+
+export interface ProcessBiometricPayload {
+  records: BiometricAttendanceItem[];
+  unrecognizedStudentAction: 'guest' | 'skip';
+  duplicatePunchStrategy: 'deduplicate' | 'accumulate';
+}
+
+export interface ProcessBiometricResponse {
+  success: boolean;
+  message: string;
+  stats: {
+    totalSubmitted: number;
+    totalProcessed: number;
+    recordsCreated: number;
+    recordsUpdated: number;
+    guestsMarked: number;
+    skippedCount: number;
+  };
+}
+
+export const useProcessBiometricAttendance = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<ProcessBiometricResponse, any, ProcessBiometricPayload>({
+    mutationFn: async (payload: ProcessBiometricPayload) => {
+      const { data } = await apiClient.post<ProcessBiometricResponse>(
+        '/attendance/biometric/upload',
+        payload
+      );
+      return data;
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['liveQRAttendance'] });
+      queryClient.invalidateQueries({ queryKey: ['dailyOverview'] });
+      toast.success(res.message || 'Biometric attendance synced successfully!');
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message || 'Failed to process biometric file.';
+      toast.error(msg);
+    },
+  });
+};

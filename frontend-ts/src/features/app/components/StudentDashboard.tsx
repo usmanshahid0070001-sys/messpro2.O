@@ -317,12 +317,19 @@ export default function StudentDashboard({
                         (m.mealType || m.type || '').toLowerCase() ===
                         mealName.toLowerCase()
                     )
+                  const servingItem = schedule?.servingTiming?.[idx]
                   const dishName =
-                    (menuItem as any)?.meal ||
-                    (menuItem as any)?.name ||
-                    "Chef's Choice Daily Special"
+                    menuItem?.meal && menuItem.meal !== 'none'
+                      ? menuItem.meal
+                      : menuItem?.name || 'Standard Menu'
                   const price = menuItem?.price || 0
-                  const timeWindow = timings[idx] || 'Scheduled Dining Session'
+                  const servingWindow = servingItem?.start && servingItem?.end
+                    ? `${servingItem.start} – ${servingItem.end}`
+                    : (mealName.toLowerCase().includes('breakfast')
+                        ? '07:30 AM – 10:00 AM'
+                        : mealName.toLowerCase().includes('lunch')
+                          ? '12:30 PM – 03:00 PM'
+                          : '07:30 PM – 10:00 PM')
 
                   // Find today's student selection/attendance record
                   const selRecord = todaySelections.find(
@@ -380,9 +387,9 @@ export default function StudentDashboard({
                         )}
                       </div>
 
-                      <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-mono font-medium">
                         <Clock className="h-3 w-3 shrink-0" />
-                        <span>{timeWindow}</span>
+                        <span>Serving: {servingWindow}</span>
                       </div>
                     </div>
                   )

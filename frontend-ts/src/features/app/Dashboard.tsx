@@ -40,8 +40,10 @@ import {
   type StudentSelectionRecord,
 } from '@/hooks/queries/useMealQueries'
 import { useGetBills } from '@/hooks/queries/useBillingQueries'
-import { useGetStudentComplaints } from '@/hooks/queries/useComplaintQueries'
-import { useGetMyRoom } from '@/hooks/queries/useResidenceQueries'
+import { useGetStudentComplaints, useGetAdminComplaints } from '@/hooks/queries/useComplaintQueries'
+import { useGetMyRoom, useGetRooms } from '@/hooks/queries/useResidenceQueries'
+import { useGetUsers } from '@/hooks/queries/useUserQueries'
+import { useGetDailyOverview } from '@/hooks/queries/useAttendanceQueries'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 
@@ -667,13 +669,10 @@ function AdminManagerDashboard({
   const role = user?.role
   const perms: string[] = user?.permissions || []
 
-  const daysRemaining = calculateDaysRemaining(hostel?.subscriptionExpiresAt || hostel?.trialExpiresAt)
-  const isExpired = hostel?.status === 'Expired' || daysRemaining === 0
-
-  const planName = hostel?.plan?.name || 'Standard Plan'
-  const maxCapacity = hostel?.plan?.limits?.maxStudents || 300
-  const activeResidents = 184
-  const occupancyPct = Math.min(100, Math.round((activeResidents / maxCapacity) * 100))
+  const now = new Date()
+  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
+  const todayDayName = daysOfWeek[now.getDay()]
+  const todayDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
   // Permission Checks for Admin & Manager
   const hasResidencePerm = perms.includes('residence_management')
@@ -685,6 +684,53 @@ function AdminManagerDashboard({
     perms.includes('manual_attendance') ||
     perms.includes('qr_attendance') ||
     perms.includes('biometric_attendance')
+
+  // Real Queries
+  const { data: rooms = [] } = useGetRooms(hasResidencePerm)
+  const { data: adminComplaints = [] } = useGetAdminComplaints('all', hasComplaintPerm)
+  const { data: usersList = [] } = useGetUsers(hasUserPerm)
+  const { data: bills = [] } = useGetBills(undefined, hasBillPerm)
+  const { data: mealSchedule } = useGetMealSchedule(hasMealPerm)
+  const { data: dailyOverview } = useGetDailyOverview(todayDateStr, hasMealPerm || hasAttendancePerm)
+
+  const daysRemaining = calculateDaysRemaining(hostel?.subscriptionExpiresAt || hostel?.trialExpiresAt)
+  const isExpired = hostel?.status === 'Expired' || daysRemaining === 0
+
+  const planName = hostel?.plan?.name || 'Standard Plan'
+  
+  // Real occupancy & resident calculations
+  const totalRoomCapacity = rooms.reduce((acc, r) => acc + (r.capacity || 0), 0)
+  const totalRoomOccupants = rooms.reduce((acc, r) => acc + (r.occupants || 0), 0)
+  const studentsInHostel = usersList.filter((u) => u.role === 'student').length
+  const activeResidents = totalRoomOccupants || studentsInHostel || 0
+  const maxCapacity = totalRoomCapacity || hostel?.plan?.limits?.maxStudents || 100
+  const occupancyPct = maxCapacity > 0 ? Math.min(100, Math.round((activeResidents / maxCapacity) * 100)) : 0
+
+  // Real Daily Meal Turnout
+  let totalSelectionsToday = 0
+  let totalAttendanceToday = 0
+  if (dailyOverview?.data) {
+    Object.values(dailyOverview.data).forEach((m) => {
+      totalSelectionsToday += m.summary.totalSelections || 0
+      totalAttendanceToday += m.summary.totalAttendance || 0
+    })
+  }
+  const turnoutPct = totalSelectionsToday > 0 ? Math.round((totalAttendanceToday / totalSelectionsToday) * 100) : 0
+
+  // Real Complaints Breakdown
+  const pendingComplaints = adminComplaints.filter((c) => c.status !== 'Resolved')
+  const openComplaints = adminComplaints.filter((c) => c.status === 'Open')
+
+  // Real Billing Collection
+  const totalBills = bills.length
+  const paidBills = bills.filter((b) => b.status === 'Paid').length
+  const unpaidBills = bills.filter((b) => b.status === 'Unpaid').length
+  const collectionPct = totalBills > 0 ? Math.round((paidBills / totalBills) * 100) : 100
+
+  // Real Directory Members
+  const totalUsersCount = usersList.length
+  const staffMembersCount = usersList.filter((u) => u.role !== 'student').length
+  const studentMembersCount = usersList.filter((u) => u.role === 'student').length
 
   // Dynamic Statistics with distinct category tints (AGENTS.md 9.1)
   const stats = []
@@ -702,22 +748,22 @@ function AdminManagerDashboard({
     })
   }
 
-  if (hasMealPerm) {
+  if (hasMealPerm || hasAttendancePerm) {
     stats.push({
       label: "Today's Active Meals",
-      value: '142',
-      subtext: 'Lunch attendance logged',
+      value: totalSelectionsToday > 0 ? `${totalAttendanceToday} / ${totalSelectionsToday}` : `${totalAttendanceToday}`,
+      subtext: totalSelectionsToday > 0 ? `${turnoutPct}% turnout logged` : `${totalAttendanceToday} meals served today`,
       icon: Utensils,
       color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
-      actionUrl: '/app/meals/manage-schedule',
+      actionUrl: hasAttendancePerm ? '/app/attendance/qr' : '/app/meals/manage-schedule',
     })
   }
 
   if (hasComplaintPerm) {
     stats.push({
       label: 'Pending Complaints',
-      value: '3',
-      subtext: '2 maintenance, 1 mess',
+      value: `${pendingComplaints.length}`,
+      subtext: `${openComplaints.length} open, ${adminComplaints.length - pendingComplaints.length} resolved`,
       icon: AlertCircle,
       color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
       actionUrl: '/app/complaints',
@@ -727,19 +773,19 @@ function AdminManagerDashboard({
   if (hasBillPerm) {
     stats.push({
       label: 'Monthly Fee Collection',
-      value: '88%',
-      subtext: '16 pending dues invoices',
+      value: `${collectionPct}%`,
+      subtext: `${unpaidBills} pending dues invoice${unpaidBills === 1 ? '' : 's'}`,
       icon: CreditCard,
       color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20',
-      actionUrl: '/app/finance/dues',
+      actionUrl: '/app/finance/bills',
     })
   }
 
   if (hasUserPerm && stats.length < 4) {
     stats.push({
       label: 'Directory Members',
-      value: '18',
-      subtext: 'Active management staff',
+      value: `${totalUsersCount}`,
+      subtext: `${staffMembersCount} staff, ${studentMembersCount} students`,
       icon: Users,
       color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
       actionUrl: '/app/users',
@@ -760,11 +806,65 @@ function AdminManagerDashboard({
   // Extract quick actions dynamically from sidebar navMain
   const quickActions = extractQuickActions(navMain)
 
-  const todaysMeals = [
-    { name: 'Breakfast', time: '07:30 AM – 09:30 AM', menu: 'Omelette, Crispy Paratha, Karak Chai', status: 'Completed' },
-    { name: 'Lunch', time: '12:30 PM – 02:30 PM', menu: 'Special Chicken Biryani, Mint Raita & Salad', status: 'Serving' },
-    { name: 'Dinner', time: '07:30 PM – 09:30 PM', menu: 'Daal Makhni, Fresh Tandoori Roti & Dessert', status: 'Upcoming' },
-  ]
+  // Real Today's Menu derived from MealSchedule
+  const mealNames = mealSchedule?.mealNames?.length ? mealSchedule.mealNames : ['Breakfast', 'Lunch', 'Dinner']
+  const todayMenuDishes = mealSchedule?.menu?.[todayDayName] || []
+  const currentHour = now.getHours()
+  const currentMinute = now.getMinutes()
+  const timeInMinutes = currentHour * 60 + currentMinute
+
+  const todaysMeals = mealNames.map((mealName, idx) => {
+    const dishItem = todayMenuDishes[idx]
+    const dishText = dishItem?.meal && dishItem.meal !== 'none' ? dishItem.meal : 'No dish scheduled'
+    const priceText = dishItem?.price ? ` • Rs. ${dishItem.price}` : ''
+
+    const configuredServing = mealSchedule?.servingTiming?.[idx]
+    let servingTimeRange = ''
+    let startMin = 0
+    let endMin = 1439
+    let status: 'Serving' | 'Completed' | 'Upcoming' = 'Upcoming'
+
+    if (configuredServing?.start && configuredServing?.end) {
+      servingTimeRange = `${configuredServing.start} – ${configuredServing.end}`
+      const [sH, sM] = configuredServing.start.split(':').map((v: string) => parseInt(v, 10))
+      const [eH, eM] = configuredServing.end.split(':').map((v: string) => parseInt(v, 10))
+      startMin = (sH || 0) * 60 + (sM || 0)
+      endMin = (eH || 23) * 60 + (eM || 59)
+    } else {
+      if (mealName.toLowerCase().includes('breakfast')) {
+        servingTimeRange = '07:30 AM – 10:00 AM'
+        startMin = 450
+        endMin = 600
+      } else if (mealName.toLowerCase().includes('lunch')) {
+        servingTimeRange = '12:30 PM – 03:00 PM'
+        startMin = 750
+        endMin = 900
+      } else if (mealName.toLowerCase().includes('dinner')) {
+        servingTimeRange = '07:30 PM – 10:00 PM'
+        startMin = 1170
+        endMin = 1320
+      } else {
+        servingTimeRange = '07:00 AM – 10:00 PM'
+        startMin = 420
+        endMin = 1320
+      }
+    }
+
+    if (timeInMinutes >= startMin && timeInMinutes <= endMin) {
+      status = 'Serving'
+    } else if (timeInMinutes > endMin) {
+      status = 'Completed'
+    } else {
+      status = 'Upcoming'
+    }
+
+    return {
+      name: mealName,
+      time: `Serving: ${servingTimeRange}`,
+      menu: `${dishText}${priceText}`,
+      status,
+    }
+  })
 
   if (isLoading) {
     return (
@@ -928,7 +1028,7 @@ function AdminManagerDashboard({
           )}
 
           {/* Attendance Automation Banner */}
-          {role === 'admin' && hasAttendancePerm && (
+          {(role === 'admin' || role === 'manager' || hasAttendancePerm) && (
             <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 flex items-center justify-between gap-3 mt-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
@@ -944,7 +1044,7 @@ function AdminManagerDashboard({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/app/attendance')}
+                onClick={() => navigate('/app/hostel-configuration')}
                 className="text-xs h-8 shrink-0 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 cursor-pointer"
               >
                 Configure
@@ -1305,7 +1405,14 @@ function StudentDashboard({
                     (menuItem as any)?.name ||
                     "Chef's Choice Daily Special"
                   const price = menuItem?.price || 0
-                  const timeWindow = timings[idx] || 'Scheduled Dining Session'
+                  const servingItem = schedule?.servingTiming?.[idx]
+                  const servingWindow = servingItem?.start && servingItem?.end
+                    ? `${servingItem.start} – ${servingItem.end}`
+                    : (mealName.toLowerCase().includes('breakfast')
+                        ? '07:30 AM – 10:00 AM'
+                        : mealName.toLowerCase().includes('lunch')
+                          ? '12:30 PM – 03:00 PM'
+                          : '07:30 PM – 10:00 PM')
 
                   // Find today's student selection/attendance record
                   const selRecord = todaySelections.find(
@@ -1328,12 +1435,13 @@ function StudentDashboard({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-foreground">{mealName}</span>
                           <span
-                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${hasEaten
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              hasEaten
                                 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                                 : isReserved
-                                  ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
-                                  : 'bg-muted text-muted-foreground'
-                              }`}
+                                ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
                           >
                             {hasEaten ? (
                               <>
@@ -1362,9 +1470,9 @@ function StudentDashboard({
                         )}
                       </div>
 
-                      <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-mono font-medium">
                         <Clock className="h-3 w-3 shrink-0" />
-                        <span>{timeWindow}</span>
+                        <span>Serving: {servingWindow}</span>
                       </div>
                     </div>
                   )

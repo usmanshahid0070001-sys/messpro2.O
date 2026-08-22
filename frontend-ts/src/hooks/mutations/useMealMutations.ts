@@ -7,7 +7,8 @@ export interface UpdateMealSchedulePayload {
   groupId?: string | null
   numberOfMeals?: number
   mealNames?: string[]
-  selectionTiming?: string[]
+  selectionTiming?: Array<{ start?: string; end?: string } | string>
+  servingTiming?: Array<{ start?: string; end?: string }>
   maxMealSelection?: number
   menu?: {
     Monday?: MenuItem[]

@@ -38,6 +38,13 @@ const DAYS_OF_WEEK = [
 
 type DayName = (typeof DAYS_OF_WEEK)[number]
 
+const formatTimeRange = (range?: { start?: string; end?: string } | string) => {
+  if (!range) return '—'
+  if (typeof range === 'string') return range
+  if (range.start && range.end) return `${range.start} – ${range.end}`
+  return range.end || range.start || '—'
+}
+
 export default function AdminMealManager({
   schedule,
 }: AdminMealManagerProps) {
@@ -46,10 +53,15 @@ export default function AdminMealManager({
   const [status, setStatus] = useState<'active' | 'inactive'>('active')
   const [maxMealSelection, setMaxMealSelection] = useState<number>(1)
   const [mealNames, setMealNames] = useState<string[]>(['Breakfast', 'Lunch', 'Dinner'])
-  const [selectionTiming, setSelectionTiming] = useState<string[]>([
-    '07:00 AM',
-    '11:30 AM',
-    '06:30 PM',
+  const [selectionTiming, setSelectionTiming] = useState<Array<{ start: string; end: string }>>([
+    { start: '06:00', end: '07:00' },
+    { start: '06:00', end: '11:30' },
+    { start: '06:00', end: '18:30' },
+  ])
+  const [servingTiming, setServingTiming] = useState<Array<{ start: string; end: string }>>([
+    { start: '07:30', end: '10:00' },
+    { start: '12:30', end: '15:00' },
+    { start: '19:30', end: '22:00' },
   ])
 
   // Menu: Record<DayName, MenuItem[]>
@@ -82,9 +94,38 @@ export default function AdminMealManager({
 
       const timings =
         schedule.selectionTiming && schedule.selectionTiming.length > 0
-          ? schedule.selectionTiming
-          : names.map((_, i) => (i === 0 ? '07:00 AM' : i === 1 ? '11:30 AM' : '06:30 PM'))
+          ? schedule.selectionTiming.map((t, i) => {
+              if (typeof t === 'object' && t !== null) {
+                return {
+                  start: t.start || '06:00',
+                  end: t.end || (i === 0 ? '07:00' : i === 1 ? '11:30' : '18:30'),
+                }
+              }
+              return {
+                start: '06:00',
+                end: String(t || (i === 0 ? '07:00' : i === 1 ? '11:30' : '18:30')),
+              }
+            })
+          : names.map((_, i) => ({
+              start: '06:00',
+              end: i === 0 ? '07:00' : i === 1 ? '11:30' : '18:30',
+            }))
       setSelectionTiming(timings)
+
+      const servTimings =
+        schedule.servingTiming && schedule.servingTiming.length > 0
+          ? schedule.servingTiming.map((s, i) => ({
+              start: s?.start || (i === 0 ? '07:30' : i === 1 ? '12:30' : '19:30'),
+              end: s?.end || (i === 0 ? '10:00' : i === 1 ? '15:00' : '22:00'),
+            }))
+          : names.map((_, i) =>
+              i === 0
+                ? { start: '07:30', end: '10:00' }
+                : i === 1
+                ? { start: '12:30', end: '15:00' }
+                : { start: '19:30', end: '22:00' }
+            )
+      setServingTiming(servTimings)
 
       const loadedMenu: Record<DayName, MenuItem[]> = {
         Monday: [],
@@ -113,9 +154,19 @@ export default function AdminMealManager({
     } else {
       // Default empty schedule
       const defaultNames = ['Breakfast', 'Lunch', 'Dinner']
-      const defaultTimings = ['07:00 AM', '11:30 AM', '06:30 PM']
+      const defaultTimings = [
+        { start: '06:00', end: '07:00' },
+        { start: '06:00', end: '11:30' },
+        { start: '06:00', end: '18:30' },
+      ]
+      const defaultServing = [
+        { start: '07:30', end: '10:00' },
+        { start: '12:30', end: '15:00' },
+        { start: '19:30', end: '22:00' },
+      ]
       setMealNames(defaultNames)
       setSelectionTiming(defaultTimings)
+      setServingTiming(defaultServing)
       const emptyMenu: Record<DayName, MenuItem[]> = {
         Monday: defaultNames.map(() => ({ meal: '', price: 0 })),
         Tuesday: defaultNames.map(() => ({ meal: '', price: 0 })),
@@ -154,10 +205,15 @@ export default function AdminMealManager({
   }
 
   // Save timing & slot changes from modal
-  const handleSaveMealTypes = (newNames: string[], newTimings: string[]) => {
+  const handleSaveMealTypes = (
+    newNames: string[],
+    newSelectionTiming: Array<{ start: string; end: string }>,
+    newServingTiming: Array<{ start: string; end: string }>
+  ) => {
     setIsDirty(true)
     setMealNames(newNames)
-    setSelectionTiming(newTimings)
+    setSelectionTiming(newSelectionTiming)
+    setServingTiming(newServingTiming)
 
     setMenu((prev) => {
       const updated: Record<DayName, MenuItem[]> = {
@@ -180,7 +236,7 @@ export default function AdminMealManager({
       return updated
     })
 
-    toast.success('Updated meal slots and cutoff timings')
+    toast.success('Updated meal slots, selection windows & serving ranges')
   }
 
   // Copy day menu to all other days
@@ -231,6 +287,7 @@ export default function AdminMealManager({
       numberOfMeals: mealNames.length,
       mealNames,
       selectionTiming,
+      servingTiming,
       menu: safeMenuPayload,
     })
 
@@ -414,18 +471,21 @@ export default function AdminMealManager({
               {mealNames.map((name, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-muted/60 border border-border/60 text-foreground"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-muted/60 border border-border/60 text-foreground"
                 >
                   <Utensils className="h-3 w-3 text-emerald-500" />
-                  <span>{name}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    ({selectionTiming[i] || '—'})
+                  <span className="font-semibold">{name}</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
+                    Serving: {formatTimeRange(servingTiming[i])}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    &bull; Cutoff: {selectionTiming[i]?.end || selectionTiming[i]?.start || '—'}
                   </span>
                 </span>
               ))}
             </div>
             <p className="text-[11px] text-muted-foreground mt-2">
-              {mealNames.length} meal slots active with daily cutoff times.
+              {mealNames.length} meal slots active with configured selection windows and dining serving time ranges.
             </p>
           </div>
         </div>
@@ -540,24 +600,30 @@ export default function AdminMealManager({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {mealNames.map((slotName, slotIndex) => {
                 const currentItem = menu[activeDay]?.[slotIndex] || { meal: '', price: 0 }
-                const cutoff = selectionTiming[slotIndex] || '—'
+                const servingWindow = formatTimeRange(servingTiming[slotIndex])
+                const selectionWindow = formatTimeRange(selectionTiming[slotIndex])
 
                 return (
                   <div
                     key={slotIndex}
                     className="p-4 rounded-2xl bg-muted/20 border border-border/80 space-y-3 hover:border-emerald-500/30 transition-colors"
                   >
-                    <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                    <div className="flex items-start justify-between pb-2 border-b border-border/60">
                       <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                           <Utensils className="h-3.5 w-3.5" />
                         </div>
                         <span className="text-xs font-bold text-foreground">{slotName}</span>
                       </div>
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span>Cutoff: {cutoff}</span>
-                      </span>
+                      <div className="text-right">
+                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center justify-end gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>Serving: {servingWindow}</span>
+                        </span>
+                        <span className="text-[10px] text-muted-foreground block">
+                          Order: {selectionWindow}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="space-y-2.5">
@@ -609,11 +675,16 @@ export default function AdminMealManager({
                   </th>
                   {mealNames.map((name, i) => (
                     <th key={i} className="p-3 font-semibold text-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Utensils className="h-3.5 w-3.5 text-emerald-500" />
-                        <span>{name}</span>
-                        <span className="text-[10px] text-muted-foreground font-normal">
-                          ({selectionTiming[i] || '—'})
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5 font-bold">
+                          <Utensils className="h-3.5 w-3.5 text-emerald-500" />
+                          <span>{name}</span>
+                        </div>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium block">
+                          Served: {formatTimeRange(servingTiming[i])}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-normal block">
+                          Order: {formatTimeRange(selectionTiming[i])}
                         </span>
                       </div>
                     </th>
@@ -683,6 +754,7 @@ export default function AdminMealManager({
         onClose={() => setIsTimingModalOpen(false)}
         mealNames={mealNames}
         selectionTiming={selectionTiming}
+        servingTiming={servingTiming}
         onSave={handleSaveMealTypes}
       />
 
