@@ -212,7 +212,7 @@ export const ACTION_METADATA: Record<string, ActionMeta> = {
   'Mark Attendance': {
     desc: 'Scan live dining hall QR code or display badge',
     icon: QrCode,
-    defaultUrl: '/app/meals/attendance',
+    defaultUrl: '/app/meals/qr',
     color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
     badgeColor: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
     hoverBg: 'group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:text-white',

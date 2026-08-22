@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import {
   useGetStudentMonthlyRecords,
+  useGetMealSchedule,
   type StudentMonthlyMealRecord,
 } from '@/hooks/queries/useMealQueries'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -26,6 +27,7 @@ export default function MealHistoryPage() {
   const monthString = useMemo(() => formatYearMonth(currentDate), [currentDate])
 
   const { data: records = [], isLoading } = useGetStudentMonthlyRecords(monthString)
+  const { data: schedule } = useGetMealSchedule()
 
   // Month Navigation
   const handlePrevMonth = () => {
@@ -87,7 +89,7 @@ export default function MealHistoryPage() {
       )}
 
       {/* 3. Interactive Bill Estimator at the end of the section */}
-      <BillEstimatorCard records={records} monthLabel={monthLabel} />
+      <BillEstimatorCard records={records} monthLabel={monthLabel} schedule={schedule} />
     </div>
   )
 }

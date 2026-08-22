@@ -10,7 +10,9 @@ import MyRoom from "./features/Residence/MyRoom";
 import WeeklySchedule from "./features/Mess/WeeklySchedule";
 import ManageMealSchedule from "./features/Mess/ManageMealSchedule";
 import MealHistoryPage from "./features/Mess/MealHistory/MealHistoryPage";
-import StudentAttendancePage from "./features/Mess/Attendance/StudentAttendancePage";
+import StudentAttendancePage from "./features/attendance/QR/StudentAttendancePage";
+import QRAttendancePage from "./features/attendance/QR/QRAttendancePage";
+import ManualAttendancePage from "./features/attendance/Manual/ManualAttendancePage";
 import MealPricesPage from "./features/Finance/MealPrices/MealPricesPage";
 import BillGenerationPage from "./features/Finance/BillGeneration/BillGenerationPage";
 import BillManagementPage from "./features/Finance/BillManagement/BillManagementPage";
@@ -48,8 +50,12 @@ const App = () => {
                 <Route path="meals/schedule" element={<WeeklySchedule />} />
                 <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
                 <Route path="meals/history" element={<MealHistoryPage />} />
-                <Route path="meals/attendance" element={<StudentAttendancePage />} />
-                <Route path="attendance/mark" element={<Navigate to="/app/meals/attendance" replace />} />
+                <Route path="meals/qr" element={<StudentAttendancePage />} />
+                <Route path="meals/attendance" element={<Navigate to="/app/meals/qr" replace />} />
+                <Route path="attendance/qr" element={<QRAttendancePage />} />
+                <Route path="attendance/manual" element={<ManualAttendancePage />} />
+                <Route path="attendance/mark" element={<Navigate to="/app/meals/qr" replace />} />
+                <Route path="meals/manual-attendance" element={<Navigate to="/app/attendance/manual" replace />} />
                 <Route path="my-bills" element={<MyBillsPage />} />
                 <Route path="finance/my-bills" element={<Navigate to="/app/my-bills" replace />} />
                 <Route path="finance/bills" element={<BillManagementPage />} />

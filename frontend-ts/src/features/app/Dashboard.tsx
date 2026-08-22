@@ -1117,12 +1117,11 @@ function StudentDashboard({
           </p>
         </div>
 
-        {/* QR attendance button only if qr_attendance feature is enabled */}
         {hasQrFeature && (
           <div className="flex items-center gap-2 self-start md:self-auto">
             <Button
               size="sm"
-              onClick={() => navigate('/app/meals/attendance')}
+              onClick={() => navigate('/app/meals/qr')}
               className="gap-2 shadow-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
             >
               <QrCode className="h-4 w-4" />

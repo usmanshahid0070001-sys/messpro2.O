@@ -176,8 +176,8 @@ export default function StudentAttendancePage() {
         err.name === 'NotAllowedError'
           ? 'Camera permission denied. Please enable camera access in your browser settings.'
           : err.name === 'NotFoundError'
-          ? 'No camera found on this device.'
-          : 'Unable to access camera. You can also paste the QR code string manually below.'
+            ? 'No camera found on this device.'
+            : 'Unable to access camera. You can also paste the QR code string manually below.'
       )
       setIsScanning(false)
     }
@@ -302,11 +302,10 @@ export default function StudentAttendancePage() {
           onClick={() => {
             setActiveTab('scan')
           }}
-          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'scan'
+          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'scan'
               ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Scan className="w-4 h-4" />
           <span>Scan Manager QR</span>
@@ -318,11 +317,10 @@ export default function StudentAttendancePage() {
             stopCamera()
             setActiveTab('my-qr')
           }}
-          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'my-qr'
+          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'my-qr'
               ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <QrCode className="w-4 h-4" />
           <span>My Student QR Code</span>
@@ -447,7 +445,7 @@ export default function StudentAttendancePage() {
                       playsInline
                       muted
                       onLoadedMetadata={() => {
-                        videoRef.current?.play().catch(() => {})
+                        videoRef.current?.play().catch(() => { })
                       }}
                     />
 

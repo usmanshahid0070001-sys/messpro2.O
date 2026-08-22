@@ -134,10 +134,10 @@ export function useNavigation() {
     // ── Attendance Methods: Group if 2+, single button if 1 ──
     const attendanceItems: { title: string; url: string; icon: any }[] = [];
     if (perms.includes("manual_attendance")) {
-      attendanceItems.push({ title: "Manual Attendance", url: '#', icon: UserCheck });
+      attendanceItems.push({ title: "Manual Attendance", url: '/app/attendance/manual', icon: UserCheck });
     }
     if (perms.includes("qr_attendance")) {
-      attendanceItems.push({ title: "QR Attendance", url: '#', icon: QrCode });
+      attendanceItems.push({ title: "QR Attendance", url: '/app/attendance/qr', icon: QrCode });
     }
     if (perms.includes("biometric_attendance")) {
       attendanceItems.push({ title: "Biometric Attendance", url: '#', icon: Fingerprint });
@@ -252,14 +252,14 @@ export function useNavigation() {
           { title: "Meal History", url: "/app/meals/history" },
         ];
         if (hasFeature('qr_attendance')) {
-          messItems.push({ title: "Mark Attendance", url: '/app/meals/attendance' });
+          messItems.push({ title: "Mark Attendance", url: '/app/meals/qr' });
         }
         studentNav.push({ title: "Mess", icon: Utensils, items: messItems, isActive: true });
       } else if (hasFeature('qr_attendance')) {
         studentNav.push({
           title: "Attendance",
           icon: QrCode,
-          items: [{ title: "Mark Attendance", url: '/app/meals/attendance' }],
+          items: [{ title: "Mark Attendance", url: '/app/meals/qr' }],
         });
       }
 
@@ -298,10 +298,10 @@ export function useNavigation() {
         adminFeatureItems.push({ title: "Room Services", url: "/app/residence/services" });
       }
       if (perms.includes('manual_attendance')) {
-        adminFeatureItems.push({ title: "Manual Attendance", url: "#" });
+        adminFeatureItems.push({ title: "Manual Attendance", url: "/app/attendance/manual" });
       }
       if (perms.includes('qr_attendance')) {
-        adminFeatureItems.push({ title: "QR Attendance", url: "#" });
+        adminFeatureItems.push({ title: "QR Attendance", url: "/app/attendance/qr" });
       }
       if (perms.includes('biometric_attendance')) {
         adminFeatureItems.push({ title: "Biometric Attendance", url: "#" });
