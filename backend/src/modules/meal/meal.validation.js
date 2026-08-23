@@ -10,7 +10,24 @@ export const mealScheduleSchema = z.object({
   groupId: z.string().nullable().optional(),
   numberOfMeals: z.number().min(1).optional(),
   mealNames: z.array(z.string()).optional(),
-  selectionTiming: z.array(z.string()).optional(),
+  selectionTiming: z.array(
+    z.union([
+      z.string(),
+      z.object({
+        start: z.string().optional(),
+        end: z.string().optional()
+      })
+    ])
+  ).optional(),
+  servingTiming: z.array(
+    z.union([
+      z.string(),
+      z.object({
+        start: z.string().optional(),
+        end: z.string().optional()
+      })
+    ])
+  ).optional(),
   maxMealSelection: z.number().int().min(1).optional(),
   menu: z.object({
     Monday: z.array(menuItemSchema).optional(),

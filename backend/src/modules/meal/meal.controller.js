@@ -15,14 +15,6 @@ export const getMealSchedule = catchAsync(async (req, res) => {
 });
 
 export const updateMealSchedule = catchAsync(async (req, res) => {
-  // THE BOUNCER: Only Admins and Managers can edit the menu
-  if (!['superadmin', 'admin', 'manager'].includes(req.user.role)) {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Access Denied: Only admins and managers can update the meal schedule.' 
-    });
-  }
-
   const hostelId = req.user.hostelId;
   const validatedData = mealScheduleSchema.parse(req.body);
 

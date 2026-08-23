@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    
+    <!-- Primary Meta Tags & SEO -->
+    <title>MessPro 2.0 — Smart Hostel &amp; Mess Management System</title>
+    <meta name="title" content="MessPro 2.0 — Smart Hostel &amp; Mess Management System" />
+    <meta
+      name="description"
+      content="MessPro 2.0 is a modern SaaS platform designed for university and private hostel mess operations. Automate meal scheduling, QR &amp; biometric attendance, billing, room management, and analytics."
+    />
+    <meta
+      name="keywords"
+      content="hostel management system, mess management SaaS, meal attendance tracker, QR attendance, biometric mess, hostel billing, student dining management, MessPro"
+    />
+    <meta name="author" content="MessPro Technologies" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Security & Privacy Policies -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+
+    <!-- PWA & Mobile Web App -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MessPro" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+
+    <!-- Favicons & App Icons -->
+    <link rel="icon" type="image/png" href="/src/assets/pwa-192x192.png" />
+    <link rel="apple-touch-icon" href="/src/assets/pwa-192x192.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Open Graph / Facebook / LinkedIn -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MessPro 2.0" />
+    <meta property="og:title" content="MessPro 2.0 — Smart Hostel &amp; Mess Management System" />
+    <meta
+      property="og:description"
+      content="Next-generation SaaS platform for streamlined hostel mess operations, automated attendance, dynamic meal pricing, and resident ledger management."
+    />
+    <meta property="og:image" content="/src/assets/pwa-512x512.png" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MessPro 2.0 — Smart Hostel &amp; Mess Management System" />
+    <meta
+      name="twitter:description"
+      content="Next-generation SaaS platform for streamlined hostel mess operations, automated attendance, dynamic meal pricing, and resident ledger management."
+    />
+    <meta name="twitter:image" content="/src/assets/pwa-512x512.png" />
+
+    <!-- JSON-LD Structured Data for Search Engines -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "MessPro 2.0",
+        "url": "https://messpro.app",
+        "description": "Smart Hostel & Mess Management SaaS platform offering real-time meal tracking, QR attendance, and automated billing.",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "All modern browsers, iOS, Android",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+
+    <!-- Instant Theme Hydration to prevent Flash of Unstyled Theme (FOUC) -->
+    <script>
+      (function () {
+        try {
+          var storedTheme = localStorage.getItem('theme');
+          var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (storedTheme === 'light' || (!storedTheme && !systemDark)) {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+          } else {
+            document.documentElement.classList.remove('light');
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Zero-Dependency Pre-Mount Loading Screen Styles -->
+    <style>
+      #app-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #09090b;
+        color: #f4f4f5;
+        transition: opacity 0.35s ease, visibility 0.35s ease;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      html.light #app-loader {
+        background-color: #ffffff;
+        color: #09090b;
+      }
+
+      .loader-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .loader-brand-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 20px;
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+      }
+
+      .loader-brand-name {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+      }
+
+      .loader-brand-name span {
+        color: #3b82f6;
+      }
+
+      .loader-bar-bg {
+        width: 140px;
+        height: 3px;
+        background: rgba(120, 120, 128, 0.2);
+        border-radius: 9999px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .loader-bar-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 40%;
+        background: #3b82f6;
+        border-radius: 9999px;
+        animation: loader-slide 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+      }
+
+      @keyframes loader-slide {
+        0% {
+          left: -40%;
+          width: 30%;
+        }
+        50% {
+          left: 35%;
+          width: 50%;
+        }
+        100% {
+          left: 100%;
+          width: 30%;
+        }
+      }
+
+      #app-loader.loaded {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Fallback for JavaScript Disabled -->
+    <noscript>
+      <div style="padding: 2rem; text-align: center; font-family: sans-serif;">
+        <h2>JavaScript Required</h2>
+        <p>MessPro requires JavaScript to run. Please enable JavaScript in your browser settings to continue.</p>
+      </div>
+    </noscript>
+
+    <!-- Initial Loading Screen (dismissed as soon as React mounts) -->
+    <div id="app-loader" aria-hidden="true">
+      <div class="loader-brand">
+        <div class="loader-brand-icon">M</div>
+        <div class="loader-brand-name">MessPro<span>2.0</span></div>
+      </div>
+      <div class="loader-bar-bg">
+        <div class="loader-bar-fill"></div>
+      </div>
+    </div>
+
+    <!-- App Root Container -->
+    <div id="root"></div>
+
+    <!-- Application Entry Point -->
+    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Auto-hide pre-mount loader once the bundle mounts -->
+    <script>
+      window.addEventListener('load', function () {
+        var loader = document.getElementById('app-loader');
+        if (loader) {
+          loader.classList.add('loaded');
+          setTimeout(function () {
+            if (loader.parentNode) {
+              loader.parentNode.removeChild(loader);
+            }
+          }, 400);
+        }
+      });
+    </script>
+  </body>
+</html>

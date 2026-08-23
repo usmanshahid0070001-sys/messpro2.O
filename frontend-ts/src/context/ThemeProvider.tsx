@@ -1,0 +1,91 @@
+import { createContext, useContext, useEffect, useState } from "react"
+import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut"
+
+type Theme = "dark" | "light" | "system"
+
+type ThemeProviderProps = {
+  children: React.ReactNode
+  defaultTheme?: Theme
+  storageKey?: string
+}
+
+type ThemeProviderState = {
+  theme: Theme
+  setTheme: (theme: Theme) => void
+}
+
+const initialState: ThemeProviderState = {
+  theme: "system",
+  setTheme: () => null,
+}
+
+const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
+
+export function ThemeProvider({
+  children,
+  defaultTheme = "system",
+  storageKey = "vite-ui-theme",
+  ...props
+}: ThemeProviderProps) {
+  const [theme, setTheme] = useState<Theme>(
+    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  )
+
+  useEffect(() => {
+    const root = window.document.documentElement
+
+    root.classList.remove("light", "dark")
+
+    if (theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light"
+
+      root.classList.add(systemTheme)
+      return
+    }
+
+    root.classList.add(theme)
+  }, [theme])
+
+  // Global keybinding: Ctrl+M to toggle theme
+  useKeyboardShortcut(['ctrl', 'm'], () => {
+    setTheme((prevTheme) => {
+      let nextTheme: Theme = 'light'
+      if (prevTheme === 'light') {
+        nextTheme = 'dark'
+      } else if (prevTheme === 'dark') {
+        nextTheme = 'light'
+      } else {
+        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        nextTheme = isSystemDark ? 'light' : 'dark'
+      }
+      localStorage.setItem(storageKey, nextTheme)
+      return nextTheme
+    })
+  })
+
+  const value = {
+    theme,
+    setTheme: (theme: Theme) => {
+      localStorage.setItem(storageKey, theme)
+      setTheme(theme)
+    },
+  }
+
+  return (
+    <ThemeProviderContext.Provider {...props} value={value}>
+      {children}
+    </ThemeProviderContext.Provider>
+  )
+}
+
+export const useTheme = () => {
+  const context = useContext(ThemeProviderContext)
+
+  if (context === undefined)
+    throw new Error("useTheme must be used within a ThemeProvider")
+
+  return context
+}

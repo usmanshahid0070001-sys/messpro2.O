@@ -266,6 +266,11 @@ class BillService {
 
       // 🧮 THE DYNAMIC MATH ENGINE
       for (const charge of customChargesInput) {
+        // Guests should not be charged static tenant fees (e.g. Room Rent)
+        if (isGuest && charge.chargeType === 'addition' && charge.target === 'none') {
+          continue;
+        }
+
         let amount = 0;
         // Determine what number we are applying the math to
         const targetValue = charge.target === 'unpaid_bill' ? previousUnpaidArrears : 
@@ -331,7 +336,15 @@ class BillService {
       );
     }
 
-    return generatedBills;
+    const studentBillsCount = generatedBills.filter(b => !b.isGuest).length;
+    const guestBillsCount = generatedBills.filter(b => b.isGuest).length;
+
+    return {
+      bills: generatedBills,
+      totalCount: generatedBills.length,
+      studentBillsCount,
+      guestBillsCount
+    };
   }
 
 

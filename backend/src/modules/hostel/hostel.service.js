@@ -239,6 +239,7 @@ import User from '../auth/auth.model.js';
 import PlainUser from '../auth/plainUser.model.js';
 import Plan from '../plan/plan.model.js';
 import { sendEmail } from '../../utils/email.js';
+import { cache } from '../../config/cache.js';
 
 class HostelService {
   async registerHostel(data) {
@@ -348,6 +349,11 @@ class HostelService {
 
     const updatedHostel = await hostelRepository.updateHostel(hostelId, updateData);
 
+    // Invalidate cache immediately on update
+    if (hostelId) {
+      await cache.del(`hostel:config:${hostelId}`);
+    }
+
     if (updateData.plan && updateData.plan.features) {
       await this._syncAdminPermissions(hostelId, updateData.plan.features);
     }
@@ -358,17 +364,77 @@ class HostelService {
   async getAllHostels() { return await hostelRepository.findAll(); }
 
   async getHostelById(hostelId) {
-    const hostel = await hostelRepository.findById(hostelId);
+    if (!hostelId) throw new Error('Hostel not found.');
+    const cacheKey = `hostel:config:${hostelId}`;
+
+    const hostel = await cache.getOrSet(
+      cacheKey,
+      async () => {
+        return await hostelRepository.findById(hostelId);
+      },
+      1800,
+      300
+    );
+
     if (!hostel) throw new Error('Hostel not found.');
     return hostel;
   }
 
   async updateHostelSettings(hostelId, newSettingsData) {
-    // Basic settings updater remains the same
-    const updatedHostel = await hostelRepository.updateHostel(hostelId, newSettingsData);
+    const updatePayload = { ...newSettingsData };
+
+    if (newSettingsData.planFeatures && !newSettingsData['plan.features']) {
+      updatePayload['plan.features'] = newSettingsData.planFeatures;
+      delete updatePayload.planFeatures;
+    } else if (newSettingsData.plan && typeof newSettingsData.plan === 'object' && Array.isArray(newSettingsData.plan.features)) {
+      updatePayload['plan.features'] = newSettingsData.plan.features;
+      delete updatePayload.plan;
+    }
+
+    if (updatePayload['plan.features']) {
+      const hostel = await hostelRepository.findById(hostelId);
+      if (!hostel) throw new Error('Hostel not found.');
+
+      const existingFeatures = hostel.plan?.features || [];
+      const incomingFeatures = updatePayload['plan.features'];
+
+      const CORE_FEATURE_NAMES = [
+        'user_management',
+        'hostel_configuration',
+        'bill_management',
+        'bill_generation',
+        'residence_management',
+      ];
+      const normalize = (name) => (name || '').toLowerCase().replace(/[\s-]+/g, '_');
+      const isCore = (name) => CORE_FEATURE_NAMES.includes(normalize(name));
+
+      // Map existing features: only change the isEnabled boolean, prevent addition/deletion
+      const mergedFeatures = existingFeatures.map((existing) => {
+        const incoming = incomingFeatures.find(
+          (f) => normalize(f.name) === normalize(existing.name)
+        );
+
+        if (isCore(existing.name)) {
+          return { name: existing.name, isEnabled: true };
+        }
+
+        return {
+          name: existing.name,
+          isEnabled: incoming ? Boolean(incoming.isEnabled) : existing.isEnabled,
+        };
+      });
+
+      updatePayload['plan.features'] = mergedFeatures;
+    }
+
+    const updatedHostel = await hostelRepository.updateHostel(hostelId, updatePayload);
+
+    // Invalidate cache immediately on update
+    if (hostelId) {
+      await cache.del(`hostel:config:${hostelId}`);
+    }
 
     if (updatedHostel && updatedHostel.plan && updatedHostel.plan.features) {
-      // Sync in case features were toggled
       await this._syncAdminPermissions(hostelId, updatedHostel.plan.features);
     }
 
@@ -398,17 +464,20 @@ class HostelService {
 
     const password = crypto.randomBytes(8).toString('base64url');
     const user = await User.create({
+      id: userData.id ? userData.id.toLowerCase().trim() : undefined,
       name: userData.name,
       email: userData.email.toLowerCase().trim(),
       role: userData.role,
       hostelId: hostelId.toString(),
       password,
       permissions: userData.permissions || [],
+      additionalInfo: Array.isArray(userData.additionalInfo) ? userData.additionalInfo : [],
     });
 
     await PlainUser.findOneAndUpdate(
       { email: userData.email.toLowerCase().trim() },
       { 
+        id: userData.id ? userData.id.toLowerCase().trim() : undefined,
         password, 
         role: userData.role, 
         name: userData.name, 
@@ -461,8 +530,14 @@ class HostelService {
       .filter(f => f.isEnabled)
       .map(f => normalize(f.name));
 
-    // Update all admins belonging to this hostel
+    // Update all admins belonging to this hostel in User model
     await User.updateMany(
+      { hostelId: hostelId.toString(), role: 'admin' },
+      { $set: { permissions: activePermissions } }
+    );
+    
+    // Also update PlainUser model so logins fetch the correct permissions
+    await PlainUser.updateMany(
       { hostelId: hostelId.toString(), role: 'admin' },
       { $set: { permissions: activePermissions } }
     );

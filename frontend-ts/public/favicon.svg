@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <!-- Outer Plate Radial Gradient -->
+    <radialGradient id="plateGradient" cx="50%" cy="50%" r="50%" fx="35%" fy="35%">
+      <stop offset="0%" stop-color="#006ee6" />
+      <stop offset="100%" stop-color="#004ea8" />
+    </radialGradient>
+    
+    <!-- Cutlery Shading Gradient -->
+    <linearGradient id="forkGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#99caff" />
+      <stop offset="60%" stop-color="#84beff" />
+      <stop offset="100%" stop-color="#60a4f6" />
+    </linearGradient>
+
+    <linearGradient id="spoonGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#99caff" />
+      <stop offset="55%" stop-color="#84beff" />
+      <stop offset="100%" stop-color="#60a4f6" />
+    </linearGradient>
+
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#001f4d" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Outer Plate Base Circle -->
+  <circle cx="256" cy="256" r="236" fill="url(#plateGradient)" />
+
+  <!-- Inner Plate Depression -->
+  <circle cx="256" cy="256" r="164" fill="#004394" opacity="0.9" />
+  <circle cx="256" cy="256" r="156" fill="#004ea8" opacity="0.6" />
+
+  <!-- Cutlery Group with Shadow -->
+  <g filter="url(#subtleShadow)">
+    <!-- FORK (Left) -->
+    <!-- Fork Handle -->
+    <path
+      d="M178 200 L178 456 C178 474 162 488 144 488 C126 488 110 474 110 456 L110 200 Z"
+      fill="url(#forkGradient)"
+    />
+    <!-- Fork Base / Bridge -->
+    <path
+      d="M74 140 C74 186 110 220 144 220 C178 220 214 186 214 140 L214 110 C214 96 198 96 198 110 L198 140 C198 165 180 184 158 184 L130 184 C108 184 90 165 90 140 L90 110 C90 96 74 96 74 110 Z"
+      fill="url(#forkGradient)"
+    />
+    <!-- Fork 4 Tines -->
+    <!-- Tine 1 (Leftmost) -->
+    <rect x="74" y="24" width="22" height="120" rx="11" fill="url(#forkGradient)" />
+    <!-- Tine 2 (Inner Left) -->
+    <rect x="114" y="24" width="20" height="120" rx="10" fill="url(#forkGradient)" />
+    <!-- Tine 3 (Inner Right) -->
+    <rect x="154" y="24" width="20" height="120" rx="10" fill="url(#forkGradient)" />
+    <!-- Tine 4 (Rightmost) -->
+    <rect x="192" y="24" width="22" height="120" rx="11" fill="url(#forkGradient)" />
+
+    <!-- SPOON (Right) -->
+    <!-- Spoon Handle -->
+    <path
+      d="M386 230 L386 456 C386 474 370 488 352 488 C334 488 318 474 318 456 L318 230 Z"
+      fill="url(#spoonGradient)"
+    />
+    <!-- Spoon Head / Bowl -->
+    <ellipse cx="352" cy="120" rx="72" ry="98" fill="url(#spoonGradient)" />
+    <path
+      d="M280 120 C280 174 312 240 352 240 C392 240 424 174 424 120 Z"
+      fill="url(#spoonGradient)"
+    />
+  </g>
+</svg>

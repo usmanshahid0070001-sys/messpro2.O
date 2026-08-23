@@ -43,11 +43,12 @@ export const updateSettingsSchema = z.object({
   plan: z.string().optional(),
   additionalDays: z.number().int().min(0).optional(),
   
-  // Existing fields for Hostel Configuration
-  subdomain: z.string()
-    .min(3, "Domain suffix is required")
-    .regex(/^@?[a-zA-Z0-9.-]+$/, "Must be a valid email domain (e.g., @student.uet.edu.pk)")
-    .optional(),
+  subdomain: z.union([
+    z.string().length(0),
+    z.string()
+      .min(3, "Domain suffix must be at least 3 characters")
+      .regex(/^@?[a-zA-Z0-9.-]+$/, "Must be a valid email domain (e.g., @student.uet.edu.pk)")
+  ]).optional(),
   
   location: z.string().min(2, "Location is required").optional(),
 
@@ -57,6 +58,11 @@ export const updateSettingsSchema = z.object({
   })).max(5, "Maximum 5 custom fields allowed").optional(),
 
   "plan.features": z.array(z.object({
+    name: z.string(),
+    isEnabled: z.boolean()
+  })).optional(),
+
+  planFeatures: z.array(z.object({
     name: z.string(),
     isEnabled: z.boolean()
   })).optional(),

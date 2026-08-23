@@ -9,6 +9,15 @@ const menuItemSchema = new mongoose.Schema(
   { _id: false } // We don't need distinct ObjectIds for every single menu item
 );
 
+// Sub-schema for time window ranges (start time and end time)
+const timeWindowSchema = new mongoose.Schema(
+  {
+    start: { type: String, default: '' }, // e.g., "06:00 AM" or "06:00"
+    end: { type: String, default: '' },   // e.g., "10:00 AM" or "10:00"
+  },
+  { _id: false }
+);
+
 const mealScheduleSchema = new mongoose.Schema(
   {
     hostelId: {
@@ -32,11 +41,13 @@ const mealScheduleSchema = new mongoose.Schema(
       default: [],
     },
     selectionTiming: {
-      type: [String], // e.g., ["04:00 AM", "03:00 PM", "09:00 PM"]
+      type: [timeWindowSchema], // Student meal booking time range [start, end]
       default: [],
     },
-    
-   
+    servingTiming: {
+      type: [timeWindowSchema], // Dining hall serving & attendance time range [start, end]
+      default: [],
+    },
     menu: {
       Monday: { type: [menuItemSchema], default: [] },
       Tuesday: { type: [menuItemSchema], default: [] },

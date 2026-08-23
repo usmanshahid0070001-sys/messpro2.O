@@ -53,3 +53,17 @@ export const saveAttendanceSchema = z.object({
     count: z.number().int().min(0)
   }))
 });
+
+export const processBiometricAttendanceSchema = z.object({
+  records: z.array(
+    z.object({
+      rollNumber: z.string().min(1, "Roll number is required").max(60),
+      date: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format"),
+      mealType: z.string().min(1, "Meal type is required"),
+      count: z.number().int().min(1).default(1),
+      punchTime: z.string().optional(),
+    })
+  ).min(1, "At least one biometric record is required"),
+  unrecognizedStudentAction: z.enum(['guest', 'skip']).default('guest'),
+  duplicatePunchStrategy: z.enum(['deduplicate', 'accumulate']).default('deduplicate'),
+});
