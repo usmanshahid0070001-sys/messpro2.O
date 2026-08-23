@@ -38,6 +38,10 @@ export const deleteComplaint = catchAsync(async (req, res) => {
 
 export const updateComplaintStatus = catchAsync(async (req, res) => {
   const { status } = updateComplaintStatusSchema.parse(req.body);
-  const complaint = await complaintService.updateComplaintStatus(req.params.id, status);
-  res.send(complaint);
+  const complaint = await complaintService.updateComplaintStatus(
+    req.params.id,
+    status,
+    req.user.role === 'superadmin' ? null : req.user.hostelId
+  );
+  res.status(200).json({ success: true, data: complaint });
 });

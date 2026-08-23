@@ -34,5 +34,6 @@ const mealRecordSchema = new mongoose.Schema({
 // 6. The Double-Dip Bouncer
 // This physically prevents a student from having two separate records for the same meal.
 mealRecordSchema.index({ hostelId: 1, date: 1, mealType: 1, rollNumber: 1 }, { unique: true });
+mealRecordSchema.index({ hostelId: 1, rollNumber: 1, date: 1 });
 
 export default mongoose.model('MealRecord', mealRecordSchema);

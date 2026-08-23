@@ -26,3 +26,7 @@ export const deleteComplaint = async (id) => {
 export const updateComplaint = async (id, updateData) => {
   return await Complaint.findByIdAndUpdate(id, updateData, { new: true });
 };
+
+export const updateComplaintByFilter = async (filter, updateData) => {
+  return await Complaint.findOneAndUpdate(filter, updateData, { new: true, runValidators: true });
+};

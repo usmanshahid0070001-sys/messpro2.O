@@ -18,3 +18,10 @@ export const updateUserSchema = z.object({
   additionalInfo: z.array(z.any()).optional(),
   permissions: z.array(z.string()).optional(),
 }).strict(); // .strict() drops any unlisted fields, keeping you 100% secure!
+
+export const addUserSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  role: z.enum(['student', 'manager']),
+  permissions: z.array(z.string()).max(50).optional(),
+}).strict();

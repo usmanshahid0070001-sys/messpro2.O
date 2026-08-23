@@ -83,4 +83,9 @@ const billSchema = new mongoose.Schema({
   
 }, { timestamps: true });
 
+billSchema.index(
+  { hostelId: 1, rollNumber: 1, 'billingPeriod.startDate': 1, 'billingPeriod.endDate': 1 },
+  { unique: true }
+);
+
 export default mongoose.model('Bill', billSchema);

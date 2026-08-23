@@ -1,6 +1,6 @@
 import { catchAsync } from '../../utils/catchAsync.js';
 import * as userService from './user.service.js';
-import { updateUserSchema } from './user.validation.js';
+import { updateUserSchema, addUserSchema } from './user.validation.js';
 import hostelService from '../hostel/hostel.service.js';
 
 export const getTargetedUsers = catchAsync(async (req, res) => {
@@ -35,7 +35,7 @@ export const updateExistingUser = catchAsync(async (req, res) => {
 
 // 👇 THE MISSING FUNCTION: This handles the POST /add route
 export const createUser = catchAsync(async (req, res) => {
-  const userData = req.body; 
+  const userData = addUserSchema.parse(req.body);
 
   // Pass who is creating the user, what hostel they are in, and the new user's details
   const newUser = await hostelService.addHostelUser(
@@ -61,5 +61,16 @@ export const signAgreementHandler = catchAsync(async (req, res) => {
     success: true,
     message: 'Agreement signed successfully.',
     data: updatedUser,
+  });
+});
+
+
+
+export const getHealthCheck = catchAsync(async (req, res) => {
+  const healthData = await userService.getSystemHealth();
+
+  res.status(healthData.status === 'healthy' ? 200 : 503).json({
+    success: healthData.status === 'healthy',
+    data: healthData,
   });
 });

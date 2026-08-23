@@ -1,5 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
+import { protect, restrictTo } from '../../middlewares/auth.middleware.js';
 
 import {
   register,
@@ -18,7 +19,9 @@ const loginLimiter = rateLimit({
   message: 'Too many login attempts from this IP, please try again after 15 minutes.'
 });
 
-router.post('/register', register);
+// Account provisioning is performed by an authenticated platform administrator.
+// Hostel staff use POST /api/users/add, which scopes creation to their tenant.
+router.post('/register', protect, restrictTo('superadmin'), register);
 router.post('/login',loginLimiter, login);
 router.get('/verify', verify);
 router.post('/logout', logout);

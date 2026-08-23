@@ -75,7 +75,8 @@ export const updateMyHostelSettings = catchAsync(async (req, res) => {
 
   // 2. We reuse your existing updateHostelSettings service!
   // (Remember, your service already handles the "change the plan" logic perfectly)
-  const updatedHostel = await hostelService.updateHostelSettings(hostelId, req.body);
+  const validatedData = updateSettingsSchema.parse(req.body);
+  const updatedHostel = await hostelService.updateHostelSettings(hostelId, validatedData);
 
   res.status(200).json({ 
     success: true, 
@@ -125,6 +126,9 @@ export const getMyHostel = catchAsync(async (req, res) => {
 export const addHostelUser = catchAsync(async (req, res) => {
   const hostelId = req.params.id;
   const creatorRole = req.user.role;
+  if (creatorRole !== 'superadmin' && String(hostelId) !== String(req.user.hostelId)) {
+    throw Object.assign(new Error('Cross-tenant user creation is not allowed.'), { statusCode: 403 });
+  }
   const validatedData = addHostelUserSchema.parse(req.body);
   const newUser = await hostelService.addHostelUser(creatorRole,hostelId, validatedData);
   res.status(201).json({ success: true, data: newUser });

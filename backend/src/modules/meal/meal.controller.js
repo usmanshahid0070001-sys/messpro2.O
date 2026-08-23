@@ -1,5 +1,6 @@
 import { catchAsync } from '../../utils/catchAsync.js';
 import mealService from './meal.service.js';
+import mealRecordService from '../mealRecord/mealRecord.service.js';
 import { mealScheduleSchema } from './meal.validation.js';
 
 export const getMealSchedule = catchAsync(async (req, res) => {
@@ -31,5 +32,31 @@ export const updateMealSchedule = catchAsync(async (req, res) => {
     success: true,
     message: 'Meal schedule updated successfully.',
     data: updatedSchedule
+  });
+});
+
+
+
+// ==========================================
+// 5. MEAL CONTROL (VIOLATION TRACKER)
+// ==========================================
+
+export const getMealViolationsSheet = catchAsync(async (req, res) => {
+  const { date } = req.query;
+  const { hostelId } = req.user;
+
+  if (!date) {
+    const error = new Error('Please provide a date to fetch violations.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const violations = await mealRecordService.getMealViolations(hostelId, date);
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Violation sheet generated successfully.',
+    results: violations.length,
+    data: violations
   });
 });

@@ -365,7 +365,7 @@ export const requestGuestPermission = catchAsync(async (req, res) => {
   const { managerHostelId, reason } = req.body;
   const student = req.user;
 
-  io.to(managerHostelId.toString()).emit('guest_permission_request', {
+  io.to(`hostel:${managerHostelId}`).emit('guest_permission_request', {
     requestId: `${student._id}_${Date.now()}`,
     rollNumber: student.id,
     name: student.name,
@@ -417,7 +417,7 @@ export const respondGuestPermission = catchAsync(async (req, res) => {
     { upsert: true, new: true }
   );
 
-  io.to(managerHostelId.toString()).emit('attendance_success', {
+  io.to(`hostel:${managerHostelId}`).emit('attendance_success', {
     rollNumber: student.id, name: student.name, isGuest,
     mealType: mealData.mealType, date: mealData.date, 
     count: record.attendance.count,
@@ -451,7 +451,7 @@ export const scanStudentQR = catchAsync(async (req, res) => {
       { upsert: true, new: true }
     );
 
-    io.to(managerHostelId.toString()).emit('attendance_success', {
+    io.to(`hostel:${managerHostelId}`).emit('attendance_success', {
       rollNumber: student.id, name: student.name, isGuest: false,
       mealType: mealData.mealType, date: mealData.date, count: record.attendance.count
     });

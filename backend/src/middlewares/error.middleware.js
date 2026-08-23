@@ -20,7 +20,23 @@ export const globalErrorHandler = (err, req, res, next) => {
     message = err.errors.map(e => e.message).join(', ');
   }
 
+  if (err.code === 11000) {
+    statusCode = 409;
+    message = 'A record with this value already exists.';
+  }
+
+  if (err.name === 'ValidationError') {
+    statusCode = 400;
+    message = 'Validation failed.';
+  }
+
+  if (statusCode >= 500) {
+    console.error(err);
+    message = 'Internal Server Error';
+  }
+
   res.status(statusCode).json({
+    status: 'error',
     success: false,
     message,
     // Only show stack trace in development, hide it in production for security

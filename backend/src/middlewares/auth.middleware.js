@@ -20,7 +20,10 @@ export const protect = catchAsync(async (req, res, next) => {
   // Verify token
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET || 'messpro-dev-secret');
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured.');
+    }
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch (err) {
     const error = new Error('Invalid or expired token. Please log in again.');
     error.statusCode = 401;

@@ -1,11 +1,13 @@
 import express from 'express';
-import { getTargetedUsers, updateExistingUser, createUser, signAgreementHandler } from './user.controller.js';
+import { getTargetedUsers, updateExistingUser, createUser, signAgreementHandler,getHealthCheck } from './user.controller.js';
 import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
 // All user routes require a valid JWT session
 router.use(protect);
+
+router.get('/health', restrictTo('superadmin'), getHealthCheck);
 
 // ─── Agreement ────────────────────────────────────────────────────────────────
 // Any authenticated user can sign their own agreement — no permission gate needed

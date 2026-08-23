@@ -4,7 +4,10 @@ import PlainUser from './plainUser.model.js';
 import Hostel from '../hostel/hostel.model.js';
 
 const createToken = (userId) => {
-  return jwt.sign({ sub: userId }, process.env.JWT_SECRET || 'messpro-dev-secret', {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured.');
+  }
+  return jwt.sign({ sub: userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
 };
@@ -161,7 +164,7 @@ export const verifyUser = async (req) => {
 
   let payload;
   try {
-    payload = jwt.verify(token, process.env.JWT_SECRET || 'messpro-dev-secret');
+    payload = jwt.verify(token, process.env.JWT_SECRET);
   } catch (error) {
     const authError = new Error('Invalid or expired authentication token.');
     authError.statusCode = 401;

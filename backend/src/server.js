@@ -5,7 +5,9 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import jwt from 'jsonwebtoken';
 import { connectDB } from './config/db.js';
+import User from './modules/auth/auth.model.js';
 
 // 🛡️ SECURITY IMPORTS
 import rateLimit from 'express-rate-limit';
@@ -27,6 +29,10 @@ import complaintRoutes from './modules/complaint/complaint.routes.js';
 
 dotenv.config(); // this will load the environment variables first 
 
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is required in production.');
+}
+
 const app = express();
 
 // ==========================================
@@ -34,16 +40,19 @@ const app = express();
 // ==========================================
 
 // 1. Trust Reverse Proxy (Required for rate limiting behind Nginx/Cloudflare)
-app.set('trust proxy', 1);
+app.set('trust proxy', process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) : false);
 
 // 2. Set Security HTTP Headers
 app.use(helmet());
 
 // 3. Cross-Origin Resource Sharing (CORS)
 const allowedOriginPattern = /^(https?:\/\/localhost:\d+|https?:\/\/127\.0\.0\.1:\d+|https?:\/\/192\.168\.\d+\.\d+:\d+)$/;
+const isAllowedOrigin = (origin) =>
+  !origin || origin === process.env.FRONTEND_URL ||
+  (process.env.NODE_ENV !== 'production' && allowedOriginPattern.test(origin));
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || origin === process.env.FRONTEND_URL || allowedOriginPattern.test(origin)) {
+        if (isAllowedOrigin(origin)) {
             callback(null, true);
             return;
         }
@@ -58,7 +67,9 @@ app.use(cors({
 const globalLimiter = rateLimit({
   max: 120, // 120 requests per minute = 2 requests per second
   windowMs: 60 * 1000, // 1 minute window (Allows React to send burst requests on initial page load)
-  message: 'Too many requests from this IP, please try again in a minute.'
+  message: { status: 'error', message: 'Too many requests from this IP, please try again in a minute.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api', globalLimiter);
 
@@ -115,7 +126,7 @@ const server = http.createServer(app);
 export const io = new SocketIOServer(server, {
   cors: {
     origin: (origin, callback) => {
-        if (!origin || origin === process.env.FRONTEND_URL || allowedOriginPattern.test(origin)) {
+        if (isAllowedOrigin(origin)) {
             callback(null, true);
             return;
         }
@@ -125,13 +136,39 @@ export const io = new SocketIOServer(server, {
   }
 });
 
+const getSocketToken = (socket) => {
+  const authorization = socket.handshake.headers.authorization;
+  const bearer = authorization?.startsWith('Bearer ') ? authorization.slice(7) : null;
+  const cookieToken = socket.handshake.headers.cookie
+    ?.split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith('token='))
+    ?.slice('token='.length);
+  return socket.handshake.auth?.token || bearer || cookieToken;
+};
+
+io.use(async (socket, next) => {
+  try {
+    if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured.');
+    const token = getSocketToken(socket);
+    if (!token) throw new Error('Authentication required.');
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(payload.sub).select('_id hostelId role');
+    if (!user) throw new Error('Authentication required.');
+    socket.user = user;
+    next();
+  } catch {
+    next(new Error('Unauthorized'));
+  }
+});
+
 io.on('connection', (socket) => {
   console.log(`🔌 New client connected: ${socket.id}`);
   
   // Clients will join a room based on their hostelId to receive targeted notifications
-  socket.on('join_hostel_room', (hostelId) => {
-    socket.join(hostelId);
-    console.log(`Client ${socket.id} joined room: ${hostelId}`);
+  socket.on('join_hostel_room', () => {
+    if (!['admin', 'manager'].includes(socket.user.role)) return;
+    socket.join(`hostel:${socket.user.hostelId}`);
   });
 
   socket.on('disconnect', () => {

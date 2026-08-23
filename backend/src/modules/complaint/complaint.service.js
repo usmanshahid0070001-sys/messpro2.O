@@ -69,14 +69,13 @@ export const deleteComplaint = async (id, roll_number) => {
   return await complaintRepository.deleteComplaint(id);
 };
 
-export const updateComplaintStatus = async (id, status) => {
-  const complaint = await complaintRepository.getComplaintById(id);
-  
+export const updateComplaintStatus = async (id, status, hostelId) => {
+  const filter = hostelId ? { _id: id, hostelid: hostelId } : { _id: id };
+  const complaint = await complaintRepository.updateComplaintByFilter(filter, { status });
   if (!complaint) {
     const error = new Error('Complaint not found');
     error.statusCode = 404;
     throw error;
   }
-
-  return await complaintRepository.updateComplaint(id, { status });
+  return complaint;
 };

@@ -5,7 +5,7 @@ import Hostel from '../hostel/hostel.model.js';
 import MealSchedule from '../meal/meal.model.js';
 
 // 👇 Imported our new Repository instead of the raw Model
-import mealRecordRepository from './mealRecord.repository.js';
+import mealRecordRepository from './mealRecord.Repository.js';
 import MealRecord from './mealRecord.model.js';
 import { bulkSelectMealsSchema } from './mealRecord.validation.js';
 
@@ -285,7 +285,7 @@ class MealRecordService {
     const mealData = await this.calculateCurrentMeal(hostelId);
 
     const isGuest = student.hostelId.toString() !== hostelId.toString();
-    const room = io.sockets.adapter.rooms.get(hostelId.toString());
+    const room = io.sockets.adapter.rooms.get(`hostel:${hostelId}`);
     const isManagerOnline = room && room.size > 0;
     const autoVerification = hostel.settings?.autoVerification || false;
 
@@ -336,10 +336,34 @@ class MealRecordService {
         }
       }
 
-      record.attendance.hasEaten = true;
-      record.attendance.method = 'QR';
-      record.attendance.count += 1;
-      await record.save();
+      // Re-check the allowance in the database. This prevents two concurrent
+      // scans from both passing the earlier in-memory check.
+      record = await MealRecord.findOneAndUpdate(
+        {
+          _id: record._id,
+          $or: [
+            { $expr: { $lt: ['$attendance.count', '$selection.count'] } },
+            {
+              'selection.count': 0,
+              'attendance.count': 0,
+            },
+          ],
+        },
+        {
+          $inc: { 'attendance.count': 1 },
+          $set: {
+            'attendance.hasEaten': true,
+            'attendance.method': 'QR',
+          },
+        },
+        { new: true }
+      );
+
+      if (!record) {
+        const error = new Error('Meal allowance was already used.');
+        error.statusCode = 409;
+        throw error;
+      }
 
     } else {
       // 🛡️ WALK-IN SCENARIO (No Record Exists)
@@ -369,7 +393,7 @@ class MealRecordService {
     }
 
     // Emit live socket event to Manager's Dashboard
-    io.to(hostelId.toString()).emit('attendance_success', {
+    io.to(`hostel:${hostelId}`).emit('attendance_success', {
       rollNumber: student.id,
       name: student.name,
       mealType: mealData.mealType,
@@ -388,7 +412,8 @@ class MealRecordService {
   // (Optional fallback if still using JWTs for alternative Manager Auth elsewhere)
   generateManagerQRToken(hostelId) {
     const payload = { type: 'manager_qr', hostelId: hostelId.toString() };
-    const token = jwt.sign(payload, process.env.JWT_SECRET || 'messpro-dev-secret', { expiresIn: '365d' });
+    if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured.');
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '365d' });
     return { token, expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) };
   }
 

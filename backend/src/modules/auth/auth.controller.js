@@ -113,7 +113,7 @@ export const register = catchAsync(async (req, res) => {
   res.status(201).json({
     success: true,
     message: 'User registered successfully.',
-    ...result,
+    data: result,
   });
 });
 
@@ -127,12 +127,13 @@ export const login = catchAsync(async (req, res) => {
     result.user.hostelStatus = await hostelService.getAndSyncHostelStatus(result.user.hostelId);
   }
 
-  res.cookie('token', result.token, createAuthCookieOptions());
+  const { token, ...session } = result;
+  res.cookie('token', token, createAuthCookieOptions());
 
   res.status(200).json({
     success: true,
     message: 'Login successful.',
-    ...result, 
+    data: session,
   });
 });
 

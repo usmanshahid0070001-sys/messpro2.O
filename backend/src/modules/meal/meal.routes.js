@@ -10,5 +10,7 @@ router.use(protect);
 
 router.get('/', restrictTo('admin', 'manager', 'student'), mealController.getMealSchedule);
 router.put('/', requirePermission('meal_settings'), mealController.updateMealSchedule);
+// Add this under your // Manager endpoints section
+router.get('/violations', requirePermission('manual_attendance'), mealController.getMealViolationsSheet);
 
 export default router;

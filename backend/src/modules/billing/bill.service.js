@@ -339,24 +339,28 @@ class BillService {
   // 2. PAYMENT PROCESSING LEDGER
   // ==========================================
   async processPayment(hostelId, bill, paidAmount) {
+    const updatedBill = await mongoose.model('Bill').findOneAndUpdate(
+      { _id: bill._id, hostelId, remainingBill: { $gte: paidAmount } },
+      [
+        {
+          $set: {
+            paidBill: { $add: ['$paidBill', paidAmount] },
+            remainingBill: { $subtract: ['$remainingBill', paidAmount] },
+          },
+        },
+        {
+          $set: {
+            status: { $cond: [{ $eq: ['$remainingBill', 0] }, 'Paid', 'Unpaid'] },
+          },
+        },
+      ],
+      { new: true }
+    );
 
-    // Prevent overpaying
-    if (paidAmount > bill.remainingBill) {
-      throw Object.assign(new Error(`Cannot pay more than the remaining balance of Rs ${bill.remainingBill}`), { statusCode: 400 });
+    if (!updatedBill) {
+      throw Object.assign(new Error('Payment exceeds the remaining balance or the bill was changed.'), { statusCode: 409 });
     }
-
-    bill.paidBill += paidAmount;
-    bill.remainingBill = bill.total - bill.paidBill;
-    
-    // Auto-update the status lock
-    if (bill.remainingBill === 0) {
-      bill.status = 'Paid';
-    } else {
-      bill.status = 'Unpaid';
-    }
-
-    await bill.save();
-    return bill;
+    return updatedBill;
   }
 
   async updateBillCustomCharges(hostelId, billId, customCharges) {
