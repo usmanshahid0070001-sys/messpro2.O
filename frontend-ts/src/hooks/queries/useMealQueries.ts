@@ -119,5 +119,79 @@ export const useGetStudentMonthlyRecords = (month: string, enabled: boolean = tr
     enabled: Boolean(month && enabled),
     staleTime: 1000 * 60 * 2, // 2 minutes cache
   })
+// ── 4. Meal Control & Violations Sheet ─────────────────────────────────
+export interface MealViolationRecord {
+  _id: string
+  date: string
+  mealType: string
+  rollNumber: string
+  studentName?: string
+  selectionCount: number
+  attendanceCount: number
+  missedMeals: number
+  extraMeals: number
+  violationType: 'Extra/Unselected Eaten' | 'Missed/Wasted' | string
+}
+
+export interface MealViolationsResponse {
+  status: string
+  message: string
+  results: number
+  data: MealViolationRecord[]
+}
+
+export const useGetMealViolations = (date: string, enabled: boolean = true) => {
+  return useQuery<MealViolationRecord[]>({
+    queryKey: ['mealViolations', date],
+    queryFn: async () => {
+      if (!date) return []
+      const { data } = await apiClient.get<MealViolationsResponse>(
+        `/meals/violations?date=${encodeURIComponent(date)}`
+      )
+      return data.data || []
+    },
+    enabled: Boolean(date && enabled),
+    staleTime: 1000 * 30, // 30 seconds
+  })
+}
+
+// ── 5. Manager Live Daily Overview ───────────────────────────────────────
+export interface LiveOverviewStudentItem {
+  name: string
+  rollNumber: string
+  isGuest: boolean
+  attendanceCount: number
+  selectionCount: number
+  hasAttended: boolean
+  isSelected: boolean
+}
+
+export interface LiveOverviewMealSlot {
+  summary: {
+    totalSelections: number
+    totalAttendance: number
+  }
+  data: LiveOverviewStudentItem[]
+}
+
+export interface ManagerLiveOverviewData {
+  date: string
+  mealTypes: string[]
+  data: Record<string, LiveOverviewMealSlot>
+}
+
+export const useGetManagerLiveOverview = (date: string, enabled: boolean = true) => {
+  return useQuery<ManagerLiveOverviewData>({
+    queryKey: ['managerLiveOverview', date],
+    queryFn: async () => {
+      if (!date) return { date: '', mealTypes: [], data: {} }
+      const { data } = await apiClient.get<{ status: string; data: ManagerLiveOverviewData }>(
+        `/attendance/live-overview?date=${encodeURIComponent(date)}`
+      )
+      return data.data
+    },
+    enabled: Boolean(date && enabled),
+    staleTime: 1000 * 15, // 15 seconds
+  })
 }
 

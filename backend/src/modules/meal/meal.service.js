@@ -1,6 +1,7 @@
 import MealSchedule from './meal.model.js';
 import mongoose from 'mongoose';
 import MealRecord from '../mealRecord/mealRecord.model.js';
+import cache from '../../config/cache.js';
 
 class MealService {
   async getScheduleByHostel(hostelId) {

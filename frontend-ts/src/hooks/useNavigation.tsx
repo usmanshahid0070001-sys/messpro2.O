@@ -82,8 +82,7 @@ export function useNavigation() {
         url: '#',
         items: [
           { title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' },
-          ...(role === 'manager' ? [{ title: "Meal Overview", url: '#' }] : []),
-          { title: 'Meal Control', url: '#' }
+          { title: 'Meal Control & Audit', url: '/app/meals/control' }
         ]
       });
     } else if (perms.includes("meal_settings")) {
@@ -91,9 +90,17 @@ export function useNavigation() {
         title: "Mess Meals & Schedule",
         icon: Utensils,
         url: '#',
-        items: role === 'manager'
-          ? [{ title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' }, { title: 'Meal Overview', url: '#' }]
-          : [{ title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' }]
+        items: [
+          { title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' },
+          { title: 'Meal Control & Audit', url: '/app/meals/control' }
+        ]
+      });
+    } else if (perms.includes("meal_control")) {
+      adminNav.push({
+        title: "Mess Meals & Schedule",
+        icon: Utensils,
+        url: '#',
+        items: [{ title: 'Meal Control & Audit', url: '/app/meals/control' }]
       });
     }
 
@@ -289,7 +296,7 @@ export function useNavigation() {
         adminFeatureItems.push({ title: "Manage Weekly Menu", url: "/app/meals/manage-schedule" });
       }
       if (perms.includes('meal_control')) {
-        adminFeatureItems.push({ title: "Meal Control", url: "#" });
+        adminFeatureItems.push({ title: "Meal Control & Audit", url: "/app/meals/control" });
       }
       if (perms.includes('residence_management')) {
         adminFeatureItems.push({ title: "Room Allocation", url: "/app/residence/allocation" });

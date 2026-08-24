@@ -43,7 +43,7 @@ export const getMealViolationsSheet = catchAsync(async (req, res) => {
     throw error;
   }
 
-  const violations = await mealRecordService.getMealViolations(hostelId, date);
+  const violations = await mealService.getMealViolations(hostelId, date);
 
   res.status(200).json({
     status: 'success',

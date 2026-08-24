@@ -10,6 +10,7 @@ import MyRoom from "./features/Residence/MyRoom";
 import WeeklySchedule from "./features/Mess/WeeklySchedule";
 import ManageMealSchedule from "./features/Mess/ManageMealSchedule";
 import MealHistoryPage from "./features/Mess/MealHistory/MealHistoryPage";
+import MealControlPage from "./features/Mess/MealControl/MealControlPage";
 import StudentAttendancePage from "./features/attendance/QR/StudentAttendancePage";
 import QRAttendancePage from "./features/attendance/QR/QRAttendancePage";
 import ManualAttendancePage from "./features/attendance/Manual/ManualAttendancePage";
@@ -54,6 +55,9 @@ const App = () => {
                   <Route path="residence/allocation" element={<RoomAllocation />} />
                   <Route path="residence/services" element={<RoomService />} />
                   <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
+                  <Route path="meals/control" element={<MealControlPage />} />
+                  <Route path="meals/violations" element={<Navigate to="/app/meals/control" replace />} />
+                  <Route path="meals/overview" element={<Navigate to="/app/meals/control" replace />} />
                   <Route path="attendance/qr" element={<QRAttendancePage />} />
                   <Route path="attendance/manual" element={<ManualAttendancePage />} />
                   <Route path="attendance/biometric" element={<BiometricAttendancePage />} />
