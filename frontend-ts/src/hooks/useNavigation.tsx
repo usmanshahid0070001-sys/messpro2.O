@@ -15,6 +15,7 @@ import {
   QrCode,
   Fingerprint,
   ClipboardCheck,
+  Layers,
 } from 'lucide-react';
 import type { RootState } from '@/store';
 import type { PlanFeature } from '@/store/slices/HostelSlice';
@@ -177,29 +178,24 @@ export function useNavigation() {
     if (role === 'superadmin') {
       return [
         {
-          title: "System Overview",
-          icon: PieChart,
-          isActive: true,
-          items: [
-            { title: "Dashboard", url: "/app" },
-            { title: "System Health", url: "/app/system-health" },
-          ]
+          title: "Dashboard",
+          url: "/app",
+          icon: LayoutDashboard
         },
         {
-          title: "Manage Hostels",
-          icon: Building2,
-          isActive: true,
-          items: [
-            { title: "All Hostels", url: "#" },
-            { title: "Manage Users", url: "/app/users" },
-          ],
+          title: "Hostel Tenants",
+          url: "/app/superadmin/hostels",
+          icon: Building2
         },
         {
-          title: "Global Settings",
-          url: "#",
-          icon: Settings2,
-          isActive: true,
-          items: [{ title: "Manage Plans", url: "#" }]
+          title: "Subscription Plans",
+          url: "/app/superadmin/plans",
+          icon: Layers
+        },
+        {
+          title: "Manage Users",
+          url: "/app/users",
+          icon: Shield
         },
       ];
     }

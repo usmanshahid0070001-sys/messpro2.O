@@ -23,12 +23,16 @@ const getStoredAuth = (): { token: string | null; user: User | null; isAuthentic
     if (typeof window === 'undefined') {
       return { token: null, user: null, isAuthenticated: false };
     }
-    const token = localStorage.getItem('token');
+    const rawToken = localStorage.getItem('token');
+    const token = rawToken && rawToken !== 'undefined' && rawToken !== 'null' ? rawToken : null;
     const userStr = localStorage.getItem('user');
-    const user = userStr ? (JSON.parse(userStr) as User) : null;
+    const user =
+      userStr && userStr !== 'undefined' && userStr !== 'null'
+        ? (JSON.parse(userStr) as User)
+        : null;
     return {
-      token: token || null,
-      user: user || null,
+      token,
+      user,
       isAuthenticated: Boolean(token && user),
     };
   } catch (e) {

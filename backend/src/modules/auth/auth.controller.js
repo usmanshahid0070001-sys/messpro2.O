@@ -127,13 +127,14 @@ export const login = catchAsync(async (req, res) => {
     result.user.hostelStatus = await hostelService.getAndSyncHostelStatus(result.user.hostelId);
   }
 
-  const { token, ...session } = result;
-  res.cookie('token', token, createAuthCookieOptions());
+  res.cookie('token', result.token, createAuthCookieOptions());
 
   res.status(200).json({
     success: true,
     message: 'Login successful.',
-    data: session,
+    user: result.user,
+    token: result.token,
+    data: result,
   });
 });
 

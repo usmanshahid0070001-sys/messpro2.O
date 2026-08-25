@@ -44,6 +44,7 @@ import { useGetStudentComplaints, useGetAdminComplaints } from '@/hooks/queries/
 import { useGetMyRoom, useGetRooms } from '@/hooks/queries/useResidenceQueries'
 import { useGetUsers } from '@/hooks/queries/useUserQueries'
 import { useGetDailyOverview } from '@/hooks/queries/useAttendanceQueries'
+import { useGetHostels, useGetPlans } from '@/hooks/queries/useSuperadminQueries'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 
@@ -404,21 +405,27 @@ function extractQuickActions(navItems: any[]): QuickActionItem[] {
 // ── Superadmin Dashboard ────────────────────────────────────────────────
 function SuperadminDashboard({ user }: { user: any }) {
   const navigate = useNavigate()
+  const { data: hostels = [], isLoading: loadingHostels } = useGetHostels()
+  const { data: plans = [] } = useGetPlans()
+
+  const totalHostels = hostels.length
+  const activeHostels = hostels.filter((h) => h.status === 'Active').length
+  const activePlansCount = plans.filter((p) => p.isActive).length
 
   const stats = [
     {
       label: 'Total Hostels',
-      value: '42',
-      change: '+3 registered this month',
+      value: `${totalHostels}`,
+      change: `${activeHostels} active subscriptions`,
       isPositive: true,
       icon: Building2,
       color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
       actionUrl: '/app/superadmin/hostels',
     },
     {
-      label: 'Active Students',
-      value: '3,850',
-      change: '+12% from last academic term',
+      label: 'Staff & Admins',
+      value: 'Multi-Tenant',
+      change: 'Scoped by hostel tenant',
       isPositive: true,
       icon: Users,
       color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
@@ -426,36 +433,30 @@ function SuperadminDashboard({ user }: { user: any }) {
     },
     {
       label: 'Active Plans',
-      value: '4 Tiers',
-      change: 'Standard • Pro • Enterprise',
+      value: `${activePlansCount || plans.length} Tiers`,
+      change: 'Configured pricing tiers',
       isPositive: null,
       icon: Layers,
       color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20',
       actionUrl: '/app/superadmin/plans',
     },
     {
-      label: 'System Health',
-      value: '99.98%',
-      change: 'All cluster nodes nominal',
+      label: 'Tenant Provisioning',
+      value: 'Live',
+      change: 'Onboard hostel domains',
       isPositive: true,
-      icon: Activity,
+      icon: Building2,
       color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20',
-      actionUrl: '/app/system-health',
+      actionUrl: '/app/superadmin/hostels',
     },
   ]
 
-  const recentHostels = [
-    { name: 'Al-Razi Boys Hostel', subdomain: 'al-razi', students: 240, plan: 'Enterprise', status: 'Active', color: 'emerald' },
-    { name: 'Iqbal Hall Residence', subdomain: 'iqbal-hall', students: 480, plan: 'Pro', status: 'Active', color: 'emerald' },
-    { name: 'Fatima Girls Hostel', subdomain: 'fatima-hall', students: 310, plan: 'Enterprise', status: 'Active', color: 'emerald' },
-    { name: 'Jinnah Executive Hostel', subdomain: 'jinnah-exec', students: 160, plan: 'Standard', status: 'Trial', color: 'amber' },
-  ]
+  const recentHostels = hostels.slice(0, 5)
 
   const superAdminActions = [
     ACTION_METADATA['All Hostels'],
-    ACTION_METADATA['Manage Users'],
     ACTION_METADATA['Manage Plans'],
-    ACTION_METADATA['System Health'],
+    ACTION_METADATA['Manage Users'],
   ]
 
   return (
@@ -578,33 +579,60 @@ function SuperadminDashboard({ user }: { user: any }) {
                 <tr className="border-b border-border text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">
                   <th className="pb-3 font-semibold">Hostel Name</th>
                   <th className="pb-3 font-semibold">Subdomain</th>
-                  <th className="pb-3 font-semibold">Residents</th>
+                  <th className="pb-3 font-semibold">Location</th>
                   <th className="pb-3 font-semibold">Plan</th>
                   <th className="pb-3 font-semibold text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {recentHostels.map((h, idx) => (
-                  <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                    <td className="py-3 font-semibold text-foreground">{h.name}</td>
-                    <td className="py-3 text-muted-foreground font-mono">{h.subdomain}.messpro.app</td>
-                    <td className="py-3 text-foreground font-mono font-medium">{h.students}</td>
-                    <td className="py-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-foreground border border-border">
-                        {h.plan}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${h.status === 'Active'
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                        }`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${h.status === 'Active' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                        {h.status}
-                      </span>
+                {recentHostels.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground text-xs">
+                      No hostel tenants registered yet. Click &ldquo;New Hostel Tenant&rdquo; above.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  recentHostels.map((h) => {
+                    const planName =
+                      typeof h.plan === 'object' ? h.plan?.name : h.plan || 'Standard'
+                    return (
+                      <tr key={h._id} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-3 font-semibold text-foreground">{h.name}</td>
+                        <td className="py-3 text-muted-foreground font-mono">
+                          {h.subdomain ? `${h.subdomain}.messpro.app` : '—'}
+                        </td>
+                        <td className="py-3 text-muted-foreground font-medium">{h.location || '—'}</td>
+                        <td className="py-3">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-foreground border border-border">
+                            {planName}
+                          </span>
+                        </td>
+                        <td className="py-3 text-right">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                              h.status === 'Active'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : h.status === 'Trial'
+                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                h.status === 'Active'
+                                  ? 'bg-emerald-500'
+                                  : h.status === 'Trial'
+                                  ? 'bg-amber-500'
+                                  : 'bg-rose-500'
+                              }`}
+                            />
+                            {h.status || 'Active'}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
               </tbody>
             </table>
           </div>

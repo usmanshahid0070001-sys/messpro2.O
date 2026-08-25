@@ -67,14 +67,21 @@ export default function LoginForm() {
 
     const onSubmit = async (data: LoginFormData) => {
         try {
-            const response = await loginMutation.mutateAsync({
+            const response: any = await loginMutation.mutateAsync({
                 email: data.email,
                 password: data.password,
             });
 
-            dispatch(setCredentials({ user: response.user, token: response.token }));
-            toast.success('Successfully logged in');
-            navigate('/app');
+            const user = response?.user || response?.data?.user;
+            const token = response?.token || response?.data?.token || '';
+
+            if (user) {
+                dispatch(setCredentials({ user, token }));
+                toast.success('Successfully logged in');
+                navigate('/app');
+            } else {
+                toast.error('Unexpected login response format. Please try again.');
+            }
         } catch (error) {
             console.error('Login failed', error);
             const message = getErrorMessage(error);

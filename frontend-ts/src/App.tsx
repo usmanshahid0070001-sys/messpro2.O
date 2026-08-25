@@ -19,6 +19,8 @@ import MealPricesPage from "./features/Finance/MealPrices/MealPricesPage";
 import BillGenerationPage from "./features/Finance/BillGeneration/BillGenerationPage";
 import BillManagementPage from "./features/Finance/BillManagement/BillManagementPage";
 import MyBillsPage from "./features/Finance/MyBills/MyBillsPage";
+import ManageTenantsPage from "./features/superadmin/ManageTenantsPage";
+import ManagePlansPage from "./features/superadmin/ManagePlansPage";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import LoginForm from "./features/auth/LoginForm";
 import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
@@ -78,6 +80,12 @@ const App = () => {
                   <Route path="attendance/mark" element={<Navigate to="/app/meals/qr" replace />} />
                   <Route path="my-bills" element={<MyBillsPage />} />
                   <Route path="finance/my-bills" element={<Navigate to="/app/my-bills" replace />} />
+                </Route>
+
+                {/* Superadmin Dedicated Governance Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
+                  <Route path="superadmin/hostels" element={<ManageTenantsPage />} />
+                  <Route path="superadmin/plans" element={<ManagePlansPage />} />
                 </Route>
               </Route>
             </Route>
