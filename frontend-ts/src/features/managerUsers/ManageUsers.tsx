@@ -4,6 +4,7 @@ import { Plus, Users, UserPlus } from 'lucide-react'
 import type { RootState } from '@/store'
 import { useGetUsers } from '@/hooks/queries/useUserQueries'
 import { useGetMyHostel } from '@/hooks/queries/useHostelQueries'
+import { usePermissions } from '@/hooks/usePermissions'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
@@ -18,6 +19,8 @@ import EditUserModal from './components/EditUserModal'
 export default function ManageUsers() {
   const { user: currentUser } = useSelector((s: RootState) => s.auth)
   const currentRole = currentUser?.role || 'student'
+  const { hasPermission } = usePermissions()
+  const canManageUsers = hasPermission('user_management')
 
   const { data: users = [], isLoading: usersLoading } = useGetUsers()
   const { data: hostel, isLoading: hostelLoading } = useGetMyHostel(currentRole)
@@ -176,14 +179,16 @@ export default function ManageUsers() {
           </div>
         </div>
 
-        <Button
-          onClick={() => setIsAddOpen(true)}
-          size="sm"
-          className="gap-1.5 self-start sm:self-auto h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-xs cursor-pointer rounded-xl"
-        >
-          <UserPlus className="h-4 w-4" />
-          <span>Add Member</span>
-        </Button>
+        {canManageUsers && (
+          <Button
+            onClick={() => setIsAddOpen(true)}
+            size="sm"
+            className="gap-1.5 self-start sm:self-auto h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-xs cursor-pointer rounded-xl"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Add Member</span>
+          </Button>
+        )}
       </div>
 
       {/* Metrics Row */}

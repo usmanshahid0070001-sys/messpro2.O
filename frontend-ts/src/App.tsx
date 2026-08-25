@@ -28,13 +28,15 @@ import { PublicRoute } from "./features/auth/components/PublicRoute";
 import { AuthSync } from "./features/auth/components/AuthSync";
 import { Toaster } from "@/components/ui/sonner";
 import { StorageWarningModal } from "@/components/StorageWarningModal";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const App = () => {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <StorageWarningModal />
-      <BrowserRouter>
-        <AuthSync>
+    <ErrorBoundary>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <StorageWarningModal />
+        <BrowserRouter>
+          <AuthSync>
           <Routes>
             {/* Public Routes (Accessible only if NOT logged in) */}
             <Route element={<PublicRoute />}>
@@ -52,29 +54,58 @@ const App = () => {
 
                 {/* Staff / Admin / Management Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['superadmin', 'admin', 'manager']} />}>
-                  <Route path="users" element={<ManageUsers />} />
-                  <Route path="hostel-configuration" element={<HostelConfiguration />} />
-                  <Route path="residence/allocation" element={<RoomAllocation />} />
-                  <Route path="residence/services" element={<RoomService />} />
+                  {/* User Directory — Requires user_management */}
+                  <Route element={<ProtectedRoute requiredPermission="user_management" />}>
+                    <Route path="users" element={<ManageUsers />} />
+                  </Route>
+
+                  {/* Residence Management — Requires residence_management */}
+                  <Route element={<ProtectedRoute requiredPermission="residence_management" requiredFeature="residence_management" />}>
+                    <Route path="residence/allocation" element={<RoomAllocation />} />
+                    <Route path="residence/services" element={<RoomService />} />
+                  </Route>
+
+                  {/* Dining Management */}
                   <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
                   <Route path="meals/control" element={<MealControlPage />} />
                   <Route path="meals/violations" element={<Navigate to="/app/meals/control" replace />} />
                   <Route path="meals/overview" element={<Navigate to="/app/meals/control" replace />} />
-                  <Route path="attendance/qr" element={<QRAttendancePage />} />
-                  <Route path="attendance/manual" element={<ManualAttendancePage />} />
-                  <Route path="attendance/biometric" element={<BiometricAttendancePage />} />
-                  <Route path="meals/biometric" element={<Navigate to="/app/attendance/biometric" replace />} />
-                  <Route path="meals/manual-attendance" element={<Navigate to="/app/attendance/manual" replace />} />
-                  <Route path="finance/bills" element={<BillManagementPage />} />
-                  <Route path="finance/manage-bills" element={<Navigate to="/app/finance/bills" replace />} />
+
+                  {/* Attendance Methods */}
+                  <Route element={<ProtectedRoute requiredFeature="qr_attendance" />}>
+                    <Route path="attendance/qr" element={<QRAttendancePage />} />
+                  </Route>
+                  <Route element={<ProtectedRoute requiredFeature="manual_attendance" />}>
+                    <Route path="attendance/manual" element={<ManualAttendancePage />} />
+                    <Route path="meals/manual-attendance" element={<Navigate to="/app/attendance/manual" replace />} />
+                  </Route>
+                  <Route element={<ProtectedRoute requiredFeature="biometric_attendance" />}>
+                    <Route path="attendance/biometric" element={<BiometricAttendancePage />} />
+                    <Route path="meals/biometric" element={<Navigate to="/app/attendance/biometric" replace />} />
+                  </Route>
+
+                  {/* Finance & Invoicing */}
+                  <Route element={<ProtectedRoute requiredPermission="bill_management" requiredFeature="bill_management" />}>
+                    <Route path="finance/bills" element={<BillManagementPage />} />
+                    <Route path="finance/manage-bills" element={<Navigate to="/app/finance/bills" replace />} />
+                  </Route>
                   <Route path="finance/meal-prices" element={<MealPricesPage />} />
-                  <Route path="finance/generate-bills" element={<BillGenerationPage />} />
-                  <Route path="finance/bills/generate" element={<Navigate to="/app/finance/generate-bills" replace />} />
+                  <Route element={<ProtectedRoute requiredPermission="bill_generation" requiredFeature="bill_generation" />}>
+                    <Route path="finance/generate-bills" element={<BillGenerationPage />} />
+                    <Route path="finance/bills/generate" element={<Navigate to="/app/finance/generate-bills" replace />} />
+                  </Route>
+                </Route>
+
+                {/* Hostel Administrator Configuration Only */}
+                <Route element={<ProtectedRoute allowedRoles={['admin']} requiredPermission="hostel_configuration" />}>
+                  <Route path="hostel-configuration" element={<HostelConfiguration />} />
                 </Route>
 
                 {/* Resident / Student Accessible Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['student', 'manager', 'admin', 'superadmin']} />}>
-                  <Route path="my-room" element={<MyRoom />} />
+                  <Route element={<ProtectedRoute requiredFeature="residence_management" />}>
+                    <Route path="my-room" element={<MyRoom />} />
+                  </Route>
                   <Route path="meals/qr" element={<StudentAttendancePage />} />
                   <Route path="meals/attendance" element={<Navigate to="/app/meals/qr" replace />} />
                   <Route path="attendance/mark" element={<Navigate to="/app/meals/qr" replace />} />
@@ -94,11 +125,11 @@ const App = () => {
             <Route path="*" element={<Navigate to="/app" replace />} />
           </Routes>
         </AuthSync>
-      </BrowserRouter>
-      <Toaster />
-    </ThemeProvider>
+        </BrowserRouter>
+        <Toaster />
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 };
 
 export default App;
-

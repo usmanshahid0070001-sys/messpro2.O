@@ -15,6 +15,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useNavigation } from "@/hooks/useNavigation"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
 import logoUrl from "@/assets/pwa-512x512.png"
 
 export default function AppLayout() {
@@ -139,8 +140,10 @@ export default function AppLayout() {
         </div>
 
         <div id="main-page-content" className="flex-1 min-w-0 max-w-full overflow-x-hidden">
-          {/* Main content — Dashboard, All Hostels, etc. */}
-          <Outlet />
+          {/* Main content — Dashboard, All Hostels, etc. protected by ErrorBoundary */}
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </div>
     </SidebarProvider>
