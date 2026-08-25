@@ -352,40 +352,34 @@ class MealRecordService {
           message: 'You are not registered in this hostel. Do you want to request guest permission?'
         };
       } else {
-        if (!autoVerification) {
-          if (isManagerOnline) {
-            return { status: 'requires_permission', reason: 'unselected', managerHostelId: hostelId, message: 'You did not reserve this meal. Request permission?' };
-          } else {
-            const error = new Error('Unselected meal rejected: Manager is offline.');
-            error.statusCode = 403; throw error;
-          }
-        }
-      } 
-      // EXTRA MEAL (Attendance >= Selection)
-      else if (record.attendance.count >= record.selection.count) {
-        if (!autoVerification) {
-          if (isManagerOnline) {
-            return { status: 'requires_permission', reason: 'extra_meal', managerHostelId: hostelId, message: `You have reached your limit of ${record.selection.count} meals. Request extra meal?` };
-          } else {
-            const error = new Error(`Meal limit reached. Manager is offline to approve extra meals.`);
-            error.statusCode = 403; throw error;
-          }
-        }
+        const error = new Error('Guest scan rejected: Manager is offline.');
+        error.statusCode = 403;
+        throw error;
       }
+    }
 
-      record.attendance.hasEaten = true;
-      record.attendance.method = 'QR';
-      record.attendance.count += 1;
-      await record.save();
+    // 🛡️ FIND TODAY'S RECORD FOR REGISTERED STUDENT
+    let record = await MealRecord.findOne({
+      hostelId,
+      date: mealData.date,
+      mealType: mealData.mealType,
+      rollNumber: student.id
+    });
 
-    } else {
+    if (!record) {
       // 🛡️ WALK-IN SCENARIO (No Record Exists)
       if (!autoVerification) {
         if (isManagerOnline) {
-          return { status: 'requires_permission', reason: 'unselected', managerHostelId: hostelId, message: 'You did not reserve this meal. Request permission?' };
+          return {
+            status: 'requires_permission',
+            reason: 'unselected',
+            managerHostelId: hostelId,
+            message: 'You did not reserve this meal. Request permission?'
+          };
         } else {
           const error = new Error('Unselected meal rejected: Manager is offline.');
-          error.statusCode = 403; throw error;
+          error.statusCode = 403;
+          throw error;
         }
       }
 
@@ -403,10 +397,51 @@ class MealRecordService {
         'attendance.method': 'QR',
         'attendance.count': 1
       });
+    } else {
+      const isUnselected = !record.selection?.hasSelected || (record.selection?.count || 0) === 0;
+      const isLimitReached = (record.attendance?.count || 0) >= (record.selection?.count || 0);
+
+      if (isUnselected) {
+        if (!autoVerification) {
+          if (isManagerOnline) {
+            return {
+              status: 'requires_permission',
+              reason: 'unselected',
+              managerHostelId: hostelId,
+              message: 'You did not reserve this meal. Request permission?'
+            };
+          } else {
+            const error = new Error('Unselected meal rejected: Manager is offline.');
+            error.statusCode = 403;
+            throw error;
+          }
+        }
+      } else if (isLimitReached) {
+        // EXTRA MEAL (Attendance >= Selection)
+        if (!autoVerification) {
+          if (isManagerOnline) {
+            return {
+              status: 'requires_permission',
+              reason: 'extra_meal',
+              managerHostelId: hostelId,
+              message: `You have reached your limit of ${record.selection.count} meals. Request extra meal?`
+            };
+          } else {
+            const error = new Error('Meal limit reached. Manager is offline to approve extra meals.');
+            error.statusCode = 403;
+            throw error;
+          }
+        }
+      }
+
+      record.attendance.hasEaten = true;
+      record.attendance.method = 'QR';
+      record.attendance.count = (record.attendance.count || 0) + 1;
+      await record.save();
     }
 
     // Emit live socket event to Manager's Dashboard
-    io.to(hostelId.toString()).emit('attendance_success', {
+    io.to(`hostel:${hostelId}`).emit('attendance_success', {
       rollNumber: student.id,
       name: student.name,
       isGuest,

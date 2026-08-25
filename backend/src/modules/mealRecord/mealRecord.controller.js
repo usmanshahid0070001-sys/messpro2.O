@@ -469,3 +469,23 @@ export const scanStudentQR = catchAsync(async (req, res) => {
     });
   }
 });
+
+// ==========================================
+// 5. BIOMETRIC HARDWARE ATTENDANCE IMPORT
+// ==========================================
+export const uploadBiometricAttendance = catchAsync(async (req, res) => {
+  const hostelId = req.body.hostelId || req.user.hostelId;
+
+  if (req.user.role !== 'superadmin' && req.user.hostelId.toString() !== hostelId.toString()) {
+    const error = new Error('Access denied: You can only upload attendance for your own hostel.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const result = await mealRecordService.processBiometricAttendance(hostelId, req.user, req.body);
+
+  res.status(200).json({
+    status: 'success',
+    ...result
+  });
+});

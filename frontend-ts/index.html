@@ -33,9 +33,9 @@
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 
     <!-- Favicons & App Icons -->
-    <link rel="icon" type="image/png" href="/src/assets/pwa-192x192.png" />
-    <link rel="apple-touch-icon" href="/src/assets/pwa-192x192.png" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/src/assets/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/src/assets/pwa-192x192.png" />
+    <link rel="shortcut icon" href="/src/assets/pwa-192x192.png" />
 
     <!-- Open Graph / Facebook / LinkedIn -->
     <meta property="og:type" content="website" />
@@ -120,17 +120,11 @@
       }
 
       .loader-brand-icon {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         border-radius: 10px;
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #ffffff;
-        font-weight: 800;
-        font-size: 20px;
-        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+        object-fit: contain;
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
       }
 
       .loader-brand-name {
@@ -197,7 +191,7 @@
     <!-- Initial Loading Screen (dismissed as soon as React mounts) -->
     <div id="app-loader" aria-hidden="true">
       <div class="loader-brand">
-        <div class="loader-brand-icon">M</div>
+        <img src="/src/assets/pwa-192x192.png" alt="MessPro Logo" class="loader-brand-icon" />
         <div class="loader-brand-name">MessPro<span>2.0</span></div>
       </div>
       <div class="loader-bar-bg">
