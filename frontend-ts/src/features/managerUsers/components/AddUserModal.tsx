@@ -209,7 +209,7 @@ export default function AddUserModal({ isOpen, onClose, currentRole, hostel }: A
 
     const additionalInfoPayload = Object.entries(customFields).map(([key, value]) => ({
       key,
-      value: value.trim(),
+      value: (value ?? '').toString().trim(),
     }))
 
     const payload: any = {

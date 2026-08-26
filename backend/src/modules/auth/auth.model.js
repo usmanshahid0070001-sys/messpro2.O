@@ -181,7 +181,7 @@ const userSchema = new mongoose.Schema(
         },
         value: {
           type: String,
-          required: true,
+          default: '',
           trim: true,
         },
       },

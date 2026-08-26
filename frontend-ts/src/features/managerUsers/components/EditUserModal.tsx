@@ -196,7 +196,7 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
 
     const additionalInfoPayload = Object.entries(customFields).map(([key, value]) => ({
       key,
-      value: value.trim(),
+      value: (value ?? '').toString().trim(),
     }))
 
     const payload: any = {
