@@ -39,3 +39,55 @@ export const exportPlansToExcel = (plans: SubscriptionPlan[]) => {
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Subscription Plans');
   XLSX.writeFile(workbook, `MessPro_Plans_${new Date().toISOString().split('T')[0]}.xlsx`);
 };
+
+export const exportUsersToExcel = (users: any[], customFieldConfigs: any[] = [], hostelName?: string) => {
+  const excelData = users.map((user) => {
+    const row: Record<string, any> = {
+      'Roll Number / ID': user.id || 'N/A',
+      'Full Name': user.name || 'N/A',
+      'Email Address': user.email || 'N/A',
+      'Role': user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Student',
+      'Room Number': user.room ? (typeof user.room === 'object' ? user.room.roomName : user.room) : 'Unassigned',
+    };
+
+    // Dynamically include all custom fields (CNIC, Domicile, etc.)
+    customFieldConfigs.forEach((config: any) => {
+      const field = (user.additionalInfo || []).find(
+        (f: any) => f.key?.trim().toLowerCase() === config.name?.trim().toLowerCase()
+      );
+      row[config.name] = field?.value || '';
+    });
+
+    // If there are other additionalInfo items not in customFieldConfigs, include them too
+    (user.additionalInfo || []).forEach((f: any) => {
+      if (f.key && !row[f.key]) {
+        row[f.key] = f.value || '';
+      }
+    });
+
+    row['Agreement Status'] = user.agreement === 'signed' ? 'Signed' : 'Pending';
+    row['Joined Date'] = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A';
+
+    return row;
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+  // Auto-fit column widths
+  const colKeys = Object.keys(excelData[0] || {});
+  worksheet['!cols'] = colKeys.map((key) => {
+    const maxLen = Math.max(
+      key.length,
+      ...excelData.map((r) => String(r[key] || '').length)
+    );
+    return { wch: Math.min(Math.max(maxLen + 4, 12), 40) };
+  });
+
+  const workbook = XLSX.utils.book_new();
+  const sheetName = (hostelName || 'Hostel').substring(0, 31);
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  const filename = `${hostelName ? hostelName.replace(/[^a-zA-Z0-9_-]/g, '_') : 'Hostel'}_Members_${dateStr}.xlsx`;
+  XLSX.writeFile(workbook, filename);
+};

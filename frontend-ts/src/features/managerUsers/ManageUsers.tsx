@@ -8,6 +8,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
+import { exportUsersToExcel } from '@/utils/exportUtils'
 
 // Import extracted sub-components
 import MetricsHeader from './components/MetricsHeader'
@@ -33,7 +34,7 @@ export default function ManageUsers() {
   const itemsPerPage = 8
 
   // Sorting State
-  const [sortOrder, setSortOrder] = useState<'none' | 'asc' | 'desc'>('asc')
+  const [sortOrder, setSortOrder] = useState<'none' | 'asc' | 'desc' | 'room_asc'>('asc')
 
   // Modal Open states
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -64,13 +65,33 @@ export default function ManageUsers() {
     })
   }, [users, deferredSearchTerm, roleFilter])
 
-  // Sort list alphabetically if selected
+  // Sort list alphabetically or by room
   const sortedUsers = useMemo(() => {
     const list = [...filteredUsers]
     if (sortOrder === 'asc') {
       list.sort((a, b) => a.name.localeCompare(b.name))
     } else if (sortOrder === 'desc') {
       list.sort((a, b) => b.name.localeCompare(a.name))
+    } else if (sortOrder === 'room_asc') {
+      list.sort((a, b) => {
+        const roomA = a.room && typeof a.room === 'object' && a.room.roomName ? String(a.room.roomName).trim() : ''
+        const roomB = b.room && typeof b.room === 'object' && b.room.roomName ? String(b.room.roomName).trim() : ''
+
+        // If neither has a room, fallback to name sort
+        if (!roomA && !roomB) {
+          return a.name.localeCompare(b.name)
+        }
+        // Unassigned students placed at the very end
+        if (!roomA) return 1
+        if (!roomB) return -1
+
+        // Alphanumeric natural comparison (e.g. "Room 2" before "Room 10", "1" before "2")
+        const roomComp = roomA.localeCompare(roomB, undefined, { numeric: true, sensitivity: 'base' })
+        if (roomComp !== 0) return roomComp
+
+        // If in same room, sort by student name
+        return a.name.localeCompare(b.name)
+      })
     }
     return list
   }, [filteredUsers, sortOrder])
@@ -91,48 +112,23 @@ export default function ManageUsers() {
     setSortOrder((current) => {
       if (current === 'none') return 'asc'
       if (current === 'asc') return 'desc'
+      if (current === 'desc') return 'room_asc'
       return 'none'
     })
   }
 
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     if (sortedUsers.length === 0) {
       toast.error('No users to export')
       return
     }
 
-    const headers = ['Name', 'Email', 'Role', 'Roll Number']
-    const customFieldNames = customFieldConfigs.slice(0, 2).map((c: any) => c.name)
-    const allHeaders = [...headers, ...customFieldNames, 'Room']
-
-    const csvRows = [allHeaders.join(',')]
-
-    sortedUsers.forEach((user) => {
-      const customFieldValues = customFieldConfigs.slice(0, 2).map((config: any) => {
-        const field = (user.additionalInfo || []).find((f: any) => f.key === config.name)
-        return field?.value || ''
-      })
-
-      const row = [
-        `"${user.name.replace(/"/g, '""')}"`,
-        `"${user.email}"`,
-        `"${user.role}"`,
-        `"${user.id || ''}"`,
-        ...customFieldValues.map((v: string) => `"${v.replace(/"/g, '""')}"`),
-        `"${user.room ? user.room.roomName : ''}"`,
-      ]
-      csvRows.push(row.join(','))
-    })
-
-    const blob = new Blob(['\uFEFF' + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.setAttribute('href', url)
-    link.setAttribute('download', `Hostel_Members_${new Date().toISOString().split('T')[0]}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    toast.success('Excel/CSV Sheet exported successfully')
+    try {
+      exportUsersToExcel(sortedUsers, customFieldConfigs, hostel?.name)
+      toast.success('Excel spreadsheet (.xlsx) exported successfully')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to export Excel spreadsheet')
+    }
   }
 
   const openEditModal = (user: any) => {
@@ -213,7 +209,7 @@ export default function ManageUsers() {
         currentRole={currentRole}
         sortOrder={sortOrder}
         onToggleSort={handleToggleSort}
-        onExport={handleExportCSV}
+        onExport={handleExportExcel}
         counts={counts}
       />
 

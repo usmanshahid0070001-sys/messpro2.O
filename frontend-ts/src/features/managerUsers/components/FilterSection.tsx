@@ -8,7 +8,7 @@ interface FilterSectionProps {
   roleFilter: string
   onRoleFilterChange: (value: string) => void
   currentRole: string
-  sortOrder: 'asc' | 'desc' | 'none'
+  sortOrder: 'asc' | 'desc' | 'room_asc' | 'none'
   onToggleSort: () => void
   onExport: () => void
   counts?: {
@@ -146,7 +146,15 @@ export default function FilterSection({
           title="Toggle sort order"
         >
           <ArrowUpDown className="h-3.5 w-3.5" />
-          <span>{sortOrder === 'none' ? 'Sort' : sortOrder === 'asc' ? 'A → Z' : 'Z → A'}</span>
+          <span>
+            {sortOrder === 'none'
+              ? 'Sort'
+              : sortOrder === 'asc'
+              ? 'Name A → Z'
+              : sortOrder === 'desc'
+              ? 'Name Z → A'
+              : 'Room A → Z'}
+          </span>
         </Button>
 
         {/* Export Excel Button */}
@@ -158,7 +166,7 @@ export default function FilterSection({
           className="h-9 px-3 text-xs gap-1.5 rounded-xl border-border/80 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/30 cursor-pointer transition-colors"
         >
           <Download className="h-3.5 w-3.5 text-emerald-500" />
-          <span>Export Sheet</span>
+          <span>Export Excel</span>
         </Button>
       </div>
     </div>
