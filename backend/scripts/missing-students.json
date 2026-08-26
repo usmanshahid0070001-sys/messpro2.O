@@ -1,0 +1,130 @@
+[
+  {
+    "rollNo": "2024-EE -327",
+    "name": "Muhammad Saif Ullah",
+    "roomName": "3",
+    "capacity": 6,
+    "cnic": "36402-5030427-9",
+    "domicile": "Pakpattan"
+  },
+  {
+    "rollNo": "2024-EE-316",
+    "name": "Muhammad Zeeshan",
+    "roomName": "5",
+    "capacity": 6,
+    "cnic": "34101-77022323",
+    "domicile": "Gujranwala"
+  },
+  {
+    "rollNo": "2025-BSCPE-07",
+    "name": "Abdullah Ashraf",
+    "roomName": "10",
+    "capacity": 6,
+    "cnic": "34501-5698658-9",
+    "domicile": "Narowal"
+  },
+  {
+    "rollNo": "2025-BME-26",
+    "name": "Fakhar Hussnain",
+    "roomName": "17",
+    "capacity": 3,
+    "cnic": "33105-4286297-1",
+    "domicile": "Lodhran"
+  },
+  {
+    "rollNo": "2023-EE-320",
+    "name": "Sikandar Ramzan",
+    "roomName": "22",
+    "capacity": 3,
+    "cnic": "35101-0477509-5",
+    "domicile": "Kasur"
+  },
+  {
+    "rollNo": "2025-BSCPE-42",
+    "name": "Ahmad Munir",
+    "roomName": "23",
+    "capacity": 3,
+    "cnic": "34601-2819490-1",
+    "domicile": "Daska"
+  },
+  {
+    "rollNo": "205-ME-252",
+    "name": "Muhammad Tayyab Farooq",
+    "roomName": "29",
+    "capacity": 6,
+    "cnic": "38402-8496748-5",
+    "domicile": "Sargodha"
+  },
+  {
+    "rollNo": "2025-ESM-8",
+    "name": "Muhammad Ali",
+    "roomName": "41",
+    "capacity": 6,
+    "cnic": "35501-0662986-7",
+    "domicile": "Nankana Sahib"
+  },
+  {
+    "rollNo": "2024-CS-674",
+    "name": "Hafiz Ali Zohaib",
+    "roomName": "45",
+    "capacity": 6,
+    "cnic": "34502-8665235-5",
+    "domicile": "Narowal"
+  },
+  {
+    "rollNo": "2025-CS-496",
+    "name": "Muhammad Abubakar Saddique",
+    "roomName": "51",
+    "capacity": 3,
+    "cnic": "33202-5004301-5",
+    "domicile": "Jhang"
+  },
+  {
+    "rollNo": "2025-SE-436",
+    "name": "Muhammad Abdullah",
+    "roomName": "56",
+    "capacity": 3,
+    "cnic": "33303-9764520-3",
+    "domicile": "Toba Tek Singh"
+  },
+  {
+    "rollNo": "2025-ME-334",
+    "name": "Muhammad Sohaib",
+    "roomName": "68",
+    "capacity": 6,
+    "cnic": "34503-0401009-3",
+    "domicile": "Narowal"
+  },
+  {
+    "rollNo": "2025-EE-273",
+    "name": "Muhammad Abdullah Naeem",
+    "roomName": "77",
+    "capacity": 6,
+    "cnic": "36103-8019229-3",
+    "domicile": "Khanewal"
+  },
+  {
+    "rollNo": "2026(S)DS-202",
+    "name": "Sajjad Ali",
+    "roomName": "78",
+    "capacity": 6,
+    "cnic": "34104-4180191-3",
+    "domicile": "Gujrawala"
+  },
+  {
+    "rollNo": "2026(S)DS-182",
+    "name": "Eysa Malik",
+    "roomName": "78",
+    "capacity": 6,
+    "cnic": "34603-2593729-3",
+    "domicile": "Sialkot"
+  },
+  {
+    "rollNo": "2026(S)CYS-177",
+    "name": "Hasan Ali",
+    "roomName": "78",
+    "capacity": 6,
+    "cnic": "35303-3479388-5",
+    "domicile": "Okara"
+  }
+]

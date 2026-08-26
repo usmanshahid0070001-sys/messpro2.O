@@ -1,0 +1,18 @@
+[
+  {
+    "rollNo": "2021-cs-101",
+    "name": "Ahmed Ali",
+    "roomName": "A-1",
+    "capacity": 3,
+    "cnic": "35201-1234567-1",
+    "domicile": "Lahore"
+  },
+  {
+    "rollNo": "2021-cs-102",
+    "name": "Bilal Khan",
+    "roomName": "A-1",
+    "capacity": 3,
+    "cnic": "35202-7654321-3",
+    "domicile": "Rawalpindi"
+  }
+]

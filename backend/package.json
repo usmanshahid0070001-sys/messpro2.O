@@ -6,7 +6,8 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "import:excel": "node scripts/import-excel-allocations.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
