@@ -157,18 +157,18 @@ export default function FileComplain() {
   }, [complaints])
 
   return (
-    <div className="space-y-5 sm:space-y-6 pb-12">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="p-2 sm:p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
-            <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
+    <div className="space-y-5 sm:space-y-6 pb-12 w-full max-w-full min-w-0">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+            <FileText className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
               Hostel Complaints & Helpdesk
             </h1>
-            <p className="text-[11px] sm:text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Report maintenance issues, track grievance status, and manage your tickets.
             </p>
           </div>

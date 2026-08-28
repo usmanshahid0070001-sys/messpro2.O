@@ -148,7 +148,7 @@ export const useGetMealViolations = (date: string, enabled: boolean = true) => {
     queryFn: async () => {
       if (!date) return []
       const { data } = await apiClient.get<MealViolationsResponse>(
-        `/meals/violations?date=${encodeURIComponent(date)}`
+        `/meal-schedule/violations?date=${encodeURIComponent(date)}`
       )
       return data.data || []
     },

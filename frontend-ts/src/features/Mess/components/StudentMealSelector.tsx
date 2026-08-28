@@ -349,19 +349,19 @@ export default function StudentMealSelector({
       : weekDays.filter((d) => d.offsetIndex === selectedDayIndex)
 
   return (
-    <div className="space-y-4 pb-20">
-      {/* ── 1. Compact Unified Top Bar (Mobile-First & Zero Clutter) ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-xs">
+    <div className="space-y-5 pb-20 w-full max-w-full min-w-0">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
         <div className="flex items-center justify-between sm:justify-start gap-2.5 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Utensils className="h-4 w-4" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+              <Utensils className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-tight">
+              <h1 className="text-xl font-bold tracking-tight text-foreground leading-tight">
                 Weekly Meal Plan
               </h1>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {totalWeekSelectedMeals} of {maxTotalWeekSlots} meals reserved this week
               </p>
             </div>
@@ -369,7 +369,7 @@ export default function StudentMealSelector({
 
           <div className="flex items-center gap-1.5 ml-auto sm:ml-2">
             <span
-              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+              className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
                 !isInactive
                   ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                   : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'

@@ -86,38 +86,34 @@ export default function BillManagementHeader({
 }: BillManagementHeaderProps) {
   return (
     <div className="space-y-4">
-      {/* Top Banner: Title & Primary CTA */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card border border-border p-5 rounded-2xl shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 shadow-xs">
-            <FileText className="w-6 h-6" />
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
                 Manage Hostel Dues
               </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
-                <Sparkles className="w-3 h-3 text-purple-500" />
-                Finance & Dues
-              </span>
-              <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                 {totalBillsCount} {totalBillsCount === 1 ? 'Bill' : 'Bills'}
               </span>
             </div>
-            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-              Review generated student bills, process full or partial dues payments, and export accounting ledgers.
+            <p className="text-xs text-muted-foreground">
+              Review generated student bills, process dues settlements, and export financial ledgers.
             </p>
           </div>
         </div>
 
         {/* Action Buttons: New Generation Shortcut & Export */}
-        <div className="flex items-center gap-2.5 self-start md:self-auto shrink-0 flex-wrap">
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
           <Link
             to="/app/finance/generate-bills"
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs md:text-sm font-medium rounded-xl border border-purple-500/30 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-purple-500/30 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors shadow-xs"
           >
-            <PlusCircle className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <PlusCircle className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
             <span>Generate Bills</span>
           </Link>
 
@@ -125,9 +121,9 @@ export default function BillManagementHeader({
             type="button"
             onClick={onExportExcel}
             disabled={isExporting || totalBillsCount === 0}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs md:text-sm font-medium rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             <span>{isExporting ? 'Exporting...' : 'Export Excel'}</span>
           </button>
         </div>

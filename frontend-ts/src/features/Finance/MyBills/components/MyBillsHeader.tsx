@@ -52,27 +52,23 @@ export default function MyBillsHeader({
 }: MyBillsHeaderProps) {
   return (
     <div className="space-y-4">
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card border border-border p-5 rounded-2xl shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 shadow-xs">
-            <FileText className="w-6 h-6" />
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
                 My Hostel Dues & Invoices
               </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
-                <Sparkles className="w-3 h-3 text-purple-500" />
-                Finance & Dues
-              </span>
-              <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                 {totalBillsCount} {totalBillsCount === 1 ? 'Invoice' : 'Invoices'}
               </span>
             </div>
-            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-              Review your monthly hostel dues, itemized charges, and payment verification receipts.
+            <p className="text-xs text-muted-foreground">
+              Review your monthly hostel dues, itemized meal charges, and payment verification receipts.
             </p>
           </div>
         </div>

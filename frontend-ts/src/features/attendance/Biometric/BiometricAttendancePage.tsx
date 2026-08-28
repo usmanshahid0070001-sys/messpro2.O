@@ -382,31 +382,25 @@ export default function BiometricAttendancePage() {
   }
 
   return (
-    <div className="space-y-6 pb-16 animate-in fade-in duration-300 max-w-5xl mx-auto">
-      {/* ── Top Header Banner ──────────────────────────────────────────────── */}
-      <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-slate-500/10 border border-slate-500/20 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0 shadow-xs">
-            <Fingerprint className="w-6 h-6" />
+    <div className="space-y-5 pb-16 w-full max-w-full min-w-0 animate-in fade-in duration-300">
+      {/* ── Page Header ──────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-slate-500/10 border border-slate-500/20 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
+            <Fingerprint className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                Biometric Hardware Attendance
-              </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20">
-                <Sparkles className="w-3 h-3 text-slate-500" />
-                Universal Import Engine
-              </span>
-            </div>
-            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-              Upload biometric device logs (CSV, Excel), map time windows to hostel meals, and sync attendance with zero data loss.
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
+              Biometric Hardware Attendance
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Upload punch machine logs (CSV/Excel), map timing windows, and sync meal turnout records.
             </p>
           </div>
         </div>
 
         {/* Step Indicator */}
-        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border text-xs font-semibold">
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border text-xs font-semibold self-start sm:self-auto">
           <span className={`px-2.5 py-1 rounded-lg ${currentStep === 1 ? 'bg-card text-foreground shadow-2xs font-bold' : 'text-muted-foreground'}`}>
             1. Upload
           </span>

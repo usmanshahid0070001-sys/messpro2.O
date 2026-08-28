@@ -114,6 +114,7 @@ export default function ManualAttendancePage() {
   } = useGetAttendance(user?.hostelId, selectedDate, selectedMeal?.type);
 
   const saveAttendanceMutation = useSaveAttendance();
+  const isSaving = saveAttendanceMutation.isPending;
 
   // Reset drafts on date or meal type change
   useEffect(() => {
@@ -372,9 +373,50 @@ export default function ManualAttendancePage() {
   const isConfigured = Boolean(selectedDate && selectedMeal);
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* ── Top Control & Action Bar ────────────────────────────────────────── */}
-      <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-end justify-between gap-4">
+    <div className="space-y-5 pb-20 w-full max-w-full min-w-0">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+            <Calendar className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
+              Manual Meal Attendance
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Mark resident meals, register dining guests, and log meal consumption records.
+            </p>
+          </div>
+        </div>
+
+        {isConfigured && (
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={exportToExcel}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Export</span>
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving || !hasUnsavedChanges}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl text-white transition-all shadow-xs ${
+                hasUnsavedChanges
+                  ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                  : 'bg-muted-foreground/40 cursor-not-allowed opacity-60'
+              }`}
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Top Control & Filter Bar ────────────────────────────────────────── */}
+      <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-end justify-between gap-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
           {/* Date Selector */}
           <div>
@@ -423,12 +465,13 @@ export default function ManualAttendancePage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Control Bar Actions */}
         <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2 lg:pt-0">
           {isConfigured && (
             <button
+              type="button"
               onClick={exportToExcel}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors shadow-2xs cursor-pointer"
               title="Download Excel Spreadsheet"
             >
               <FileSpreadsheet className="w-4 h-4" />
@@ -437,26 +480,28 @@ export default function ManualAttendancePage() {
           )}
 
           <button
+            type="button"
             onClick={() => setIsAddingGuest(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-colors shadow-2xs cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-colors shadow-2xs cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>Add Guest</span>
           </button>
 
           <button
+            type="button"
             onClick={handleSave}
             disabled={!isConfigured || saveAttendanceMutation.isPending || (!hasUnsavedChanges && serverAttendance.length > 0)}
-            className={`inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all shadow-2xs cursor-pointer ${
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
               hasUnsavedChanges
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30 active:scale-95'
                 : 'bg-muted border border-border text-muted-foreground opacity-70 cursor-not-allowed'
             }`}
           >
             {saveAttendanceMutation.isPending ? (
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <Save className="w-4 h-4" />
+              <Save className="w-3.5 h-3.5" />
             )}
             <span>
               {saveAttendanceMutation.isPending

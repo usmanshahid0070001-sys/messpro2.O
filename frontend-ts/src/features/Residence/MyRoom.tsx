@@ -99,13 +99,16 @@ export default function MyRoom() {
 
     return (
       <div className="space-y-4 pb-12 w-full max-w-full min-w-0">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
-            <BedDouble className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">My Room & Residence</h1>
-            <p className="text-xs text-muted-foreground">Room allotment, roommates, and service logs.</p>
+        {/* ── Page Header ────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
+              <BedDouble className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">My Room & Residence</h1>
+              <p className="text-xs text-muted-foreground">Room allotment, roommates, and service logs.</p>
+            </div>
           </div>
         </div>
         <div className="bg-card border border-border rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-3 shadow-xs">
@@ -123,17 +126,17 @@ export default function MyRoom() {
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-12 w-full max-w-full min-w-0">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="p-2 sm:p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
-            <BedDouble className="h-5 w-5 sm:h-6 sm:w-6" />
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
+            <BedDouble className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
               {myRoom.roomName}
             </h1>
-            <p className="text-[11px] sm:text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Capacity:{' '}
               <span className="font-mono text-foreground">{myRoom.occupants} / {myRoom.capacity} beds</span>
               {' • '}Status: <strong className="text-foreground">{myRoom.status}</strong>

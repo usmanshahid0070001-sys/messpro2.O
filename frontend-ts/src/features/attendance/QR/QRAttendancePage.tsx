@@ -337,34 +337,30 @@ export default function QRAttendancePage() {
   };
 
   return (
-    <div className="space-y-6 pb-16 animate-in fade-in duration-300">
-      {/* ── Top Header Banner ──────────────────────────────────────────────── */}
-      <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-xs">
-            <QrCode className="w-6 h-6" />
+    <div className="space-y-5 pb-16 w-full max-w-full min-w-0 animate-in fade-in duration-300">
+      {/* ── Page Header ──────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <QrCode className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
                 QR Attendance Management
               </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                <Shield className="w-3 h-3 text-emerald-500" />
-                Live Fortress Terminal
-              </span>
-              <span className="text-xs font-mono bg-muted text-muted-foreground px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-mono bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
                 {currentHostel?.name || 'Main Hostel'}
               </span>
             </div>
-            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-              Display dynamic dining hall counter QR codes, scan resident badges, and monitor live turnout in real-time.
+            <p className="text-xs text-muted-foreground">
+              Display dynamic dining hall counter QR codes, scan resident badges, and monitor live turnout.
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 flex-wrap self-start md:self-auto">
+        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
           <button
             onClick={() => {
               refetchQR();
@@ -372,7 +368,7 @@ export default function QRAttendancePage() {
               refetchOverview();
               toast.success('Refreshed QR sessions and feeds');
             }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
             title="Refresh active session data"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isQRFetching ? 'animate-spin' : ''}`} />
@@ -381,7 +377,7 @@ export default function QRAttendancePage() {
 
           <button
             onClick={toggleFullscreen}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
             title="Toggle TV / Counter Fullscreen Display"
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}

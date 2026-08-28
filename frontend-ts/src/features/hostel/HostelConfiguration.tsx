@@ -445,38 +445,38 @@ export default function HostelConfiguration() {
   }
 
   return (
-    <div className="space-y-6 pb-24">
-      {/* ── 1. Header & Live Profile Strip ── */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20">
-              Tenant System Configuration
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {hostel?.status || 'Active'}
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
-              {hostel?.plan?.name || 'Standard Tier'}
-            </span>
+    <div className="space-y-5 pb-24 w-full max-w-full min-w-0">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 shrink-0">
+            <Building2 className="h-5 w-5" />
           </div>
-
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            {hostel?.name || 'Hostel Settings'}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Configure institutional identity, attendance timezone, custom resident admission fields,
-            and enabled plan modules.
-          </p>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
+                {hostel?.name || 'Hostel Settings'}
+              </h1>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {hostel?.status || 'Active'}
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+                {hostel?.plan?.name || 'Standard Tier'}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Configure institutional identity, attendance timezone, custom admission fields, and enabled modules.
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start md:self-auto">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <Button
             onClick={handleSave}
             disabled={mutation.isPending || !hasChanges}
             size="sm"
-            className="gap-1.5 h-9 px-4 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs"
+            className="gap-1.5 h-9 px-4 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs disabled:opacity-50"
           >
             <Save className="h-3.5 w-3.5" />
             <span>{mutation.isPending ? 'Saving…' : 'Save Changes'}</span>

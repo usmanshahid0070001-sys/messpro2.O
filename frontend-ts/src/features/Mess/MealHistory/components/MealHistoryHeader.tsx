@@ -56,39 +56,35 @@ export default function MealHistoryHeader({
 
   return (
     <div className="space-y-4">
-      {/* Top Banner: Title & Primary CTA */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card border border-border p-5 rounded-2xl shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-xs">
-            <Utensils className="w-6 h-6" />
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <Utensils className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
                 Meal Consumption History
               </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                <Sparkles className="w-3 h-3 text-emerald-500" />
-                Mess & Meals
-              </span>
-              <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                 {totalRecordsCount} Logged Entries
               </span>
             </div>
-            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-              Review your daily dining attendance, pre-selected portions, and calculate projected dues with the live bill estimator.
+            <p className="text-xs text-muted-foreground">
+              Review daily dining attendance, reserved portions, and calculate projected dues.
             </p>
           </div>
         </div>
 
         {/* Action Button: Scroll to Live Bill Estimator */}
-        <div className="flex items-center gap-2.5 self-start md:self-auto shrink-0">
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
           <button
             type="button"
             onClick={onScrollToEstimator}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-semibold rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-xs active:scale-95 cursor-pointer"
           >
-            <Calculator className="w-4 h-4" />
+            <Calculator className="w-3.5 h-3.5" />
             <span>Estimate Bill</span>
           </button>
         </div>

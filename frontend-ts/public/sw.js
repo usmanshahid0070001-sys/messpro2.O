@@ -1,5 +1,5 @@
 // MessPro 2.0 Progressive Web App (PWA) Service Worker
-// Version: 1.0.0
+// Version: 1.0.1
 
 const CACHE_NAME = 'messpro-static-v1';
 const CORE_PRECACHE_URLS = [
@@ -15,25 +15,30 @@ const CORE_PRECACHE_URLS = [
 // Install: Cache essential app shell assets and activate immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(CORE_PRECACHE_URLS).catch((err) => {
-        // Individual asset failure should not break install of core shell
-        console.warn('[PWA SW] Precache warning:', err);
-      });
-    }).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => {
+        return cache.addAll(CORE_PRECACHE_URLS).catch((err) => {
+          console.warn('[PWA SW] Precache warning:', err);
+        });
+      })
+      .then(() => self.skipWaiting())
   );
 });
 
 // Activate: Clean up outdated caches and claim active clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name.startsWith('messpro-') && name !== CACHE_NAME)
-          .map((oldName) => caches.delete(oldName))
-      );
-    }).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((name) => name.startsWith('messpro-') && name !== CACHE_NAME)
+            .map((oldName) => caches.delete(oldName))
+        );
+      })
+      .then(() => self.clients.claim())
   );
 });
 
@@ -48,8 +53,15 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // BYPASS: API calls and backend data endpoints must never serve stale offline records
-  if (url.pathname.startsWith('/api') || url.pathname.includes('/api/')) {
+  // BYPASS: API endpoints, dynamic data, and Vite dev server internals
+  if (
+    url.pathname.startsWith('/api') ||
+    url.pathname.includes('/api/') ||
+    url.pathname.startsWith('/@') ||
+    url.pathname.includes('node_modules') ||
+    url.searchParams.has('token') ||
+    url.searchParams.has('t')
+  ) {
     return;
   }
 
@@ -61,7 +73,7 @@ self.addEventListener('fetch', (event) => {
           if (networkResponse && networkResponse.status === 200) {
             const copy = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, copy);
+              cache.put(request, copy).catch(() => {});
             });
           }
           return networkResponse;
@@ -71,7 +83,7 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          return caches.match('/') || caches.match('/index.html');
+          return (await caches.match('/')) || (await caches.match('/index.html')) || Response.error();
         })
     );
     return;
@@ -96,11 +108,11 @@ self.addEventListener('fetch', (event) => {
         const fetchPromise = fetch(request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
-              cache.put(request, networkResponse.clone());
+              cache.put(request, networkResponse.clone()).catch(() => {});
             }
             return networkResponse;
           })
-          .catch(() => cachedResponse);
+          .catch(() => cachedResponse || Response.error());
 
         return cachedResponse || fetchPromise;
       })
@@ -113,15 +125,17 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then((cachedResponse) => {
       return (
         cachedResponse ||
-        fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, copy);
-            });
-          }
-          return networkResponse;
-        })
+        fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const copy = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(request, copy).catch(() => {});
+              });
+            }
+            return networkResponse;
+          })
+          .catch(() => cachedResponse || Response.error())
       );
     })
   );

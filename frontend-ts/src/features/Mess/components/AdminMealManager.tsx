@@ -304,35 +304,31 @@ export default function AdminMealManager({
   }
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* ── Top Hero Configuration Strip ── */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border flex flex-col lg:flex-row lg:items-center justify-between gap-5 shadow-xs">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              Mess Management
-            </span>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-              Weekly Menu Configuration
-            </span>
+    <div className="space-y-5 pb-12 w-full max-w-full min-w-0">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+            <Utensils className="h-5 w-5" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Weekly Meal Schedule
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Set daily dishes, pricing, student ordering quotas, and selection cutoff times.
-          </p>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
+              Weekly Meal Schedule
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Set daily dishes, pricing, student ordering quotas, and selection cutoff times.
+            </p>
+          </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setIsTimingModalOpen(true)}
-            className="gap-1.5 h-9 text-xs rounded-xl border-border hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"
+            className="gap-1.5 h-9 text-xs font-semibold rounded-xl border-border hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer shadow-xs"
           >
             <Clock className="h-3.5 w-3.5" />
             <span>Configure Slots ({mealNames.length})</span>

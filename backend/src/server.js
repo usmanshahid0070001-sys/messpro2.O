@@ -102,6 +102,7 @@ app.use('/api/plans', planRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/residence', residenceRoutes);
 app.use('/api/meal-schedule', mealRoutes);
+app.use('/api/meals', mealRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/billing', billRoutes);
 app.use('/api/complaints', complaintRoutes);

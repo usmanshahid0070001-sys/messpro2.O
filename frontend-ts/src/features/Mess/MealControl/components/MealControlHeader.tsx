@@ -41,15 +41,15 @@ export default function MealControlHeader({
 }: MealControlHeaderProps) {
   return (
     <div className="space-y-4">
-      {/* ── Top Bar: Title & Primary Actions ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-            <Utensils className="h-6 w-6" />
+            <Utensils className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
                 Meal Control & Audit
               </h1>
               {violationsCount > 0 && (
@@ -58,24 +58,24 @@ export default function MealControlHeader({
                 </span>
               )}
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground">
               Live dining control, meal attendance validation, and food waste audit sheet.
             </p>
           </div>
         </div>
 
         {/* Global Action Buttons */}
-        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={onRefresh}
             disabled={isRefetching}
-            className="h-9 px-3 rounded-xl border-border/80 hover:bg-muted/80 text-xs font-medium cursor-pointer"
+            className="h-9 px-3 rounded-xl border-border/80 hover:bg-muted/80 text-xs font-semibold cursor-pointer shadow-xs"
           >
             <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isRefetching ? 'animate-spin' : ''}`} />
-            Refresh
+            <span>Refresh</span>
           </Button>
 
           <Button
@@ -83,10 +83,10 @@ export default function MealControlHeader({
             variant="outline"
             size="sm"
             onClick={onPrint}
-            className="h-9 px-3 rounded-xl border-border/80 hover:bg-muted/80 text-xs font-medium cursor-pointer text-foreground"
+            className="h-9 px-3 rounded-xl border-border/80 hover:bg-muted/80 text-xs font-semibold cursor-pointer shadow-xs text-foreground"
           >
             <Printer className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-            Print Report
+            <span>Print Report</span>
           </Button>
         </div>
       </div>

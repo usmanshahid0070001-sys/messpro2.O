@@ -62,22 +62,21 @@ export default function ManageTenantsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-              Multi-Tenant Registry
-            </span>
-            <span className="text-xs text-muted-foreground">• Global Directory</span>
+    <div className="space-y-5 pb-12 w-full max-w-full min-w-0">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
+            <Building2 className="h-5 w-5" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Hostel Tenants Management
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Manage provisioned hostel domains, subscription states, geofence coordinates, and staff credentials.
-          </p>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
+              Hostel Tenants Management
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Manage provisioned hostel domains, subscription tiers, geofence coordinates, and administrator credentials.
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <Button
@@ -85,18 +84,18 @@ export default function ManageTenantsPage() {
             size="sm"
             onClick={handleExport}
             disabled={filteredHostels.length === 0}
-            className="gap-1.5 text-xs font-medium cursor-pointer shadow-xs"
+            className="gap-1.5 h-9 text-xs font-medium cursor-pointer shadow-xs rounded-xl"
           >
-            <Download className="h-4 w-4 text-muted-foreground" />
-            Export Excel
+            <Download className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>Export Excel</span>
           </Button>
           <Button
             size="sm"
             onClick={() => setIsCreateModalOpen(true)}
-            className="gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm"
+            className="gap-1.5 h-9 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs rounded-xl"
           >
-            <Plus className="h-4 w-4" />
-            Provision Hostel
+            <Plus className="h-3.5 w-3.5" />
+            <span>Provision Hostel</span>
           </Button>
         </div>
       </div>

@@ -7,7 +7,17 @@ export function registerServiceWorker(onUpdate?: (registration: ServiceWorkerReg
     return;
   }
 
-  // Register service worker after initial window load to avoid blocking critical initial render
+  // In development, unregister any existing service worker to prevent intercepting Vite HMR & WebSockets
+  if (import.meta.env.DEV) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const registration of registrations) {
+        registration.unregister().catch(() => {});
+      }
+    }).catch(() => {});
+    return;
+  }
+
+  // Register service worker in production after window load
   window.addEventListener('load', async () => {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', {
