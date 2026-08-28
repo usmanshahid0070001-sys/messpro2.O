@@ -7,6 +7,8 @@ import { Provider } from 'react-redux'
 import { store } from './store'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { registerServiceWorker, activateWaitingServiceWorker } from './pwa/registerServiceWorker'
+import { toast } from 'sonner'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +26,18 @@ const queryClient = new QueryClient({
   },
 })
 
+// Initialize Progressive Web App (PWA) Service Worker lifecycle
+registerServiceWorker((registration) => {
+  toast.info('Update Available', {
+    description: 'A new version of MessPro is ready.',
+    action: {
+      label: 'Reload',
+      onClick: () => activateWaitingServiceWorker(registration),
+    },
+    duration: 12000,
+  })
+})
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
@@ -37,4 +51,5 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 )
+
 
