@@ -1,6 +1,15 @@
-import { Search, Download, RotateCcw, ArrowUpDown } from 'lucide-react'
+import { Search, Download, RotateCcw, ArrowUpDown, ChevronDown, Filter } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface ComplaintFilterBarProps {
   searchTerm: string
@@ -44,11 +53,11 @@ export default function ComplaintFilterBar({
   ]
 
   const intensityOptions = [
-    { label: 'All Urgencies', value: 'all' },
-    { label: 'Urgent', value: 'Urgent' },
-    { label: 'High', value: 'High' },
-    { label: 'Medium', value: 'Medium' },
-    { label: 'Low', value: 'Low' },
+    { label: 'All Urgencies', value: 'all', dot: 'bg-muted-foreground' },
+    { label: 'Urgent', value: 'Urgent', dot: 'bg-red-500' },
+    { label: 'High', value: 'High', dot: 'bg-amber-500' },
+    { label: 'Medium', value: 'Medium', dot: 'bg-yellow-500' },
+    { label: 'Low', value: 'Low', dot: 'bg-blue-500' },
   ]
 
   const getSortLabel = () => {
@@ -57,13 +66,16 @@ export default function ComplaintFilterBar({
     return 'Priority'
   }
 
+  const selectedIntensityLabel =
+    intensityOptions.find((o) => o.value === intensityFilter)?.label || 'Urgency'
+
   return (
     <div className="flex flex-col gap-3 bg-card p-3.5 sm:p-4 rounded-2xl border border-border shadow-xs">
       {/* Top row: Search & Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center justify-between">
         {/* Search Bar */}
         <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Search by Roll No, Category, Room..."
             value={searchTerm}
@@ -78,7 +90,7 @@ export default function ComplaintFilterBar({
             variant="outline"
             size="sm"
             onClick={onToggleSort}
-            className="h-9 text-xs gap-1.5 font-medium border-border flex-1 sm:flex-none justify-center"
+            className="h-9 text-xs gap-1.5 font-medium border-border flex-1 sm:flex-none justify-center cursor-pointer"
           >
             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{getSortLabel()}</span>
@@ -90,7 +102,7 @@ export default function ComplaintFilterBar({
               size="sm"
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="h-9 text-xs gap-1.5 font-medium border-border px-2.5"
+              className="h-9 text-xs gap-1.5 font-medium border-border px-2.5 cursor-pointer"
               title="Refresh complaints"
             >
               <RotateCcw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -102,10 +114,10 @@ export default function ComplaintFilterBar({
             variant="outline"
             size="sm"
             onClick={onExport}
-            className="h-9 text-xs gap-1.5 font-medium border-border hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 flex-1 sm:flex-none justify-center"
+            className="h-9 text-xs gap-1.5 font-semibold border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 flex-1 sm:flex-none justify-center cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" />
-            <span>Export</span>
+            <span>Export Excel</span>
           </Button>
         </div>
       </div>
@@ -121,10 +133,10 @@ export default function ComplaintFilterBar({
                 key={opt.value}
                 type="button"
                 onClick={() => onStatusFilterChange(opt.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-amber-500 text-white shadow-xs font-semibold'
-                    : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-amber-500 text-white shadow-2xs font-semibold'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
                 {opt.label}
@@ -134,37 +146,82 @@ export default function ComplaintFilterBar({
         </div>
 
         {/* Secondary filters: Intensity and Category dropdowns */}
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Intensity Selector */}
-          <div className="flex items-center gap-1.5 w-full sm:w-auto">
-            <select
-              value={intensityFilter}
-              onChange={(e) => onIntensityFilterChange(e.target.value)}
-              className="h-8 sm:h-9 px-2.5 rounded-lg border border-border bg-background text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer w-full"
-            >
-              {intensityOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-muted/40 border border-border/80 text-xs font-medium text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer min-w-[120px]"
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <span
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      intensityOptions.find((o) => o.value === intensityFilter)?.dot || 'bg-muted-foreground'
+                    }`}
+                  />
+                  <span className="truncate">{selectedIntensityLabel}</span>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                Urgency Level
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={intensityFilter}
+                onValueChange={(val) => onIntensityFilterChange(val)}
+              >
+                {intensityOptions.map((opt) => (
+                  <DropdownMenuRadioItem
+                    key={opt.value}
+                    value={opt.value}
+                    className="text-xs flex items-center gap-2 cursor-pointer"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${opt.dot} shrink-0`} />
+                    <span>{opt.label}</span>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Category Selector */}
-          <div className="flex items-center gap-1.5 w-full sm:w-auto">
-            <select
-              value={categoryFilter}
-              onChange={(e) => onCategoryFilterChange(e.target.value)}
-              className="h-8 sm:h-9 px-2.5 rounded-lg border border-border bg-background text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer w-full sm:max-w-[150px]"
-            >
-              <option value="all">All Categories</option>
-              {availableCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-muted/40 border border-border/80 text-xs font-medium text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer min-w-[130px]"
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <Filter className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span className="truncate">{categoryFilter === 'all' ? 'All Categories' : categoryFilter}</span>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 max-h-60 overflow-y-auto">
+              <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                Complaint Category
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={categoryFilter}
+                onValueChange={(val) => onCategoryFilterChange(val)}
+              >
+                <DropdownMenuRadioItem value="all" className="text-xs cursor-pointer">
+                  All Categories
+                </DropdownMenuRadioItem>
+                {availableCategories.map((cat) => (
+                  <DropdownMenuRadioItem key={cat} value={cat} className="text-xs cursor-pointer">
+                    {cat}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

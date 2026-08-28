@@ -17,8 +17,20 @@ import {
   Building2,
   FileSpreadsheet,
   X,
+  ChevronDown,
+  ArrowUpDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 import { useGetMealSchedule } from '@/hooks/queries/useMealQueries';
 import { useGetUsers, type ManageableUser } from '@/hooks/queries/useUserQueries';
@@ -35,6 +47,23 @@ interface LocalGuest {
   count: number;
 }
 
+export type AttendanceStatusFilter = 'all' | 'eaten' | 'reserved' | 'not-eaten';
+export type AttendanceSortOrder = 'name-asc' | 'name-desc' | 'roll-asc' | 'room-asc';
+
+const STATUS_LABELS: Record<AttendanceStatusFilter, { label: string; dotColor: string }> = {
+  all: { label: 'All Residents', dotColor: 'bg-muted-foreground' },
+  eaten: { label: 'Meals Served', dotColor: 'bg-emerald-500' },
+  reserved: { label: 'Pre-Reserved', dotColor: 'bg-purple-500' },
+  'not-eaten': { label: 'Not Taken Yet', dotColor: 'bg-amber-500' },
+};
+
+const SORT_LABELS: Record<AttendanceSortOrder, string> = {
+  'name-asc': 'Name (A → Z)',
+  'name-desc': 'Name (Z → A)',
+  'roll-asc': 'Roll Number',
+  'room-asc': 'Room Number',
+};
+
 export default function ManualAttendancePage() {
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -49,6 +78,8 @@ export default function ManualAttendancePage() {
 
   const [selectedMealId, setSelectedMealId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [attendanceFilter, setAttendanceFilter] = useState<AttendanceStatusFilter>('all');
+  const [sortOrder, setSortOrder] = useState<AttendanceSortOrder>('name-asc');
 
   // ── Draft & Changes State ────────────────────────────────────────────────
   // Key: rollNumber, Value: eaten count
@@ -132,9 +163,14 @@ export default function ManualAttendancePage() {
     const enrolledStudents = allUsers.filter((u) => u.role === 'student');
 
     serverAttendance.forEach((att: AttendanceRecord) => {
+      if (!att.rollNumber) return;
       newDraft[att.rollNumber] = att.attendance?.count ?? 0;
       if (att.isGuest) {
-        const isEnrolled = enrolledStudents.some((s) => s.id === att.rollNumber);
+        const isEnrolled = enrolledStudents.some(
+          (s) =>
+            (s.id && att.rollNumber && s.id.toLowerCase() === att.rollNumber.toLowerCase()) ||
+            (s._id && att.studentId?._id && s._id === att.studentId._id)
+        );
         if (!isEnrolled) {
           newGuests.push({
             rollNumber: att.rollNumber,
@@ -164,12 +200,19 @@ export default function ManualAttendancePage() {
 
     return studentsOnly.map((student: ManageableUser) => {
       const studentRoll = student.id || student._id;
-      const serverAtt = serverAttendance.find((a) => a.rollNumber === studentRoll);
+      const serverAtt = serverAttendance.find(
+        (a) =>
+          (a.rollNumber && studentRoll && a.rollNumber.toLowerCase() === studentRoll.toLowerCase()) ||
+          (a.studentId?._id && student._id && a.studentId._id === student._id) ||
+          (a.studentId?.id && student.id && a.studentId.id.toLowerCase() === student.id.toLowerCase())
+      );
 
       const count =
         draftAttendance[studentRoll] !== undefined
           ? draftAttendance[studentRoll]
-          : serverAtt?.attendance?.count ?? 0;
+          : (serverAtt?.rollNumber && draftAttendance[serverAtt.rollNumber] !== undefined
+            ? draftAttendance[serverAtt.rollNumber]
+            : serverAtt?.attendance?.count ?? 0);
 
       const reservedCount = serverAtt?.selection?.count ?? 0;
 
@@ -182,18 +225,46 @@ export default function ManualAttendancePage() {
     });
   }, [allUsers, draftAttendance, serverAttendance]);
 
-  // Search filtering
+  // Search & Status Filtering + Sorting
   const filteredStudents = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return mergedStudentsList;
+    let result = mergedStudentsList;
 
-    return mergedStudentsList.filter((s) => {
-      const nameMatch = s.name?.toLowerCase().includes(query);
-      const rollMatch = s.rollNumber?.toLowerCase().includes(query);
-      const roomMatch = s.room?.roomName?.toLowerCase().includes(query);
-      return nameMatch || rollMatch || roomMatch;
+    // 1. Search Query Filter
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      result = result.filter((s) => {
+        const nameMatch = s.name?.toLowerCase().includes(query);
+        const rollMatch = s.rollNumber?.toLowerCase().includes(query);
+        const roomMatch = s.room?.roomName?.toLowerCase().includes(query);
+        return nameMatch || rollMatch || roomMatch;
+      });
+    }
+
+    // 2. Status Filter
+    if (attendanceFilter === 'eaten') {
+      result = result.filter((s) => s.count > 0);
+    } else if (attendanceFilter === 'reserved') {
+      result = result.filter((s) => s.reservedCount > 0);
+    } else if (attendanceFilter === 'not-eaten') {
+      result = result.filter((s) => s.count === 0);
+    }
+
+    // 3. Sorting
+    return [...result].sort((a, b) => {
+      switch (sortOrder) {
+        case 'name-asc':
+          return (a.name || '').localeCompare(b.name || '');
+        case 'name-desc':
+          return (b.name || '').localeCompare(a.name || '');
+        case 'roll-asc':
+          return (a.rollNumber || '').localeCompare(b.rollNumber || '');
+        case 'room-asc':
+          return (a.room?.roomName || '').localeCompare(b.room?.roomName || '');
+        default:
+          return (a.name || '').localeCompare(b.name || '');
+      }
     });
-  }, [mergedStudentsList, searchQuery]);
+  }, [mergedStudentsList, searchQuery, attendanceFilter, sortOrder]);
 
   // Merged guests
   const mergedGuestsList = useMemo(() => {
@@ -389,30 +460,6 @@ export default function ManualAttendancePage() {
             </p>
           </div>
         </div>
-
-        {isConfigured && (
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button
-              onClick={exportToExcel}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Export</span>
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving || !hasUnsavedChanges}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl text-white transition-all shadow-xs ${
-                hasUnsavedChanges
-                  ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-                  : 'bg-muted-foreground/40 cursor-not-allowed opacity-60'
-              }`}
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {/* ── Top Control & Filter Bar ────────────────────────────────────────── */}
@@ -442,26 +489,58 @@ export default function ManualAttendancePage() {
             <label className="block text-[13px] font-medium text-muted-foreground mb-1.5 ml-1">
               Meal Slot & Menu Item
             </label>
-            <div className="relative">
-              <Utensils className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              <select
-                value={selectedMealId}
-                onChange={(e) => setSelectedMealId(e.target.value)}
-                className="w-full bg-background border border-input rounded-xl py-2 pl-9 pr-8 text-foreground text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
-              >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full inline-flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-background border border-input text-xs sm:text-sm font-medium text-foreground hover:bg-muted/40 transition-colors shadow-2xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <Utensils className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="truncate">
+                      {selectedMeal
+                        ? `${selectedMeal.type}: ${selectedMeal.name} (Rs. ${selectedMeal.price})`
+                        : todaysMeals.length === 0
+                        ? 'No meals scheduled'
+                        : 'Select Meal Slot'}
+                    </span>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-80">
+                <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                  Available Meals for {todayName}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
                 {todaysMeals.length === 0 ? (
-                  <option value="" disabled>
+                  <div className="p-3 text-xs text-muted-foreground text-center">
                     No meals scheduled for this day
-                  </option>
+                  </div>
                 ) : (
-                  todaysMeals.map((meal) => (
-                    <option key={meal._id} value={meal._id}>
-                      {meal.type}: {meal.name} (Rs. {meal.price})
-                    </option>
-                  ))
+                  <DropdownMenuRadioGroup
+                    value={selectedMealId}
+                    onValueChange={(val) => setSelectedMealId(val)}
+                  >
+                    {todaysMeals.map((meal) => (
+                      <DropdownMenuRadioItem
+                        key={meal._id}
+                        value={meal._id}
+                        className="text-xs flex items-center justify-between py-2 cursor-pointer"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-foreground">{meal.type}</span>
+                          <span className="text-[11px] text-muted-foreground">{meal.name}</span>
+                        </div>
+                        <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 ml-2">
+                          Rs. {meal.price}
+                        </span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
                 )}
-              </select>
-            </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -486,30 +565,6 @@ export default function ManualAttendancePage() {
           >
             <UserPlus className="w-4 h-4" />
             <span>Add Guest</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!isConfigured || saveAttendanceMutation.isPending || (!hasUnsavedChanges && serverAttendance.length > 0)}
-            className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
-              hasUnsavedChanges
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30 active:scale-95'
-                : 'bg-muted border border-border text-muted-foreground opacity-70 cursor-not-allowed'
-            }`}
-          >
-            {saveAttendanceMutation.isPending ? (
-              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Save className="w-3.5 h-3.5" />
-            )}
-            <span>
-              {saveAttendanceMutation.isPending
-                ? 'Saving...'
-                : hasUnsavedChanges
-                ? 'Save Changes'
-                : 'Saved'}
-            </span>
           </button>
         </div>
       </div>
@@ -644,20 +699,18 @@ export default function ManualAttendancePage() {
           <div className="flex items-center justify-between mb-2">
             <span className="text-[13px] font-medium text-muted-foreground">Sync Status</span>
             <span
-              className={`w-8 h-8 rounded-xl flex items-center justify-center border ${
-                hasUnsavedChanges
+              className={`w-8 h-8 rounded-xl flex items-center justify-center border ${hasUnsavedChanges
                   ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                   : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-              }`}
+                }`}
             >
               {hasUnsavedChanges ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
             </span>
           </div>
           <div>
             <div
-              className={`text-lg font-bold ${
-                hasUnsavedChanges ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
-              }`}
+              className={`text-lg font-bold ${hasUnsavedChanges ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+                }`}
             >
               {hasUnsavedChanges ? 'Unsaved Draft' : 'Up to Date'}
             </div>
@@ -668,22 +721,107 @@ export default function ManualAttendancePage() {
         </div>
       </div>
 
-      {/* ── Search Bar & Batch Actions ───────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search student by name, roll number, or room..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-background border border-input rounded-xl py-2 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-2xs"
-          />
+      {/* ── Search Bar, Dropdown Filters & Batch Actions ───────────────────── */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-card border border-border p-3 sm:p-4 rounded-2xl shadow-xs">
+        {/* Left Side: Search & Filter Dropdowns */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 flex-1">
+          {/* Search Input */}
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search resident, roll number, room..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-muted/40 border border-border/80 rounded-xl py-1.5 pl-9 pr-4 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-2xs"
+            />
+          </div>
+
+          {/* 1. Status Filter Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-muted/40 border border-border/80 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer min-w-[130px]"
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_LABELS[attendanceFilter].dotColor}`} />
+                  <span className="truncate">{STATUS_LABELS[attendanceFilter].label}</span>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                Filter by Meal Status
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={attendanceFilter}
+                onValueChange={(val) => setAttendanceFilter(val as AttendanceStatusFilter)}
+              >
+                <DropdownMenuRadioItem value="all" className="text-xs flex items-center gap-2 cursor-pointer">
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground shrink-0" />
+                  <span>All Residents</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="eaten" className="text-xs flex items-center gap-2 cursor-pointer">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Meals Served</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="reserved" className="text-xs flex items-center gap-2 cursor-pointer">
+                  <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+                  <span>Pre-Reserved</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="not-eaten" className="text-xs flex items-center gap-2 cursor-pointer">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                  <span>Not Taken Yet</span>
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* 2. Sort Order Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-muted/40 border border-border/80 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer min-w-[130px]"
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span className="truncate">{SORT_LABELS[sortOrder]}</span>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                Sort Roster Order
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={sortOrder}
+                onValueChange={(val) => setSortOrder(val as AttendanceSortOrder)}
+              >
+                <DropdownMenuRadioItem value="name-asc" className="text-xs cursor-pointer">
+                  Name (A → Z)
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name-desc" className="text-xs cursor-pointer">
+                  Name (Z → A)
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="roll-asc" className="text-xs cursor-pointer">
+                  Roll Number
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="room-asc" className="text-xs cursor-pointer">
+                  Room Number
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Quick Batch Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Right Side: Quick Batch Buttons */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleFillAllReserved}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 border border-purple-500/20 transition-colors shadow-2xs cursor-pointer"
@@ -738,21 +876,19 @@ export default function ManualAttendancePage() {
                   return (
                     <tr
                       key={student.rollNumber}
-                      className={`transition-colors group ${
-                        isEaten
+                      className={`transition-colors group ${isEaten
                           ? 'bg-blue-500/5 hover:bg-blue-500/10'
                           : 'hover:bg-muted/40'
-                      }`}
+                        }`}
                     >
                       {/* Name & Avatar */}
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-colors ${
-                              isEaten
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-colors ${isEaten
                                 ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 font-semibold'
                                 : 'bg-muted text-muted-foreground border border-border'
-                            }`}
+                              }`}
                           >
                             {student.name ? student.name.charAt(0).toUpperCase() : 'S'}
                           </div>
@@ -804,22 +940,20 @@ export default function ManualAttendancePage() {
                             type="button"
                             onClick={() => handleCountChange(student.rollNumber, -1)}
                             disabled={student.count === 0}
-                            className={`w-7 h-7 flex items-center justify-center rounded-md font-bold transition-colors cursor-pointer ${
-                              student.count > 0
+                            className={`w-7 h-7 flex items-center justify-center rounded-md font-bold transition-colors cursor-pointer ${student.count > 0
                                 ? 'text-red-500 hover:bg-red-500/10 active:scale-95'
                                 : 'text-muted-foreground/40 cursor-not-allowed'
-                            }`}
+                              }`}
                             aria-label="Decrease plate count"
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </button>
 
                           <span
-                            className={`font-mono font-bold text-sm min-w-[1.25rem] text-center ${
-                              student.count > 0
+                            className={`font-mono font-bold text-sm min-w-[1.25rem] text-center ${student.count > 0
                                 ? 'text-blue-600 dark:text-blue-400'
                                 : 'text-muted-foreground'
-                            }`}
+                              }`}
                           >
                             {student.count}
                           </span>
@@ -856,9 +990,8 @@ export default function ManualAttendancePage() {
                     return (
                       <tr
                         key={guest.rollNumber}
-                        className={`transition-colors ${
-                          isEaten ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-muted/40'
-                        }`}
+                        className={`transition-colors ${isEaten ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-muted/40'
+                          }`}
                       >
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
@@ -896,21 +1029,19 @@ export default function ManualAttendancePage() {
                               type="button"
                               onClick={() => handleCountChange(guest.rollNumber, -1)}
                               disabled={guest.count === 0}
-                              className={`w-7 h-7 flex items-center justify-center rounded-md font-bold transition-colors cursor-pointer ${
-                                guest.count > 0
+                              className={`w-7 h-7 flex items-center justify-center rounded-md font-bold transition-colors cursor-pointer ${guest.count > 0
                                   ? 'text-red-500 hover:bg-red-500/10 active:scale-95'
                                   : 'text-muted-foreground/40 cursor-not-allowed'
-                              }`}
+                                }`}
                             >
                               <Minus className="w-3.5 h-3.5" />
                             </button>
 
                             <span
-                              className={`font-mono font-bold text-sm min-w-[1.25rem] text-center ${
-                                guest.count > 0
+                              className={`font-mono font-bold text-sm min-w-[1.25rem] text-center ${guest.count > 0
                                   ? 'text-amber-600 dark:text-amber-400'
                                   : 'text-muted-foreground'
-                              }`}
+                                }`}
                             >
                               {guest.count}
                             </span>

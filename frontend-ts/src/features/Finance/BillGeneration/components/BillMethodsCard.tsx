@@ -1,18 +1,28 @@
-import React, { memo } from 'react'
+import { memo } from 'react'
 import {
   Settings2,
   Plus,
   Trash2,
   Link as LinkIcon,
   Calculator,
+  ChevronDown,
 } from 'lucide-react'
 import type { BillFieldConfig } from '@/hooks/queries/useBillingQueries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface BillMethodsCardProps {
   billFields: BillFieldConfig[]
-  messRevenue: number
+  messRevenue?: number
   onAddField: () => void
   onUpdateField: (id: string, key: keyof BillFieldConfig, value: any) => void
   onRemoveField: (id: string) => void
@@ -22,7 +32,6 @@ interface BillMethodsCardProps {
 
 function BillMethodsCard({
   billFields,
-  messRevenue,
   onAddField,
   onUpdateField,
   onRemoveField,
@@ -113,32 +122,54 @@ function BillMethodsCard({
 
                 {/* Right controls: Type selector & Delete */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <select
-                    value={field.type}
-                    onChange={(e) => {
-                      const newType = e.target.value as any
-                      onUpdateField(field.id, 'type', newType)
-                      if (newType !== 'percentage' && newType !== 'multiplier') {
-                        onUpdateField(field.id, 'linkedFieldId', null)
-                      }
-                    }}
-                    disabled={isCoreField}
-                    className="h-8.5 bg-background border border-border rounded-lg px-2.5 text-xs font-semibold text-foreground focus:border-purple-500 outline-none cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
-                  >
-                    {field.type === 'meal_attendance' && (
-                      <option value="meal_attendance">Mess Bill Link</option>
-                    )}
-                    {field.type === 'previous_unpaid' && (
-                      <option value="previous_unpaid">Unpaid Arrears Link</option>
-                    )}
-                    {!isCoreField && (
-                      <>
-                        <option value="static">Fixed Amount</option>
-                        <option value="percentage">Percentage (%)</option>
-                        <option value="multiplier">Multiplier (×)</option>
-                      </>
-                    )}
-                  </select>
+                  {isCoreField ? (
+                    <span className="px-2.5 py-1 text-xs font-semibold bg-muted/60 text-muted-foreground rounded-lg border border-border/60">
+                      {field.type === 'meal_attendance' ? 'Mess Bill Link' : 'Unpaid Arrears Link'}
+                    </span>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="h-8.5 inline-flex items-center justify-between gap-1.5 bg-background border border-border rounded-lg px-2.5 text-xs font-semibold text-foreground hover:bg-muted/40 cursor-pointer shadow-2xs"
+                        >
+                          <span>
+                            {field.type === 'static'
+                              ? 'Fixed Amount'
+                              : field.type === 'percentage'
+                              ? 'Percentage (%)'
+                              : 'Multiplier (×)'}
+                          </span>
+                          <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                          Charge Type
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuRadioGroup
+                          value={field.type}
+                          onValueChange={(val: any) => {
+                            onUpdateField(field.id, 'type', val)
+                            if (val !== 'percentage' && val !== 'multiplier') {
+                              onUpdateField(field.id, 'linkedFieldId', null)
+                            }
+                          }}
+                        >
+                          <DropdownMenuRadioItem value="static" className="text-xs cursor-pointer">
+                            Fixed Amount
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="percentage" className="text-xs cursor-pointer">
+                            Percentage (%)
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="multiplier" className="text-xs cursor-pointer">
+                            Multiplier (×)
+                          </DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
 
                   {!isCoreField && (
                     <button
@@ -210,24 +241,37 @@ function BillMethodsCard({
                         {field.type === 'multiplier' ? '×' : 'of'}
                       </span>
 
-                      <select
-                        value={field.linkedFieldId || ''}
-                        onChange={(e) =>
-                          onUpdateField(field.id, 'linkedFieldId', e.target.value)
-                        }
-                        className="flex-1 min-w-[140px] h-8 bg-background border border-border rounded-lg px-2 text-xs font-medium text-foreground focus:border-purple-500 outline-none cursor-pointer"
-                      >
-                        <option value="" disabled>
-                          Select target charge...
-                        </option>
-                        {billFields
-                          .filter((f) => f.id !== field.id)
-                          .map((f) => (
-                            <option key={f.id} value={f.id}>
-                              {f.name}
-                            </option>
-                          ))}
-                      </select>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex-1 min-w-[140px] h-8 inline-flex items-center justify-between gap-1.5 bg-background border border-border rounded-lg px-2.5 text-xs font-medium text-foreground hover:bg-muted/40 cursor-pointer shadow-2xs"
+                          >
+                            <span className="truncate">
+                              {billFields.find((f) => f.id === field.linkedFieldId)?.name || 'Select target charge...'}
+                            </span>
+                            <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-52">
+                          <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                            Target Charge
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuRadioGroup
+                            value={field.linkedFieldId || ''}
+                            onValueChange={(val) => onUpdateField(field.id, 'linkedFieldId', val)}
+                          >
+                            {billFields
+                              .filter((f) => f.id !== field.id)
+                              .map((f) => (
+                                <DropdownMenuRadioItem key={f.id} value={f.id} className="text-xs cursor-pointer">
+                                  {f.name}
+                                </DropdownMenuRadioItem>
+                              ))}
+                          </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   )}
 

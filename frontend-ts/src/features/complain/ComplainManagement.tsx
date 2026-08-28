@@ -110,54 +110,46 @@ export default function ComplainManagement() {
     })
   }
 
-  const handleExportCSV = () => {
+  const handleExportExcel = async () => {
     if (sortedComplaints.length === 0) {
       toast.error('No complaints to export')
       return
     }
 
-    const headers = [
-      'Ticket ID',
-      'Roll Number',
-      'Category',
-      'Intensity',
-      'Status',
-      'Room',
-      'Block',
-      'Description',
-      'Reported Date',
-    ]
+    try {
+      const XLSX = await import('xlsx')
+      const dataToExport = sortedComplaints.map((c) => {
+        const roomNum =
+          typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.roomNumber : 'N/A'
+        const block =
+          typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.block || 'N/A' : 'N/A'
+        const date = new Date(c.createdAt).toLocaleString()
 
-    const rows = sortedComplaints.map((c) => {
-      const roomNum =
-        typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.roomNumber : 'N/A'
-      const block =
-        typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.block || 'N/A' : 'N/A'
-      const date = new Date(c.createdAt).toLocaleString()
+        return {
+          'Ticket ID': c._id,
+          'Roll Number': c.roll_number,
+          Category: c.category,
+          Intensity: c.intensity,
+          Status: c.status,
+          Room: roomNum,
+          Block: block,
+          Description: c.description,
+          'Reported Date': date,
+        }
+      })
 
-      return [
-        `"${c._id}"`,
-        `"${c.roll_number}"`,
-        `"${c.category}"`,
-        `"${c.intensity}"`,
-        `"${c.status}"`,
-        `"${roomNum}"`,
-        `"${block}"`,
-        `"${c.description.replace(/"/g, '""')}"`,
-        `"${date}"`,
-      ].join(',')
-    })
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Complaints')
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `complaints_export_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    toast.success(`Exported ${sortedComplaints.length} complaints to CSV`)
+      const fileName = `Complaints_Report_${new Date().toISOString().slice(0, 10)}.xlsx`
+      XLSX.writeFile(workbook, fileName)
+      toast.success(`Exported ${sortedComplaints.length} complaints to Excel (.xlsx)`)
+    } catch (err: any) {
+      toast.error('Export Failed', {
+        description: err?.message || 'Could not generate Excel spreadsheet.',
+      })
+    }
   }
 
   const handleViewDetails = (complaint: Complaint) => {
@@ -212,7 +204,7 @@ export default function ComplainManagement() {
         availableCategories={availableCategories}
         sortOrder={sortOrder}
         onToggleSort={handleToggleSort}
-        onExport={handleExportCSV}
+        onExport={handleExportExcel}
         onRefresh={() => refetch()}
         isRefreshing={isLoading || isRefetching}
       />

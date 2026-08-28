@@ -1,7 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react'
-import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import type { RootState } from '@/store'
 import { toast } from 'sonner'
 import {
   Fingerprint,
@@ -10,24 +8,16 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
-  Sparkles,
   ArrowRight,
   RotateCcw,
   SlidersHorizontal,
   Table as TableIcon,
-  ShieldAlert,
-  Users,
-  Utensils,
   ChevronRight,
   Info,
-  Check,
-  X,
   FileCheck2,
-  Calendar,
-  Layers,
   ArrowLeft,
   Loader2,
-  Download,
+  ChevronDown,
 } from 'lucide-react'
 
 import { useGetMealSchedule } from '@/hooks/queries/useMealQueries'
@@ -36,10 +26,18 @@ import {
   useProcessBiometricAttendance,
   type BiometricAttendanceItem,
 } from '@/hooks/mutations/useAttendanceMutations'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 export default function BiometricAttendancePage() {
   const navigate = useNavigate()
-  const { currentHostel } = useSelector((state: RootState) => state.hostel)
   const { data: schedule } = useGetMealSchedule()
   const { data: usersList = [] } = useGetUsers()
 
@@ -62,9 +60,6 @@ export default function BiometricAttendancePage() {
   const [timeColIdx, setTimeColIdx] = useState<number>(2)
   const [mealColIdx, setMealColIdx] = useState<number>(-1)
   const [countColIdx, setCountColIdx] = useState<number>(-1) // Optional count column
-
-  // Date Parsing Settings
-  const [dateFormat, setDateFormat] = useState<'AUTO' | 'YYYY-MM-DD' | 'YYYY/MM/DD' | 'DD-MM-YYYY' | 'DD/MM/YYYY' | 'MM/DD/YYYY'>('AUTO')
 
   // Policies
   const [unrecognizedAction, setUnrecognizedAction] = useState<'guest' | 'skip'>('guest')
@@ -564,64 +559,146 @@ export default function BiometricAttendancePage() {
               {/* Roll Number Column */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">Student Roll / ID Column *</label>
-                <select
-                  value={rollColIdx}
-                  onChange={(e) => setRollColIdx(Number(e.target.value))}
-                  className="w-full bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground focus:outline-hidden focus:ring-2 focus:ring-slate-500/20 font-medium cursor-pointer"
-                >
-                  {columnNames.map((c, idx) => (
-                    <option key={idx} value={idx}>
-                      Column {idx + 1}: {c}
-                    </option>
-                  ))}
-                </select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full inline-flex items-center justify-between bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground font-medium hover:bg-muted/40 cursor-pointer shadow-2xs"
+                    >
+                      <span className="truncate">
+                        {columnNames[rollColIdx] ? `Column ${rollColIdx + 1}: ${columnNames[rollColIdx]}` : 'Select Column'}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64 max-h-60 overflow-y-auto">
+                    <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                      Roll Number Column
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={String(rollColIdx)}
+                      onValueChange={(val) => setRollColIdx(Number(val))}
+                    >
+                      {columnNames.map((c, idx) => (
+                        <DropdownMenuRadioItem key={idx} value={String(idx)} className="text-xs cursor-pointer">
+                          Column {idx + 1}: {c}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {/* Date & Time Layout Mode */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">Date & Time Structure *</label>
-                <select
-                  value={dateMode}
-                  onChange={(e) => setDateMode(e.target.value as any)}
-                  className="w-full bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground focus:outline-hidden focus:ring-2 focus:ring-slate-500/20 font-medium cursor-pointer"
-                >
-                  <option value="separate">Separate Date & Time Columns</option>
-                  <option value="merged">Merged Single Timestamp Column</option>
-                  <option value="explicit_meal">Direct Meal Name Column</option>
-                </select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full inline-flex items-center justify-between bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground font-medium hover:bg-muted/40 cursor-pointer shadow-2xs"
+                    >
+                      <span className="truncate">
+                        {dateMode === 'separate'
+                          ? 'Separate Date & Time'
+                          : dateMode === 'merged'
+                          ? 'Merged Single Timestamp'
+                          : 'Direct Meal Name Column'}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64">
+                    <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                      Timestamp Structure
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={dateMode}
+                      onValueChange={(val: any) => setDateMode(val)}
+                    >
+                      <DropdownMenuRadioItem value="separate" className="text-xs cursor-pointer">
+                        Separate Date & Time Columns
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="merged" className="text-xs cursor-pointer">
+                        Merged Single Timestamp Column
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="explicit_meal" className="text-xs cursor-pointer">
+                        Direct Meal Name Column
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {/* Date Column */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">Date Column *</label>
-                <select
-                  value={dateColIdx}
-                  onChange={(e) => setDateColIdx(Number(e.target.value))}
-                  className="w-full bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground focus:outline-hidden focus:ring-2 focus:ring-slate-500/20 font-medium cursor-pointer"
-                >
-                  {columnNames.map((c, idx) => (
-                    <option key={idx} value={idx}>
-                      Column {idx + 1}: {c}
-                    </option>
-                  ))}
-                </select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full inline-flex items-center justify-between bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground font-medium hover:bg-muted/40 cursor-pointer shadow-2xs"
+                    >
+                      <span className="truncate">
+                        {columnNames[dateColIdx] ? `Column ${dateColIdx + 1}: ${columnNames[dateColIdx]}` : 'Select Column'}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64 max-h-60 overflow-y-auto">
+                    <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                      Date Column
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={String(dateColIdx)}
+                      onValueChange={(val) => setDateColIdx(Number(val))}
+                    >
+                      {columnNames.map((c, idx) => (
+                        <DropdownMenuRadioItem key={idx} value={String(idx)} className="text-xs cursor-pointer">
+                          Column {idx + 1}: {c}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {/* Time Column (if separate) */}
               {dateMode === 'separate' && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-foreground">Time of Marking Column *</label>
-                  <select
-                    value={timeColIdx}
-                    onChange={(e) => setTimeColIdx(Number(e.target.value))}
-                    className="w-full bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground focus:outline-hidden focus:ring-2 focus:ring-slate-500/20 font-medium cursor-pointer"
-                  >
-                    {columnNames.map((c, idx) => (
-                      <option key={idx} value={idx}>
-                        Column {idx + 1}: {c}
-                      </option>
-                    ))}
-                  </select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full inline-flex items-center justify-between bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground font-medium hover:bg-muted/40 cursor-pointer shadow-2xs"
+                      >
+                        <span className="truncate">
+                          {columnNames[timeColIdx] ? `Column ${timeColIdx + 1}: ${columnNames[timeColIdx]}` : 'Select Column'}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-64 max-h-60 overflow-y-auto">
+                      <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                        Time Column
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuRadioGroup
+                        value={String(timeColIdx)}
+                        onValueChange={(val) => setTimeColIdx(Number(val))}
+                      >
+                        {columnNames.map((c, idx) => (
+                          <DropdownMenuRadioItem key={idx} value={String(idx)} className="text-xs cursor-pointer">
+                            Column {idx + 1}: {c}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               )}
 
@@ -629,36 +706,80 @@ export default function BiometricAttendancePage() {
               {dateMode === 'explicit_meal' && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-foreground">Meal Name Column *</label>
-                  <select
-                    value={mealColIdx}
-                    onChange={(e) => setMealColIdx(Number(e.target.value))}
-                    className="w-full bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground focus:outline-hidden focus:ring-2 focus:ring-slate-500/20 font-medium cursor-pointer"
-                  >
-                    <option value={-1}>-- Select Column --</option>
-                    {columnNames.map((c, idx) => (
-                      <option key={idx} value={idx}>
-                        Column {idx + 1}: {c}
-                      </option>
-                    ))}
-                  </select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full inline-flex items-center justify-between bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground font-medium hover:bg-muted/40 cursor-pointer shadow-2xs"
+                      >
+                        <span className="truncate">
+                          {mealColIdx >= 0 && columnNames[mealColIdx]
+                            ? `Column ${mealColIdx + 1}: ${columnNames[mealColIdx]}`
+                            : '-- Select Column --'}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-64 max-h-60 overflow-y-auto">
+                      <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                        Meal Name Column
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuRadioGroup
+                        value={String(mealColIdx)}
+                        onValueChange={(val) => setMealColIdx(Number(val))}
+                      >
+                        <DropdownMenuRadioItem value="-1" className="text-xs cursor-pointer">
+                          -- Select Column --
+                        </DropdownMenuRadioItem>
+                        {columnNames.map((c, idx) => (
+                          <DropdownMenuRadioItem key={idx} value={String(idx)} className="text-xs cursor-pointer">
+                            Column {idx + 1}: {c}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               )}
 
               {/* Optional Count Column */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">Count Column (Optional)</label>
-                <select
-                  value={countColIdx}
-                  onChange={(e) => setCountColIdx(Number(e.target.value))}
-                  className="w-full bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground focus:outline-hidden focus:ring-2 focus:ring-slate-500/20 font-medium cursor-pointer"
-                >
-                  <option value={-1}>None (Default 1 plate per entry)</option>
-                  {columnNames.map((c, idx) => (
-                    <option key={idx} value={idx}>
-                      Column {idx + 1}: {c}
-                    </option>
-                  ))}
-                </select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full inline-flex items-center justify-between bg-background border border-input rounded-xl py-2 px-3 text-xs text-foreground font-medium hover:bg-muted/40 cursor-pointer shadow-2xs"
+                    >
+                      <span className="truncate">
+                        {countColIdx >= 0 && columnNames[countColIdx]
+                          ? `Column ${countColIdx + 1}: ${columnNames[countColIdx]}`
+                          : 'None (Default 1 plate)'}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64 max-h-60 overflow-y-auto">
+                    <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                      Portion Count Column
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={String(countColIdx)}
+                      onValueChange={(val) => setCountColIdx(Number(val))}
+                    >
+                      <DropdownMenuRadioItem value="-1" className="text-xs cursor-pointer">
+                        None (Default 1 plate per entry)
+                      </DropdownMenuRadioItem>
+                      {columnNames.map((c, idx) => (
+                        <DropdownMenuRadioItem key={idx} value={String(idx)} className="text-xs cursor-pointer">
+                          Column {idx + 1}: {c}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>

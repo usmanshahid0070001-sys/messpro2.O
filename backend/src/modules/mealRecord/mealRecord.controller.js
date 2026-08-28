@@ -130,6 +130,19 @@ export const getLiveQRAttendance = catchAsync(async (req, res) => {
     date: activeDate
   }).populate('studentId', 'name id').lean();
 
+  // Resolve any records with missing populated studentId
+  const missingRolls = attendances
+    .filter(a => !a.studentId?.name && a.rollNumber)
+    .map(a => a.rollNumber.toLowerCase());
+
+  const fallbackUserMap = new Map();
+  if (missingRolls.length > 0) {
+    const foundUsers = await User.find({ id: { $in: missingRolls } }).select('name id').lean();
+    foundUsers.forEach(u => {
+      if (u.id) fallbackUserMap.set(u.id.toLowerCase(), u);
+    });
+  }
+
   const resultData = {};
   mealTypes.forEach(mt => {
     resultData[mt] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
@@ -149,9 +162,13 @@ export const getLiveQRAttendance = catchAsync(async (req, res) => {
       resultData[mType].summary.totalAttendance += 1;
     }
 
+    const matchedUser = att.studentId || (att.rollNumber ? fallbackUserMap.get(att.rollNumber.toLowerCase()) : null);
+    const resolvedName = matchedUser?.name || (att.isGuest ? 'Guest Entry' : (att.rollNumber || 'Resident'));
+    const resolvedRoll = matchedUser?.id || att.rollNumber;
+
     resultData[mType].data.push({
-      name: att.studentId?.name || 'Unknown',
-      rollNumber: att.studentId?.id || att.rollNumber,
+      name: resolvedName,
+      rollNumber: resolvedRoll,
       isGuest: att.isGuest,
       attendanceCount: att.attendance?.count || 0,
       selectionCount: selCount,
@@ -194,6 +211,19 @@ export const getDailyOverview = catchAsync(async (req, res) => {
     date: targetDate
   }).populate('studentId', 'name id').lean();
 
+  // Resolve any records with missing populated studentId
+  const missingRolls = attendances
+    .filter(a => !a.studentId?.name && a.rollNumber)
+    .map(a => a.rollNumber.toLowerCase());
+
+  const fallbackUserMap = new Map();
+  if (missingRolls.length > 0) {
+    const foundUsers = await User.find({ id: { $in: missingRolls } }).select('name id').lean();
+    foundUsers.forEach(u => {
+      if (u.id) fallbackUserMap.set(u.id.toLowerCase(), u);
+    });
+  }
+
   const resultData = {};
   mealTypes.forEach(mt => {
     resultData[mt] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
@@ -213,9 +243,13 @@ export const getDailyOverview = catchAsync(async (req, res) => {
       resultData[mType].summary.totalAttendance += 1;
     }
 
+    const matchedUser = att.studentId || (att.rollNumber ? fallbackUserMap.get(att.rollNumber.toLowerCase()) : null);
+    const resolvedName = matchedUser?.name || (att.isGuest ? 'Guest Entry' : (att.rollNumber || 'Resident'));
+    const resolvedRoll = matchedUser?.id || att.rollNumber;
+
     resultData[mType].data.push({
-      name: att.studentId?.name || 'Unknown',
-      rollNumber: att.studentId?.id || att.rollNumber,
+      name: resolvedName,
+      rollNumber: resolvedRoll,
       isGuest: att.isGuest,
       attendanceCount: att.attendance?.count || 0,
       selectionCount: selCount,

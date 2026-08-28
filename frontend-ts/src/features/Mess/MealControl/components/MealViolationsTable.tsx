@@ -7,8 +7,18 @@ import {
   UserX,
   Utensils,
   User,
+  ChevronDown,
 } from 'lucide-react'
 import type { MealViolationRecord } from '@/hooks/queries/useMealQueries'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface MealViolationsTableProps {
   records: MealViolationRecord[]
@@ -83,19 +93,39 @@ export default function MealViolationsTable({
         <div className="flex flex-wrap items-center gap-2">
           {/* Meal Type Filter */}
           {availableMealTypes.length > 0 && (
-            <select
-              value={selectedMealType}
-              onChange={(e) => setSelectedMealType(e.target.value)}
-              aria-label="Filter by meal type"
-              className="h-8 px-2.5 rounded-xl border border-border/80 bg-background text-xs font-medium text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
-            >
-              <option value="all">All Meals</option>
-              {availableMealTypes.map((mt) => (
-                <option key={mt} value={mt}>
-                  {mt}
-                </option>
-              ))}
-            </select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-between gap-1.5 px-3 py-1.5 rounded-xl bg-muted/40 border border-border/80 text-xs font-medium text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer min-w-[110px]"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Utensils className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="truncate">{selectedMealType === 'all' ? 'All Meals' : selectedMealType}</span>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                  Meal Slot
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={selectedMealType}
+                  onValueChange={(val) => setSelectedMealType(val)}
+                >
+                  <DropdownMenuRadioItem value="all" className="text-xs cursor-pointer">
+                    All Meals
+                  </DropdownMenuRadioItem>
+                  {availableMealTypes.map((mt) => (
+                    <DropdownMenuRadioItem key={mt} value={mt} className="text-xs cursor-pointer">
+                      {mt}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
 
           {/* Category Filter */}

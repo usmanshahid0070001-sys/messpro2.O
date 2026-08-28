@@ -1,6 +1,14 @@
-import React from 'react'
-import { Search } from 'lucide-react'
+import { Search, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 type ServiceFilterType = 'all' | 'cleaned-today' | 'pending-today' | 'never'
 type ServiceSortType = 'recent' | 'name' | 'least'
@@ -17,6 +25,12 @@ interface ServiceFilterBarProps {
   pendingCount: number
 }
 
+const SORT_LABELS: Record<ServiceSortType, string> = {
+  recent: 'Recently Cleaned',
+  name: 'Room Name (A → Z)',
+  least: 'Fewest Cleanings',
+}
+
 export default function ServiceFilterBar({
   searchTerm,
   onSearchChange,
@@ -29,10 +43,10 @@ export default function ServiceFilterBar({
   pendingCount,
 }: ServiceFilterBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center justify-between bg-card p-3 sm:p-3.5 rounded-xl border border-border shadow-xs">
+    <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center justify-between bg-card p-3 sm:p-3.5 rounded-2xl border border-border shadow-xs">
       {/* Search */}
       <div className="relative flex-1 min-w-0">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           placeholder="Search room name (e.g. Room 101, A-1)..."
           value={searchTerm}
@@ -43,13 +57,13 @@ export default function ServiceFilterBar({
 
       {/* Filter pills and sort select */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg">
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl">
           <button
             type="button"
             onClick={() => onFilterChange('all')}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               filter === 'all'
-                ? 'bg-background text-foreground shadow-xs font-semibold'
+                ? 'bg-background text-foreground shadow-2xs font-semibold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -58,9 +72,9 @@ export default function ServiceFilterBar({
           <button
             type="button"
             onClick={() => onFilterChange('cleaned-today')}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               filter === 'cleaned-today'
-                ? 'bg-background text-foreground shadow-xs font-semibold'
+                ? 'bg-background text-foreground shadow-2xs font-semibold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -69,9 +83,9 @@ export default function ServiceFilterBar({
           <button
             type="button"
             onClick={() => onFilterChange('pending-today')}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               filter === 'pending-today'
-                ? 'bg-background text-foreground shadow-xs font-semibold'
+                ? 'bg-background text-foreground shadow-2xs font-semibold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -79,15 +93,40 @@ export default function ServiceFilterBar({
           </button>
         </div>
 
-        <select
-          value={sortOrder}
-          onChange={(e) => onSortChange(e.target.value as ServiceSortType)}
-          className="h-8 px-2 rounded-lg border border-border bg-background text-xs font-medium text-foreground cursor-pointer focus:ring-1 focus:ring-teal-500"
-        >
-          <option value="recent">Recently Cleaned</option>
-          <option value="name">Room Name (A-Z)</option>
-          <option value="least">Fewest Cleanings</option>
-        </select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center justify-between gap-1.5 px-3 py-1.5 rounded-xl bg-muted/40 border border-border/80 text-xs font-medium text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer min-w-[145px]"
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <ArrowUpDown className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                <span className="truncate">{SORT_LABELS[sortOrder]}</span>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+              Sort Cleaning Logs
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup
+              value={sortOrder}
+              onValueChange={(val) => onSortChange(val as ServiceSortType)}
+            >
+              <DropdownMenuRadioItem value="recent" className="text-xs cursor-pointer">
+                Recently Cleaned
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="name" className="text-xs cursor-pointer">
+                Room Name (A → Z)
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="least" className="text-xs cursor-pointer">
+                Fewest Cleanings
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )

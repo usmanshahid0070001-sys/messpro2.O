@@ -18,6 +18,12 @@ export const exportHostelsToExcel = (hostels: HostelTenant[]) => {
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const colKeys = Object.keys(excelData[0] || {});
+  worksheet['!cols'] = colKeys.map((key) => {
+    const maxLen = Math.max(key.length, ...excelData.map((r: any) => String(r[key] || '').length));
+    return { wch: Math.min(Math.max(maxLen + 4, 12), 40) };
+  });
+
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Hostel Tenants');
   XLSX.writeFile(workbook, `MessPro_Hostel_Tenants_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -35,6 +41,12 @@ export const exportPlansToExcel = (plans: SubscriptionPlan[]) => {
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const colKeys = Object.keys(excelData[0] || {});
+  worksheet['!cols'] = colKeys.map((key) => {
+    const maxLen = Math.max(key.length, ...excelData.map((r: any) => String(r[key] || '').length));
+    return { wch: Math.min(Math.max(maxLen + 4, 12), 40) };
+  });
+
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Subscription Plans');
   XLSX.writeFile(workbook, `MessPro_Plans_${new Date().toISOString().split('T')[0]}.xlsx`);

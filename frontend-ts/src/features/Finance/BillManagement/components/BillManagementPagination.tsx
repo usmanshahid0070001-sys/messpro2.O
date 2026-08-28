@@ -1,5 +1,12 @@
 import React from 'react'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface BillManagementPaginationProps {
   currentPage: number
@@ -48,22 +55,34 @@ export default function BillManagementPagination({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-card border border-border/80 rounded-2xl shadow-xs text-xs">
       {/* Left: Rows Per Page & Range Info */}
-      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground font-medium">Rows per page:</span>
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              onPageSizeChange(Number(e.target.value))
-              onPageChange(1)
-            }}
-            className="px-2.5 py-1 rounded-xl bg-muted/40 border border-border/80 text-foreground font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer shadow-2xs"
-          >
-            <option value={5} className="bg-card text-foreground">5</option>
-            <option value={10} className="bg-card text-foreground">10</option>
-            <option value={25} className="bg-card text-foreground">25</option>
-            <option value={50} className="bg-card text-foreground">50</option>
-          </select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-muted/40 border border-border/80 text-foreground font-semibold hover:bg-muted transition-colors cursor-pointer shadow-2xs"
+              >
+                <span>{pageSize}</span>
+                <ChevronDown className="w-3 h-3 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-24 min-w-0">
+              <DropdownMenuRadioGroup
+                value={String(pageSize)}
+                onValueChange={(val) => {
+                  onPageSizeChange(Number(val))
+                  onPageChange(1)
+                }}
+              >
+                {[5, 10, 25, 50].map((size) => (
+                  <DropdownMenuRadioItem key={size} value={String(size)} className="text-xs cursor-pointer">
+                    {size}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <span className="text-muted-foreground font-mono">

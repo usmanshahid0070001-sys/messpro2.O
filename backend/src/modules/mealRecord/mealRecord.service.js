@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { io } from '../../server.js';
 import User from '../auth/auth.model.js';
@@ -226,21 +227,51 @@ class MealRecordService {
   async upsertAttendance(hostelId, date, mealType, mealInfo, records, recordedBy) {
     // 1. Deduplicate incoming records (last one wins)
     const uniqueRecordsMap = new Map();
-    records.forEach(r => uniqueRecordsMap.set(r.rollNumber, r));
+    records.forEach(r => {
+      if (r && r.rollNumber !== undefined && r.rollNumber !== null) {
+        uniqueRecordsMap.set(String(r.rollNumber).trim(), r);
+      }
+    });
     const uniqueRecords = Array.from(uniqueRecordsMap.values());
-    const rollNumbers = uniqueRecords.map(r => r.rollNumber);
+    const rollNumbers = uniqueRecords.map(r => String(r.rollNumber).trim());
+    const lowerRolls = rollNumbers.map(r => r.toLowerCase());
 
-    // Fetch existing records to check their selection counts
+    // Fetch existing records to check their selection counts and preserve existing studentIds
     const existingRecords = await MealRecord.find({
-      hostelId, date, mealType, rollNumber: { $in: rollNumbers }
+      hostelId,
+      date,
+      mealType,
+      $or: [
+        { rollNumber: { $in: rollNumbers } },
+        { rollNumber: { $in: lowerRolls } }
+      ]
     });
     const recordMap = new Map();
-    existingRecords.forEach(r => recordMap.set(r.rollNumber, r));
+    existingRecords.forEach(r => {
+      if (r.rollNumber) {
+        recordMap.set(r.rollNumber, r);
+        recordMap.set(r.rollNumber.toLowerCase(), r);
+      }
+    });
 
-    // 2. Global User Lookup (to check if they are guests)
-    const existingUsers = await User.find({ id: { $in: rollNumbers } }).select('_id id hostelId');
+    // 2. Global User Lookup (case-insensitive and by ObjectId if applicable)
+    const objectIdRolls = rollNumbers.filter(r => mongoose.isValidObjectId(r));
+    const existingUsers = await User.find({
+      $or: [
+        { id: { $in: rollNumbers } },
+        { id: { $in: lowerRolls } },
+        ...(objectIdRolls.length > 0 ? [{ _id: { $in: objectIdRolls } }] : [])
+      ]
+    }).select('_id id name hostelId');
+
     const userMap = new Map();
-    existingUsers.forEach(u => userMap.set(u.id, u));
+    existingUsers.forEach(u => {
+      if (u.id) {
+        userMap.set(u.id, u);
+        userMap.set(u.id.toLowerCase(), u);
+      }
+      userMap.set(u._id.toString(), u);
+    });
 
     const bulkOps = [];
 
@@ -248,28 +279,33 @@ class MealRecordService {
     uniqueRecords.forEach(record => {
       // This 'count' is the exact number from the Manager's +/- UI buttons
       const { rollNumber, count: uiCount } = record;
-      const user = userMap.get(rollNumber);
+      const cleanRoll = String(rollNumber).trim();
+      const existingRecord = recordMap.get(cleanRoll) || recordMap.get(cleanRoll.toLowerCase());
 
-      const isGuest = !user || user.hostelId.toString() !== hostelId.toString();
-      const studentId = user ? user._id : null;
+      const user = userMap.get(cleanRoll) || userMap.get(cleanRoll.toLowerCase());
+      const studentId = user ? user._id : (existingRecord?.studentId || null);
+      const isGuest = user
+        ? (user.hostelId.toString() !== hostelId.toString())
+        : (existingRecord?.isGuest ?? true);
+
+      const targetRollNumber = existingRecord?.rollNumber || (user?.id ? user.id : cleanRoll);
 
       if (uiCount === 0) {
         // Manager clicked '-' until it reached 0. 
-        const existingRecord = recordMap.get(rollNumber);
         const selCount = existingRecord?.selection?.count || 0;
 
         if (selCount === 0) {
           // Both selection and attendance are 0, completely delete the document
           bulkOps.push({
             deleteOne: {
-              filter: { hostelId, date, mealType, rollNumber }
+              filter: { hostelId, date, mealType, rollNumber: targetRollNumber }
             }
           });
         } else {
           // We reset the attendance side but keep their pre-selection alive!
           bulkOps.push({
             updateOne: {
-              filter: { hostelId, date, mealType, rollNumber },
+              filter: { hostelId, date, mealType, rollNumber: targetRollNumber },
               update: {
                 $set: {
                   'attendance.hasEaten': false,
@@ -282,13 +318,19 @@ class MealRecordService {
           });
         }
       } else {
-        // Manager clicked '+' and hit save. We overwrite the count!
+        // Manager clicked '+' or 'Mark Pre-Reserved' and hit save. We overwrite the count!
         bulkOps.push({
           updateOne: {
-            filter: { hostelId, date, mealType, rollNumber },
+            filter: { hostelId, date, mealType, rollNumber: targetRollNumber },
             update: {
               $set: {
-                hostelId, date, mealType, mealInfo, rollNumber, isGuest, studentId,
+                hostelId,
+                date,
+                mealType,
+                mealInfo,
+                rollNumber: targetRollNumber,
+                isGuest,
+                studentId,
                 'attendance.hasEaten': true,
                 'attendance.count': uiCount, // Overwrite with the exact UI number
                 'attendance.recordedBy': recordedBy,

@@ -4,16 +4,14 @@ import {
   Loader2,
   Building2,
   MapPin,
-  QrCode,
   ShieldCheck,
   Check,
   RefreshCw,
-  Sparkles,
   Calendar,
   Layers,
-  Clock,
   Globe,
   Sliders,
+  ChevronDown,
 } from 'lucide-react'
 import { useUpdateHostelSettings } from '@/hooks/mutations/useSuperadminMutations'
 import { useGetPlans, type HostelTenant } from '@/hooks/queries/useSuperadminQueries'
@@ -21,6 +19,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface HostelSettingsModalProps {
   isOpen: boolean
@@ -172,19 +179,44 @@ export default function HostelSettingsModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Plan Selection */}
               <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">Assigned Plan Tier</label>
-                <select
-                  value={planId}
-                  onChange={(e) => setPlanId(e.target.value)}
-                  className="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-hidden focus:ring-1 focus:ring-ring"
-                >
-                  <option value="">-- Keep Current Plan --</option>
-                  {plans.map((p) => (
-                    <option key={p._id} value={p._id}>
-                      {p.name} (${p.price}/mo)
-                    </option>
-                  ))}
-                </select>
+                <label className="font-semibold text-foreground text-xs">Assigned Plan Tier</label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full inline-flex items-center justify-between h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs hover:bg-muted/40 cursor-pointer shadow-2xs"
+                    >
+                      <span className="truncate">
+                        {plans.find((p) => p._id === planId)
+                          ? `${plans.find((p) => p._id === planId)?.name} ($${plans.find((p) => p._id === planId)?.price}/mo)`
+                          : '-- Keep Current Plan --'}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64">
+                    <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                      Subscription Plans
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={planId}
+                      onValueChange={(val) => setPlanId(val)}
+                    >
+                      <DropdownMenuRadioItem value="" className="text-xs cursor-pointer">
+                        -- Keep Current Plan --
+                      </DropdownMenuRadioItem>
+                      {plans.map((p) => (
+                        <DropdownMenuRadioItem key={p._id} value={p._id} className="text-xs cursor-pointer flex items-center justify-between">
+                          <span>{p.name}</span>
+                          <span className="font-mono font-bold text-purple-600 dark:text-purple-400">
+                            ${p.price}/mo
+                          </span>
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {/* Plan Renewal / Additional Days */}
