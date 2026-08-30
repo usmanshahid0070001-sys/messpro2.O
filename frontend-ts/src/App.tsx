@@ -33,6 +33,25 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const LandingPage = React.lazy(() => import("./features/landing/LandingPage"));
 
+const LandingRouteWrapper: React.FC = () => {
+  // If running as an installed PWA (standalone display mode), launch directly into the app
+  const isStandalone =
+    typeof window !== "undefined" &&
+    (window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true ||
+      document.referrer.includes("android-app://"));
+
+  if (isStandalone) {
+    return <Navigate to="/app" replace />;
+  }
+
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <LandingPage />
+    </Suspense>
+  );
+};
+
 const App = () => {
   return (
     <ErrorBoundary>
@@ -41,23 +60,9 @@ const App = () => {
         <BrowserRouter>
           <AuthSync>
             <Routes>
-              {/* Landing Page Routes (Accessible to everyone) */}
-              <Route
-                path="/"
-                element={
-                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
-                    <LandingPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/landing"
-                element={
-                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
-                    <LandingPage />
-                  </Suspense>
-                }
-              />
+              {/* Landing Page Routes (Accessible in browser, bypassed in installed PWA) */}
+              <Route path="/" element={<LandingRouteWrapper />} />
+              <Route path="/landing" element={<LandingRouteWrapper />} />
 
               {/* Public Routes (Accessible only if NOT logged in) */}
               <Route element={<PublicRoute />}>

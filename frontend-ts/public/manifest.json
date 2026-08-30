@@ -1,9 +1,9 @@
 {
-  "id": "/#messpro-app",
+  "id": "/app#messpro-app",
   "name": "MessPro 2.0 — Smart Hostel & Mess Management",
   "short_name": "MessPro",
   "description": "Smart SaaS platform for hostel mess operations, billing, dynamic meal pricing, and automated attendance.",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -45,7 +45,7 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View overall hostel and mess activity",
-      "url": "/",
+      "url": "/app",
       "icons": [
         {
           "src": "/pwa-192x192.png",
@@ -57,7 +57,7 @@
       "name": "Attendance",
       "short_name": "Attendance",
       "description": "Mark and monitor meal attendance",
-      "url": "/attendance",
+      "url": "/app/attendance/qr",
       "icons": [
         {
           "src": "/pwa-192x192.png",

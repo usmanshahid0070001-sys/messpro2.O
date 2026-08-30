@@ -1,9 +1,8 @@
 // MessPro 2.0 Progressive Web App (PWA) Service Worker
-// Version: 1.0.1
+// Version: 1.0.2
 
-const CACHE_NAME = 'messpro-static-v1';
+const CACHE_NAME = 'messpro-static-v2';
 const CORE_PRECACHE_URLS = [
-  '/',
   '/index.html',
   '/manifest.json',
   '/favicon.svg',
@@ -83,7 +82,7 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          return (await caches.match('/')) || (await caches.match('/index.html')) || Response.error();
+          return (await caches.match('/index.html')) || Response.error();
         })
     );
     return;
