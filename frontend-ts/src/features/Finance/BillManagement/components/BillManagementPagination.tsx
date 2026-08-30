@@ -55,6 +55,7 @@ export default function BillManagementPagination({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-card border border-border/80 rounded-2xl shadow-xs text-xs">
       {/* Left: Rows Per Page & Range Info */}
+      <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground font-medium">Rows per page:</span>
           <DropdownMenu>

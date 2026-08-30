@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./features/app/AppLayout";
 import Dashboard from "./features/app/Dashboard";
@@ -30,6 +31,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { StorageWarningModal } from "@/components/StorageWarningModal";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
+const LandingPage = React.lazy(() => import("./features/landing/LandingPage"));
+
 const App = () => {
   return (
     <ErrorBoundary>
@@ -37,94 +40,112 @@ const App = () => {
         <StorageWarningModal />
         <BrowserRouter>
           <AuthSync>
-          <Routes>
-            {/* Public Routes (Accessible only if NOT logged in) */}
-            <Route element={<PublicRoute />}>
-              <Route path="/login" element={<LoginForm />} />
-            </Route>
+            <Routes>
+              {/* Landing Page Routes (Accessible to everyone) */}
+              <Route
+                path="/"
+                element={
+                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                    <LandingPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/landing"
+                element={
+                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                    <LandingPage />
+                  </Suspense>
+                }
+              />
 
-            {/* Protected Routes (Accessible only if logged in) */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/app" element={<AppLayout />}>
-                {/* General Authenticated Routes */}
-                <Route index element={<Dashboard />} />
-                <Route path="complaints" element={<ComplaintIndex />} />
-                <Route path="meals/schedule" element={<WeeklySchedule />} />
-                <Route path="meals/history" element={<MealHistoryPage />} />
+              {/* Public Routes (Accessible only if NOT logged in) */}
+              <Route element={<PublicRoute />}>
+                <Route path="/login" element={<LoginForm />} />
+              </Route>
 
-                {/* Staff / Admin / Management Routes */}
-                <Route element={<ProtectedRoute allowedRoles={['superadmin', 'admin', 'manager']} />}>
-                  {/* User Directory — Requires user_management */}
-                  <Route element={<ProtectedRoute requiredPermission="user_management" />}>
-                    <Route path="users" element={<ManageUsers />} />
+              {/* Protected Routes (Accessible only if logged in) */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/app" element={<AppLayout />}>
+                  {/* General Authenticated Routes */}
+                  <Route index element={<Dashboard />} />
+                  <Route path="complaints" element={<ComplaintIndex />} />
+                  <Route path="meals/schedule" element={<WeeklySchedule />} />
+                  <Route path="meals/history" element={<MealHistoryPage />} />
+
+                  {/* Staff / Admin / Management Routes */}
+                  <Route element={<ProtectedRoute allowedRoles={['superadmin', 'admin', 'manager']} />}>
+                    {/* User Directory — Requires user_management */}
+                    <Route element={<ProtectedRoute requiredPermission="user_management" />}>
+                      <Route path="users" element={<ManageUsers />} />
+                    </Route>
+
+                    {/* Residence Management — Requires residence_management */}
+                    <Route element={<ProtectedRoute requiredPermission="residence_management" requiredFeature="residence_management" />}>
+                      <Route path="residence/allocation" element={<RoomAllocation />} />
+                      <Route path="residence/services" element={<RoomService />} />
+                    </Route>
+
+                    {/* Dining Management */}
+                    <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
+                    <Route path="meals/control" element={<MealControlPage />} />
+                    <Route path="meals/violations" element={<Navigate to="/app/meals/control" replace />} />
+                    <Route path="meals/overview" element={<Navigate to="/app/meals/control" replace />} />
+
+                    {/* Attendance Methods */}
+                    <Route element={<ProtectedRoute requiredFeature="qr_attendance" />}>
+                      <Route path="attendance/qr" element={<QRAttendancePage />} />
+                    </Route>
+                    <Route element={<ProtectedRoute requiredFeature="manual_attendance" />}>
+                      <Route path="attendance/manual" element={<ManualAttendancePage />} />
+                      <Route path="meals/manual-attendance" element={<Navigate to="/app/attendance/manual" replace />} />
+                    </Route>
+                    <Route element={<ProtectedRoute requiredFeature="biometric_attendance" />}>
+                      <Route path="attendance/biometric" element={<BiometricAttendancePage />} />
+                      <Route path="meals/biometric" element={<Navigate to="/app/attendance/biometric" replace />} />
+                    </Route>
+
+                    {/* Finance & Invoicing */}
+                    <Route element={<ProtectedRoute requiredPermission="bill_management" requiredFeature="bill_management" />}>
+                      <Route path="finance/bills" element={<BillManagementPage />} />
+                      <Route path="finance/manage-bills" element={<Navigate to="/app/finance/bills" replace />} />
+                    </Route>
+                    <Route path="finance/meal-prices" element={<MealPricesPage />} />
+                    <Route element={<ProtectedRoute requiredPermission="bill_generation" requiredFeature="bill_generation" />}>
+                      <Route path="finance/generate-bills" element={<BillGenerationPage />} />
+                      <Route path="finance/bills/generate" element={<Navigate to="/app/finance/generate-bills" replace />} />
+                    </Route>
                   </Route>
 
-                  {/* Residence Management — Requires residence_management */}
-                  <Route element={<ProtectedRoute requiredPermission="residence_management" requiredFeature="residence_management" />}>
-                    <Route path="residence/allocation" element={<RoomAllocation />} />
-                    <Route path="residence/services" element={<RoomService />} />
+                  {/* Hostel Administrator Configuration Only */}
+                  <Route element={<ProtectedRoute allowedRoles={['admin']} requiredPermission="hostel_configuration" />}>
+                    <Route path="hostel-configuration" element={<HostelConfiguration />} />
                   </Route>
 
-                  {/* Dining Management */}
-                  <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
-                  <Route path="meals/control" element={<MealControlPage />} />
-                  <Route path="meals/violations" element={<Navigate to="/app/meals/control" replace />} />
-                  <Route path="meals/overview" element={<Navigate to="/app/meals/control" replace />} />
-
-                  {/* Attendance Methods */}
-                  <Route element={<ProtectedRoute requiredFeature="qr_attendance" />}>
-                    <Route path="attendance/qr" element={<QRAttendancePage />} />
-                  </Route>
-                  <Route element={<ProtectedRoute requiredFeature="manual_attendance" />}>
-                    <Route path="attendance/manual" element={<ManualAttendancePage />} />
-                    <Route path="meals/manual-attendance" element={<Navigate to="/app/attendance/manual" replace />} />
-                  </Route>
-                  <Route element={<ProtectedRoute requiredFeature="biometric_attendance" />}>
-                    <Route path="attendance/biometric" element={<BiometricAttendancePage />} />
-                    <Route path="meals/biometric" element={<Navigate to="/app/attendance/biometric" replace />} />
+                  {/* Resident / Student Accessible Routes */}
+                  <Route element={<ProtectedRoute allowedRoles={['student', 'manager', 'admin', 'superadmin']} />}>
+                    <Route element={<ProtectedRoute requiredFeature="residence_management" />}>
+                      <Route path="my-room" element={<MyRoom />} />
+                    </Route>
+                    <Route path="meals/qr" element={<StudentAttendancePage />} />
+                    <Route path="meals/attendance" element={<Navigate to="/app/meals/qr" replace />} />
+                    <Route path="attendance/mark" element={<Navigate to="/app/meals/qr" replace />} />
+                    <Route path="my-bills" element={<MyBillsPage />} />
+                    <Route path="finance/my-bills" element={<Navigate to="/app/my-bills" replace />} />
                   </Route>
 
-                  {/* Finance & Invoicing */}
-                  <Route element={<ProtectedRoute requiredPermission="bill_management" requiredFeature="bill_management" />}>
-                    <Route path="finance/bills" element={<BillManagementPage />} />
-                    <Route path="finance/manage-bills" element={<Navigate to="/app/finance/bills" replace />} />
+                  {/* Superadmin Dedicated Governance Routes */}
+                  <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
+                    <Route path="superadmin/hostels" element={<ManageTenantsPage />} />
+                    <Route path="superadmin/plans" element={<ManagePlansPage />} />
                   </Route>
-                  <Route path="finance/meal-prices" element={<MealPricesPage />} />
-                  <Route element={<ProtectedRoute requiredPermission="bill_generation" requiredFeature="bill_generation" />}>
-                    <Route path="finance/generate-bills" element={<BillGenerationPage />} />
-                    <Route path="finance/bills/generate" element={<Navigate to="/app/finance/generate-bills" replace />} />
-                  </Route>
-                </Route>
-
-                {/* Hostel Administrator Configuration Only */}
-                <Route element={<ProtectedRoute allowedRoles={['admin']} requiredPermission="hostel_configuration" />}>
-                  <Route path="hostel-configuration" element={<HostelConfiguration />} />
-                </Route>
-
-                {/* Resident / Student Accessible Routes */}
-                <Route element={<ProtectedRoute allowedRoles={['student', 'manager', 'admin', 'superadmin']} />}>
-                  <Route element={<ProtectedRoute requiredFeature="residence_management" />}>
-                    <Route path="my-room" element={<MyRoom />} />
-                  </Route>
-                  <Route path="meals/qr" element={<StudentAttendancePage />} />
-                  <Route path="meals/attendance" element={<Navigate to="/app/meals/qr" replace />} />
-                  <Route path="attendance/mark" element={<Navigate to="/app/meals/qr" replace />} />
-                  <Route path="my-bills" element={<MyBillsPage />} />
-                  <Route path="finance/my-bills" element={<Navigate to="/app/my-bills" replace />} />
-                </Route>
-
-                {/* Superadmin Dedicated Governance Routes */}
-                <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
-                  <Route path="superadmin/hostels" element={<ManageTenantsPage />} />
-                  <Route path="superadmin/plans" element={<ManagePlansPage />} />
                 </Route>
               </Route>
-            </Route>
 
-            {/* Catch-all redirect */}
-            <Route path="*" element={<Navigate to="/app" replace />} />
-          </Routes>
-        </AuthSync>
+              {/* Catch-all redirect to Landing Page */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AuthSync>
         </BrowserRouter>
         <Toaster />
       </ThemeProvider>
