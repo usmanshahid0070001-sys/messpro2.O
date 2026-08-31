@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   QrCode,
   BedDouble,
@@ -11,7 +12,8 @@ import {
   Sparkles,
   ShieldCheck,
   Zap,
-  ArrowRight
+  ArrowRight,
+  BookOpen
 } from 'lucide-react';
 
 interface FeatureTab {
@@ -210,7 +212,7 @@ export const SolutionSection: React.FC = () => {
                 ))}
               </div>
 
-              <div className="pt-3">
+              <div className="pt-3 flex flex-wrap items-center gap-4">
                 <a
                   href="#cta"
                   className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-primary hover:underline group"
@@ -218,6 +220,24 @@ export const SolutionSection: React.FC = () => {
                   <span>Ready to deploy {activeFeature.name}?</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </a>
+
+                <Link
+                  to={`/docs?section=${
+                    activeTabId === 'rooms'
+                      ? 'residence'
+                      : activeTabId === 'meals'
+                      ? 'dining-mess'
+                      : activeTabId === 'billing'
+                      ? 'billing-finance'
+                      : activeTabId === 'governance'
+                      ? 'user-management'
+                      : activeTabId
+                  }`}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span>Feature Guide &rarr;</span>
+                </Link>
               </div>
             </div>
 

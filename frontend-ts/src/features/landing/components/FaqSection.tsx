@@ -1,11 +1,15 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   HelpCircle,
   Plus,
   Minus,
   Search,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  BookOpen,
+  ArrowRight,
+  Mail
 } from 'lucide-react';
 
 interface FaqItem {
@@ -169,6 +173,36 @@ export const FaqSection: React.FC = () => {
               No questions found matching "{searchQuery}". Please contact our support team.
             </div>
           )}
+        </div>
+
+        {/* Extended Support & Docs Callout */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-card/60 dark:bg-neutral-900/60 border border-border/80 dark:border-white/10 max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 backdrop-blur-xl shadow-xs glass-bevel">
+          <div className="space-y-1 text-center sm:text-left">
+            <span className="text-sm sm:text-base font-bold text-foreground block">
+              Still have questions about how MessPro works?
+            </span>
+            <span className="text-xs text-muted-foreground block">
+              Explore our step-by-step feature guides, setup walk-throughs, and role permissions.
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Link
+              to="/docs"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Read Docs</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+            <a
+              href="mailto:support@messpro.io"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/70 bg-card hover:bg-muted text-foreground text-xs font-semibold transition-colors"
+            >
+              <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>Email Team</span>
+            </a>
+          </div>
         </div>
 
       </div>

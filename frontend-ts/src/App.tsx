@@ -32,6 +32,9 @@ import { StorageWarningModal } from "@/components/StorageWarningModal";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const LandingPage = React.lazy(() => import("./features/landing/LandingPage"));
+const TermsPage = React.lazy(() => import("./features/legal/TermsPage"));
+const PrivacyPolicyPage = React.lazy(() => import("./features/legal/PrivacyPolicyPage"));
+const DocumentationPage = React.lazy(() => import("./features/docs/DocumentationPage"));
 
 const LandingRouteWrapper: React.FC = () => {
   // If running as an installed PWA (standalone display mode), launch directly into the app
@@ -60,9 +63,34 @@ const App = () => {
         <BrowserRouter>
           <AuthSync>
             <Routes>
-              {/* Landing Page Routes (Accessible in browser, bypassed in installed PWA) */}
+              {/* Landing & Informational Public Routes */}
               <Route path="/" element={<LandingRouteWrapper />} />
               <Route path="/landing" element={<LandingRouteWrapper />} />
+              <Route
+                path="/terms"
+                element={
+                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                    <TermsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/privacy"
+                element={
+                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                    <PrivacyPolicyPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/docs"
+                element={
+                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                    <DocumentationPage />
+                  </Suspense>
+                }
+              />
+              <Route path="/documentation" element={<Navigate to="/docs" replace />} />
 
               {/* Public Routes (Accessible only if NOT logged in) */}
               <Route element={<PublicRoute />}>

@@ -16,6 +16,9 @@ import {
   Fingerprint,
   ClipboardCheck,
   Layers,
+  BookOpen,
+  ShieldCheck,
+  Scale,
 } from 'lucide-react';
 import type { RootState } from '@/store';
 import type { PlanFeature } from '@/store/slices/HostelSlice';
@@ -339,9 +342,10 @@ export function useNavigation() {
   }, [role, isAuthenticated, features, perms]);
 
   const projects = [
-    { name: "Landing Page", url: "https://messprouet.vercel.app", icon: Globe },
-    { name: "Terms & Policy", url: "https://messprouet.vercel.app", icon: Shield },
-    { name: "Legal Doc", url: "https://messprouet.vercel.app", icon: FileText },
+    { name: "Landing Page", url: "/", icon: Globe },
+    { name: "Documentation", url: "/docs", icon: BookOpen },
+    { name: "Terms of Service", url: "/terms", icon: Scale },
+    { name: "Privacy Policy", url: "/privacy", icon: ShieldCheck },
   ];
 
   return { navMain, projects };
