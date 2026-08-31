@@ -9,7 +9,8 @@ import {
   ArrowRight,
   Sparkles,
   LayoutDashboard,
-  LogIn
+  LogIn,
+  BookOpen
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeProvider';
 import type { RootState } from '@/store';
@@ -164,6 +165,14 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
               </button>
             );
           })}
+
+          {/* Docs link */}
+          <Link
+            to="/docs"
+            className="relative z-10 px-3 py-1 text-xs font-semibold rounded-full text-muted-foreground hover:text-foreground transition-colors duration-200 flex items-center gap-1"
+          >
+            <span>Docs</span>
+          </Link>
         </nav>
 
         {/* Right: Actions & Theme Toggle */}
@@ -182,7 +191,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
             )}
           </button>
 
-          {/* Login or Dashboard Button with lethal highlight */}
+          {/* Login or Dashboard Button */}
           {isAuthenticated ? (
             <Link
               to="/app"
@@ -214,7 +223,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
         </div>
       </header>
 
-      {/* Mobile Glass Drawer with Staggered Cascading Reveal */}
+      {/* Mobile Glass Drawer */}
       {mobileMenuOpen && (
         <div className="pointer-events-auto absolute top-14 inset-x-4 max-w-sm mx-auto rounded-3xl border border-white/20 dark:border-white/10 bg-background/95 dark:bg-neutral-950/95 backdrop-blur-2xl p-4 space-y-2.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
           <div className="grid grid-cols-2 gap-1.5">
@@ -236,6 +245,32 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
                 </button>
               );
             })}
+
+            {/* Mobile Docs Link */}
+            <Link
+              to="/docs"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-all"
+            >
+              <span>Documentation</span>
+              <BookOpen className="w-3 h-3" />
+            </Link>
+
+            {/* Mobile Terms & Privacy */}
+            <Link
+              to="/terms"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-muted/40 dark:bg-white/5 text-foreground hover:bg-muted"
+            >
+              <span>Terms</span>
+            </Link>
+            <Link
+              to="/privacy"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-muted/40 dark:bg-white/5 text-foreground hover:bg-muted"
+            >
+              <span>Privacy</span>
+            </Link>
           </div>
 
           <div className="pt-2 border-t border-border/60 dark:border-white/10 flex items-center justify-between">
@@ -254,3 +289,5 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
     </div>
   );
 };
+
+export default Navbar;
