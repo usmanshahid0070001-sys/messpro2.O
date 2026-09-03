@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useSEO } from '@/hooks/useSEO';
 import {
   BookOpen,
   Search,
@@ -289,6 +290,181 @@ const DOCS_DATA: DocSection[] = [
     ]
   },
   {
+    id: 'student-guide',
+    category: 'Student Portal',
+    categoryIcon: <Smartphone className="w-4 h-4" />,
+    categoryColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20',
+    title: 'Student & Resident Portal Guide',
+    summary: 'Complete self-service guide for hostel residents: rolling QR meal pass, room inspection, meal skips, billing receipts, and maintenance requests.',
+    readTime: '6 min read',
+    roles: ['Student'],
+    steps: [
+      {
+        title: '1. Accessing Your Dynamic QR Meal Pass (/app/meals/qr)',
+        description: 'Navigate to "Meals" > "QR Pass" or the quick pass button on your phone. Present the rotating dynamic QR code to the dining gate scanner. A new secure token generates automatically every 30 seconds to prevent unauthorized screenshots or proxy passes.',
+        tip: 'Ensure screen brightness is adequate when presenting your phone to the gate scanner.'
+      },
+      {
+        title: '2. Checking Room & Roommate Details (/app/my-room)',
+        description: 'Open "My Room" to view your assigned hostel wing, room number, floor, and bed slot. You can see your registered roommates, contact details, and the real-time housekeeping log detailing when your room was last cleaned or inspected.',
+      },
+      {
+        title: '3. Reviewing Weekly Menu & Skipping Meals (/app/meals/schedule)',
+        description: 'Check the daily breakfast, lunch, and dinner menus for the week. If you plan to dine out or travel, toggle "Skip Meal" before the daily cutoff deadline (e.g. 4:00 PM for dinner). Plate charges are automatically waived from your monthly ledger.',
+        tip: 'Skipping meals in advance assists kitchen chefs in calculating exact headcounts and preventing food waste.'
+      },
+      {
+        title: '4. Tracking Meal Consumption History (/app/meals/history)',
+        description: 'View an itemized record of every meal you checked into, with exact dates, entry timestamps, meal types (breakfast/lunch/dinner), and registered guest plates. Filter by date to cross-check your monthly consumption.',
+      },
+      {
+        title: '5. Inspecting Dues & Downloading Invoices (/app/my-bills)',
+        description: 'Check your current outstanding balance, paid invoices, and upcoming payment due dates. Click on any invoice to view a complete breakdown: (Room Rent) + (Meal Charges) + (Custom Fines/Discounts). Click "Download PDF" to save or print official institutional receipts for parents.',
+      },
+      {
+        title: '6. Submitting & Tracking Maintenance Complaints (/app/complaints)',
+        description: 'If you have issues with Wi-Fi, plumbing, electrical fixtures, or furniture, click "New Complaint", choose category and priority, add details and photos, and track manager updates until the issue is marked resolved.',
+      }
+    ],
+    keyPoints: [
+      'Rotating QR tokens eliminate lost plastic mess cards and prevent proxy scans',
+      'Full financial transparency: every plate timestamp is visible on your ledger',
+      'Direct maintenance escalation with instant resolution notifications'
+    ],
+    faqs: [
+      {
+        q: 'What should I do if my phone battery dies before meal time?',
+        a: 'Inform the mess supervisor at the gate. They can verify your photo and roll number via the Manual Attendance terminal and mark your meal on the spot.'
+      },
+      {
+        q: 'Can I cancel a meal skip if my plans change?',
+        a: 'Yes, as long as the cancellation window has not passed. Simply return to the Weekly Schedule and toggle your meal back on.'
+      }
+    ]
+  },
+  {
+    id: 'manager-guide',
+    category: 'Manager Operations',
+    categoryIcon: <UserCheck className="w-4 h-4" />,
+    categoryColor: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
+    title: 'Hostel Manager & Warden Operational Guide',
+    summary: 'Master daily hostel operations: gate QR scanner terminals, manual meal overrides, headcount forecasts, room sanitization logs, and ledger payments.',
+    readTime: '8 min read',
+    roles: ['Manager', 'Admin'],
+    steps: [
+      {
+        title: '1. Operating Gate Scanner Terminal (/app/attendance/qr)',
+        description: 'Mount any tablet or phone running the MessPro Scanner at the dining entrance. When a resident scans, the terminal verifies identity in <300ms, displays the resident photo, plays an audible chime, and records the entry. Double-scan attempts within the same meal window trigger a visual warning.',
+        tip: 'The terminal works seamlessly offline; scan records sync automatically once network re-establishes.'
+      },
+      {
+        title: '2. Performing Manual Attendance Roll-Call (/app/attendance/manual)',
+        description: 'If a resident forgets their phone or has hardware camera issues, search by roll number or room number, verify their resident portrait, select meal type, and record attendance with a supervisor reason code.',
+      },
+      {
+        title: '3. Meal Control & Headcount Planning (/app/meals/control)',
+        description: 'Access real-time dining statistics: expected turnouts (active subscriptions minus skips) vs actual checked-in counts. Use this live data to signal kitchen chefs for replenishments or to shut dining windows on schedule.',
+      },
+      {
+        title: '4. Logging Housekeeping & Room Inspections (/app/residence/services)',
+        description: 'Maintain hygiene audits by selecting room numbers and recording dates for routine cleaning, sanitization, AC maintenance, or pest control. Residents immediately see updated service timestamps on their portal.',
+      },
+      {
+        title: '5. Triaging & Resolving Student Complaints (/app/complaints)',
+        description: 'Review incoming tickets filtered by category (Plumbing, Electrical, Food Quality, Internet). Assign tickets to staff technicians, update ticket status to "In Progress", and close tickets with resolution notes once inspected.',
+      },
+      {
+        title: '6. Managing Resident Ledgers & Offline Cash (/app/finance/bills)',
+        description: 'Search resident accounts, filter by unpaid or overdue status, and record offline cash payments or bank wire references. You can also append custom fines (e.g. late return fines or property damage fees) with itemized notes.',
+      }
+    ],
+    keyPoints: [
+      'Sub-300ms gate scanning prevents bottleneck queues during peak dining hours',
+      'Accurate kitchen headcount forecasts prevent food surplus and budget deficits',
+      'Complete accountability trail for facility upkeep and student fee collections'
+    ]
+  },
+  {
+    id: 'admin-guide',
+    category: 'Hostel Admin',
+    categoryIcon: <Sliders className="w-4 h-4" />,
+    categoryColor: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
+    title: 'Hostel Admin: System Configuration & Financial Governance',
+    summary: 'Complete administrative control: hostel wing setup, bed allocation matrices, meal pricing models, staff permission scoping, and 1-click monthly billing.',
+    readTime: '9 min read',
+    roles: ['Admin', 'Superadmin'],
+    steps: [
+      {
+        title: '1. Comprehensive Hostel Setup (/app/hostel-configuration)',
+        description: 'Define your hostel profile, wings, floors, room categories (single, double, triple), dining operation windows (Breakfast, Lunch, Snacks, Dinner), meal skip cutoff rules, and attendance gate policies.',
+      },
+      {
+        title: '2. User Management & Batch Roster Import (/app/users)',
+        description: 'Add individual students and staff or onboard hundreds in seconds using the Excel/CSV batch upload tool. Assign roles (Admin, Manager, Student) and configure granular permissions (e.g. "qr_attendance", "residence_management", "bill_generation").',
+        tip: 'The importer validates email uniqueness and roll numbers automatically before committing.'
+      },
+      {
+        title: '3. Visual Room & Bed Allocation Matrix (/app/residence/allocation)',
+        description: 'View an interactive capacity grid of every room. Allocate residents to specific beds, process room transfers when residents request bed swaps, and complete check-outs with security deposit clearance records.',
+      },
+      {
+        title: '4. Meal Pricing Models (/app/finance/meal-prices)',
+        description: 'Choose between Fixed Monthly Flat Dining Rates or Per-Plate Variable Pricing. Set rates for breakfast, lunch, and dinner, including variable rate overrides for special holiday feasts or premium weekend meals.',
+      },
+      {
+        title: '5. Automated Monthly Invoicing Engine (/app/finance/generate-bills)',
+        description: 'Launch the batch bill calculation wizard. Select billing month and year. MessPro tallies (Base Room Rent) + (Actual Verified Meals / Flat Rate) + (Applied Penalties) - (Credits/Discounts). Review draft statements, then lock and publish bills to all residents in 1 click.',
+      },
+      {
+        title: '6. Superadmin SaaS Governance (/app/superadmin/hostels)',
+        description: 'For institutional owners managing multiple hostel branches: provision new tenant organizations, assign subscription tiers, configure feature flags, and oversee centralized revenue metrics.',
+      }
+    ],
+    keyPoints: [
+      'Unified command center for residential facilities, food logistics, and revenue management',
+      'Automated batch billing eliminates manual invoice compilation errors',
+      'Granular permission toggles protect sensitive financial and administrative controls'
+    ]
+  },
+  {
+    id: 'data-extraction',
+    category: 'Data & Reports',
+    categoryIcon: <Receipt className="w-4 h-4" />,
+    categoryColor: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+    title: 'Data Extraction, Reports & Excel Exports',
+    summary: 'How to extract and export student rosters, meal logs, financial ledgers, audit trails, and PDF statements from MessPro 2.0.',
+    readTime: '5 min read',
+    roles: ['Superadmin', 'Admin', 'Manager', 'Student'],
+    steps: [
+      {
+        title: '1. Exporting Student Rosters & Directory to Excel / CSV',
+        description: 'In "Manage Users" (/app/users), click the "Export" button above the table. Select whether to export the full roster or currently filtered search results. MessPro generates a clean .xlsx spreadsheet containing student names, roll numbers, room numbers, contact info, and registration status.',
+        tip: 'Use column filters in the table first to export specific subsets (e.g. only 3rd-floor residents).'
+      },
+      {
+        title: '2. Exporting Meal Attendance Logs & Audit Proofs',
+        description: 'Navigate to "Meal History" (/app/meals/history). Set your desired date range (e.g. past month or past semester). Click "Export Logs" to download an audit trail with exact scan timestamps, gate terminal IDs, meal types, and student IDs.',
+      },
+      {
+        title: '3. Extracting Financial Ledgers & Outstanding Fee Reports',
+        description: 'Under "Bill Management" (/app/finance/bills), filter by "Unpaid" or "Overdue". Click "Export Ledger" to obtain a comprehensive Excel report of all outstanding debts, collected payments, payment methods (Cash/Bank), and late penalties.',
+      },
+      {
+        title: '4. Generating & Printing Student PDF Invoices & Receipts',
+        description: 'Both administrators and residents can generate print-ready PDF statements from "Bill Management" or "My Bills". Click the receipt icon on any invoice row to render an institutional PDF with hostel header, student details, itemized line items, and payment proof.',
+      },
+      {
+        title: '5. Exporting Complaint & Maintenance Audit Logs',
+        description: 'From "Complaints" (/app/complaints), administrators can export ticket histories to evaluate vendor response times, recurring plumbing/electrical breakdown frequencies, and resident satisfaction ratings.',
+      }
+    ],
+    keyPoints: [
+      '1-click export to Excel (.xlsx) and CSV across all major tables',
+      'Institutional-grade PDF receipts ready for accounting audits and parent billing',
+      'Custom date range and status filtering before initiating data extraction'
+    ]
+  },
+  {
     id: 'pwa-mobile',
     category: 'Mobile & Offline',
     categoryIcon: <Smartphone className="w-4 h-4" />,
@@ -324,10 +500,64 @@ export const DocumentationPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSection = searchParams.get('section') || 'getting-started';
   const [activeSectionId, setActiveSectionId] = useState<string>(initialSection);
+  const [selectedRole, setSelectedRole] = useState<'All' | 'Student' | 'Manager' | 'Admin'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  const activeDoc = useMemo(() => {
+    return DOCS_DATA.find((d) => d.id === activeSectionId) || DOCS_DATA[0];
+  }, [activeSectionId]);
+
+  useSEO({
+    title: `${activeDoc.title} — Documentation — MessPro 2.0`,
+    description: `${activeDoc.summary} Learn how to configure and operate ${activeDoc.category} in MessPro 2.0.`,
+    keywords: 'MessPro documentation, hostel management guide, mess setup tutorial, QR dining docs, hostel billing guide',
+    canonicalUrl: `/docs?section=${activeDoc.id}`,
+    robots: 'index, follow',
+    ogType: 'article',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'TechArticle',
+          headline: activeDoc.title,
+          description: activeDoc.summary,
+          articleSection: activeDoc.category,
+          url: `https://messpro.app/docs?section=${activeDoc.id}`,
+          publisher: {
+            '@type': 'Organization',
+            name: 'MessPro Technologies',
+            url: 'https://messpro.app',
+          },
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: 'Home',
+              item: 'https://messpro.app/',
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: 'Documentation',
+              item: 'https://messpro.app/docs',
+            },
+            {
+              '@type': 'ListItem',
+              position: 3,
+              name: activeDoc.title,
+              item: `https://messpro.app/docs?section=${activeDoc.id}`,
+            },
+          ],
+        },
+      ],
+    },
+  });
 
   // Sync with search params
   useEffect(() => {
@@ -350,12 +580,19 @@ export const DocumentationPage: React.FC = () => {
     setTimeout(() => setCopiedSection(null), 2000);
   };
 
-  // Filter docs by search query
+  // Filter docs by role and search query
   const filteredDocs = useMemo(() => {
-    if (!searchQuery.trim()) return DOCS_DATA;
-    const query = searchQuery.toLowerCase();
-    return DOCS_DATA.filter(
-      (doc) =>
+    return DOCS_DATA.filter((doc) => {
+      const matchesRole =
+        selectedRole === 'All' ||
+        doc.roles.includes(selectedRole as any) ||
+        (selectedRole === 'Admin' && doc.roles.includes('Superadmin'));
+
+      if (!matchesRole) return false;
+      if (!searchQuery.trim()) return true;
+
+      const query = searchQuery.toLowerCase();
+      return (
         doc.title.toLowerCase().includes(query) ||
         doc.summary.toLowerCase().includes(query) ||
         doc.category.toLowerCase().includes(query) ||
@@ -363,12 +600,9 @@ export const DocumentationPage: React.FC = () => {
         doc.steps.some(
           (s) => s.title.toLowerCase().includes(query) || s.description.toLowerCase().includes(query)
         )
-    );
-  }, [searchQuery]);
-
-  const activeDoc = useMemo(() => {
-    return DOCS_DATA.find((d) => d.id === activeSectionId) || DOCS_DATA[0];
-  }, [activeSectionId]);
+      );
+    });
+  }, [searchQuery, selectedRole]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary">
@@ -433,7 +667,7 @@ export const DocumentationPage: React.FC = () => {
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left Sidebar: Navigation & Search */}
-        <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-20">
+        <aside className="lg:col-span-4 space-y-4 lg:sticky lg:top-20">
           {/* Search Box */}
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
@@ -453,6 +687,24 @@ export const DocumentationPage: React.FC = () => {
                 Clear
               </button>
             )}
+          </div>
+
+          {/* Role Filter Tabs */}
+          <div className="flex items-center gap-1 p-1 bg-muted/60 dark:bg-neutral-900/80 rounded-2xl border border-border/70 dark:border-white/10 text-xs">
+            {(['All', 'Student', 'Manager', 'Admin'] as const).map((role) => (
+              <button
+                key={role}
+                type="button"
+                onClick={() => setSelectedRole(role)}
+                className={`flex-1 py-1.5 px-2 rounded-xl font-bold transition-all text-center text-[11px] cursor-pointer ${
+                  selectedRole === role
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+              >
+                {role === 'All' ? 'All Roles' : role}
+              </button>
+            ))}
           </div>
 
           {/* Table of Contents List */}

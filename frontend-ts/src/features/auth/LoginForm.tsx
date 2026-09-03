@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useSEO } from '@/hooks/useSEO';
 import { setCredentials } from '../../store/slices/AuthSlice';
 import { useLoginMutation } from '../../hooks/mutations/useAuthMutations';
 import { z } from 'zod';
@@ -53,6 +54,13 @@ export default function LoginForm() {
     const dispatch = useDispatch();
     const loginMutation = useLoginMutation();
     const [showPassword, setShowPassword] = useState(false);
+
+    useSEO({
+        title: 'Sign In — MessPro 2.0',
+        description: 'Log in to your MessPro account to manage hostel rooms, meals, QR attendance, and student billing.',
+        canonicalUrl: '/login',
+        robots: 'index, follow',
+    });
 
     const {
         register,

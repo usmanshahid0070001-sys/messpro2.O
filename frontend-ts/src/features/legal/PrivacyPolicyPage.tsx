@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useSEO } from '@/hooks/useSEO';
 import {
   ShieldCheck,
   Lock,
@@ -23,6 +24,49 @@ import logoUrl from '@/assets/pwa-192x192.png';
 
 export const PrivacyPolicyPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('data-collected');
+
+  useSEO({
+    title: 'Privacy Policy — MessPro 2.0',
+    description:
+      'Learn how MessPro 2.0 safeguards resident biometric data, attendance logs, billing information, and institutional privacy.',
+    keywords: 'MessPro privacy policy, student data protection, hostel biometric security, GDPR hostel SaaS',
+    canonicalUrl: '/privacy',
+    robots: 'index, follow',
+    ogType: 'article',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'WebPage',
+          name: 'Privacy Policy',
+          description: 'Official Privacy Policy and Data Security Standards for MessPro 2.0',
+          url: 'https://messpro.app/privacy',
+          isPartOf: {
+            '@type': 'WebSite',
+            name: 'MessPro 2.0',
+            url: 'https://messpro.app',
+          },
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: 'Home',
+              item: 'https://messpro.app/',
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: 'Privacy Policy',
+              item: 'https://messpro.app/privacy',
+            },
+          ],
+        },
+      ],
+    },
+  });
 
   const scrollToSection = (id: string) => {
     setActiveSection(id);

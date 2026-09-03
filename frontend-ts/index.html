@@ -18,6 +18,7 @@
     />
     <meta name="author" content="MessPro Technologies" />
     <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://messpro.app/" />
 
     <!-- Security & Privacy Policies -->
     <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -41,12 +42,13 @@
     <!-- Open Graph / Facebook / LinkedIn -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MessPro 2.0" />
+    <meta property="og:url" content="https://messpro.app/" />
     <meta property="og:title" content="MessPro 2.0 — Smart Hostel &amp; Mess Management System" />
     <meta
       property="og:description"
       content="Next-generation SaaS platform for streamlined hostel mess operations, automated attendance, dynamic meal pricing, and resident ledger management."
     />
-    <meta property="og:image" content="/pwa-512x512.png" />
+    <meta property="og:image" content="https://messpro.app/pwa-512x512.png" />
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -55,23 +57,60 @@
       name="twitter:description"
       content="Next-generation SaaS platform for streamlined hostel mess operations, automated attendance, dynamic meal pricing, and resident ledger management."
     />
-    <meta name="twitter:image" content="/pwa-512x512.png" />
+    <meta name="twitter:image" content="https://messpro.app/pwa-512x512.png" />
 
     <!-- JSON-LD Structured Data for Search Engines -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "MessPro 2.0",
-        "url": "https://messpro.app",
-        "description": "Smart Hostel & Mess Management SaaS platform offering real-time meal tracking, QR attendance, and automated billing.",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "All modern browsers, iOS, Android",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        }
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://messpro.app/#organization",
+            "name": "MessPro Technologies",
+            "url": "https://messpro.app",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://messpro.app/pwa-512x512.png"
+            },
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "email": "support@messpro.app",
+              "contactType": "Customer Support"
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://messpro.app/#website",
+            "url": "https://messpro.app",
+            "name": "MessPro 2.0",
+            "description": "Smart Hostel & Mess Management SaaS System",
+            "publisher": {
+              "@id": "https://messpro.app/#organization"
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://messpro.app/#software",
+            "name": "MessPro 2.0",
+            "url": "https://messpro.app",
+            "description": "Smart Hostel & Mess Management SaaS platform offering real-time meal tracking, QR attendance, and automated billing.",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, iOS, Android (PWA)",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "featureList": [
+              "QR Code Dining Attendance",
+              "Automated Meal Invoicing & Ledgers",
+              "Real-time Room Allocations",
+              "Multi-tenant Superadmin Governance",
+              "Offline-first Scanner Caching"
+            ]
+          }
+        ]
       }
     </script>
 

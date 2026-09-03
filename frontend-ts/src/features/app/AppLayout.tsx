@@ -15,6 +15,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useNavigation } from "@/hooks/useNavigation"
+import { useSEO } from "@/hooks/useSEO"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import logoUrl from "@/assets/pwa-512x512.png"
 
@@ -83,6 +84,13 @@ export default function AppLayout() {
       current: formatSegment(segments.slice(1).join(" ")),
     }
   }, [location.pathname, navMain])
+
+  // Ensure internal authenticated dashboard routes are protected from search indexing
+  useSEO({
+    title: `${breadcrumbs.current} — MessPro 2.0`,
+    description: 'MessPro 2.0 Authenticated Portal',
+    robots: 'noindex, nofollow',
+  })
 
   return (
     <SidebarProvider>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useSEO } from '@/hooks/useSEO';
 import {
   FileText,
   Shield,
@@ -21,6 +22,49 @@ import logoUrl from '@/assets/pwa-192x192.png';
 
 export const TermsPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('acceptance');
+
+  useSEO({
+    title: 'Terms of Service — MessPro 2.0',
+    description:
+      'Review the official Terms of Service, Master Subscription Agreement, and SLA protocols governing use of the MessPro 2.0 SaaS platform.',
+    keywords: 'MessPro terms of service, hostel SaaS agreement, mess management software license, student dining SLA',
+    canonicalUrl: '/terms',
+    robots: 'index, follow',
+    ogType: 'article',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'WebPage',
+          name: 'Terms of Service',
+          description: 'Official Terms of Service for MessPro 2.0',
+          url: 'https://messpro.app/terms',
+          isPartOf: {
+            '@type': 'WebSite',
+            name: 'MessPro 2.0',
+            url: 'https://messpro.app',
+          },
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: 'Home',
+              item: 'https://messpro.app/',
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: 'Terms of Service',
+              item: 'https://messpro.app/terms',
+            },
+          ],
+        },
+      ],
+    },
+  });
 
   const scrollToSection = (id: string) => {
     setActiveSection(id);
