@@ -160,7 +160,7 @@ export default function ComplainManagement() {
   return (
     <div className="space-y-4 pb-10 w-full max-w-full min-w-0">
       {/* ── Page Header ────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
             <FileText className="h-5 w-5" />

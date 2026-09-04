@@ -446,7 +446,7 @@ export default function ManualAttendancePage() {
   return (
     <div className="space-y-5 pb-20 w-full max-w-full min-w-0">
       {/* ── Page Header ────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
             <Calendar className="h-5 w-5" />
@@ -1084,15 +1084,15 @@ export default function ManualAttendancePage() {
             <button
               type="button"
               onClick={handleSave}
-              disabled={saveAttendanceMutation.isPending}
+              disabled={isSaving}
               className="inline-flex items-center gap-1.5 h-8 px-4 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm active:scale-95 transition-all"
             >
-              {saveAttendanceMutation.isPending ? (
+              {isSaving ? (
                 <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <Save className="h-3.5 w-3.5" />
               )}
-              <span>{saveAttendanceMutation.isPending ? 'Saving...' : 'Save Changes'}</span>
+              <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
             </button>
           </div>
         </div>

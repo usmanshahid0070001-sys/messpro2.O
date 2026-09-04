@@ -339,7 +339,7 @@ export default function QRAttendancePage() {
   return (
     <div className="space-y-5 pb-16 w-full max-w-full min-w-0 animate-in fade-in duration-300">
       {/* ── Page Header ──────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <QrCode className="w-5 h-5" />

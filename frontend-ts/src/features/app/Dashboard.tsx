@@ -599,7 +599,7 @@ function SuperadminDashboard({ user }: { user: any }) {
                       <tr key={h._id} className="hover:bg-muted/30 transition-colors">
                         <td className="py-3 font-semibold text-foreground">{h.name}</td>
                         <td className="py-3 text-muted-foreground font-mono">
-                          {h.subdomain ? `${h.subdomain}.messpro.app` : '—'}
+                          {h.subdomain ? `${h.subdomain}` : '—'}
                         </td>
                         <td className="py-3 text-muted-foreground font-medium">{h.location || '—'}</td>
                         <td className="py-3">
@@ -954,7 +954,7 @@ function AdminManagerDashboard({
             <span>•</span>
             <span className="flex items-center gap-1 font-mono">
               <Globe className="h-3 w-3 text-muted-foreground" />
-              {hostel?.subdomain ? `${hostel.subdomain}.messpro.app` : 'hostel.messpro.app'}
+              {hostel?.subdomain ? `${hostel.subdomain}` : 'hostel.messpro.app'}
             </span>
           </div>
         </div>
