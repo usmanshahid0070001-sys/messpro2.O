@@ -15,7 +15,7 @@ import {
   getStudentMonthlyRecords,
   uploadBiometricAttendance
 } from './mealRecord.controller.js';
-import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
+import { protect, restrictTo, requirePermission, requireAnyPermission } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -24,7 +24,7 @@ router.use(protect);
 // ── Manager Endpoints ────────────────────────────────────────────────────────
 router.get('/qr/generate', requirePermission('qr_attendance'), getManagerQR);
 router.get('/qr/live', requirePermission('qr_attendance'), getLiveQRAttendance);
-router.get('/daily-overview', requirePermission('manual_attendance') || requirePermission('qr_attendance'), getDailyOverview);
+router.get('/daily-overview', requireAnyPermission('manual_attendance', 'qr_attendance'), getDailyOverview);
 router.post('/qr/scan-student', requirePermission('qr_attendance'), scanStudentQR);
 router.post('/qr/respond-permission', requirePermission('qr_attendance'), respondGuestPermission);
 router.post('/biometric/upload', requirePermission('biometric_attendance'), uploadBiometricAttendance);

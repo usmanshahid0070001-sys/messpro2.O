@@ -4,7 +4,6 @@ import { io } from '../../server.js';
 import mealService from '../meal/meal.service.js';
 import hostelService from '../hostel/hostel.service.js';
 import { bulkSelectMealsSchema, processBiometricAttendanceSchema } from './mealRecord.validation.js';
-import mealRecordRepository from './mealRecord.Repository.js';
 
 // ==========================================
 // HELPER: Haversine Formula for GPS distance

@@ -96,6 +96,7 @@ export interface ScanManagerQRPayload {
 }
 
 export interface ScanManagerQRSuccessResponse {
+  status?: 'success'
   success: boolean
   message: string
   record?: {
