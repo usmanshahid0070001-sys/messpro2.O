@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import type { RootState } from '@/store'
 import {
@@ -6,15 +6,9 @@ import {
   QrCode,
   CheckCircle2,
   AlertCircle,
-  Clock,
-  Sparkles,
   Utensils,
-  MapPin,
   Camera,
-  RotateCcw,
   Send,
-  X,
-  Radio,
   Loader2,
   Info,
 } from 'lucide-react'
@@ -23,7 +17,6 @@ import {
   useScanManagerQR,
   useRequestGuestPermission,
   type ScanManagerQRPermissionResponse,
-  type ScanManagerQRSuccessResponse,
 } from '@/hooks/mutations/useMealMutations'
 import QRCodeSVG from './components/QRCodeSVG'
 
@@ -36,7 +29,6 @@ export default function StudentAttendancePage() {
   // ── Camera Scanner State ─────────────────────────────────────────────
   const [isScanning, setIsScanning] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
-  const [manualCodeInput, setManualCodeInput] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
 
   // ── Results & Prompts ────────────────────────────────────────────────
@@ -128,18 +120,15 @@ export default function StudentAttendancePage() {
           setIsVerifying(false)
           toast.dismiss(toastId)
 
-          if ('status' in res && res.status === 'requires_permission') {
+          if (res.status === 'requires_permission') {
             setPermissionPrompt(res)
-          } else if (('status' in res && res.status === 'success') || ('success' in res && Boolean((res as any).success))) {
-            toast.success(res.message || 'Meal successfully claimed!')
+          } else {
             setSuccessRecord((res as any).record || (res as any).data)
           }
         },
-        onError: (err: any) => {
+        onError: () => {
           setIsVerifying(false)
           toast.dismiss(toastId)
-          const msg = err?.response?.data?.message || err?.message || 'Attendance scan rejected by server.'
-          toast.error(msg)
         },
       }
     )
@@ -253,13 +242,6 @@ export default function StudentAttendancePage() {
         },
       }
     )
-  }
-
-  const handleManualCodeSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!manualCodeInput.trim()) return
-    processScannedData(manualCodeInput.trim())
-    setManualCodeInput('')
   }
 
   // Student QR Code Payload for Manager Scanner

@@ -1,29 +1,7 @@
 import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./features/app/AppLayout";
-import Dashboard from "./features/app/Dashboard";
-import ManageUsers from "./features/managerUsers/ManageUsers";
-import HostelConfiguration from "./features/hostel/HostelConfiguration";
-import ComplaintIndex from "./features/complain/ComplaintIndex";
-import RoomAllocation from "./features/Residence/RoomAllocation";
-import RoomService from "./features/Residence/RoomService";
-import MyRoom from "./features/Residence/MyRoom";
-import WeeklySchedule from "./features/Mess/WeeklySchedule";
-import ManageMealSchedule from "./features/Mess/ManageMealSchedule";
-import MealHistoryPage from "./features/Mess/MealHistory/MealHistoryPage";
-import MealControlPage from "./features/Mess/MealControl/MealControlPage";
-import StudentAttendancePage from "./features/attendance/QR/StudentAttendancePage";
-import QRAttendancePage from "./features/attendance/QR/QRAttendancePage";
-import ManualAttendancePage from "./features/attendance/Manual/ManualAttendancePage";
-import BiometricAttendancePage from "./features/attendance/Biometric/BiometricAttendancePage";
-import MealPricesPage from "./features/Finance/MealPrices/MealPricesPage";
-import BillGenerationPage from "./features/Finance/BillGeneration/BillGenerationPage";
-import BillManagementPage from "./features/Finance/BillManagement/BillManagementPage";
-import MyBillsPage from "./features/Finance/MyBills/MyBillsPage";
-import ManageTenantsPage from "./features/superadmin/ManageTenantsPage";
-import ManagePlansPage from "./features/superadmin/ManagePlansPage";
 import { ThemeProvider } from "@/context/ThemeProvider";
-import LoginForm from "./features/auth/LoginForm";
 import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
 import { PublicRoute } from "./features/auth/components/PublicRoute";
 import { AuthSync } from "./features/auth/components/AuthSync";
@@ -31,10 +9,34 @@ import { Toaster } from "@/components/ui/sonner";
 import { StorageWarningModal } from "@/components/StorageWarningModal";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
+// Route-based Code Splitting (Lazy-loaded per Section 8 of AGENTS.md)
+const LoginForm = React.lazy(() => import("./features/auth/LoginForm"));
+const Dashboard = React.lazy(() => import("./features/app/Dashboard"));
+const ManageUsers = React.lazy(() => import("./features/managerUsers/ManageUsers"));
+const HostelConfiguration = React.lazy(() => import("./features/hostel/HostelConfiguration"));
+const ComplaintIndex = React.lazy(() => import("./features/complain/ComplaintIndex"));
+const RoomAllocation = React.lazy(() => import("./features/Residence/RoomAllocation"));
+const RoomService = React.lazy(() => import("./features/Residence/RoomService"));
+const MyRoom = React.lazy(() => import("./features/Residence/MyRoom"));
+const WeeklySchedule = React.lazy(() => import("./features/Mess/WeeklySchedule"));
+const ManageMealSchedule = React.lazy(() => import("./features/Mess/ManageMealSchedule"));
+const MealHistoryPage = React.lazy(() => import("./features/Mess/MealHistory/MealHistoryPage"));
+const MealControlPage = React.lazy(() => import("./features/Mess/MealControl/MealControlPage"));
+const StudentAttendancePage = React.lazy(() => import("./features/attendance/QR/StudentAttendancePage"));
+const QRAttendancePage = React.lazy(() => import("./features/attendance/QR/QRAttendancePage"));
+const ManualAttendancePage = React.lazy(() => import("./features/attendance/Manual/ManualAttendancePage"));
+const BiometricAttendancePage = React.lazy(() => import("./features/attendance/Biometric/BiometricAttendancePage"));
+const MealPricesPage = React.lazy(() => import("./features/Finance/MealPrices/MealPricesPage"));
+const BillGenerationPage = React.lazy(() => import("./features/Finance/BillGeneration/BillGenerationPage"));
+const BillManagementPage = React.lazy(() => import("./features/Finance/BillManagement/BillManagementPage"));
+const MyBillsPage = React.lazy(() => import("./features/Finance/MyBills/MyBillsPage"));
+const ManageTenantsPage = React.lazy(() => import("./features/superadmin/ManageTenantsPage"));
+const ManagePlansPage = React.lazy(() => import("./features/superadmin/ManagePlansPage"));
 const LandingPage = React.lazy(() => import("./features/landing/LandingPage"));
 const TermsPage = React.lazy(() => import("./features/legal/TermsPage"));
 const PrivacyPolicyPage = React.lazy(() => import("./features/legal/PrivacyPolicyPage"));
 const DocumentationPage = React.lazy(() => import("./features/docs/DocumentationPage"));
+
 
 const LandingRouteWrapper: React.FC = () => {
   // If running as an installed PWA (standalone display mode), launch directly into the app
@@ -94,7 +96,14 @@ const App = () => {
 
               {/* Public Routes (Accessible only if NOT logged in) */}
               <Route element={<PublicRoute />}>
-                <Route path="/login" element={<LoginForm />} />
+                <Route
+                  path="/login"
+                  element={
+                    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                      <LoginForm />
+                    </Suspense>
+                  }
+                />
               </Route>
 
               {/* Protected Routes (Accessible only if logged in) */}

@@ -1,10 +1,5 @@
 import mongoose from 'mongoose';
-
-
-
-
-import User from '../auth/auth.model.js';
-import PlainUser from '../auth/plainUser.model.js'; // For syncing names & permissions
+import userRepository from './user.repository.js';
 
 export const getUsersByHierarchy = async (requesterRole, requesterHostelId) => {
   let query = {}; 
@@ -27,13 +22,13 @@ export const getUsersByHierarchy = async (requesterRole, requesterHostelId) => {
     throw error;
   }
 
-  // Execute the query, but hide the passwords from the frontend!
-  return await User.find(query).populate('room', 'roomName capacity status').select('-password').sort({ createdAt: -1 });
+  // Execute the query via repository, hiding passwords
+  return await userRepository.findUsers(query);
 };
 
 export const updateUser = async (requesterRole, requesterHostelId, targetUserId, updateData) => {
   // 1. Find the user they are trying to update
-  const targetUser = await User.findById(targetUserId);
+  const targetUser = await userRepository.findById(targetUserId);
   if (!targetUser) {
     const error = new Error('User not found.');
     error.statusCode = 404;
@@ -63,11 +58,7 @@ export const updateUser = async (requesterRole, requesterHostelId, targetUserId,
   }
 
   // 3. Perform the update on the main User table
-  const updatedUser = await User.findByIdAndUpdate(
-    targetUserId,
-    { $set: updateData },
-    { new: true, runValidators: true }
-  ).select('-password');
+  const updatedUser = await userRepository.findByIdAndUpdate(targetUserId, updateData);
 
   // 4. Architect Bonus: Keep PlainUser model in sync if they changed the name OR permissions!
   if (updateData.name !== undefined || updateData.permissions !== undefined) {
@@ -75,10 +66,7 @@ export const updateUser = async (requesterRole, requesterHostelId, targetUserId,
     if (updateData.name !== undefined) syncData.name = updateData.name;
     if (updateData.permissions !== undefined) syncData.permissions = updateData.permissions;
 
-    await PlainUser.findOneAndUpdate(
-      { email: targetUser.email },
-      { $set: syncData }
-    );
+    await userRepository.syncPlainUser(targetUser.email, syncData);
   }
 
   return updatedUser;
@@ -88,16 +76,13 @@ export const updateUser = async (requesterRole, requesterHostelId, targetUserId,
 // Called when the user clicks "I Agree" in the LegalAgreementModal.
 // Sets agreement = 'signed' and stamps agreementSignedAt timestamp.
 export const signAgreement = async (userId) => {
-  const updatedUser = await User.findByIdAndUpdate(
+  const updatedUser = await userRepository.findByIdAndUpdate(
     userId,
     {
-      $set: {
-        agreement: 'signed',
-        agreementSignedAt: new Date(),
-      },
-    },
-    { new: true, runValidators: true }
-  ).select('-password');
+      agreement: 'signed',
+      agreementSignedAt: new Date(),
+    }
+  );
 
   if (!updatedUser) {
     const error = new Error('User not found.');
@@ -107,8 +92,6 @@ export const signAgreement = async (userId) => {
 
   return updatedUser;
 };
-
-
 
 // ─── Superadmin System Health Check ──────────────────────────────────────────
 export const getSystemHealth = async () => {

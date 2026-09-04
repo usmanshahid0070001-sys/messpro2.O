@@ -308,7 +308,6 @@ export default function StudentMealSelector({
     try {
       await bulkSelectMutation.mutateAsync({ selections: payloadSelections })
       setIsDirty(false)
-      toast.success('Your weekly meal preferences have been saved!')
     } catch (err: any) {
       // Toast already handled by mutation hook
     }

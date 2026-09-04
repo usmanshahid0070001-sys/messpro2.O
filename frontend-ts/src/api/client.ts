@@ -42,6 +42,7 @@ apiClient.interceptors.response.use(
       if (!error.response) {
         // Network Error (server down or no connection)
         toast.error('Network Error', {
+          id: 'network-error',
           description: 'Unable to connect to the server. Please check your connection.',
         });
       } else {
@@ -55,10 +56,12 @@ apiClient.interceptors.response.use(
           store.dispatch(clearHostel());
         } else if (status >= 500) {
           toast.error('Server Error', {
+            id: 'server-error',
             description: 'Something went wrong on our end. Please try again later.',
           });
         } else if (status === 403) {
           toast.error('Access Denied', {
+            id: 'access-denied-error',
             description: 'You do not have permission to perform this action.',
           });
         }

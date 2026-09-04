@@ -148,9 +148,23 @@ export default function AppLayout() {
         </div>
 
         <div id="main-page-content" className="flex-1 min-w-0 max-w-full overflow-x-hidden">
-          {/* Main content — Dashboard, All Hostels, etc. protected by ErrorBoundary */}
+          {/* Main content — Dashboard, All Hostels, etc. protected by ErrorBoundary & Suspense */}
           <ErrorBoundary>
-            <Outlet />
+            <React.Suspense
+              fallback={
+                <div className="p-6 space-y-4 animate-pulse">
+                  <div className="h-8 w-48 bg-muted rounded-lg" />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="h-28 bg-muted/60 rounded-2xl" />
+                    <div className="h-28 bg-muted/60 rounded-2xl" />
+                    <div className="h-28 bg-muted/60 rounded-2xl" />
+                  </div>
+                  <div className="h-72 w-full bg-muted/40 rounded-2xl" />
+                </div>
+              }
+            >
+              <Outlet />
+            </React.Suspense>
           </ErrorBoundary>
         </div>
       </div>

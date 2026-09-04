@@ -9,6 +9,7 @@ import {
   Clock,
   AlertCircle,
   Loader2,
+  RotateCcw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { RootState } from '@/store'
@@ -35,7 +36,7 @@ export default function MyRoom() {
   const hasResidence = hasFeature('residence_management')
   const hasService = hasFeature('service_management')   // cleaning attendance only when true
 
-  const { data: myRoom, isLoading, isError, error } = useGetMyRoom(hasResidence)
+  const { data: myRoom, isLoading, isError, error, refetch } = useGetMyRoom(hasResidence)
   const markCleaningMutation = useMarkRoomCleaning()
 
   const today = new Date()
@@ -52,7 +53,11 @@ export default function MyRoom() {
   }, [myRoom?.cleaningDates])
 
   const handleMarkCleaning = async () => {
-    await markCleaningMutation.mutateAsync()
+    try {
+      await markCleaningMutation.mutateAsync()
+    } catch {
+      // Error handled by mutation hook toast
+    }
   }
 
   // ── Feature disabled guard ────────────────────────────────────────────────
@@ -91,11 +96,14 @@ export default function MyRoom() {
     )
   }
 
-  // ── No room allotted state ────────────────────────────────────────────────
+  // ── No room allotted vs Server/Network Error state ────────────────────────
   if (isError || !myRoom) {
+    const is404 = (error as any)?.response?.status === 404
     const errorMsg =
       (error as any)?.response?.data?.message ||
-      'You do not have a room allotted yet. Please contact your hostel administrator or manager to assign you a room.'
+      (is404
+        ? 'You do not have a room allotted yet. Please contact your hostel administrator or manager to assign you a room.'
+        : 'Unable to connect to the server or retrieve your residence details.')
 
     return (
       <div className="space-y-4 pb-12 w-full max-w-full min-w-0">
@@ -111,13 +119,33 @@ export default function MyRoom() {
             </div>
           </div>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-3 shadow-xs">
-          <div className="p-4 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-            <AlertCircle className="w-8 h-8" />
+
+        {is404 ? (
+          <div className="bg-card border border-border rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-3 shadow-xs">
+            <div className="p-4 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h2 className="text-base font-bold text-foreground">No Room Allotted</h2>
+            <p className="text-xs text-muted-foreground max-w-md leading-relaxed">{errorMsg}</p>
           </div>
-          <h2 className="text-base font-bold text-foreground">No Room Allotted</h2>
-          <p className="text-xs text-muted-foreground max-w-md leading-relaxed">{errorMsg}</p>
-        </div>
+        ) : (
+          <div className="bg-card border border-destructive/20 rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-3 shadow-xs">
+            <div className="p-4 rounded-2xl bg-destructive/10 text-destructive border border-destructive/20">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h2 className="text-base font-bold text-foreground">Failed to Load Room Details</h2>
+            <p className="text-xs text-muted-foreground max-w-md leading-relaxed">{errorMsg}</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => refetch()}
+              className="mt-2 text-xs font-semibold gap-1.5 border-border hover:bg-muted cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Retry</span>
+            </Button>
+          </div>
+        )}
       </div>
     )
   }

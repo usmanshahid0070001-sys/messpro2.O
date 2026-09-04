@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Loader2,
   BedDouble,
+  RotateCcw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGetRooms, type Room } from '@/hooks/queries/useResidenceQueries'
@@ -22,7 +23,7 @@ type ServiceFilterType = 'all' | 'cleaned-today' | 'pending-today' | 'never'
 type ServiceSortType = 'recent' | 'name' | 'least'
 
 export default function RoomService() {
-  const { data: rooms = [], isLoading } = useGetRooms()
+  const { data: rooms = [], isLoading, isError, refetch } = useGetRooms()
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('')
@@ -180,6 +181,25 @@ export default function RoomService() {
           </div>
         </div>
       </div>
+
+      {/* ── Network / Query Error Banner ────────────────────────── */}
+      {isError && (
+        <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-xs font-medium">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <span>Unable to load room sanitation records. Please check your network connection.</span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => refetch()}
+            className="self-start sm:self-auto h-8 text-xs font-semibold border-destructive/30 hover:bg-destructive/10 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5 mr-1" />
+            Retry
+          </Button>
+        </div>
+      )}
 
       {/* Metrics Strip */}
       <ResidenceMetrics metrics={metricConfigs} />
