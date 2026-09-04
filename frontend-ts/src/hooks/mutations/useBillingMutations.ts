@@ -36,6 +36,8 @@ export const useUpdateMealPrices = () => {
       })
     },
     onError: (error: any) => {
+      // Network issues are already alerted by the global apiClient interceptor
+      if (!error.response) return
       const message = error.response?.data?.message || 'Failed to update meal prices.'
       toast.error('Save Failed', {
         description: message,
@@ -70,6 +72,7 @@ export const useUpdateBillingSettings = () => {
       })
     },
     onError: (error: any) => {
+      if (!error.response) return
       const message = error.response?.data?.message || 'Failed to save billing settings.'
       toast.error('Settings Save Failed', {
         description: message,
@@ -124,6 +127,7 @@ export const useGenerateBills = () => {
       })
     },
     onError: (error: any) => {
+      if (!error.response) return
       const message = error.response?.data?.message || 'Failed to generate bills.'
       toast.error('Generation Failed', {
         description: message,
@@ -165,6 +169,7 @@ export const usePayBill = () => {
       })
     },
     onError: (error: any) => {
+      if (!error.response) return
       const message = error.response?.data?.message || 'Failed to record payment.'
       toast.error('Payment Failed', {
         description: message,
@@ -212,6 +217,7 @@ export const useUpdateBillCharges = () => {
       })
     },
     onError: (error: any) => {
+      if (!error.response) return
       const message = error.response?.data?.message || 'Failed to update bill charges.'
       toast.error('Update Failed', {
         description: message,
@@ -219,4 +225,3 @@ export const useUpdateBillCharges = () => {
     },
   })
 }
-
