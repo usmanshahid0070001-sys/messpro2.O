@@ -14,7 +14,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { useGetPlans, type SubscriptionPlan } from '@/hooks/queries/useSuperadminQueries'
-import PlanFormModal from './components/PlanFormModal'
+import PlanFormModal, { ALL_PLAN_FEATURES, FEATURE_CATEGORIES } from './components/PlanFormModal'
 import { exportPlansToExcel } from '@/utils/exportUtils'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -270,15 +270,22 @@ export default function ManagePlansPage() {
                       Included Capabilities ({plan.features?.length || 0})
                     </p>
                     <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
-                      {plan.features?.map((f) => (
-                        <span
-                          key={f}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted/30 border border-border/80 text-foreground"
-                        >
-                          <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />
-                          {f.replace(/_/g, ' ')}
-                        </span>
-                      ))}
+                      {plan.features?.map((f) => {
+                        const featDef = ALL_PLAN_FEATURES.find((af) => af.id === f)
+                        const label = featDef ? featDef.label : f.replace(/_/g, ' ')
+                        const cat = FEATURE_CATEGORIES.find((c) => c.id === featDef?.category)
+                        const badgeColor = cat ? cat.badgeColor : 'bg-muted/30 text-foreground border-border/80'
+
+                        return (
+                          <span
+                            key={f}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium border ${badgeColor}`}
+                          >
+                            <CheckCircle2 className="h-3 w-3 shrink-0" />
+                            {label}
+                          </span>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>

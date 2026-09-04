@@ -18,8 +18,9 @@ class UserRepository {
   }
 
   async syncPlainUser(email, syncData) {
+    if (!email || typeof email !== 'string') return null;
     return PlainUser.findOneAndUpdate(
-      { email },
+      { email: email.toLowerCase().trim() },
       { $set: syncData }
     );
   }

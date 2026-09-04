@@ -38,7 +38,7 @@ const INITIAL_FORM = {
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const SUBDOMAIN_REGEX = /^[a-z0-9-]+$/
+const SUBDOMAIN_REGEX = /^@?[a-zA-Z0-9.-]+$/
 
 export default function CreateHostelModal({ isOpen, onClose }: CreateHostelModalProps) {
   const [formData, setFormData] = useState(INITIAL_FORM)
@@ -65,18 +65,11 @@ export default function CreateHostelModal({ isOpen, onClose }: CreateHostelModal
 
   if (!isOpen) return null
 
-  // Auto-generate subdomain from hostel name if not manually modified
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
-    const autoSub = val
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
     setFormData((prev) => ({
       ...prev,
       name: val,
-      subdomain: touched.subdomain ? prev.subdomain : autoSub,
     }))
   }
 
@@ -88,7 +81,7 @@ export default function CreateHostelModal({ isOpen, onClose }: CreateHostelModal
     name: touched.name && !formData.name.trim() ? 'Hostel name is required' : null,
     subdomain:
       touched.subdomain && (!formData.subdomain.trim() || !SUBDOMAIN_REGEX.test(formData.subdomain))
-        ? 'Valid lowercase subdomain required (a-z, 0-9, -)'
+        ? 'Valid domain suffix required (e.g. @student.uet.edu.pk)'
         : null,
     location: touched.location && !formData.location.trim() ? 'City / Location is required' : null,
     maxMealSelection:
@@ -244,30 +237,31 @@ export default function CreateHostelModal({ isOpen, onClose }: CreateHostelModal
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5 text-blue-500" /> Tenant Subdomain Slug{' '}
+                  <Globe className="h-3.5 w-3.5 text-blue-500" /> Institutional Email Domain Suffix{' '}
                   <span className="text-rose-500">*</span>
                 </label>
-                <div className="flex items-center rounded-md border border-input bg-background focus-within:ring-1 focus-within:ring-ring overflow-hidden">
-                  <span className="px-3 text-xs text-muted-foreground bg-muted/40 border-r border-border py-2">
-                    https://
-                  </span>
-                  <input
+                <div className="relative">
+                  <Input
                     type="text"
-                    placeholder="al-razi"
+                    placeholder="e.g. @student.uet.edu.pk or student.uet.edu.pk"
                     value={formData.subdomain}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''),
+                        subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9.@-]/g, ''),
                       }))
                     }
                     onBlur={() => handleBlur('subdomain')}
-                    className="flex-1 px-3 py-2 text-xs bg-transparent focus:outline-hidden font-mono"
+                    className={`text-xs font-mono h-9 ${errors.subdomain ? 'border-rose-500' : ''}`}
                   />
-                  <span className="px-3 text-xs text-muted-foreground bg-muted/40 border-l border-border py-2">
-                    .messpro.app
-                  </span>
                 </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Shared across hostels of the same university. Used to construct student emails (e.g.{' '}
+                  <span className="font-mono text-foreground font-semibold">
+                    2021-CS-15{formData.subdomain ? (formData.subdomain.startsWith('@') ? formData.subdomain : `@${formData.subdomain}`) : '@student.uet.edu.pk'}
+                  </span>
+                  ) during Excel imports and roll-number logins.
+                </p>
                 {errors.subdomain && (
                   <p className="text-[11px] text-rose-500 font-medium">{errors.subdomain}</p>
                 )}

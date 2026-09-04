@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/api/client';
 import { toast } from 'sonner';
+import { extractApiErrorMessage } from './useHostelMutations';
 
 export interface CreateUserPayload {
   name: string;
@@ -32,8 +33,8 @@ export const useCreateUser = () => {
       toast.success('User created successfully and email notification sent');
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Failed to create user';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to create user');
+      toast.error(msg);
     },
   });
 };
@@ -51,8 +52,8 @@ export const useUpdateUser = () => {
       toast.success('User updated successfully');
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Failed to update user';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to update user');
+      toast.error(msg);
     },
   });
 };

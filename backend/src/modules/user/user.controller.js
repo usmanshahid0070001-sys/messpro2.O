@@ -1,6 +1,6 @@
 import { catchAsync } from '../../utils/catchAsync.js';
 import * as userService from './user.service.js';
-import { updateUserSchema, addUserSchema } from './user.validation.js';
+import { updateUserSchema, addUserSchema, userIdParamSchema } from './user.validation.js';
 import hostelService from '../hostel/hostel.service.js';
 
 export const getTargetedUsers = catchAsync(async (req, res) => {
@@ -8,6 +8,7 @@ export const getTargetedUsers = catchAsync(async (req, res) => {
   const users = await userService.getUsersByHierarchy(req.user.role, req.user.hostelId);
 
   res.status(200).json({
+    status: 'success',
     success: true,
     count: users.length,
     data: users,
@@ -15,7 +16,7 @@ export const getTargetedUsers = catchAsync(async (req, res) => {
 });
 
 export const updateExistingUser = catchAsync(async (req, res) => {
-  const targetUserId = req.params.id;
+  const { id: targetUserId } = userIdParamSchema.parse(req.params);
   const validatedData = updateUserSchema.parse(req.body);
 
   // Pass who is asking, what hostel they are from, who they want to edit, and the new data
@@ -27,6 +28,7 @@ export const updateExistingUser = catchAsync(async (req, res) => {
   );
 
   res.status(200).json({
+    status: 'success',
     success: true,
     message: 'User updated successfully.',
     data: updatedUser,
@@ -45,6 +47,7 @@ export const createUser = catchAsync(async (req, res) => {
   );
 
   res.status(201).json({
+    status: 'success',
     success: true,
     message: 'User created successfully and email sent.',
     data: newUser,
@@ -58,18 +61,18 @@ export const signAgreementHandler = catchAsync(async (req, res) => {
   const updatedUser = await userService.signAgreement(req.user._id);
 
   res.status(200).json({
+    status: 'success',
     success: true,
     message: 'Agreement signed successfully.',
     data: updatedUser,
   });
 });
 
-
-
 export const getHealthCheck = catchAsync(async (req, res) => {
   const healthData = await userService.getSystemHealth();
 
   res.status(healthData.status === 'healthy' ? 200 : 503).json({
+    status: healthData.status === 'healthy' ? 'success' : 'fail',
     success: healthData.status === 'healthy',
     data: healthData,
   });

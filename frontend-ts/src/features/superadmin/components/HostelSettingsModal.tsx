@@ -12,6 +12,8 @@ import {
   Globe,
   Sliders,
   ChevronDown,
+  LocateFixed,
+  ExternalLink,
 } from 'lucide-react'
 import { useUpdateHostelSettings } from '@/hooks/mutations/useSuperadminMutations'
 import { useGetPlans, type HostelTenant } from '@/hooks/queries/useSuperadminQueries'
@@ -41,7 +43,7 @@ export default function HostelSettingsModal({
   hostel,
 }: HostelSettingsModalProps) {
   const [planId, setPlanId] = useState<string>('')
-  const [additionalDays, setAdditionalDays] = useState<number>(0)
+  const [additionalDays, setAdditionalDays] = useState<number | string>(0)
   const [location, setLocation] = useState<string>('')
   const [subdomain, setSubdomain] = useState<string>('')
   const [maxMealSelection, setMaxMealSelection] = useState<number>(4)
@@ -49,6 +51,8 @@ export default function HostelSettingsModal({
   const [lat, setLat] = useState<string>('')
   const [lng, setLng] = useState<string>('')
   const [qrSecret, setQrSecret] = useState<string>('')
+  const [isLocating, setIsLocating] = useState<boolean>(false)
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
 
   const { data: plans = [] } = useGetPlans(isOpen)
   const { mutateAsync: updateSettings, isPending: isSaving } = useUpdateHostelSettings()
@@ -68,10 +72,48 @@ export default function HostelSettingsModal({
       setLat(hostel.locationCoords?.lat !== undefined ? String(hostel.locationCoords.lat) : '')
       setLng(hostel.locationCoords?.lng !== undefined ? String(hostel.locationCoords.lng) : '')
       setQrSecret(hostel.qrSecret || '')
+      setGpsAccuracy(null)
     }
   }, [hostel, isOpen])
 
   if (!isOpen || !hostel) return null
+
+  const handleCaptureCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser.')
+      return
+    }
+
+    setIsLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setIsLocating(false)
+        const latitude = position.coords.latitude.toFixed(6)
+        const longitude = position.coords.longitude.toFixed(6)
+        setLat(latitude)
+        setLng(longitude)
+        setGpsAccuracy(Math.round(position.coords.accuracy))
+        toast.success(`Fresh GPS coordinates captured! (±${Math.round(position.coords.accuracy)}m accuracy)`)
+      },
+      (err) => {
+        setIsLocating(false)
+        let msg = 'Failed to retrieve GPS location.'
+        if (err.code === 1) {
+          msg = 'Location permission was denied. Please enable location access in your browser settings.'
+        } else if (err.code === 2) {
+          msg = 'Location unavailable. Please verify GPS is enabled on your device.'
+        } else if (err.code === 3) {
+          msg = 'GPS request timed out. Please try again.'
+        }
+        toast.error(msg)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    )
+  }
 
   const handleGenerateNewSecret = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -319,31 +361,96 @@ export default function HostelSettingsModal({
 
           {/* Geofence & QR Secret Security */}
           <div className="space-y-3 pt-2 border-t border-border/60">
-            <h3 className="font-bold text-foreground flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-teal-500" /> GPS Geofence & QR Security
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-foreground flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-teal-500" /> GPS Geofence & QR Security
+              </h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCaptureCurrentLocation}
+                disabled={isLocating}
+                className="h-7 px-2.5 text-xs gap-1.5 bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30 hover:bg-teal-500/20 cursor-pointer font-medium"
+              >
+                {isLocating ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Locating...</span>
+                  </>
+                ) : (
+                  <>
+                    <LocateFixed className="h-3.5 w-3.5" />
+                    <span>Capture Current Location</span>
+                  </>
+                )}
+              </Button>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">Latitude (GPS)</label>
+                <label className="font-semibold text-foreground text-xs">Latitude (GPS)</label>
                 <Input
                   value={lat}
-                  onChange={(e) => setLat(e.target.value)}
-                  placeholder="e.g. 33.6425"
+                  onChange={(e) => {
+                    setLat(e.target.value)
+                    setGpsAccuracy(null)
+                  }}
+                  placeholder="e.g. 33.642512"
                   className="text-xs font-mono"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">Longitude (GPS)</label>
+                <label className="font-semibold text-foreground text-xs">Longitude (GPS)</label>
                 <Input
                   value={lng}
-                  onChange={(e) => setLng(e.target.value)}
-                  placeholder="e.g. 72.9904"
+                  onChange={(e) => {
+                    setLng(e.target.value)
+                    setGpsAccuracy(null)
+                  }}
+                  placeholder="e.g. 72.990415"
                   className="text-xs font-mono"
                 />
               </div>
             </div>
+
+            {/* Status and Maps helper */}
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground pt-0.5">
+              <div className="flex items-center gap-2">
+                {gpsAccuracy !== null && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <Check className="h-3 w-3" /> ±{gpsAccuracy}m GPS accuracy
+                  </span>
+                )}
+                {lat && lng && (
+                  <a
+                    href={`https://www.google.com/maps?q=${lat},${lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                  >
+                    <ExternalLink className="h-3 w-3" /> Verify Pin on Google Maps
+                  </a>
+                )}
+              </div>
+              {lat && lng && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLat('')
+                    setLng('')
+                    setGpsAccuracy(null)
+                  }}
+                  className="text-rose-500 hover:underline cursor-pointer"
+                >
+                  Clear coordinates
+                </button>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Dining counter check-in verifies that the resident's mobile device is within 30 meters of this geofence center.
+            </p>
 
             <div className="space-y-1.5">
               <label className="font-semibold text-foreground flex items-center justify-between">

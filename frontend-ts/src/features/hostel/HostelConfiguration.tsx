@@ -26,6 +26,9 @@ import {
   Layers,
   Info,
   SlidersHorizontal,
+  LocateFixed,
+  ExternalLink,
+  Loader2,
 } from 'lucide-react'
 import type { RootState } from '@/store'
 import { useGetMyHostel } from '@/hooks/queries/useHostelQueries'
@@ -277,6 +280,10 @@ export default function HostelConfiguration() {
   const [customFields, setCustomFields] = useState<CustomRegistrationField[]>([])
   const [features, setFeatures] = useState<PlanFeatureConfig[]>([])
   const [copiedSecret, setCopiedSecret] = useState(false)
+  const [lat, setLat] = useState('')
+  const [lng, setLng] = useState('')
+  const [isLocating, setIsLocating] = useState(false)
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
 
   // Seed from server data
   useEffect(() => {
@@ -284,6 +291,9 @@ export default function HostelConfiguration() {
     setSubdomain(hostel.subdomain || '')
     setLocation(hostel.location || 'Asia/Karachi')
     setAutoMeal(hostel.settings?.autoMealVerification ?? true)
+    setLat(hostel.locationCoords?.lat !== undefined ? String(hostel.locationCoords.lat) : '')
+    setLng(hostel.locationCoords?.lng !== undefined ? String(hostel.locationCoords.lng) : '')
+    setGpsAccuracy(null)
     setCustomFields(
       (hostel.customRegistrationFields || []).map((f: any) => ({
         name: f.name || '',
@@ -330,12 +340,55 @@ export default function HostelConfiguration() {
     }
   }, [location])
 
+  // Capture fresh GPS coordinates from browser Geolocation API
+  const handleCaptureCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser.')
+      return
+    }
+
+    setIsLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setIsLocating(false)
+        const latitude = position.coords.latitude.toFixed(6)
+        const longitude = position.coords.longitude.toFixed(6)
+        setLat(latitude)
+        setLng(longitude)
+        setGpsAccuracy(Math.round(position.coords.accuracy))
+        toast.success(`Fresh GPS coordinates captured! (±${Math.round(position.coords.accuracy)}m accuracy)`)
+      },
+      (err) => {
+        setIsLocating(false)
+        let msg = 'Failed to retrieve GPS location.'
+        if (err.code === 1) {
+          msg = 'Location permission was denied. Please enable location access in your browser settings.'
+        } else if (err.code === 2) {
+          msg = 'Location unavailable. Please verify GPS is enabled on your device.'
+        } else if (err.code === 3) {
+          msg = 'GPS request timed out. Please try again.'
+        }
+        toast.error(msg)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    )
+  }
+
   // Dirty tracking
   const hasChanges = useMemo(() => {
     if (!hostel) return false
     if (subdomain !== (hostel.subdomain || '')) return true
     if (location !== (hostel.location || 'Asia/Karachi')) return true
     if (autoMealVerification !== (hostel.settings?.autoMealVerification ?? true)) return true
+
+    const prevLat = hostel.locationCoords?.lat !== undefined ? String(hostel.locationCoords.lat) : ''
+    const prevLng = hostel.locationCoords?.lng !== undefined ? String(hostel.locationCoords.lng) : ''
+    if (lat !== prevLat || lng !== prevLng) return true
+
     const initFields = (hostel.customRegistrationFields || []).map((f: any) => ({
       name: f.name || '',
       isRequired: Boolean(f.isRequired),
@@ -346,7 +399,7 @@ export default function HostelConfiguration() {
       isEnabled: isCore(f.name) ? true : Boolean(f.isEnabled),
     }))
     return JSON.stringify(features) !== JSON.stringify(initFeats)
-  }, [subdomain, location, autoMealVerification, customFields, features, hostel])
+  }, [subdomain, location, autoMealVerification, lat, lng, customFields, features, hostel])
 
   // Custom field handlers
   const addField = () => {
@@ -372,6 +425,9 @@ export default function HostelConfiguration() {
     setSubdomain(hostel.subdomain || '')
     setLocation(hostel.location || 'Asia/Karachi')
     setAutoMeal(hostel.settings?.autoMealVerification ?? true)
+    setLat(hostel.locationCoords?.lat !== undefined ? String(hostel.locationCoords.lat) : '')
+    setLng(hostel.locationCoords?.lng !== undefined ? String(hostel.locationCoords.lng) : '')
+    setGpsAccuracy(null)
     setCustomFields(
       (hostel.customRegistrationFields || []).map((f: any) => ({
         name: f.name || '',
@@ -409,9 +465,16 @@ export default function HostelConfiguration() {
       return
     }
 
+    const parsedLat = lat.trim() ? parseFloat(lat) : undefined
+    const parsedLng = lng.trim() ? parseFloat(lng) : undefined
+
     mutation.mutate({
       subdomain: sub.toLowerCase(),
       location: location.trim(),
+      locationCoords:
+        parsedLat !== undefined && parsedLng !== undefined
+          ? { lat: parsedLat, lng: parsedLng }
+          : undefined,
       customRegistrationFields: customFields.map((f) => ({
         name: f.name.trim(),
         isRequired: f.isRequired,
@@ -884,12 +947,148 @@ export default function HostelConfiguration() {
                   onToggle={() => toggleFeature(feat.name)}
                 />
               ))}
+      {/* ── 7. GPS Geofence & Security Controls ── */}
+      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/60">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+              <ShieldCheck className="h-5 w-5" />
             </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">GPS Geofence & Dining Hall Security</h3>
+              <p className="text-xs text-muted-foreground">
+                Set geographic boundary constraints and inspect rotated QR terminal credentials.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleCaptureCurrentLocation}
+            disabled={isLocating}
+            className="gap-1.5 text-xs rounded-xl self-start sm:self-auto bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30 hover:bg-teal-500/20 cursor-pointer font-semibold h-8"
+          >
+            {isLocating ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Locating GPS...</span>
+              </>
+            ) : (
+              <>
+                <LocateFixed className="h-3.5 w-3.5" />
+                <span>Capture Fresh Location</span>
+              </>
+            )}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">
+              Dining Hall Latitude (GPS)
+            </label>
+            <Input
+              value={lat}
+              onChange={(e) => {
+                setLat(e.target.value)
+                setGpsAccuracy(null)
+              }}
+              placeholder="e.g. 33.642512"
+              className="text-xs font-mono h-9"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">
+              Dining Hall Longitude (GPS)
+            </label>
+            <Input
+              value={lng}
+              onChange={(e) => {
+                setLng(e.target.value)
+                setGpsAccuracy(null)
+              }}
+              placeholder="e.g. 72.990415"
+              className="text-xs font-mono h-9"
+            />
+          </div>
+        </div>
+
+        {/* GPS Verification and Maps Helper */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground pt-1">
+          <div className="flex items-center gap-2">
+            {gpsAccuracy !== null && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <Check className="h-3 w-3" /> ±{gpsAccuracy}m GPS accuracy
+              </span>
+            )}
+            {lat && lng && (
+              <a
+                href={`https://www.google.com/maps?q=${lat},${lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+              >
+                <ExternalLink className="h-3 w-3" /> Verify Pin on Google Maps
+              </a>
+            )}
+          </div>
+          {lat && lng && (
+            <button
+              type="button"
+              onClick={() => {
+                setLat('')
+                setLng('')
+                setGpsAccuracy(null)
+              }}
+              className="text-rose-500 hover:underline cursor-pointer"
+            >
+              Clear GPS coordinates
+            </button>
+          )}
+        </div>
+
+        <p className="text-[11px] text-muted-foreground bg-muted/30 p-2.5 rounded-xl border border-border/60">
+          📍 <strong>30-Meter Radius Rule:</strong> When configured, student QR scans must be physically within 30 meters of this coordinate pin to prevent off-campus fraudulent meal scans.
+        </p>
+
+        {/* Rotated QR Counter Secret */}
+        {hostel?.qrSecret && (
+          <div className="p-3 rounded-xl bg-muted/20 border border-border/80 flex items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <span className="text-xs font-semibold text-foreground block">
+                Counter QR Secret Key (Rotated)
+              </span>
+              <span className="font-mono text-xs font-bold tracking-widest text-foreground">
+                {hostel.qrSecret}
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopyQrSecret}
+              className="h-8 gap-1.5 text-xs rounded-xl cursor-pointer"
+            >
+              {copiedSecret ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy Secret</span>
+                </>
+              )}
+            </Button>
           </div>
         )}
       </div>
 
-      {/* ── 7. Sticky Floating Save Bar (When Changes are Dirty) ── */}
+      {/* ── 8. Sticky Floating Save Bar (When Changes are Dirty) ── */}
       {hasChanges && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-xl p-4 rounded-2xl bg-card/95 backdrop-blur-md border border-blue-500/40 shadow-2xl flex items-center justify-between gap-4 animate-in slide-in-from-bottom-5">
           <div className="flex items-center gap-2 text-xs">

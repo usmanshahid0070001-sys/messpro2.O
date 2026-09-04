@@ -6,11 +6,6 @@ import {
   GraduationCap,
   UserCheck,
   ShieldCheck,
-  Building2,
-  Utensils,
-  ClipboardCheck,
-  Settings2,
-  KeyRound,
   Check,
 } from 'lucide-react'
 import { useCreateUser } from '@/hooks/mutations/useUserMutations'
@@ -228,8 +223,13 @@ export default function AddUserModal({ isOpen, onClose, currentRole, hostel }: A
       payload.permissions = permissions
     }
 
-    await createUserMutation.mutateAsync(payload)
-    onClose()
+    try {
+      await createUserMutation.mutateAsync(payload)
+      onClose()
+    } catch {
+      // Error is caught and surfaced via toast notification in useCreateUser
+      // Modal stays open so the user doesn't lose entered inputs
+    }
   }
 
   return (

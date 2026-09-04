@@ -315,7 +315,11 @@ export default function ManageTenantsPage() {
                           <div className="flex items-center gap-1.5 text-muted-foreground font-mono text-[11px]">
                             <Globe className="h-3 w-3 text-blue-500 shrink-0" />
                             <span>
-                              {hostel.subdomain ? `${hostel.subdomain}.messpro.app` : 'No custom subdomain'}
+                              {hostel.subdomain
+                                ? hostel.subdomain.startsWith('@')
+                                  ? hostel.subdomain
+                                  : `@${hostel.subdomain}`
+                                : 'No domain suffix'}
                             </span>
                           </div>
                         </div>

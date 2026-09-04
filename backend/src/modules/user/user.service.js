@@ -10,10 +10,20 @@ export const getUsersByHierarchy = async (requesterRole, requesterHostelId) => {
   } 
   // 2. Hostel Admin: Sees Managers & Students ONLY in their specific hostel
   else if (requesterRole === 'admin') {
+    if (!requesterHostelId) {
+      const error = new Error('No hostel associated with this administrator account.');
+      error.statusCode = 400;
+      throw error;
+    }
     query = { hostelId: requesterHostelId, role: { $in: ['manager', 'student'] } };
   } 
   // 3. Manager & Permitted Student: Sees Students ONLY in their specific hostel
   else if (requesterRole === 'manager' || requesterRole === 'student') {
+    if (!requesterHostelId) {
+      const error = new Error('No hostel associated with this account.');
+      error.statusCode = 400;
+      throw error;
+    }
     query = { hostelId: requesterHostelId, role: 'student' };
   } 
   else {

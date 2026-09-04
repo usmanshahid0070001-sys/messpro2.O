@@ -208,12 +208,16 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
       payload.permissions = permissions
     }
 
-    await updateUserMutation.mutateAsync({
-      id: user._id,
-      payload,
-    })
-
-    onClose()
+    try {
+      await updateUserMutation.mutateAsync({
+        id: user._id,
+        payload,
+      })
+      onClose()
+    } catch {
+      // Error is caught and surfaced via toast notification in useUpdateUser
+      // Modal stays open so the user doesn't lose entered inputs
+    }
   }
 
   return (

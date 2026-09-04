@@ -1,6 +1,6 @@
 import { useState, useMemo, useDeferredValue } from 'react'
 import { useSelector } from 'react-redux'
-import { Plus, Users, UserPlus } from 'lucide-react'
+import { Users, UserPlus, AlertCircle, RefreshCw } from 'lucide-react'
 import type { RootState } from '@/store'
 import { useGetUsers } from '@/hooks/queries/useUserQueries'
 import { useGetMyHostel } from '@/hooks/queries/useHostelQueries'
@@ -23,7 +23,14 @@ export default function ManageUsers() {
   const { hasPermission } = usePermissions()
   const canManageUsers = hasPermission('user_management')
 
-  const { data: users = [], isLoading: usersLoading } = useGetUsers()
+  const {
+    data: users = [],
+    isLoading: usersLoading,
+    isError: usersError,
+    error: usersErrorObj,
+    refetch: refetchUsers,
+    isFetching: usersFetching,
+  } = useGetUsers()
   const { data: hostel, isLoading: hostelLoading } = useGetMyHostel(currentRole)
 
   // Search & Filtering State
@@ -186,6 +193,30 @@ export default function ManageUsers() {
           </Button>
         )}
       </div>
+
+      {/* Error Alert Banner */}
+      {usersError && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive animate-in fade-in duration-200">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <p className="text-xs sm:text-sm font-medium">
+              {(usersErrorObj as any)?.response?.data?.message ||
+                (usersErrorObj as any)?.message ||
+                'Failed to load users. Please verify your connection or permissions.'}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetchUsers()}
+            disabled={usersFetching}
+            className="border-destructive/40 hover:bg-destructive/20 text-destructive shrink-0 cursor-pointer h-8 gap-1.5 text-xs"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${usersFetching ? 'animate-spin' : ''}`} />
+            <span>Retry</span>
+          </Button>
+        </div>
+      )}
 
       {/* Metrics Row */}
       <MetricsHeader

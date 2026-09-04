@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { io } from '../../server.js';
 import mealService from '../meal/meal.service.js';
 import hostelService from '../hostel/hostel.service.js';
+import mealRecordRepository from './mealRecord.repository.js';
 import { bulkSelectMealsSchema, processBiometricAttendanceSchema } from './mealRecord.validation.js';
 
 // ==========================================
