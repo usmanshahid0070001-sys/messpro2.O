@@ -7,11 +7,16 @@ import {
   ShieldCheck,
   CheckCircle2,
   Lock,
-  Headphones
+  Building2,
+  LogIn
 } from 'lucide-react';
 import type { RootState } from '@/store';
 
-export const CtaSection: React.FC = () => {
+interface CtaSectionProps {
+  onSetupClick?: () => void;
+}
+
+export const CtaSection: React.FC<CtaSectionProps> = ({ onSetupClick }) => {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   return (
@@ -42,49 +47,53 @@ export const CtaSection: React.FC = () => {
 
         {/* CTA Buttons with 1px Rotating Conic Gradient Signature */}
         <div className="flex flex-wrap items-center justify-center gap-4 pt-3">
+          {/* Setup Hostel Primary Action */}
           <div className="relative p-[1px] rounded-full overflow-hidden inline-flex group">
-            <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#b8842a,#ff9800,#b8842a)] animate-spin-conic opacity-75 group-hover:opacity-100 transition-opacity" />
-            {isAuthenticated ? (
-              <Link
-                to="/app"
-                className="relative z-10 inline-flex items-center gap-2 px-8 py-3.5 text-xs sm:text-sm font-bold rounded-full bg-primary text-primary-foreground shadow-xl hover:opacity-95 active:scale-[0.98] transition-all"
-              >
-                <span>Open Dashboard</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            ) : (
-              <Link
-                to="/login"
-                className="relative z-10 inline-flex items-center gap-2 px-8 py-3.5 text-xs sm:text-sm font-bold rounded-full bg-primary text-primary-foreground shadow-xl hover:opacity-95 active:scale-[0.98] transition-all"
-              >
-                <span>Sign In to Account</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            )}
+            <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#b8842a,#ff9800,#b8842a)] animate-spin-conic opacity-90 group-hover:opacity-100 transition-opacity" />
+            <button
+              type="button"
+              onClick={onSetupClick}
+              className="relative z-10 inline-flex items-center gap-2 px-8 py-3.5 text-xs sm:text-sm font-extrabold rounded-full bg-primary text-primary-foreground shadow-xl hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Setup Your Hostel (10-Day Free Trial)</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </button>
           </div>
 
-          <a
-            href="mailto:support@messpro.io"
-            className="inline-flex items-center gap-2 px-6 py-3.5 text-xs sm:text-sm font-semibold rounded-full border border-border/80 dark:border-white/15 bg-card/60 dark:bg-white/5 hover:bg-muted/80 backdrop-blur-md text-foreground transition-colors glass-bevel"
-          >
-            <Headphones className="w-4 h-4 text-muted-foreground" />
-            <span>Speak with Support</span>
-          </a>
+          {/* Secondary Action */}
+          {isAuthenticated ? (
+            <Link
+              to="/app"
+              className="inline-flex items-center gap-2 px-6 py-3.5 text-xs sm:text-sm font-semibold rounded-full border border-border/80 dark:border-white/15 bg-card/60 dark:bg-white/5 hover:bg-muted/80 backdrop-blur-md text-foreground transition-colors glass-bevel"
+            >
+              <span>Go to Dashboard</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 px-6 py-3.5 text-xs sm:text-sm font-semibold rounded-full border border-border/80 dark:border-white/15 bg-card/60 dark:bg-white/5 hover:bg-muted/80 backdrop-blur-md text-foreground transition-colors glass-bevel"
+            >
+              <LogIn className="w-4 h-4 text-muted-foreground" />
+              <span>Sign In</span>
+            </Link>
+          )}
         </div>
 
         {/* Reassurance Badges */}
         <div className="pt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
           <div className="flex items-center gap-2 font-semibold">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <span>Fast 5-minute setup</span>
+            <span>Fast 3-minute onboarding</span>
           </div>
           <div className="flex items-center gap-2 font-semibold">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>100% Data privacy & backups</span>
+            <span>10-day full access trial</span>
           </div>
           <div className="flex items-center gap-2 font-semibold">
             <Lock className="w-4 h-4 text-emerald-500" />
-            <span>Audit-proof ledger sync</span>
+            <span>Official Superadmin approval</span>
           </div>
         </div>
 
@@ -92,3 +101,4 @@ export const CtaSection: React.FC = () => {
     </section>
   );
 };
+

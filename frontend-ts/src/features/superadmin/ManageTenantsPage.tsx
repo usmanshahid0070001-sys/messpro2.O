@@ -6,6 +6,7 @@ import {
   Download,
   Settings,
   UserPlus,
+  Trash2,
   Globe,
   MapPin,
   TrendingUp,
@@ -18,6 +19,7 @@ import { useGetHostels, type HostelTenant } from '@/hooks/queries/useSuperadminQ
 import CreateHostelModal from './components/CreateHostelModal'
 import HostelSettingsModal from './components/HostelSettingsModal'
 import AddHostelUserModal from './components/AddHostelUserModal'
+import DeleteHostelModal from './components/DeleteHostelModal'
 import { exportHostelsToExcel } from '@/utils/exportUtils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,6 +33,7 @@ export default function ManageTenantsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [selectedSettingsHostel, setSelectedSettingsHostel] = useState<HostelTenant | null>(null)
   const [selectedUserHostel, setSelectedUserHostel] = useState<HostelTenant | null>(null)
+  const [selectedDeleteHostel, setSelectedDeleteHostel] = useState<HostelTenant | null>(null)
 
   // Derived metrics
   const totalCount = hostels.length
@@ -399,6 +402,15 @@ export default function ManageTenantsPage() {
                             <Settings className="h-3.5 w-3.5" />
                             <span className="hidden md:inline">Configure</span>
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedDeleteHostel(hostel)}
+                            title="Delete Hostel & Associated Users"
+                            className="h-8 px-2 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-500/10 border-rose-500/20 hover:border-rose-500/40 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -427,6 +439,13 @@ export default function ManageTenantsPage() {
         onClose={() => setSelectedUserHostel(null)}
         hostel={selectedUserHostel}
       />
+
+      <DeleteHostelModal
+        isOpen={Boolean(selectedDeleteHostel)}
+        onClose={() => setSelectedDeleteHostel(null)}
+        hostel={selectedDeleteHostel}
+      />
     </div>
   )
 }
+

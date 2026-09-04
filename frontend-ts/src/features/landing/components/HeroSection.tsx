@@ -19,6 +19,7 @@ import type { RecentScan } from '../types';
 interface HeroSectionProps {
   onExploreClick: () => void;
   onCalculateClick: () => void;
+  onSetupClick?: () => void;
 }
 
 const INITIAL_SCANS: RecentScan[] = [
@@ -38,7 +39,7 @@ const SAMPLE_NAMES = [
 const HEADLINE_WORDS_1 = ['Run', 'your', 'entire', 'mess', '&'];
 const HEADLINE_WORDS_2 = ['hostel', 'without', 'the'];
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ onExploreClick, onCalculateClick }) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ onExploreClick, onCalculateClick, onSetupClick }) => {
   const [scanCount, setScanCount] = useState<number>(248);
   const [scans, setScans] = useState<RecentScan[]>(INITIAL_SCANS);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -187,17 +188,27 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onExploreClick, onCalc
 
             {/* Action Buttons with 1px Rotating Conic Gradient Signature */}
             <div className="flex flex-wrap items-center gap-3 pt-1">
+              {/* Primary Setup Hostel CTA */}
               <div className="relative p-[1px] rounded-full overflow-hidden inline-flex group">
-                <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#b8842a,#ff9800,#b8842a)] animate-spin-conic opacity-70 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#b8842a,#ff9800,#b8842a)] animate-spin-conic opacity-90 group-hover:opacity-100 transition-opacity" />
                 <button
                   type="button"
-                  onClick={onExploreClick}
-                  className="relative z-10 inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold rounded-full bg-primary text-primary-foreground shadow-sm hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer"
+                  onClick={onSetupClick || onExploreClick}
+                  className="relative z-10 inline-flex items-center justify-center gap-2 px-6 py-3 text-xs sm:text-sm font-extrabold rounded-full bg-primary text-primary-foreground shadow-md hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer"
                 >
-                  <span>Explore Features</span>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Setup Hostel (10-Day Free Trial)</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </div>
+
+              <button
+                type="button"
+                onClick={onExploreClick}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-full border border-border/80 dark:border-white/15 bg-card/60 dark:bg-white/5 hover:bg-muted/80 backdrop-blur-md text-foreground transition-all cursor-pointer glass-bevel"
+              >
+                <span>Explore Features</span>
+              </button>
 
               <button
                 type="button"
@@ -208,6 +219,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onExploreClick, onCalc
                 <span>Calculate Savings</span>
               </button>
             </div>
+
 
             {/* Proof Metric Strip */}
             <div className="pt-3 flex items-center gap-5 text-xs text-muted-foreground border-t border-border/60 dark:border-white/10">

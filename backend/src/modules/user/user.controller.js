@@ -19,12 +19,13 @@ export const updateExistingUser = catchAsync(async (req, res) => {
   const { id: targetUserId } = userIdParamSchema.parse(req.params);
   const validatedData = updateUserSchema.parse(req.body);
 
-  // Pass who is asking, what hostel they are from, who they want to edit, and the new data
+  // Pass who is asking, what hostel they are from, who they want to edit, the new data, and requester user ID
   const updatedUser = await userService.updateUser(
     req.user.role,
     req.user.hostelId,
     targetUserId,
-    validatedData
+    validatedData,
+    req.user._id
   );
 
   res.status(200).json({

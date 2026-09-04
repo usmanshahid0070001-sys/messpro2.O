@@ -17,7 +17,9 @@ import {
   BookOpen,
   ShieldCheck,
   Scale,
+  Inbox,
 } from 'lucide-react';
+
 import type { RootState } from '@/store';
 import type { PlanFeature } from '@/store/slices/HostelSlice';
 
@@ -184,6 +186,11 @@ export function useNavigation() {
           icon: LayoutDashboard
         },
         {
+          title: "Hostel Requests",
+          url: "/app/superadmin/requests",
+          icon: Inbox
+        },
+        {
           title: "Hostel Tenants",
           url: "/app/superadmin/hostels",
           icon: Building2
@@ -200,6 +207,7 @@ export function useNavigation() {
         },
       ];
     }
+
 
     // ── Admin ───────────────────────────────────────────────────────────────
     if (role === 'admin') {

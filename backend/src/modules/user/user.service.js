@@ -36,7 +36,7 @@ export const getUsersByHierarchy = async (requesterRole, requesterHostelId) => {
   return await userRepository.findUsers(query);
 };
 
-export const updateUser = async (requesterRole, requesterHostelId, targetUserId, updateData) => {
+export const updateUser = async (requesterRole, requesterHostelId, targetUserId, updateData, requesterUserId = null) => {
   // 1. Find the user they are trying to update
   const targetUser = await userRepository.findById(targetUserId);
   if (!targetUser) {
@@ -45,23 +45,25 @@ export const updateUser = async (requesterRole, requesterHostelId, targetUserId,
     throw error;
   }
 
+  const isSelf = requesterUserId && String(targetUser._id) === String(requesterUserId);
+
   // 2. THE SECURITY BOUNCER: Hierarchy & Tenant Isolation Check
   const allowedUpdates = {
-    superadmin: ['admin', 'manager'],
+    superadmin: ['superadmin', 'admin', 'manager', 'student'],
     admin:      ['manager', 'student'],
     manager:    ['student'],
     student:    ['student']
   };
 
-  // Rule A: Can this role edit that role?
-  if (!allowedUpdates[requesterRole]?.includes(targetUser.role)) {
+  // Rule A: Can this role edit that role? (Self-update of profile/additionalInfo is always allowed)
+  if (!isSelf && !allowedUpdates[requesterRole]?.includes(targetUser.role)) {
     const error = new Error(`Access Denied: A ${requesterRole} cannot update a ${targetUser.role}.`);
     error.statusCode = 403;
     throw error;
   }
 
-  // Rule B: Are they in the same hostel? (Superadmins bypass this rule)
-  if (requesterRole !== 'superadmin' && String(targetUser.hostelId) !== String(requesterHostelId)) {
+  // Rule B: Are they in the same hostel? (Superadmins and self-updates bypass this rule)
+  if (!isSelf && requesterRole !== 'superadmin' && String(targetUser.hostelId) !== String(requesterHostelId)) {
     const error = new Error('Access Denied: This user belongs to a different hostel.');
     error.statusCode = 403;
     throw error;

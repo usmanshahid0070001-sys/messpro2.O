@@ -20,6 +20,7 @@ import logoUrl from '@/assets/pwa-192x192.png';
 interface NavbarProps {
   activeSection: SectionId;
   onNavigate: (id: SectionId) => void;
+  onSetupClick?: () => void;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -30,7 +31,8 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'faqs', label: 'FAQs' },
 ];
 
-export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => {
+export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSetupClick }) => {
+
   const { theme, setTheme } = useTheme();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -191,6 +193,18 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
             )}
           </button>
 
+          {/* Setup Hostel Button */}
+          {onSetupClick && (
+            <button
+              type="button"
+              onClick={onSetupClick}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full bg-amber-500 hover:bg-amber-600 text-neutral-950 shadow-xs active:scale-[0.97] transition-all cursor-pointer relative overflow-hidden"
+            >
+              <Sparkles className="w-3 h-3 text-neutral-950" />
+              <span>Setup Hostel</span>
+            </button>
+          )}
+
           {/* Login or Dashboard Button */}
           {isAuthenticated ? (
             <Link
@@ -204,7 +218,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
           ) : (
             <Link
               to="/login"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full bg-primary text-primary-foreground shadow-xs hover:opacity-90 active:scale-[0.97] transition-all cursor-pointer relative overflow-hidden group"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full bg-muted/60 dark:bg-white/10 hover:bg-muted text-foreground border border-border/60 dark:border-white/10 shadow-xs hover:opacity-90 active:scale-[0.97] transition-all cursor-pointer relative overflow-hidden group"
             >
               <LogIn className="w-3 h-3" />
               <span>Sign In</span>
@@ -226,6 +240,20 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
       {/* Mobile Glass Drawer */}
       {mobileMenuOpen && (
         <div className="pointer-events-auto absolute top-14 inset-x-4 max-w-sm mx-auto rounded-3xl border border-white/20 dark:border-white/10 bg-background/95 dark:bg-neutral-950/95 backdrop-blur-2xl p-4 space-y-2.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          {onSetupClick && (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onSetupClick();
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-500 text-neutral-950 font-black text-xs shadow-md"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Setup Your Hostel (10-Day Free Trial)</span>
+            </button>
+          )}
+
           <div className="grid grid-cols-2 gap-1.5">
             {NAV_ITEMS.map((item, idx) => {
               const isActive = activeSection === item.id;
@@ -274,7 +302,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
           </div>
 
           <div className="pt-2 border-t border-border/60 dark:border-white/10 flex items-center justify-between">
-            <span className="text-[11px] text-muted-foreground font-medium">Ready to start?</span>
+            <span className="text-[11px] text-muted-foreground font-medium">Have an account?</span>
             <Link
               to="/login"
               onClick={() => setMobileMenuOpen(false)}
@@ -289,5 +317,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
     </div>
   );
 };
+
 
 export default Navbar;

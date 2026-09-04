@@ -161,3 +161,117 @@ export const useUpdatePlan = () => {
     },
   });
 };
+
+export interface SubmitHostelRequestPayload {
+  hostelName: string;
+  subdomain: string;
+  location: string;
+  address?: string;
+  adminName: string;
+  adminEmail: string;
+  adminPhone: string;
+  managerName?: string;
+  managerEmail?: string;
+  requestedPlan: {
+    planType: '10_day_trial' | 'standard' | 'custom';
+    planId?: string;
+    estimatedStudents?: number;
+    estimatedManagers?: number;
+    desiredFeatures?: string[];
+    notes?: string;
+  };
+}
+
+export const useSubmitHostelRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: SubmitHostelRequestPayload) => {
+      const response = await apiClient.post('/hostels/requests', payload);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'hostel-requests'] });
+      toast.success('Hostel setup request submitted successfully! Check your email for confirmation.');
+    },
+    onError: (error: any) => {
+      const msg = extractApiErrorMessage(error, 'Failed to submit hostel setup request');
+      toast.error(msg);
+    },
+  });
+};
+
+export interface ApproveHostelRequestPayload {
+  id: string;
+  planId: string;
+  temporaryPassword?: string;
+  supportEmail?: string;
+  supportPhone?: string;
+}
+
+export const useApproveHostelRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: ApproveHostelRequestPayload) => {
+      const response = await apiClient.post(`/hostels/requests/${id}/approve`, payload);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'hostel-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'hostels'] });
+      toast.success('Hostel approved and onboarded! Login credentials & welcome details emailed to client.');
+    },
+    onError: (error: any) => {
+      const msg = extractApiErrorMessage(error, 'Failed to approve hostel request');
+      toast.error(msg);
+    },
+  });
+};
+
+export interface RejectHostelRequestPayload {
+  id: string;
+  reason: string;
+}
+
+export const useRejectHostelRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, reason }: RejectHostelRequestPayload) => {
+      const response = await apiClient.post(`/hostels/requests/${id}/reject`, { reason });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'hostel-requests'] });
+      toast.success('Hostel request marked as rejected');
+    },
+    onError: (error: any) => {
+      const msg = extractApiErrorMessage(error, 'Failed to reject hostel request');
+      toast.error(msg);
+    },
+  });
+};
+
+export const useDeleteHostel = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiClient.delete(`/hostels/${id}`);
+      return response.data;
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'hostels'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success(data?.message || 'Hostel and associated users deleted successfully');
+    },
+    onError: (error: any) => {
+      const msg = extractApiErrorMessage(error, 'Failed to delete hostel');
+      toast.error(msg);
+    },
+  });
+};
+
+

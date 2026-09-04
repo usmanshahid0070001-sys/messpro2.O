@@ -26,8 +26,8 @@ export const createHostelSchema = z.object({
   location: z.string().trim().min(2, 'Location is required').max(150, 'Location cannot exceed 150 characters'),
   adminName: z.string().trim().min(2, 'Admin name is required.').max(100),
   adminEmail: z.string().trim().toLowerCase().email('Valid admin email is required.'),
-  managerName: z.string().trim().min(2, 'Manager name is required.').max(100),
-  managerEmail: z.string().trim().toLowerCase().email('Valid manager email is required.'),
+  managerName: z.string().trim().max(100).optional().or(z.literal('')),
+  managerEmail: z.string().trim().toLowerCase().email('Valid manager email is required.').optional().or(z.literal('')),
   plan: z.string().regex(OBJECT_ID_REGEX, 'Invalid Plan ID structure.').optional(),
   settings: z.object({
     authMethod: z.enum(['Email', 'RollNumber']).default('Email').optional(),
@@ -107,3 +107,43 @@ export const superadminUpdateHostelSettingsSchema = updateTenantSettingsSchema.e
 
 // Backward-compatibility alias
 export const updateSettingsSchema = superadminUpdateHostelSettingsSchema;
+
+// ─── Public Hostel Setup Request Schema ───────────────────────────────────────
+export const createHostelRequestSchema = z.object({
+  hostelName: z.string().trim().min(3, 'Hostel name must be at least 3 characters.').max(100),
+  subdomain: z.string().trim().min(3, 'Subdomain must be at least 3 characters.').max(50).toLowerCase(),
+  location: z.string().trim().min(2, 'Location / Timezone is required.').default('Asia/Karachi'),
+  address: z.string().trim().max(250).optional().default(''),
+  adminName: z.string().trim().min(2, 'Administrator name is required.').max(100),
+  adminEmail: z.string().trim().email('Valid administrator email is required.').toLowerCase(),
+  adminPhone: z.string().trim().min(6, 'Valid WhatsApp contact phone number is required.').max(30),
+  managerName: z.string().trim().max(100).optional().default(''),
+  managerEmail: z.string().trim().email('Valid manager email is required.').toLowerCase().optional().or(z.literal('')),
+  requestedPlan: z.object({
+    planType: z.enum(['10_day_trial', 'trial', 'standard', 'enterprise', 'custom']).default('10_day_trial'),
+    planId: z.string().regex(OBJECT_ID_REGEX, 'Invalid Plan ID format.').optional(),
+    estimatedStudents: z.number().int().min(1).max(50000).default(100),
+    estimatedManagers: z.number().int().min(1).max(500).default(2),
+    desiredFeatures: z.array(z.string().trim()).optional().default([]),
+    customFeatures: z.array(z.string().trim()).optional().default([]),
+    notes: z.string().trim().max(1000).optional().default(''),
+  }).optional().default({}),
+});
+
+
+// ─── Superadmin Approval & Rejection Schemas ──────────────────────────────────
+export const approveHostelRequestSchema = z.object({
+  planId: z.string().regex(OBJECT_ID_REGEX, 'Selected subscription Plan ID is required.'),
+  temporaryPassword: z.string().trim().min(6, 'Temporary password must be at least 6 characters.').max(100).optional().or(z.literal('')),
+  supportEmail: z.string().trim().email('Invalid support email.').toLowerCase().optional().or(z.literal('')),
+  supportPhone: z.string().trim().max(50).optional().or(z.literal('')),
+  notes: z.string().trim().max(500).optional(),
+});
+
+export const rejectHostelRequestSchema = z.object({
+  reason: z.string().trim().min(3, 'Please provide a clear reason for rejecting the request.').max(500),
+});
+
+export const hostelRequestIdParamSchema = z.object({
+  id: z.string().regex(OBJECT_ID_REGEX, 'Invalid Hostel Request ID format.'),
+});

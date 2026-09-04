@@ -2,6 +2,12 @@ import crypto from 'crypto';
 import hostelRepository from './hostel.repository.js';
 import { sendEmail } from '../../utils/email.js';
 import { cache } from '../../config/cache.js';
+import {
+  verifyEmailDomainMX,
+  validateEmailFormat,
+  validateSubdomain,
+} from '../../utils/emailValidator.js';
+
 
 const CORE_FEATURE_NAMES = [
   'user_management',
@@ -33,11 +39,13 @@ class HostelService {
       throw error;
     }
 
-    const managerExists = await hostelRepository.findUserByEmail(data.managerEmail);
-    if (managerExists) {
-      const error = new Error(`User with email ${data.managerEmail} already exists.`);
-      error.statusCode = 409;
-      throw error;
+    if (data.managerEmail && typeof data.managerEmail === 'string' && data.managerEmail.trim()) {
+      const managerExists = await hostelRepository.findUserByEmail(data.managerEmail.trim());
+      if (managerExists) {
+        const error = new Error(`User with email ${data.managerEmail} already exists.`);
+        error.statusCode = 409;
+        throw error;
+      }
     }
 
     let planData = data.plan
@@ -86,15 +94,18 @@ class HostelService {
         name: data.adminName,
         email: data.adminEmail,
         role: 'admin',
+        password: data.adminPassword,
       });
       createdUsers.push(adminUser.email);
 
-      const managerUser = await this.createHostelUser(hostel._id, hostel.name, {
-        name: data.managerName,
-        email: data.managerEmail,
-        role: 'manager',
-      });
-      createdUsers.push(managerUser.email);
+      if (data.managerEmail && typeof data.managerEmail === 'string' && data.managerEmail.trim()) {
+        const managerUser = await this.createHostelUser(hostel._id, hostel.name, {
+          name: data.managerName?.trim() || 'Manager',
+          email: data.managerEmail.trim(),
+          role: 'manager',
+        });
+        createdUsers.push(managerUser.email);
+      }
 
       // Sync initial features to newly created admin
       await this._syncAdminPermissions(hostel._id, planSnapshot.features);
@@ -460,7 +471,9 @@ class HostelService {
       if (hasFeat('bill_management')) userData.permissions.push('bill_management');
     }
 
-    const password = crypto.randomBytes(8).toString('base64url');
+    const password = userData.password && userData.password.trim().length >= 6
+      ? userData.password.trim()
+      : crypto.randomBytes(8).toString('base64url');
     const user = await hostelRepository.createUser({
       id: userData.id ? userData.id.toLowerCase().trim() : undefined,
       name: userData.name.trim(),
@@ -547,6 +560,397 @@ class HostelService {
       .map((f) => normalizeFeatureName(f.name));
 
     await hostelRepository.syncAdminPermissions(hostelId, activePermissions);
+  }
+
+  // ─── Hostel Setup Onboarding Requests ───────────────────────────────────────
+
+  /**
+   * Public submission of a hostel setup / trial request (from landing page)
+   * Hardened for production: MX verification, disposable block, user collision, duplicate/subdomain checks
+   */
+  async submitHostelRequest(data) {
+    const rawAdminEmail = (data.adminEmail || '').toLowerCase().trim();
+    const rawManagerEmail = (data.managerEmail || '').toLowerCase().trim();
+    const rawSubdomain = (data.subdomain || '').toLowerCase().trim();
+    const rawHostelName = (data.hostelName || '').trim();
+
+    // 1. Subdomain Validation & Reserved Word Guard
+    const subValidation = validateSubdomain(rawSubdomain);
+    if (!subValidation.valid) {
+      const error = new Error(subValidation.reason);
+      error.statusCode = 400;
+      throw error;
+    }
+    const cleanSubdomain = subValidation.sanitized;
+
+    // 2. Email Syntax & DNS MX Deliverability Verification (Real mailbox domain verification)
+    const emailMxCheck = await verifyEmailDomainMX(rawAdminEmail);
+    if (!emailMxCheck.valid) {
+      const error = new Error(emailMxCheck.reason);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (rawManagerEmail) {
+      const mgrMxCheck = await verifyEmailDomainMX(rawManagerEmail);
+      if (!mgrMxCheck.valid) {
+        const error = new Error(`Manager Email: ${mgrMxCheck.reason}`);
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // 3. Check for Subdomain Collisions (Active Hostel or Pending Request)
+    const existingSubdomainHostel = await hostelRepository.findBySubdomain(cleanSubdomain);
+    if (existingSubdomainHostel) {
+      const error = new Error(`The subdomain "${cleanSubdomain}.messpro.app" is already in use by an active hostel. Please choose another unique subdomain slug.`);
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const pendingSubdomainRequest = await hostelRepository.findPendingHostelRequestBySubdomain(cleanSubdomain);
+    if (pendingSubdomainRequest) {
+      const error = new Error(`The subdomain "${cleanSubdomain}.messpro.app" has already been requested and is pending review. Please choose another unique subdomain.`);
+      error.statusCode = 409;
+      throw error;
+    }
+
+    // 4. Check for Hostel Name Collisions (Active Hostel)
+    const existingName = await hostelRepository.findByName(rawHostelName);
+    if (existingName) {
+      const error = new Error(`A hostel named "${rawHostelName}" is already active on MessPro. Please choose a distinct hostel name.`);
+      error.statusCode = 409;
+      throw error;
+    }
+
+    // 5. Existing User Check: If admin is already a registered user in MessPro
+    const existingAdminUser = await hostelRepository.findUserByEmail(rawAdminEmail);
+    if (existingAdminUser) {
+      const error = new Error(`An account with email "${rawAdminEmail}" is already registered on MessPro. If you are already an administrator or resident, please sign in or submit this setup request using a different official email address.`);
+      error.statusCode = 409;
+      throw error;
+    }
+
+    if (rawManagerEmail) {
+      const existingManagerUser = await hostelRepository.findUserByEmail(rawManagerEmail);
+      if (existingManagerUser) {
+        const error = new Error(`The manager email "${rawManagerEmail}" is already associated with an account on MessPro. Please provide an unused manager email or leave it empty.`);
+        error.statusCode = 409;
+        throw error;
+      }
+    }
+
+    // 6. One Active Pending Request Per Email Guard
+    const pendingRequest = await hostelRepository.findPendingHostelRequestByEmail(rawAdminEmail);
+    if (pendingRequest) {
+      const error = new Error(`A setup request from "${rawAdminEmail}" is already pending review by the MessPro Superadmin team. Our team will verify and activate your workspace shortly. If you need to request another facility, please use another email address.`);
+      error.statusCode = 409;
+      throw error;
+    }
+
+    // 7. Persist Validated Setup Request
+    const request = await hostelRepository.createHostelRequest({
+      hostelName: rawHostelName,
+      subdomain: cleanSubdomain,
+      location: data.location?.trim() || 'Asia/Karachi',
+      address: data.address?.trim() || '',
+      adminName: data.adminName.trim(),
+      adminEmail: rawAdminEmail,
+      adminPhone: data.adminPhone.trim(),
+      managerName: data.managerName?.trim() || '',
+      managerEmail: rawManagerEmail || '',
+      requestedPlan: data.requestedPlan || {},
+      status: 'pending',
+    });
+
+    // 8. Dispatch Acknowledgment Email to Client
+    try {
+      await sendEmail({
+        to: rawAdminEmail,
+        subject: `Onboarding Request Received — MessPro 2.0 (${rawHostelName})`,
+        text: `Hello ${data.adminName},\n\nWe received your setup request for "${rawHostelName}" with subdomain "${cleanSubdomain}.messpro.app".\n\nOur Superadmin team is currently reviewing your configuration. Once approved, your dedicated hostel workspace and initial 10-day trial credentials will be provisioned and sent to this email.\n\nThank you for choosing MessPro 2.0!`,
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+            <h2 style="color: #b8842a;">Hostel Onboarding Request Received</h2>
+            <p>Hello <strong>${data.adminName}</strong>,</p>
+            <p>Thank you for submitting a setup request for <strong>${rawHostelName}</strong> on MessPro 2.0.</p>
+            <div style="background: #f9fafb; padding: 14px; border-radius: 8px; border-left: 4px solid #b8842a; margin: 16px 0;">
+              <p style="margin: 3px 0;"><strong>Facility:</strong> ${rawHostelName}</p>
+              <p style="margin: 3px 0;"><strong>Subdomain:</strong> ${cleanSubdomain}.messpro.app</p>
+              <p style="margin: 3px 0;"><strong>Timezone:</strong> ${data.location || 'Asia/Karachi'}</p>
+              <p style="margin: 3px 0;"><strong>Status:</strong> Under Review (MessPro Team)</p>
+            </div>
+            <p>Once our team verifies your submission, your tenant instance and administrator credentials will be generated and dispatched automatically.</p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;" />
+            <p style="font-size: 12px; color: #6b7280;">MessPro 2.0 — Smart Mess & Hostel Management Platform</p>
+          </div>
+        `,
+      });
+    } catch (e) {
+      console.warn('Could not send onboarding acknowledgment email:', e.message);
+    }
+
+    return {
+      success: true,
+      message: 'Your hostel setup request has been submitted successfully! Check your email for confirmation.',
+      data: request,
+    };
+  }
+
+
+  /**
+   * Superadmin retrieval of all onboarding requests with status & search filtering
+   */
+  async getHostelRequests({ status = 'all', search = '', page = 1, limit = 25 } = {}) {
+    const filter = {};
+
+    if (status && status !== 'all') {
+      filter.status = status.toLowerCase();
+    }
+
+    if (search && search.trim()) {
+      const regex = new RegExp(search.trim(), 'i');
+      filter.$or = [
+        { hostelName: regex },
+        { adminEmail: regex },
+        { adminName: regex },
+        { subdomain: regex },
+        { adminPhone: regex },
+      ];
+    }
+
+    const skip = (Math.max(1, page) - 1) * Math.max(1, limit);
+    const [requests, total] = await Promise.all([
+      hostelRepository.findHostelRequests({ filter, skip, limit: Math.max(1, limit) }),
+      hostelRepository.countHostelRequests(filter),
+    ]);
+
+    return {
+      data: requests,
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / Math.max(1, limit)),
+    };
+  }
+
+  /**
+   * Superadmin approval of a hostel setup request: Provisions tenant, creates accounts, and sends official credentials
+   */
+  async approveHostelRequest(requestId, approvalData, approverUser = null) {
+    const request = await hostelRepository.findHostelRequestById(requestId);
+    if (!request) {
+      const error = new Error('Hostel setup request not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (request.status !== 'pending') {
+      const error = new Error(`Cannot approve request: This request is already marked as ${request.status}.`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const planData = await hostelRepository.findPlanById(approvalData.planId);
+    if (!planData) {
+      const error = new Error('Selected subscription plan does not exist.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // 1. Provision the real Hostel and Admin account
+    const provisionResult = await this.registerHostel({
+      name: request.hostelName,
+      subdomain: request.subdomain,
+      location: request.location,
+      plan: planData._id.toString(),
+      adminName: request.adminName,
+      adminEmail: request.adminEmail,
+      adminPassword: approvalData.temporaryPassword?.trim() || undefined,
+      managerName: request.managerName || undefined,
+      managerEmail: request.managerEmail || undefined,
+    });
+
+    // 2. Fetch created hostel document to get exact ID
+    const createdHostel = await hostelRepository.findByName(request.hostelName);
+
+    // 3. Extract Superadmin Support Contacts from additionalInfo
+    let superadminInfo = approverUser?.additionalInfo || [];
+    if ((!superadminInfo || superadminInfo.length === 0) && approverUser?._id) {
+      const dbUser = await hostelRepository.findUserById(approverUser._id);
+      if (dbUser?.additionalInfo && Array.isArray(dbUser.additionalInfo)) {
+        superadminInfo = dbUser.additionalInfo;
+      }
+    }
+
+    const supportEmails = [];
+    const supportPhones = [];
+
+    if (Array.isArray(superadminInfo) && superadminInfo.length > 0) {
+      superadminInfo.forEach((item) => {
+        if (!item || !item.value) return;
+        const val = String(item.value).trim();
+        const key = String(item.key || 'Contact').trim();
+        if (!val) return;
+
+        const isEmail = val.includes('@') || key.toLowerCase().includes('mail');
+        if (isEmail) {
+          supportEmails.push({ label: key, value: val });
+        } else {
+          supportPhones.push({ label: key, value: val });
+        }
+      });
+    }
+
+    // Fallbacks if no custom contacts configured
+    if (supportEmails.length === 0) {
+      const fallbackEmail = approvalData.supportEmail?.trim() || approverUser?.email || process.env.EMAIL_USER || 'support@messpro.app';
+      supportEmails.push({ label: 'Support Email', value: fallbackEmail });
+    }
+    if (supportPhones.length === 0 && approvalData.supportPhone?.trim()) {
+      supportPhones.push({ label: 'WhatsApp Support', value: approvalData.supportPhone.trim() });
+    }
+
+    // 4. Mark request as approved
+    await hostelRepository.updateHostelRequest(requestId, {
+      status: 'approved',
+      approvedHostelId: createdHostel?._id || null,
+      supportContact: {
+        email: supportEmails.map((e) => `${e.label}: ${e.value}`).join(' | '),
+        phone: supportPhones.map((p) => `${p.label}: ${p.value}`).join(' | '),
+      },
+    });
+
+    // 5. Send Official Approval & Onboarding Email to the client
+    const featuresList = (planData.features || [])
+      .map((f) => `• ${typeof f === 'string' ? f : f.name}`)
+      .join('\n');
+
+    const supportLinesText = [
+      ...supportEmails.map((e) => `📧 ${e.label}: ${e.value}`),
+      ...supportPhones.map((p) => `💬 ${p.label} (WhatsApp): ${p.value}`),
+    ].join('\n');
+
+    const supportLinesHtml = [
+      ...supportEmails.map((e) => `<p style="margin: 2px 0;">📧 <strong>${e.label}:</strong> <a href="mailto:${e.value}" style="color: #2563eb;">${e.value}</a></p>`),
+      ...supportPhones.map((p) => `<p style="margin: 2px 0;">💬 <strong>${p.label} (WhatsApp):</strong> <a href="https://wa.me/${p.value.replace(/[^0-9]/g, '')}" style="color: #16a34a; font-weight: bold;">${p.value}</a></p>`),
+    ].join('');
+
+    const emailLines = [
+      `🎉 Congratulations! Your MessPro Hostel Workspace is Ready.`,
+      ``,
+      `Hostel Name: ${request.hostelName}`,
+      `Subdomain / Suffix: ${request.subdomain}.messpro.app`,
+      `Assigned Plan: ${planData.name} (10-Day Free Trial Activated)`,
+      `Student Capacity Limit: ${planData.limits?.maxStudents === -1 ? 'Unlimited' : (planData.limits?.maxStudents ?? 100)} students`,
+      `Manager Limit: ${planData.limits?.maxManagers === -1 ? 'Unlimited' : (planData.limits?.maxManagers ?? 2)} managers`,
+      ``,
+      `Included Features:`,
+      featuresList,
+      ``,
+      `Login Portal: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`,
+      `Admin Email: ${request.adminEmail}`,
+      ``,
+      `Need to extend your trial, upgrade limits, or ask questions? Contact MessPro Superadmin support:`,
+      supportLinesText,
+    ];
+
+    try {
+      await sendEmail({
+        to: request.adminEmail,
+        subject: `🎉 Workspace Activated: Welcome to MessPro 2.0 — ${request.hostelName}`,
+        text: emailLines.join('\n'),
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+            <h2 style="color: #2563eb;">🎉 Your MessPro Workspace is Active!</h2>
+            <p>Hello <strong>${request.adminName}</strong>,</p>
+            <p>Your hostel setup request for <strong>${request.hostelName}</strong> has been approved. A 10-day free trial on the <strong>${planData.name}</strong> plan is now active.</p>
+            <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <p style="margin: 4px 0;"><strong>Hostel:</strong> ${request.hostelName}</p>
+              <p style="margin: 4px 0;"><strong>Subdomain:</strong> ${request.subdomain}.messpro.app</p>
+              <p style="margin: 4px 0;"><strong>Plan Tier:</strong> ${planData.name} (10-Day Free Trial)</p>
+              <p style="margin: 4px 0;"><strong>Student Limit:</strong> ${planData.limits?.maxStudents === -1 ? 'Unlimited' : (planData.limits?.maxStudents ?? 100)}</p>
+              <p style="margin: 4px 0;"><strong>Manager Limit:</strong> ${planData.limits?.maxManagers === -1 ? 'Unlimited' : (planData.limits?.maxManagers ?? 2)}</p>
+            </div>
+            <p><a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/login" style="background: #2563eb; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Login to Admin Portal</a></p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+            <h4 style="margin-bottom: 8px; color: #1f2937;">Need to renew, upgrade your plan, or get assistance?</h4>
+            <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border-left: 3px solid #2563eb;">
+              ${supportLinesHtml}
+            </div>
+          </div>
+        `,
+      });
+    } catch (emailErr) {
+      console.warn('Could not send approval email to client:', emailErr.message);
+    }
+
+    return {
+      success: true,
+      message: `Hostel "${request.hostelName}" approved and provisioned successfully. Welcome email dispatched to ${request.adminEmail}.`,
+      hostel: createdHostel,
+    };
+  }
+
+  /**
+   * Superadmin rejection of a hostel setup request
+   */
+  async rejectHostelRequest(requestId, reason) {
+    const request = await hostelRepository.findHostelRequestById(requestId);
+    if (!request) {
+      const error = new Error('Hostel setup request not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (request.status !== 'pending') {
+      const error = new Error(`Cannot reject request: This request is already marked as ${request.status}.`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const updated = await hostelRepository.updateHostelRequest(requestId, {
+      status: 'rejected',
+      rejectionReason: reason,
+    });
+
+    try {
+      await sendEmail({
+        to: request.adminEmail,
+        subject: `Update regarding your MessPro Onboarding Request — ${request.hostelName}`,
+        text: `Hello ${request.adminName},\n\nThank you for your interest in MessPro 2.0. Regarding your onboarding request for "${request.hostelName}", we are currently unable to approve the setup for the following reason:\n\n${reason}\n\nIf you believe this is a misunderstanding or wish to submit updated details, please feel free to reach out to us.`,
+        html: `<p>Hello <strong>${request.adminName}</strong>,</p><p>Thank you for your interest in MessPro 2.0. Regarding your onboarding request for <strong>${request.hostelName}</strong>, our team was unable to approve the request for the following reason:</p><blockquote style="border-left: 3px solid #ef4444; margin: 12px 0; padding-left: 12px; color: #374151;">${reason}</blockquote><p>If you have any questions, please reply to this email.</p>`,
+      });
+    } catch (e) {
+      console.warn('Could not send rejection email:', e.message);
+    }
+
+    return {
+      success: true,
+      message: `Hostel request for "${request.hostelName}" has been rejected.`,
+      data: updated,
+    };
+  }
+
+  /**
+   * Superadmin deletion of a hostel: Cascade deletes all admins, managers, students, and tenant records
+   */
+  async deleteHostel(hostelId) {
+    const hostel = await hostelRepository.findById(hostelId);
+    if (!hostel) {
+      const error = new Error('Hostel not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const result = await hostelRepository.deleteHostelWithCascade(hostelId);
+    await cache.del(`hostel:config:${hostelId}`);
+
+    return {
+      success: true,
+      message: `Hostel "${hostel.name}" and all associated users (${result.deletedUsersCount} total: admins, managers, students) have been permanently deleted.`,
+      data: result,
+    };
   }
 }
 

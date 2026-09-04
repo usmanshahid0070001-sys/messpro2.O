@@ -72,3 +72,70 @@ export const useGetPlans = (enabled = true) => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
+
+export interface HostelSetupRequest {
+  _id: string;
+  hostelName: string;
+  subdomain: string;
+  location: string;
+  address?: string;
+  adminName: string;
+  adminEmail: string;
+  adminPhone: string;
+  managerName?: string;
+  managerEmail?: string;
+  requestedPlan: {
+    planType: '10_day_trial' | 'trial' | 'standard' | 'enterprise' | 'custom' | string;
+    planId?: { _id: string; name: string; price?: number; limits?: any } | string;
+    estimatedStudents?: number;
+    estimatedManagers?: number;
+    desiredFeatures?: string[];
+    customFeatures?: string[];
+    notes?: string;
+  };
+  status: 'pending' | 'approved' | 'rejected';
+  approvedHostelId?: {
+    _id: string;
+    name: string;
+    subdomain: string;
+  } | string;
+  rejectionReason?: string;
+  supportContact?: {
+    email?: string;
+    whatsappPhone?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+
+export const useGetHostelRequests = (params?: { status?: string; search?: string }, enabled = true) => {
+  return useQuery<{ requests: HostelSetupRequest[]; total: number }>({
+    queryKey: ['superadmin', 'hostel-requests', params],
+    queryFn: async () => {
+      const response = await apiClient.get('/hostels/requests', { params });
+      const resData = response.data;
+      if (Array.isArray(resData?.data)) {
+        return {
+          requests: resData.data,
+          total: typeof resData.total === 'number' ? resData.total : resData.data.length,
+        };
+      }
+      if (Array.isArray(resData?.requests)) {
+        return {
+          requests: resData.requests,
+          total: typeof resData.total === 'number' ? resData.total : resData.requests.length,
+        };
+      }
+      if (Array.isArray(resData)) {
+        return {
+          requests: resData,
+          total: resData.length,
+        };
+      }
+      return { requests: [], total: 0 };
+    },
+    enabled,
+    staleTime: 1000 * 30, // 30 seconds
+  });
+};

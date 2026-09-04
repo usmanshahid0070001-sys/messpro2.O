@@ -100,7 +100,7 @@ export default function AddUserModal({ isOpen, onClose, currentRole, hostel }: A
 
   const creatableRoles = useMemo(() => {
     if (currentRole === 'superadmin') return ['admin', 'manager']
-    if (currentRole === 'admin') return ['manager', 'student']
+    if (currentRole === 'admin') return ['student', 'manager']
     if (currentRole === 'manager') return ['student']
     return ['student']
   }, [currentRole])
@@ -119,7 +119,9 @@ export default function AddUserModal({ isOpen, onClose, currentRole, hostel }: A
     if (isOpen) {
       setName('')
       setEmail('')
-      const initialRole = (creatableRoles[0] as any) || 'student'
+      const initialRole = creatableRoles.includes('student')
+        ? 'student'
+        : (creatableRoles[0] as any) || 'student'
       setRole(initialRole)
       setRollNumber('')
 

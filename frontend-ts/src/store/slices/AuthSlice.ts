@@ -10,6 +10,7 @@ export interface User {
   hostelStatus?: any; // You can type this more strictly if you know the status shape
   permissions?: string[];
   room?: string;
+  additionalInfo?: Array<{ key: string; value: string }>;
 }
 
 interface AuthState {

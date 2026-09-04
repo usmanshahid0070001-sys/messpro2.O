@@ -32,7 +32,9 @@ const BillManagementPage = React.lazy(() => import("./features/Finance/BillManag
 const MyBillsPage = React.lazy(() => import("./features/Finance/MyBills/MyBillsPage"));
 const ManageTenantsPage = React.lazy(() => import("./features/superadmin/ManageTenantsPage"));
 const ManagePlansPage = React.lazy(() => import("./features/superadmin/ManagePlansPage"));
+const HostelRequestsPage = React.lazy(() => import("./features/superadmin/HostelRequestsPage"));
 const LandingPage = React.lazy(() => import("./features/landing/LandingPage"));
+
 const TermsPage = React.lazy(() => import("./features/legal/TermsPage"));
 const PrivacyPolicyPage = React.lazy(() => import("./features/legal/PrivacyPolicyPage"));
 const DocumentationPage = React.lazy(() => import("./features/docs/DocumentationPage"));
@@ -178,9 +180,11 @@ const App = () => {
 
                   {/* Superadmin Dedicated Governance Routes */}
                   <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
+                    <Route path="superadmin/requests" element={<HostelRequestsPage />} />
                     <Route path="superadmin/hostels" element={<ManageTenantsPage />} />
                     <Route path="superadmin/plans" element={<ManagePlansPage />} />
                   </Route>
+
                 </Route>
               </Route>
 

@@ -8,6 +8,7 @@ import { HowItWorksSection } from './components/HowItWorksSection';
 import { FaqSection } from './components/FaqSection';
 import { CtaSection } from './components/CtaSection';
 import { Footer } from './components/Footer';
+import { SetupHostelModal } from './components/SetupHostelModal';
 import type { SectionId } from './types';
 
 const LANDING_STRUCTURED_DATA = {
@@ -90,6 +91,7 @@ const LANDING_STRUCTURED_DATA = {
 
 export const LandingPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<SectionId>('hero');
+  const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
 
   useSEO({
     title: 'MessPro 2.0 — Smart Hostel & Mess Management System',
@@ -163,25 +165,37 @@ export const LandingPage: React.FC = () => {
       </div>
 
       {/* Floating Apple Liquid Glass Island Navbar */}
-      <Navbar activeSection={activeSection} onNavigate={handleNavigate} />
+      <Navbar
+        activeSection={activeSection}
+        onNavigate={handleNavigate}
+        onSetupClick={() => setIsSetupModalOpen(true)}
+      />
 
       {/* Main Sections */}
       <main className="flex-1 relative z-10">
         <HeroSection
           onExploreClick={() => handleNavigate('solution')}
           onCalculateClick={() => handleNavigate('problem')}
+          onSetupClick={() => setIsSetupModalOpen(true)}
         />
         <ProblemSection />
         <SolutionSection />
         <HowItWorksSection />
         <FaqSection />
-        <CtaSection />
+        <CtaSection onSetupClick={() => setIsSetupModalOpen(true)} />
       </main>
 
       {/* Branded Footer */}
       <Footer onNavigate={handleNavigate} />
+
+      {/* Public Hostel Setup Modal */}
+      <SetupHostelModal
+        isOpen={isSetupModalOpen}
+        onClose={() => setIsSetupModalOpen(false)}
+      />
     </div>
   );
 };
 
 export default LandingPage;
+
