@@ -22,6 +22,8 @@ export const useCreateUserMutation = () => {
  onSuccess: () => {
  toast.success('User created successfully');
  queryClient.invalidateQueries({ queryKey: ['targettedUsers'] });
+ queryClient.invalidateQueries({ queryKey: ['myHostel'] });
+ queryClient.invalidateQueries({ queryKey: ['hostel'] });
  },
  onError: (error) => {
  toast.error(error.response?.data?.message ||'Failed to create user');

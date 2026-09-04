@@ -1,14 +1,17 @@
 // MessPro 2.0 Progressive Web App (PWA) Service Worker
-// Version: 1.0.2
-
-const CACHE_NAME = 'messpro-static-v2';
+// Version: 1.0.3
+ 
+const CACHE_NAME = 'messpro-static-v3';
 const CORE_PRECACHE_URLS = [
   '/index.html',
   '/manifest.json',
-  '/favicon.svg',
+  '/favicon.ico',
+  '/favicon-32x32.png',
+  '/favicon-16x16.png',
+  '/apple-touch-icon.png',
   '/icons.svg',
-  '/pwa-192x192.png',
-  '/pwa-512x512.png',
+  '/android-chrome-192x192.png',
+  '/android-chrome-512x512.png',
 ];
 
 // Install: Cache essential app shell assets and activate immediately
