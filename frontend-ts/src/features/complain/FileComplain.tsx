@@ -108,8 +108,7 @@ export default function FileComplain() {
   const createComplaintMutation = useCreateComplaint()
   const deleteComplaintMutation = useDeleteComplaint()
 
-  const maxChars = 80
-  const remainingChars = maxChars - description.length
+  const maxChars = 500
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -118,7 +117,7 @@ export default function FileComplain() {
         ? customCategory.trim()
         : selectedCategory
 
-    if (!description.trim()) return
+    if (!description.trim() || description.trim().length < 5) return
 
     await createComplaintMutation.mutateAsync({
       category: finalCategory,
@@ -290,32 +289,37 @@ export default function FileComplain() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-foreground">
-                  Brief Description <span className="text-rose-500">*</span>
+                  Description <span className="text-rose-500">*</span>
                 </label>
                 <span
                   className={`text-[10px] sm:text-[11px] font-mono ${
-                    remainingChars < 10
-                      ? 'text-rose-500 font-bold'
+                    description.length > 450
+                      ? 'text-amber-500 font-bold'
                       : 'text-muted-foreground'
                   }`}
                 >
-                  {remainingChars} chars left
+                  {description.length} / {maxChars} chars
                 </span>
               </div>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value.slice(0, maxChars))}
-                placeholder="E.g., Fan regulator is burnt in room 204. Need replacement."
+                placeholder="Describe your maintenance grievance in detail (minimum 5 characters)..."
                 rows={3}
                 required
                 className="w-full rounded-xl border border-border bg-background p-2.5 sm:p-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 resize-none transition-all"
               />
+              {description.trim().length > 0 && description.trim().length < 5 && (
+                <p className="text-[11px] text-rose-500">
+                  Please provide at least 5 characters describing the issue.
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={createComplaintMutation.isPending || !description.trim()}
+              disabled={createComplaintMutation.isPending || description.trim().length < 5}
               className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs h-9 sm:h-10 gap-2 shadow-xs transition-all cursor-pointer"
             >
               {createComplaintMutation.isPending ? (
@@ -423,11 +427,20 @@ export default function FileComplain() {
                           </span>
                           <ComplaintIntensityBadge intensity={c.intensity} />
                         </div>
-                        <span className="text-[10px] sm:text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap">
+                        <span className="text-[10px] sm:text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
                           <Calendar className="w-3 h-3" />
                           <span>Filed on {formattedDate}</span>
                           <span>•</span>
                           <span className="font-mono">#{c._id.slice(-6).toUpperCase()}</span>
+                          {typeof c.roomid === 'object' && c.roomid !== null && (
+                            <>
+                              <span>•</span>
+                              <span className="flex items-center gap-1 text-teal-600 dark:text-teal-400">
+                                <BedDouble className="w-3 h-3" />
+                                Room {c.roomid.roomNumber}
+                              </span>
+                            </>
+                          )}
                         </span>
                       </div>
 

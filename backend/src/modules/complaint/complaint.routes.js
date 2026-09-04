@@ -5,14 +5,16 @@ import * as complaintController from './complaint.controller.js';
 const router = express.Router();
 
 router.use(protect);
-//for student 
-router.post('/',restrictTo('student'), complaintController.createComplaint);
-router.get('/student',restrictTo('student'),complaintController.getStudentComplaints);
-router.delete('/:id',restrictTo('student'),complaintController.deleteComplaint);
 
-//for admin, permissions are inplemented
-router.get('/',requirePermission('complaint_management'),complaintController.getComplaints);
+// Student routes
+router.post('/', restrictTo('student'), complaintController.createComplaint);
+router.get('/student', restrictTo('student'), complaintController.getStudentComplaints);
+router.delete('/:id', restrictTo('student'), complaintController.deleteComplaint);
 
-router.patch('/:id/status',requirePermission('complaint_management'),complaintController.updateComplaintStatus);
+// Admin / Manager routes
+router.get('/stats', requirePermission('complaint_management'), complaintController.getComplaintStats);
+router.get('/', requirePermission('complaint_management'), complaintController.getComplaints);
+router.patch('/:id/status', requirePermission('complaint_management'), complaintController.updateComplaintStatus);
 
 export default router;
+

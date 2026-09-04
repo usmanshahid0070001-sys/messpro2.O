@@ -6,13 +6,10 @@ import {
   FileText,
   Building2,
   Calendar,
-  User,
-  MoreVertical,
   CheckCircle2,
   Clock,
   UserCheck,
   AlertCircle,
-  Tag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -100,6 +97,8 @@ export default function ComplaintTable({
       {/* ── MOBILE / TABLET CARD VIEW (Visible on screens < md) ── */}
       <div className="block md:hidden divide-y divide-border">
         {paginatedComplaints.map((c) => {
+          const studentName =
+            typeof c.studentId === 'object' && c.studentId !== null ? c.studentId.name : null
           const roomStr = formatRoomDisplay(c.roomid)
           const timeStr = new Date(c.createdAt).toLocaleDateString('en-US', {
             month: 'short',
@@ -113,13 +112,18 @@ export default function ComplaintTable({
               onClick={() => onViewDetails(c)}
               className="p-4 space-y-2.5 hover:bg-muted/30 active:bg-muted/50 transition-colors cursor-pointer"
             >
-              {/* Top Row: Roll No, Category, Badges */}
+              {/* Top Row: Roll No, Student Name, Category, Badges */}
               <div className="flex items-start justify-between gap-2">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono font-bold text-xs text-foreground bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-md border border-amber-500/20">
                       {c.roll_number}
                     </span>
+                    {studentName && (
+                      <span className="text-xs font-semibold text-foreground">
+                        {studentName}
+                      </span>
+                    )}
                     <span className="text-xs font-medium text-foreground bg-muted px-2 py-0.5 rounded-md">
                       {c.category}
                     </span>
@@ -217,6 +221,8 @@ export default function ComplaintTable({
           </thead>
           <tbody className="divide-y divide-border">
             {paginatedComplaints.map((c) => {
+              const studentName =
+                typeof c.studentId === 'object' && c.studentId !== null ? c.studentId.name : null
               const roomStr = formatRoomDisplay(c.roomid)
               const timeStr = new Date(c.createdAt).toLocaleDateString('en-US', {
                 month: 'short',
@@ -229,15 +235,22 @@ export default function ComplaintTable({
                   onClick={() => onViewDetails(c)}
                   className="hover:bg-muted/30 transition-colors cursor-pointer group"
                 >
-                  {/* Student Roll No */}
+                  {/* Student Info */}
                   <td className="py-3 px-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono font-bold text-xs flex items-center justify-center border border-amber-500/20">
-                        {c.roll_number?.slice(-2) || '#'}
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center border border-amber-500/20 shrink-0">
+                        {studentName ? studentName[0].toUpperCase() : (c.roll_number?.slice(-2) || '#')}
                       </div>
-                      <span className="font-mono font-semibold text-foreground text-xs">
-                        {c.roll_number}
-                      </span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-foreground text-xs truncate max-w-[140px]">
+                          {studentName || c.roll_number}
+                        </span>
+                        {studentName && (
+                          <span className="font-mono text-[10px] text-muted-foreground truncate">
+                            {c.roll_number}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
 

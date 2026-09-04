@@ -14,6 +14,21 @@ export interface UpdateComplaintStatusPayload {
   status: ComplaintStatus;
 }
 
+const extractErrorMessage = (error: any, fallback: string): string => {
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+  if (error?.response?.data?.error) {
+    return typeof error.response.data.error === 'string'
+      ? error.response.data.error
+      : JSON.stringify(error.response.data.error);
+  }
+  if (Array.isArray(error?.response?.data?.errors)) {
+    return error.response.data.errors.map((e: any) => e.message || JSON.stringify(e)).join(', ');
+  }
+  return error?.message || fallback;
+};
+
 export const useCreateComplaint = () => {
   const queryClient = useQueryClient();
 
@@ -29,11 +44,8 @@ export const useCreateComplaint = () => {
       });
     },
     onError: (error: any) => {
-      const msg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Failed to submit complaint';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractErrorMessage(error, 'Failed to submit complaint');
+      toast.error(msg);
     },
   });
 };
@@ -53,11 +65,8 @@ export const useDeleteComplaint = () => {
       });
     },
     onError: (error: any) => {
-      const msg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Failed to delete complaint';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractErrorMessage(error, 'Failed to delete complaint');
+      toast.error(msg);
     },
   });
 };
@@ -75,11 +84,9 @@ export const useUpdateComplaintStatus = () => {
       toast.success(`Complaint status changed to ${variables.status}`);
     },
     onError: (error: any) => {
-      const msg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Failed to update complaint status';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractErrorMessage(error, 'Failed to update complaint status');
+      toast.error(msg);
     },
   });
 };
+

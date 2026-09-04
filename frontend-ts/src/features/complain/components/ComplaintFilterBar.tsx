@@ -45,7 +45,8 @@ export default function ComplaintFilterBar({
   isRefreshing = false,
 }: ComplaintFilterBarProps) {
   const statusOptions = [
-    { label: 'Active', value: 'all' },
+    { label: 'All Tickets', value: 'all' },
+    { label: 'Active / Pending', value: 'active' },
     { label: 'Open', value: 'open' },
     { label: 'Assigned', value: 'assigned' },
     { label: 'In Progress', value: 'in progress' },

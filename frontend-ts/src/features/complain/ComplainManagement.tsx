@@ -53,10 +53,13 @@ export default function ComplainManagement() {
         typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.roomNumber : ''
       const block =
         typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.block || '' : ''
+      const studentName =
+        typeof c.studentId === 'object' && c.studentId !== null ? c.studentId.name || '' : ''
 
       const matchSearch =
         !term ||
         c.roll_number.toLowerCase().includes(term) ||
+        studentName.toLowerCase().includes(term) ||
         c.category.toLowerCase().includes(term) ||
         c.description.toLowerCase().includes(term) ||
         roomNumber.toLowerCase().includes(term) ||
@@ -119,6 +122,8 @@ export default function ComplainManagement() {
     try {
       const XLSX = await import('xlsx')
       const dataToExport = sortedComplaints.map((c) => {
+        const studentName =
+          typeof c.studentId === 'object' && c.studentId !== null ? c.studentId.name : 'N/A'
         const roomNum =
           typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.roomNumber : 'N/A'
         const block =
@@ -127,6 +132,7 @@ export default function ComplainManagement() {
 
         return {
           'Ticket ID': c._id,
+          'Student Name': studentName,
           'Roll Number': c.roll_number,
           Category: c.category,
           Intensity: c.intensity,
