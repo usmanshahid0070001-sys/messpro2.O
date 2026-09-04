@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/api/client';
 import { toast } from 'sonner';
-import type { HostelSettings, SubscriptionPlan } from '../queries/useSuperadminQueries';
+import { extractApiErrorMessage } from './useHostelMutations';
 
 export interface CreateHostelPayload {
   name: string;
@@ -79,8 +79,8 @@ export const useCreateHostel = () => {
       toast.success('Hostel created successfully and welcome credentials dispatched');
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Failed to create hostel';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to create hostel');
+      toast.error(msg);
     },
   });
 };
@@ -98,8 +98,8 @@ export const useUpdateHostelSettings = () => {
       toast.success('Hostel settings updated successfully');
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Failed to update settings';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to update settings');
+      toast.error(msg);
     },
   });
 };
@@ -118,8 +118,8 @@ export const useAddHostelUser = () => {
       toast.success('Staff user created and added to hostel successfully');
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Failed to add hostel user';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to add hostel user');
+      toast.error(msg);
     },
   });
 };

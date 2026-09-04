@@ -1,161 +1,138 @@
-import hostelService from "./hostel.service.js";
-import { createHostelSchema, updateSettingsSchema, addHostelUserSchema } from './hostel.validation.js';
-import { catchAsync } from "../../utils/catchAsync.js";
+import hostelService from './hostel.service.js';
+import {
+  createHostelSchema,
+  hostelIdParamSchema,
+  hostelQuerySchema,
+  updateTenantSettingsSchema,
+  superadminUpdateHostelSettingsSchema,
+  addHostelUserSchema,
+} from './hostel.validation.js';
+import { catchAsync } from '../../utils/catchAsync.js';
 
-// export const createHostel=async (req,res)=>{
-//     try {
-//         const validateData=createHostelSchema.parse(req.body);
-
-// const newHostel = await hostelService.registerHostel(validateData);
-
-// //    Serialization: Convert the JS Object back to JSON and send a 201 Created status
-//     res.status(201).json({ success: true, data: newHostel });
-
-//     } catch (error) {
-//         if(error.name==='ZodError'){
-//             return res.status('400').json({
-//                 success:false,
-//                 error:error.errors.map(e=>e.message
-//             )
-//         }
-//     )
-//         }
-//       //agr zod ka errror nhi to mtlb service error ha 
-//         res.status(400).json({ success: false, message: error.message });
-//     }
-
-// };
-
-
-
-
-
-// export const getHostels = async (req, res) => {
-//   try {
-//     // Ask the service for the data
-//     const hostels = await hostelService.getAllHostels();
-
-//     // Serialize and send the response[cite: 22]
-//     res.status(200).json({ success: true, count: hostels.length, data: hostels });
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// };
-
-
-
-// export const updateSettings=async(req,res)=>{
-
-//     try {
-//          //dynamic route ki id params my ati ha 
-//     const hostelId=req.params.id
-
-//     const validatedData=updateSettingsSchema.parse(req.body)
-
-
-//     const updatedHostel=await hostelService.updateHostelSettings(hostelId,validatedData)
-//     res.status(200).json({ success: true, data: updatedHostel });
-//     } catch (error) {
-//     if (error.name === 'ZodError') {
-//       return res.status(400).json({ success: false, errors: error.errors.map(e => e.message) });
-//     }
-//     // If ID is malformed, mongoose throws a CastError
-//     if (error.name === 'CastError') {
-//       return res.status(400).json({ success: false, message: 'Invalid Hostel ID format.' });
-//     }
-//     res.status(400).json({ success: false, message: error.message });
-//   }
-// };
-
-
-
-export const updateMyHostelSettings = catchAsync(async (req, res) => {
-  // 1. Grab the hostel ID from the logged-in Admin
-  const hostelId = req.user.hostelId;
-
-  // 2. We reuse your existing updateHostelSettings service!
-  // (Remember, your service already handles the "change the plan" logic perfectly)
-  const validatedData = updateSettingsSchema.parse(req.body);
-  const updatedHostel = await hostelService.updateHostelSettings(hostelId, validatedData);
-
-  res.status(200).json({ 
-    success: true, 
-    message: "Hostel settings updated successfully.",
-    data: updatedHostel 
-  });
-});
-
+/**
+ * Superadmin: Register a new hostel with admin + manager
+ */
 export const createHostel = catchAsync(async (req, res) => {
   const validatedData = createHostelSchema.parse(req.body);
-  
   const newHostel = await hostelService.registerHostel(validatedData);
-  res.status(201).json({ success: true, data: newHostel });
-});
 
-export const getHostels = catchAsync(async (req, res) => {
-  const hostels = await hostelService.getAllHostels();
-  res.status(200).json({ success: true, count: hostels.length, data: hostels });
-});
-
-
-export const getMyHostel = catchAsync(async (req, res) => {
-  // We use the logged-in user's ID badge, NOT the URL parameters!
-  const hostel = await hostelService.getHostelById(req.user.hostelId);
-
-  let hostelData = hostel;
-  if (req.user.role === 'student') {
-    // Convert to plain object if it's a Mongoose document to allow deletion
-    const data = typeof hostel.toObject === 'function' ? hostel.toObject() : { ...hostel };
-    if (data.plan) {
-      delete data.plan.limits;
-      delete data.plan.price;
-      delete data.plan.planId;
-      delete data.plan.name;
-    }
-    delete data.isTrial;
-    delete data.trialExpiresAt;
-    hostelData = data;
-  }
-
-  res.status(200).json({ 
-    success: true, 
-    data: hostelData 
+  res.status(201).json({
+    success: true,
+    message: 'Hostel registered successfully.',
+    data: newHostel,
   });
 });
 
-export const addHostelUser = catchAsync(async (req, res) => {
-  const hostelId = req.params.id;
-  const creatorRole = req.user.role;
-  if (creatorRole !== 'superadmin' && String(hostelId) !== String(req.user.hostelId)) {
-    throw Object.assign(new Error('Cross-tenant user creation is not allowed.'), { statusCode: 403 });
-  }
-  const validatedData = addHostelUserSchema.parse(req.body);
-  const newUser = await hostelService.addHostelUser(creatorRole,hostelId, validatedData);
-  res.status(201).json({ success: true, data: newUser });
+/**
+ * Superadmin: Get list of all hostels with search, status filtering, and pagination
+ */
+export const getHostels = catchAsync(async (req, res) => {
+  const validatedQuery = hostelQuerySchema.parse(req.query);
+  const result = await hostelService.getAllHostels(validatedQuery);
+
+  res.status(200).json({
+    success: true,
+    count: result.hostels.length,
+    total: result.total,
+    page: result.page,
+    data: result.hostels,
+  });
 });
 
+/**
+ * Superadmin or authorized tenant: Get specific hostel by ID
+ */
+export const getHostelById = catchAsync(async (req, res) => {
+  const { id } = hostelIdParamSchema.parse(req.params);
+
+  // Cross-tenant verification: Non-superadmins can only access their own hostel
+  if (req.user.role !== 'superadmin' && String(id) !== String(req.user.hostelId)) {
+    const error = new Error('Access Denied: You cannot view details for another hostel.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const hostel = await hostelService.getHostelById(id, req.user.role);
+  res.status(200).json({
+    success: true,
+    data: hostel,
+  });
+});
+
+/**
+ * Tenant (Admin, Manager, Student): Get details of the caller's assigned hostel
+ */
+export const getMyHostel = catchAsync(async (req, res) => {
+  const hostelId = req.user.hostelId || req.user.hostelid;
+  if (!hostelId) {
+    const error = new Error('User is not associated with any hostel.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const hostel = await hostelService.getHostelById(hostelId, req.user.role);
+  res.status(200).json({
+    success: true,
+    data: hostel,
+  });
+});
+
+/**
+ * Tenant Admin: Update own hostel configuration (Strictly prevents privilege escalation)
+ */
+export const updateMyHostelSettings = catchAsync(async (req, res) => {
+  const hostelId = req.user.hostelId || req.user.hostelid;
+  if (!hostelId) {
+    const error = new Error('User is not associated with any hostel.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const validatedData = updateTenantSettingsSchema.parse(req.body);
+  const updatedHostel = await hostelService.updateTenantSettings(hostelId, validatedData);
+
+  res.status(200).json({
+    success: true,
+    message: 'Hostel settings updated successfully.',
+    data: updatedHostel,
+  });
+});
+
+/**
+ * Superadmin: Update hostel configuration, subscription, plan, and status
+ */
 export const updateSettings = catchAsync(async (req, res) => {
-  const hostelId = req.params.id;
-  const validatedData = updateSettingsSchema.parse(req.body);
-  
-  if (validatedData.plan || validatedData.additionalDays !== undefined) {
-    const updatedHostel = await hostelService.extendOrUpgradeSubscription(
-      hostelId,
-      validatedData.plan,
-      validatedData.additionalDays || 0
-    );
-    return res.status(200).json({ success: true, data: updatedHostel });
-  }
+  const { id } = hostelIdParamSchema.parse(req.params);
+  const validatedData = superadminUpdateHostelSettingsSchema.parse(req.body);
 
-  const updatedHostel = await hostelService.updateHostelSettings(hostelId, validatedData);
-  res.status(200).json({ success: true, data: updatedHostel });
+  const updatedHostel = await hostelService.updateSuperadminHostelSettings(id, validatedData);
+
+  res.status(200).json({
+    success: true,
+    message: 'Hostel updated successfully.',
+    data: updatedHostel,
+  });
 });
 
+/**
+ * Superadmin / Admin / Manager: Add a new user under a hostel
+ */
+export const addHostelUser = catchAsync(async (req, res) => {
+  const { id } = hostelIdParamSchema.parse(req.params);
+  const creatorRole = req.user.role;
 
-// export const getMyHostel = catchAsync(async (req, res) => {
-//   res.status(200).json({ success: true, message: "getMyHostel route is alive!" });
-// });
+  if (creatorRole !== 'superadmin' && String(id) !== String(req.user.hostelId)) {
+    const error = new Error('Cross-tenant user creation is not allowed.');
+    error.statusCode = 403;
+    throw error;
+  }
 
-// export const updateMyHostelSettings = catchAsync(async (req, res) => {
-//   res.status(200).json({ success: true, message: "updateMyHostelSettings route is alive!" });
-// });
+  const validatedData = addHostelUserSchema.parse(req.body);
+  const newUser = await hostelService.addHostelUser(creatorRole, id, validatedData);
+
+  res.status(201).json({
+    success: true,
+    message: `${validatedData.role} added successfully.`,
+    data: newUser,
+  });
+});

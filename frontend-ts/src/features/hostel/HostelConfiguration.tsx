@@ -23,9 +23,7 @@ import {
   Check,
   RotateCcw,
   Users,
-  Shield,
   Layers,
-  BedDouble,
   Info,
   SlidersHorizontal,
 } from 'lucide-react'
@@ -405,8 +403,14 @@ export default function HostelConfiguration() {
       return
     }
 
+    const sub = subdomain.trim()
+    if (sub && !/^@?[a-zA-Z0-9.-]+$/.test(sub)) {
+      toast.error('Domain suffix must be a valid domain or prefix (e.g. @student.uet.edu.pk or campus-hostel)')
+      return
+    }
+
     mutation.mutate({
-      subdomain: subdomain.trim().toLowerCase(),
+      subdomain: sub.toLowerCase(),
       location: location.trim(),
       customRegistrationFields: customFields.map((f) => ({
         name: f.name.trim(),

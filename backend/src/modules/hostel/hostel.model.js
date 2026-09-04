@@ -18,8 +18,8 @@ const hostelSchema = new mongoose.Schema({
   subdomain: {
     type: String,
     required: true,
-    // unique: true,
     lowercase: true,
+    index: true,
   },
   location: {
     type: String,
@@ -66,12 +66,14 @@ const hostelSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['Active', 'Suspended', 'Archived', 'Inactive', 'Expired'],
-    default: 'Active'
+    default: 'Active',
+    index: true,
   },
   
   subscriptionExpiresAt: {
     type: Date,
-    default: null
+    default: null,
+    index: true,
   },
 
   // 👇 1. THE SECURE POINTER (Moved to root level for easy querying)
