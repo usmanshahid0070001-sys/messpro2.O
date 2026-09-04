@@ -127,13 +127,13 @@ export const ALL_PLAN_FEATURES: FeatureDefinition[] = [
   },
   {
     id: 'bill_management',
-    label: 'Fee Dues & Payment Tracking',
+    label: 'Bill Management',
     desc: 'Student dues ledger, payment recording, and balance tracking',
     category: 'food',
   },
   {
     id: 'bill_generation',
-    label: 'Automated Invoice Generation',
+    label: 'Bill Generation',
     desc: 'Monthly fee invoices and automated student bill calculation',
     category: 'food',
   },

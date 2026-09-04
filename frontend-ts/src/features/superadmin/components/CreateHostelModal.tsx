@@ -184,7 +184,6 @@ export default function CreateHostelModal({ isOpen, onClose }: CreateHostelModal
         {/* Step Indicator */}
         <div className="grid grid-cols-3 border-b border-border bg-muted/10">
           {stepsMeta.map((s) => {
-            const Icon = s.icon
             const isCompleted = step > s.num
             const isCurrent = step === s.num
             return (
@@ -512,7 +511,7 @@ export default function CreateHostelModal({ isOpen, onClose }: CreateHostelModal
           ) : (
             <Button
               size="sm"
-              disabled={isSubmitting || !formData.plan}
+              disabled={isSubmitting || !isStep3Valid}
               onClick={handleSubmit}
               className="gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
             >

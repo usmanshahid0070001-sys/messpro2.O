@@ -63,7 +63,11 @@ class BillRepository {
 
   // ── Student & Meal Aggregations ───────────────────────────────────────────
   async findActiveStudentsByHostel(hostelId) {
-    return await User.find({ hostelId, role: 'student' }).select('_id id name');
+    return await User.find({
+      hostelId,
+      role: 'student',
+      status: { $ne: 'Suspended' },
+    }).select('_id id name');
   }
 
   async aggregateMealCosts(hostelId, startDate, endDate) {

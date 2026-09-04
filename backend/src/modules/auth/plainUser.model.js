@@ -17,6 +17,11 @@ const plainUserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    status: {
+      type: String,
+      enum: ['Active', 'Suspended'],
+      default: 'Active',
+    },
     
     permissions: {
       type: [String],

@@ -171,7 +171,7 @@ class HostelService {
         updatePayload.isTrial = validatedData.isTrial;
       }
 
-      if (validatedData.plan && validatedData.plan !== hostel.plan?.planId?.toString()) {
+      if (validatedData.plan) {
         const planData = await hostelRepository.findPlanById(validatedData.plan);
         if (!planData) {
           const error = new Error('Selected plan not found.');
@@ -179,10 +179,18 @@ class HostelService {
           throw error;
         }
 
+        const currentStudents = hostel.plan?.limits?.students || 0;
+        const currentManagers = hostel.plan?.limits?.managers || 0;
+
         updatePayload.plan = {
           planId: planData._id,
           name: planData.name,
-          limits: planData.limits,
+          limits: {
+            maxStudents: planData.limits?.maxStudents ?? 100,
+            maxManagers: planData.limits?.maxManagers ?? 1,
+            students: currentStudents,
+            managers: currentManagers,
+          },
           features: (planData.features || []).map((f) => ({
             name: typeof f === 'string' ? f : f.name,
             isEnabled: true,
@@ -443,10 +451,13 @@ class HostelService {
         .filter((f) => f.isEnabled)
         .map((f) => normalizeFeatureName(f.name));
     } else if (userData.role === 'manager' && (!userData.permissions || userData.permissions.length === 0)) {
-      const hasFeat = (name) => enabledFeatures.some((f) => f.name === name && f.isEnabled);
+      const hasFeat = (name) =>
+        enabledFeatures.some(
+          (f) => normalizeFeatureName(f.name) === normalizeFeatureName(name) && f.isEnabled
+        );
       userData.permissions = [];
-      if (hasFeat('Meal settings')) userData.permissions.push('meal_settings');
-      if (hasFeat('Bill Management') || hasFeat('Bills Management')) userData.permissions.push('bill_management');
+      if (hasFeat('meal_settings')) userData.permissions.push('meal_settings');
+      if (hasFeat('bill_management')) userData.permissions.push('bill_management');
     }
 
     const password = crypto.randomBytes(8).toString('base64url');

@@ -13,6 +13,7 @@ const additionalInfoItemSchema = z.object({
 // We strictly block 'role', 'password', or 'hostelId' from being changed here.
 export const updateUserSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters.').max(100, 'Name cannot exceed 100 characters.').optional(),
+  status: z.enum(['Active', 'Suspended']).optional(),
   additionalInfo: z.array(additionalInfoItemSchema).optional(),
   permissions: z.array(z.string().trim().min(1)).max(50).optional(),
 }).strict(); // .strict() drops any unlisted fields, keeping you 100% secure!

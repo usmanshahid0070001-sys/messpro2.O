@@ -95,6 +95,12 @@ export const getMyRoomDetails = catchAsync(async (req, res) => {
 });
 
 export const markRoomCleaning = catchAsync(async (req, res) => {
+  if (req.user?.status === 'Suspended') {
+    const error = new Error('Your account is currently suspended. You cannot request room services while suspended.');
+    error.statusCode = 403;
+    throw error;
+  }
+
   if (!['student', 'manager'].includes(req.user.role)) {
     const error = new Error('Only residents (students or managers) can mark room cleaning.');
     error.statusCode = 403;

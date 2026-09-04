@@ -6,18 +6,13 @@ import {
   Download,
   Settings,
   UserPlus,
-  ShieldCheck,
   Globe,
   MapPin,
-  Sparkles,
   TrendingUp,
-  AlertCircle,
-  Filter,
   CheckCircle2,
   Clock,
   Ban,
   Layers,
-  ArrowUpRight,
 } from 'lucide-react'
 import { useGetHostels, type HostelTenant } from '@/hooks/queries/useSuperadminQueries'
 import CreateHostelModal from './components/CreateHostelModal'
@@ -29,7 +24,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ManageTenantsPage() {
-  const { data: hostels = [], isLoading, error } = useGetHostels()
+  const { data: hostels = [], isLoading } = useGetHostels()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Trial' | 'Suspended'>('all')

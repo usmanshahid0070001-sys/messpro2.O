@@ -5,7 +5,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Bell } from "lucide-react"
+import { Bell, ShieldAlert } from "lucide-react"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/store"
 import { GlobalSearch } from "@/features/app/components/global-search"
 import {
   Breadcrumb,
@@ -22,6 +24,7 @@ import logoUrl from "@/assets/pwa-512x512.png"
 export default function AppLayout() {
   const location = useLocation()
   const { navMain } = useNavigation()
+  const { user: currentUser } = useSelector((s: RootState) => s.auth)
 
   // Resolve breadcrumbs dynamically based on active route and navigation items
   const breadcrumbs = React.useMemo(() => {
@@ -146,6 +149,17 @@ export default function AppLayout() {
             </button>
           </div>
         </div>
+
+        {currentUser?.status === 'Suspended' && (
+          <div className="mx-1 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between text-xs text-amber-700 dark:text-amber-300">
+            <div className="flex items-center gap-2.5">
+              <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                <strong>Account Suspended:</strong> Your account is currently suspended. You have read-only access to view your dashboard and billing statements.
+              </span>
+            </div>
+          </div>
+        )}
 
         <div id="main-page-content" className="flex-1 min-w-0 max-w-full overflow-x-hidden">
           {/* Main content — Dashboard, All Hostels, etc. protected by ErrorBoundary & Suspense */}

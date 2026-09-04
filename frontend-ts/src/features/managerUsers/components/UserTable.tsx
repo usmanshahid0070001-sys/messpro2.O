@@ -12,11 +12,14 @@ import {
   UserCheck,
   Copy,
   Check,
+  CheckCircle2,
   Settings2,
   MoreHorizontal,
   MoreVertical,
+  Loader2,
 } from 'lucide-react'
 import type { ManageableUser } from '@/hooks/queries/useUserQueries'
+import { useUpdateUser, useDeleteUser } from '@/hooks/mutations/useUserMutations'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -82,6 +85,8 @@ export default function UserTable({
   customFieldConfigs,
 }: UserTableProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser()
+  const { mutateAsync: deleteUser, isPending: isDeleting } = useDeleteUser()
 
   const handleCopyEmail = (email: string, id: string) => {
     navigator.clipboard.writeText(email)
@@ -90,12 +95,32 @@ export default function UserTable({
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const handleFreeze = (userName: string) => {
-    toast.info(`Status update: ${userName}'s account status has been marked.`)
+  const handleToggleStatus = async (user: ManageableUser) => {
+    const isCurrentlySuspended = user.status === 'Suspended'
+    const nextStatus = isCurrentlySuspended ? 'Active' : 'Suspended'
+    try {
+      await updateUser({ id: user._id, payload: { status: nextStatus } })
+      toast.success(
+        isCurrentlySuspended
+          ? `${user.name}'s account has been reactivated.`
+          : `${user.name}'s account has been suspended.`
+      )
+    } catch {
+      // Toast handled by mutation
+    }
   }
 
-  const handleDelete = (userName: string) => {
-    toast.warning(`Request to remove ${userName} has been logged.`)
+  const handleDelete = async (user: ManageableUser) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete ${user.name} (${user.role})?\n\nNOTE: If this user has unpaid bills or pending dues, deletion will be rejected until dues are settled.`
+    )
+    if (!confirmed) return
+
+    try {
+      await deleteUser(user._id)
+    } catch {
+      // Toast handled by mutation
+    }
   }
 
   if (paginatedUsers.length === 0) {
@@ -144,12 +169,24 @@ export default function UserTable({
                     <div className="flex items-center gap-3">
                       <div className={`relative h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border select-none ${roleConfig.avatarBg}`}>
                         {user.name.substring(0, 2).toUpperCase()}
-                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+                        <span
+                          className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${
+                            user.status === 'Suspended' ? 'bg-rose-500' : 'bg-emerald-500'
+                          }`}
+                          title={user.status === 'Suspended' ? 'Account Suspended' : 'Account Active'}
+                        />
                       </div>
                       <div className="min-w-0">
-                        <span className="font-semibold text-foreground block truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {user.name}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-foreground truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {user.name}
+                          </span>
+                          {user.status === 'Suspended' && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                              Suspended
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <span className="truncate">{user.email}</span>
                           <button
@@ -259,15 +296,26 @@ export default function UserTable({
                           <span>Configure Profile</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleFreeze(user.name)}
+                          onClick={() => handleToggleStatus(user)}
+                          disabled={isUpdating}
                           className="text-xs gap-2 px-2 py-1.5 rounded-lg cursor-pointer text-foreground focus:bg-amber-500/10 focus:text-amber-600 dark:focus:text-amber-400"
                         >
-                          <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
-                          <span>Suspend / Freeze</span>
+                          {user.status === 'Suspended' ? (
+                            <>
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                              <span>Reactivate Account</span>
+                            </>
+                          ) : (
+                            <>
+                              <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
+                              <span>Suspend Account</span>
+                            </>
+                          )}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="my-1 bg-border/60" />
                         <DropdownMenuItem
-                          onClick={() => handleDelete(user.name)}
+                          onClick={() => handleDelete(user)}
+                          disabled={isDeleting}
                           variant="destructive"
                           className="text-xs gap-2 px-2 py-1.5 rounded-lg cursor-pointer text-rose-600 dark:text-rose-400 focus:bg-rose-500/10 focus:text-rose-600"
                         >
@@ -294,13 +342,25 @@ export default function UserTable({
             <div key={user._id} className="p-4 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border ${roleConfig.avatarBg}`}>
+                  <div className={`relative h-10 w-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border ${roleConfig.avatarBg}`}>
                     {user.name.substring(0, 2).toUpperCase()}
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${
+                        user.status === 'Suspended' ? 'bg-rose-500' : 'bg-emerald-500'
+                      }`}
+                    />
                   </div>
                   <div className="min-w-0">
-                    <span className="font-semibold text-foreground text-sm block truncate">
-                      {user.name}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-foreground text-sm truncate">
+                        {user.name}
+                      </span>
+                      {user.status === 'Suspended' && (
+                        <span className="text-[8px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                          Suspended
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs text-muted-foreground truncate block">
                       {user.email}
                     </span>
@@ -339,12 +399,30 @@ export default function UserTable({
                         <Settings2 className="h-3.5 w-3.5 text-blue-500" />
                         <span>Configure</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleFreeze(user.name)} className="text-xs gap-2 px-2 py-1.5 cursor-pointer">
-                        <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
-                        <span>Suspend</span>
+                      <DropdownMenuItem
+                        onClick={() => handleToggleStatus(user)}
+                        disabled={isUpdating}
+                        className="text-xs gap-2 px-2 py-1.5 cursor-pointer"
+                      >
+                        {user.status === 'Suspended' ? (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                            <span>Reactivate</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
+                            <span>Suspend</span>
+                          </>
+                        )}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator className="my-1 bg-border/60" />
-                      <DropdownMenuItem onClick={() => handleDelete(user.name)} variant="destructive" className="text-xs gap-2 px-2 py-1.5 text-rose-600 cursor-pointer">
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(user)}
+                        disabled={isDeleting}
+                        variant="destructive"
+                        className="text-xs gap-2 px-2 py-1.5 text-rose-600 cursor-pointer"
+                      >
                         <Trash2 className="h-3.5 w-3.5" />
                         <span>Delete</span>
                       </DropdownMenuItem>

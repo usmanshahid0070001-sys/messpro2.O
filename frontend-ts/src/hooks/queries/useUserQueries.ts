@@ -7,6 +7,7 @@ export interface ManageableUser {
   name: string;
   email: string;
   role: 'student' | 'manager' | 'admin' | 'superadmin';
+  status?: 'Active' | 'Suspended';
   hostelId: string;
   permissions: string[];
   additionalInfo?: Array<{ key: string; value: any }>;

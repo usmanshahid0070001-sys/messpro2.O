@@ -59,7 +59,9 @@ export default function HostelSettingsModal({
 
   useEffect(() => {
     if (hostel && isOpen) {
-      const currentPlan = typeof hostel.plan === 'object' ? hostel.plan?._id : hostel.plan || ''
+      const currentPlan = typeof hostel.plan === 'object'
+        ? String((hostel.plan as any)?.planId?._id || (hostel.plan as any)?.planId || (hostel.plan as any)?._id || '')
+        : String(hostel.plan || '')
       setPlanId(currentPlan)
       setAdditionalDays(0)
       setLocation(hostel.location || '')
@@ -130,11 +132,12 @@ export default function HostelSettingsModal({
       const parsedLat = lat.trim() ? parseFloat(lat) : undefined
       const parsedLng = lng.trim() ? parseFloat(lng) : undefined
 
+      const numDays = Number(additionalDays)
       const payload: any = {
         id: hostel._id,
         settingsData: {
           plan: planId || undefined,
-          additionalDays: Number(additionalDays) > 0 ? Number(additionalDays) : undefined,
+          additionalDays: !isNaN(numDays) && numDays >= 0 ? numDays : 0,
           location: location.trim() || undefined,
           subdomain: subdomain.trim() || undefined,
           settings: {
@@ -265,20 +268,24 @@ export default function HostelSettingsModal({
               <div className="space-y-1.5">
                 <label className="font-semibold text-foreground flex items-center justify-between">
                   <span>Extend / Renew Contract</span>
-                  {additionalDays > 0 && (
+                  {Number(additionalDays) > 0 ? (
                     <span className="text-purple-600 dark:text-purple-400 font-mono font-bold">
                       +{additionalDays} days
                     </span>
+                  ) : (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                      +0d (Sync Plan Only)
+                    </span>
                   )}
                 </label>
-                <div className="flex items-center gap-1.5">
-                  {[30, 90, 180, 365].map((days) => (
+                <div className="grid grid-cols-6 gap-1">
+                  {[0, 10, 30, 90, 180, 365].map((days) => (
                     <button
                       key={days}
                       type="button"
-                      onClick={() => setAdditionalDays(additionalDays === days ? 0 : days)}
-                      className={`flex-1 py-1.5 rounded-md border text-[11px] font-bold transition-all cursor-pointer ${
-                        additionalDays === days
+                      onClick={() => setAdditionalDays(days)}
+                      className={`py-1.5 rounded-md border text-[11px] font-bold transition-all cursor-pointer text-center ${
+                        Number(additionalDays) === days
                           ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
                           : 'bg-background text-muted-foreground border-border hover:text-foreground hover:bg-muted/40'
                       }`}
@@ -287,6 +294,11 @@ export default function HostelSettingsModal({
                     </button>
                   ))}
                 </div>
+                <p className="text-[10px] text-muted-foreground leading-tight">
+                  {Number(additionalDays) === 0
+                    ? '⚡ +0d: Syncs latest plan features, quotas & details into the hostel document without altering remaining subscription days.'
+                    : `Extends the current contract duration by +${additionalDays} days.`}
+                </p>
               </div>
             </div>
           </div>

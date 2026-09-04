@@ -8,6 +8,12 @@ import {
 } from './complaint.validation.js';
 
 export const createComplaint = catchAsync(async (req, res) => {
+  if (req.user?.status === 'Suspended') {
+    const error = new Error('Your account is currently suspended. You cannot file complaints while suspended.');
+    error.statusCode = 403;
+    throw error;
+  }
+
   const validatedData = createComplaintSchema.parse(req.body);
 
   const hostelId = req.user.hostelId || req.user.hostelid;

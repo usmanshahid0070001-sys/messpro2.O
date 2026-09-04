@@ -45,6 +45,12 @@ class MealRecordService {
   // 1. STUDENT FEATURE: SELECT MEAL IN ADVANCE
   // ==========================================
   async bulkSelectMeals(student, hostelId, payload) {
+    if (student.status === 'Suspended') {
+      const error = new Error('Your account is currently suspended. You cannot select or modify meals while suspended.');
+      error.statusCode = 403;
+      throw error;
+    }
+
     const { selections } = bulkSelectMealsSchema.parse(payload);
     
     const schedule = await mealService.getScheduleByHostel(hostelId);
@@ -334,6 +340,12 @@ class MealRecordService {
   // 3. STUDENT SCAN FEATURE (UNBREAKABLE QR LOGIC)
   // ==========================================
   async processStudentScan(student, hostelId, scannedSecret, studentLat, studentLng) {
+    if (student.status === 'Suspended') {
+      const error = new Error('Your account is currently suspended. You cannot scan for meals while suspended.');
+      error.statusCode = 403;
+      throw error;
+    }
+
     const hostel = await hostelService.getHostelById(hostelId);
     if (!hostel) throw new Error('Hostel not found.');
 

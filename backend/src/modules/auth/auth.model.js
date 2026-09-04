@@ -33,6 +33,12 @@ const userSchema = new mongoose.Schema(
       required: true,
       default: 'student',
     },
+    status: {
+      type: String,
+      enum: ['Active', 'Suspended'],
+      default: 'Active',
+      index: true,
+    },
     
     // 👇 THE NEW SPARSE ARRAY PERMISSIONS 👇
     permissions: {

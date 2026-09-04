@@ -35,6 +35,23 @@ export const updateExistingUser = catchAsync(async (req, res) => {
   });
 });
 
+export const deleteExistingUser = catchAsync(async (req, res) => {
+  const { id: targetUserId } = userIdParamSchema.parse(req.params);
+
+  const result = await userService.deleteUser(
+    req.user.role,
+    req.user.hostelId,
+    targetUserId
+  );
+
+  res.status(200).json({
+    status: 'success',
+    success: true,
+    message: result.message,
+    data: { userId: result.userId },
+  });
+});
+
 // 👇 THE MISSING FUNCTION: This handles the POST /add route
 export const createUser = catchAsync(async (req, res) => {
   const userData = addUserSchema.parse(req.body);

@@ -70,16 +70,82 @@ export const updateUser = async (requesterRole, requesterHostelId, targetUserId,
   // 3. Perform the update on the main User table
   const updatedUser = await userRepository.findByIdAndUpdate(targetUserId, updateData);
 
-  // 4. Architect Bonus: Keep PlainUser model in sync if they changed the name OR permissions!
-  if (updateData.name !== undefined || updateData.permissions !== undefined) {
+  // 4. Architect Bonus: Keep PlainUser model in sync if they changed name, status, OR permissions!
+  if (updateData.name !== undefined || updateData.permissions !== undefined || updateData.status !== undefined) {
     const syncData = {};
     if (updateData.name !== undefined) syncData.name = updateData.name;
     if (updateData.permissions !== undefined) syncData.permissions = updateData.permissions;
+    if (updateData.status !== undefined) syncData.status = updateData.status;
 
     await userRepository.syncPlainUser(targetUser.email, syncData);
   }
 
   return updatedUser;
+};
+
+export const deleteUser = async (requesterRole, requesterHostelId, targetUserId) => {
+  // 1. Find target user
+  const targetUser = await userRepository.findById(targetUserId);
+  if (!targetUser) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // 2. Hierarchy & Tenant Isolation Check
+  const allowedDeletions = {
+    superadmin: ['admin', 'manager'],
+    admin:      ['manager', 'student'],
+    manager:    ['student'],
+  };
+
+  if (!allowedDeletions[requesterRole]?.includes(targetUser.role)) {
+    const error = new Error(`Access Denied: A ${requesterRole} is not permitted to delete a ${targetUser.role}.`);
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (requesterRole !== 'superadmin' && String(targetUser.hostelId) !== String(requesterHostelId)) {
+    const error = new Error('Access Denied: This user belongs to a different hostel.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  // 3. FINANCIAL GUARD: Ensure no pending dues or unpaid bills exist
+  const pendingBills = await userRepository.findPendingBillsByUser(
+    targetUser.hostelId,
+    targetUser._id,
+    targetUser.id
+  );
+
+  if (pendingBills && pendingBills.length > 0) {
+    const totalDues = pendingBills.reduce((acc, b) => acc + (b.remainingBill || 0), 0);
+    const error = new Error(
+      `Cannot delete user: ${targetUser.name} has ${pendingBills.length} unpaid bill(s) with pending dues totaling Rs. ${totalDues}. All pending dues must be cleared first before deleting the user.`
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 4. Room Occupancy Cleanup
+  if (targetUser.room) {
+    await userRepository.unassignRoomOccupant(targetUser.room);
+  }
+
+  // 5. Delete User Doc & PlainUser Doc (Preserving MealRecords and Bills intact)
+  await userRepository.deleteUserById(targetUserId);
+  await userRepository.deletePlainUserByEmail(targetUser.email);
+
+  // 6. Recalculate and sync hostel student / manager limits
+  if (targetUser.role === 'student' || targetUser.role === 'manager') {
+    await userRepository.syncHostelUserLimit(targetUser.hostelId, targetUser.role);
+  }
+
+  return {
+    success: true,
+    message: `User ${targetUser.name} (${targetUser.role}) has been deleted successfully.`,
+    userId: targetUserId,
+  };
 };
 
 // ─── Sign Legal Agreement ────────────────────────────────────────────────────

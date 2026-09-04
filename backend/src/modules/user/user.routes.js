@@ -1,5 +1,12 @@
 import express from 'express';
-import { getTargetedUsers, updateExistingUser, createUser, signAgreementHandler,getHealthCheck } from './user.controller.js';
+import {
+  getTargetedUsers,
+  updateExistingUser,
+  deleteExistingUser,
+  createUser,
+  signAgreementHandler,
+  getHealthCheck,
+} from './user.controller.js';
 import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -16,6 +23,7 @@ router.post('/sign-agreement', signAgreementHandler);
 // ─── User Management ──────────────────────────────────────────────────────────
 router.get('/', requirePermission('user_management'), getTargetedUsers);
 router.patch('/:id', requirePermission('user_management'), updateExistingUser);
+router.delete('/:id', requirePermission('user_management'), deleteExistingUser);
 router.post('/add', requirePermission('user_management'), createUser);
 
 export default router;

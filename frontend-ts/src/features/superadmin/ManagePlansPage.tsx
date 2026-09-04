@@ -10,8 +10,6 @@ import {
   Layers,
   Sparkles,
   Download,
-  Check,
-  TrendingUp,
 } from 'lucide-react'
 import { useGetPlans, type SubscriptionPlan } from '@/hooks/queries/useSuperadminQueries'
 import PlanFormModal, { ALL_PLAN_FEATURES, FEATURE_CATEGORIES } from './components/PlanFormModal'
