@@ -130,15 +130,15 @@ export default function StudentAttendancePage() {
 
           if ('status' in res && res.status === 'requires_permission') {
             setPermissionPrompt(res)
-          } else if ('success' in res && res.success) {
+          } else if (('status' in res && res.status === 'success') || ('success' in res && Boolean((res as any).success))) {
             toast.success(res.message || 'Meal successfully claimed!')
-            setSuccessRecord(res.record)
+            setSuccessRecord((res as any).record || (res as any).data)
           }
         },
         onError: (err: any) => {
           setIsVerifying(false)
           toast.dismiss(toastId)
-          const msg = err?.response?.data?.message || 'Attendance scan rejected by server.'
+          const msg = err?.response?.data?.message || err?.message || 'Attendance scan rejected by server.'
           toast.error(msg)
         },
       }

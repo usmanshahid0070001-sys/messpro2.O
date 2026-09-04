@@ -31,7 +31,6 @@ router.route('/')
 router.route('/:id/users')
   .post(
     protect,
-    restrictTo('superadmin', 'admin', 'manager'),
     requirePermission('user_management'),
     addHostelUser
   );

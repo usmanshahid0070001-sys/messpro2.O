@@ -1,16 +1,10 @@
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { io } from '../../server.js';
-import User from '../auth/auth.model.js';
-import Hostel from '../hostel/hostel.model.js';
-import MealSchedule from '../meal/meal.model.js';
 import mealService from '../meal/meal.service.js';
 import hostelService from '../hostel/hostel.service.js';
-
-// 👇 Imported our new Repository instead of the raw Model
-import mealRecordRepository from './mealRecord.Repository.js';
-import MealRecord from './mealRecord.model.js';
 import { bulkSelectMealsSchema, processBiometricAttendanceSchema } from './mealRecord.validation.js';
+import mealRecordRepository from './mealRecord.Repository.js';
 
 // ==========================================
 // HELPER: Haversine Formula for GPS distance
@@ -85,11 +79,11 @@ class MealRecordService {
     const bulkOps = [];
 
     // Fetch existing records for checking attendance before zeroing out selection
-    const existingRecords = await MealRecord.find({
+    const existingRecords = await mealRecordRepository.findExistingRecords(
       hostelId,
-      rollNumber: student.id,
-      date: { $in: selections.map(s => s.date) }
-    });
+      student.id,
+      selections.map(s => s.date)
+    );
     const recordMap = new Map();
     existingRecords.forEach(r => recordMap.set(`${r.date}_${r.mealType}`, r));
 
@@ -193,13 +187,7 @@ class MealRecordService {
   }
 
   async getStudentSelections(rollNumber, hostelId, startDate, endDate) {
-    const records = await MealRecord.find({
-      rollNumber,
-      hostelId,
-      date: { $gte: startDate, $lte: endDate }
-    }).select('date mealType selection');
-
-    return records;
+    return mealRecordRepository.getStudentSelections(rollNumber, hostelId, startDate, endDate);
   }
 
   async getStudentMonthlyRecords(rollNumber, hostelId, month) {
@@ -207,21 +195,19 @@ class MealRecordService {
     const startDate = `${month}-01`;
     const endDate = `${month}-31`; // Simple string matching, handles up to 31st
 
-    const records = await mealRecordRepository.getStudentMonthlyRecords({
+    return mealRecordRepository.getStudentMonthlyRecords({
       rollNumber,
       hostelId,
       date: { $gte: startDate, $lte: endDate }
     });
-
-    return records;
   }
 
   // ==========================================
   // 2. MANAGER FEATURE: FETCH & BULK UPSERT
-  // =l=========================================
+  // ==========================================
 
   async getAttendance(hostelId, date, mealType) {
-    return await mealRecordRepository.getPopulatedAttendance({ hostelId, date, mealType });
+    return mealRecordRepository.getPopulatedAttendance({ hostelId, date, mealType });
   }
 
   async upsertAttendance(hostelId, date, mealType, mealInfo, records, recordedBy) {
@@ -237,15 +223,13 @@ class MealRecordService {
     const lowerRolls = rollNumbers.map(r => r.toLowerCase());
 
     // Fetch existing records to check their selection counts and preserve existing studentIds
-    const existingRecords = await MealRecord.find({
+    const existingRecords = await mealRecordRepository.findAttendanceRecordsForUpsert(
       hostelId,
       date,
       mealType,
-      $or: [
-        { rollNumber: { $in: rollNumbers } },
-        { rollNumber: { $in: lowerRolls } }
-      ]
-    });
+      rollNumbers,
+      lowerRolls
+    );
     const recordMap = new Map();
     existingRecords.forEach(r => {
       if (r.rollNumber) {
@@ -256,13 +240,11 @@ class MealRecordService {
 
     // 2. Global User Lookup (case-insensitive and by ObjectId if applicable)
     const objectIdRolls = rollNumbers.filter(r => mongoose.isValidObjectId(r));
-    const existingUsers = await User.find({
-      $or: [
-        { id: { $in: rollNumbers } },
-        { id: { $in: lowerRolls } },
-        ...(objectIdRolls.length > 0 ? [{ _id: { $in: objectIdRolls } }] : [])
-      ]
-    }).select('_id id name hostelId');
+    const existingUsers = await mealRecordRepository.findUsersByRollsOrIds(
+      rollNumbers,
+      lowerRolls,
+      objectIdRolls
+    );
 
     const userMap = new Map();
     existingUsers.forEach(u => {
@@ -401,7 +383,7 @@ class MealRecordService {
     }
 
     // 🛡️ FIND TODAY'S RECORD FOR REGISTERED STUDENT
-    let record = await MealRecord.findOne({
+    let record = await mealRecordRepository.findSingleRecord({
       hostelId,
       date: mealData.date,
       mealType: mealData.mealType,
@@ -492,9 +474,24 @@ class MealRecordService {
       count: record.attendance.count
     });
 
+    const recordPayload = {
+      mealType: mealData.mealType,
+      meal: mealData.mealInfo?.name || 'Regular Meal',
+      mealInfo: mealData.mealInfo,
+      date: mealData.date,
+      count: record.attendance.count,
+      attendance: {
+        hasEaten: true,
+        count: record.attendance.count,
+        method: 'QR'
+      }
+    };
+
     return {
       status: 'success',
+      success: true,
       message: 'Attendance marked successfully.',
+      record: recordPayload,
       data: {
         meal: mealData.mealInfo.name,
         mealType: mealData.mealType,
@@ -506,8 +503,22 @@ class MealRecordService {
   }
 
   // ==========================================
-  // 4. MANAGER QR CODE LOGIC (100% RELIABLE)
+  // 4. MANAGER QR & LIVE DASHBOARDS
   // ==========================================
+
+  async getManagerQR(hostelId) {
+    const hostel = await mealRecordRepository.findHostelById(hostelId);
+    if (!hostel) {
+      const error = new Error('Hostel not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+    return {
+      h: hostel._id,
+      s: hostel.qrSecret
+    };
+  }
+
   generateManagerQRToken(hostelId) {
     const payload = { type: 'manager_qr', hostelId: hostelId.toString() };
     if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured.');
@@ -598,8 +609,369 @@ class MealRecordService {
     };
   }
 
+  async getLiveQRAttendance(hostelId, targetDate) {
+    const currentMealData = await this.calculateCurrentMeal(hostelId);
+    const activeDate = targetDate || currentMealData.date;
+    
+    const schedule = await mealService.getScheduleByHostel(hostelId);
+    const mealTypes = schedule ? schedule.mealNames : [];
+
+    const attendances = await mealRecordRepository.findDailyRecords(hostelId, activeDate);
+
+    // Resolve any records with missing populated studentId
+    const missingRolls = attendances
+      .filter(a => !a.studentId?.name && a.rollNumber)
+      .map(a => a.rollNumber.toLowerCase());
+
+    const fallbackUserMap = new Map();
+    if (missingRolls.length > 0) {
+      const foundUsers = await mealRecordRepository.findUsersByIdsList(missingRolls);
+      foundUsers.forEach(u => {
+        if (u.id) fallbackUserMap.set(u.id.toLowerCase(), u);
+      });
+    }
+
+    const resultData = {};
+    mealTypes.forEach(mt => {
+      resultData[mt] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+    });
+
+    attendances.forEach(att => {
+      const mType = att.mealType;
+      if (!resultData[mType]) {
+        resultData[mType] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+      }
+      
+      const isAttended = att.attendance?.count > 0;
+      const selCount = att.selection?.count || 0;
+      
+      resultData[mType].summary.totalSelections += selCount;
+      if (isAttended) {
+        resultData[mType].summary.totalAttendance += 1;
+      }
+
+      const matchedUser = att.studentId || (att.rollNumber ? fallbackUserMap.get(att.rollNumber.toLowerCase()) : null);
+      const resolvedName = matchedUser?.name || (att.isGuest ? 'Guest Entry' : (att.rollNumber || 'Resident'));
+      const resolvedRoll = matchedUser?.id || att.rollNumber;
+
+      resultData[mType].data.push({
+        name: resolvedName,
+        rollNumber: resolvedRoll,
+        isGuest: att.isGuest,
+        attendanceCount: att.attendance?.count || 0,
+        selectionCount: selCount,
+        hasAttended: isAttended,
+        isSelected: selCount > 0
+      });
+    });
+
+    return {
+      date: activeDate,
+      currentMeal: currentMealData.mealType,
+      mealTypes,
+      data: resultData
+    };
+  }
+
+  async getDailyOverview(hostelId, targetDate) {
+    const schedule = await mealService.getScheduleByHostel(hostelId);
+    const mealTypes = schedule ? schedule.mealNames : [];
+
+    if (!mealTypes.length) {
+      return {
+        date: targetDate,
+        mealTypes: [],
+        data: {}
+      };
+    }
+
+    const attendances = await mealRecordRepository.findDailyRecords(hostelId, targetDate);
+
+    // Resolve any records with missing populated studentId
+    const missingRolls = attendances
+      .filter(a => !a.studentId?.name && a.rollNumber)
+      .map(a => a.rollNumber.toLowerCase());
+
+    const fallbackUserMap = new Map();
+    if (missingRolls.length > 0) {
+      const foundUsers = await mealRecordRepository.findUsersByIdsList(missingRolls);
+      foundUsers.forEach(u => {
+        if (u.id) fallbackUserMap.set(u.id.toLowerCase(), u);
+      });
+    }
+
+    const resultData = {};
+    mealTypes.forEach(mt => {
+      resultData[mt] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+    });
+
+    attendances.forEach(att => {
+      const mType = att.mealType;
+      if (!resultData[mType]) {
+        resultData[mType] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+      }
+      
+      const isAttended = att.attendance?.count > 0;
+      const selCount = att.selection?.count || 0;
+      
+      resultData[mType].summary.totalSelections += selCount;
+      if (isAttended) {
+        resultData[mType].summary.totalAttendance += 1;
+      }
+
+      const matchedUser = att.studentId || (att.rollNumber ? fallbackUserMap.get(att.rollNumber.toLowerCase()) : null);
+      const resolvedName = matchedUser?.name || (att.isGuest ? 'Guest Entry' : (att.rollNumber || 'Resident'));
+      const resolvedRoll = matchedUser?.id || att.rollNumber;
+
+      resultData[mType].data.push({
+        name: resolvedName,
+        rollNumber: resolvedRoll,
+        isGuest: att.isGuest,
+        attendanceCount: att.attendance?.count || 0,
+        selectionCount: selCount,
+        hasAttended: isAttended,
+        isSelected: selCount > 0
+      });
+    });
+
+    return {
+      date: targetDate,
+      mealTypes,
+      data: resultData
+    };
+  }
+
+  async getManagerLiveOverview(hostelId, targetDate) {
+    const schedule = await mealService.getScheduleByHostel(hostelId);
+    const mealTypes = schedule ? schedule.mealNames : [];
+
+    if (!mealTypes.length) {
+      return {
+        date: targetDate,
+        mealTypes: [],
+        data: {}
+      };
+    }
+
+    // 1. Fetch ALL students for this hostel
+    const allStudents = await mealRecordRepository.findStudentsByHostel(hostelId);
+
+    // 2. Fetch MealRecords for this date
+    const attendances = await mealRecordRepository.findDailyRecords(hostelId, targetDate);
+
+    const resultData = {};
+    mealTypes.forEach(mt => {
+      resultData[mt] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+    });
+
+    // Organize attendances by mealType and rollNumber for quick lookup
+    const recordMap = {};
+    attendances.forEach(att => {
+      const roll = att.studentId?.id || att.rollNumber;
+      if (!recordMap[att.mealType]) recordMap[att.mealType] = {};
+      recordMap[att.mealType][roll] = att;
+    });
+
+    // 3. For each mealType, map over ALL students
+    mealTypes.forEach(mType => {
+      allStudents.forEach(student => {
+        const att = recordMap[mType]?.[student.id];
+        const isAttended = att?.attendance?.count > 0;
+        const selCount = att?.selection?.count || 0;
+        
+        resultData[mType].summary.totalSelections += selCount;
+        if (isAttended) {
+          resultData[mType].summary.totalAttendance += 1;
+        }
+
+        if (selCount > 0 || isAttended) {
+          resultData[mType].data.push({
+            name: student.name,
+            rollNumber: student.id,
+            isGuest: false,
+            attendanceCount: att?.attendance?.count || 0,
+            selectionCount: selCount,
+            hasAttended: isAttended,
+            isSelected: selCount > 0
+          });
+        }
+      });
+
+      // Also include any guests who might not be in the allStudents list
+      if (recordMap[mType]) {
+        Object.values(recordMap[mType]).forEach(att => {
+          if (att.isGuest) {
+            const isAttended = att.attendance?.count > 0;
+            const selCount = att.selection?.count || 0;
+            
+            resultData[mType].summary.totalSelections += selCount;
+            if (isAttended) {
+              resultData[mType].summary.totalAttendance += 1;
+            }
+
+            if (isAttended || selCount > 0) {
+              resultData[mType].data.push({
+                name: att.studentId?.name || 'Guest',
+                rollNumber: att.studentId?.id || att.rollNumber,
+                isGuest: true,
+                attendanceCount: att.attendance?.count || 0,
+                selectionCount: selCount,
+                hasAttended: isAttended,
+                isSelected: selCount > 0
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return {
+      date: targetDate,
+      mealTypes,
+      data: resultData
+    };
+  }
+
   // ==========================================
-  // 5. BIOMETRIC HARDWARE ATTENDANCE IMPORT ENGINE
+  // 5. GUEST PERMISSION & STUDENT QR BY MANAGER
+  // ==========================================
+
+  requestGuestPermission(student, managerHostelId, reason) {
+    io.to(`hostel:${managerHostelId}`).emit('guest_permission_request', {
+      requestId: `${student._id}_${Date.now()}`,
+      rollNumber: student.id,
+      name: student.name,
+      studentId: student._id,
+      sourceHostelId: student.hostelId,
+      reason: reason || 'guest'
+    });
+
+    return { message: 'Permission request sent to manager.' };
+  }
+
+  async respondGuestPermission(managerHostelId, recordedById, { requestId, studentId, isApproved }) {
+    if (!isApproved) {
+      return { status: 'success', message: 'Rejected.' };
+    }
+
+    const student = await mealRecordRepository.findUserById(studentId);
+    if (!student) {
+      const error = new Error('Student not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const mealData = await this.calculateCurrentMeal(managerHostelId);
+    const isGuest = student.hostelId.toString() !== managerHostelId.toString();
+    
+    // Find existing record to preserve selection count if any
+    const existingRecord = await mealRecordRepository.findSingleRecord({
+      hostelId: managerHostelId,
+      date: mealData.date,
+      mealType: mealData.mealType,
+      rollNumber: student.id
+    });
+
+    const record = await mealRecordRepository.findOneAndUpdate(
+      { hostelId: managerHostelId, date: mealData.date, mealType: mealData.mealType, rollNumber: student.id },
+      {
+        $set: {
+          hostelId: managerHostelId,
+          date: mealData.date,
+          mealType: mealData.mealType,
+          mealInfo: mealData.mealInfo,
+          rollNumber: student.id,
+          studentId: student._id,
+          isGuest,
+          'attendance.hasEaten': true,
+          'attendance.method': 'Manual',
+          'attendance.recordedBy': recordedById
+        },
+        $setOnInsert: {
+          'selection.hasSelected': existingRecord?.selection?.hasSelected || false,
+          'selection.count': existingRecord?.selection?.count || 0
+        },
+        $inc: { 'attendance.count': 1 }
+      },
+      { upsert: true, new: true }
+    );
+
+    io.to(`hostel:${managerHostelId}`).emit('attendance_success', {
+      rollNumber: student.id,
+      name: student.name,
+      isGuest,
+      mealType: mealData.mealType,
+      date: mealData.date, 
+      count: record.attendance.count,
+      selectionCount: record.selection?.count || 0
+    });
+
+    return {
+      status: 'success',
+      message: 'Guest approved and attendance marked.',
+      data: mealData
+    };
+  }
+
+  async scanStudentQR(managerHostelId, recordedById, studentRollNumber) {
+    const student = await mealRecordRepository.findStudentByRollNumber(studentRollNumber);
+    if (!student) {
+      const error = new Error('Student not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // 1. Verify that a meal is actively being served right now
+    const mealData = await this.calculateCurrentMeal(managerHostelId);
+
+    if (student.hostelId.toString() === managerHostelId.toString()) {
+      // Same hostel, force upsert
+      const record = await mealRecordRepository.findOneAndUpdate(
+        { hostelId: managerHostelId, date: mealData.date, mealType: mealData.mealType, rollNumber: student.id },
+        {
+          $set: {
+            hostelId: managerHostelId,
+            date: mealData.date,
+            mealType: mealData.mealType,
+            mealInfo: mealData.mealInfo,
+            rollNumber: student.id,
+            studentId: student._id,
+            isGuest: false,
+            'attendance.hasEaten': true,
+            'attendance.method': 'QR',
+            'attendance.recordedBy': recordedById
+          },
+          $inc: { 'attendance.count': 1 }
+        },
+        { upsert: true, new: true }
+      );
+
+      io.to(`hostel:${managerHostelId}`).emit('attendance_success', {
+        rollNumber: student.id,
+        name: student.name,
+        isGuest: false,
+        mealType: mealData.mealType,
+        date: mealData.date,
+        count: record.attendance.count
+      });
+
+      return {
+        status: 'success',
+        message: 'Attendance marked successfully.',
+        data: mealData
+      };
+    } else {
+      // Different hostel, UI should prompt manager
+      return {
+        status: 'requires_permission',
+        student: { _id: student._id, name: student.name, rollNumber: student.id, hostelId: student.hostelId },
+        message: 'This student is from a different hostel. Accept as guest?'
+      };
+    }
+  }
+
+  // ==========================================
+  // 6. BIOMETRIC HARDWARE ATTENDANCE IMPORT ENGINE
   // ==========================================
   async processBiometricAttendance(hostelId, user, payload) {
     const parsedData = processBiometricAttendanceSchema.parse(payload);
@@ -620,24 +992,12 @@ class MealRecordService {
     const rawRollNumbers = records.map((r) => r.rollNumber);
     const uniqueRollNumbers = [...new Set(rawRollNumbers)];
 
-    const enrolledStudents = await User.find({
-      id: { $in: uniqueRollNumbers },
-      hostelId: hostelId,
-      role: 'student',
-    })
-      .select('_id id name hostelId')
-      .lean();
-
+    const enrolledStudents = await mealRecordRepository.findEnrolledStudents(hostelId, uniqueRollNumbers);
     const enrolledStudentMap = new Map();
     enrolledStudents.forEach((s) => enrolledStudentMap.set(s.id, s));
 
     // Also check global users for guest info
-    const globalUsers = await User.find({
-      id: { $in: uniqueRollNumbers },
-    })
-      .select('_id id name hostelId')
-      .lean();
-
+    const globalUsers = await mealRecordRepository.findUsersByIdsList(uniqueRollNumbers);
     const globalUserMap = new Map();
     globalUsers.forEach((u) => globalUserMap.set(u.id, u));
 
@@ -699,11 +1059,11 @@ class MealRecordService {
 
     // 4. Fetch existing MealRecords to check selection count preservation
     const queryDates = [...new Set(aggregatedPunches.map((p) => p.date))];
-    const existingRecords = await MealRecord.find({
+    const existingRecords = await mealRecordRepository.findRecordsByDatesAndRolls(
       hostelId,
-      date: { $in: queryDates },
-      rollNumber: { $in: uniqueRollNumbers },
-    }).lean();
+      queryDates,
+      uniqueRollNumbers
+    );
 
     const existingRecordMap = new Map();
     existingRecords.forEach((r) => {

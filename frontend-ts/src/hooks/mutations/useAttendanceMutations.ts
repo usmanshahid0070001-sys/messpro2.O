@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/api/client';
 import { toast } from 'sonner';
+import { extractApiErrorMessage } from './useHostelMutations';
 
 export interface SaveAttendanceRecordItem {
   rollNumber: string;
@@ -39,10 +40,12 @@ export const useSaveAttendance = () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       queryClient.invalidateQueries({ queryKey: ['liveQRAttendance'] });
       queryClient.invalidateQueries({ queryKey: ['dailyOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['managerLiveOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['studentMonthlyRecords'] });
       toast.success(res.message || 'Attendance saved successfully!');
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to save attendance.';
+      const msg = extractApiErrorMessage(error, 'Failed to save attendance.');
       toast.error(msg);
     },
   });
@@ -88,11 +91,13 @@ export const useScanStudentQR = () => {
         queryClient.invalidateQueries({ queryKey: ['liveQRAttendance'] });
         queryClient.invalidateQueries({ queryKey: ['dailyOverview'] });
         queryClient.invalidateQueries({ queryKey: ['attendance'] });
+        queryClient.invalidateQueries({ queryKey: ['managerLiveOverview'] });
+        queryClient.invalidateQueries({ queryKey: ['studentMonthlyRecords'] });
         toast.success(res.message || 'Student attendance marked!');
       }
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to process student QR code.';
+      const msg = extractApiErrorMessage(error, 'Failed to process student QR code.');
       toast.error(msg);
     },
   });
@@ -124,10 +129,12 @@ export const useRespondGuestPermission = () => {
       queryClient.invalidateQueries({ queryKey: ['liveQRAttendance'] });
       queryClient.invalidateQueries({ queryKey: ['dailyOverview'] });
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['managerLiveOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['studentMonthlyRecords'] });
       toast.success(res.message || 'Permission updated successfully!');
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to update guest permission.';
+      const msg = extractApiErrorMessage(error, 'Failed to update guest permission.');
       toast.error(msg);
     },
   });
@@ -176,10 +183,12 @@ export const useProcessBiometricAttendance = () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       queryClient.invalidateQueries({ queryKey: ['liveQRAttendance'] });
       queryClient.invalidateQueries({ queryKey: ['dailyOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['managerLiveOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['studentMonthlyRecords'] });
       toast.success(res.message || 'Biometric attendance synced successfully!');
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to process biometric file.';
+      const msg = extractApiErrorMessage(error, 'Failed to process biometric file.');
       toast.error(msg);
     },
   });

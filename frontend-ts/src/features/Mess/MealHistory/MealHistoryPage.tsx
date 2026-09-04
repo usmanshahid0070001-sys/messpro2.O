@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react'
 import {
   useGetStudentMonthlyRecords,
   useGetMealSchedule,
-  type StudentMonthlyMealRecord,
 } from '@/hooks/queries/useMealQueries'
 import { Skeleton } from '@/components/ui/skeleton'
 
