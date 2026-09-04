@@ -79,15 +79,20 @@ export const googleAuth = catchAsync(async (req, res) => {
 });
 
 export const googleCallback = catchAsync(async (req, res) => {
-  const { code } = req.query;
+  const { code, error } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-  if (!code) {
-    return res.status(400).json({ success: false, message: 'Google login was cancelled.' });
+  if (error || !code) {
+    const errorMsg = error || 'Google login was cancelled.';
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorMsg)}`);
   }
 
-  const result = await authenticateWithGoogle(code);
-  res.cookie('token', result.token, createAuthCookieOptions());
-
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  res.redirect(`${frontendUrl}/?auth=google`);
+  try {
+    const result = await authenticateWithGoogle(code);
+    res.cookie('token', result.token, createAuthCookieOptions());
+    res.redirect(`${frontendUrl}/?auth=google`);
+  } catch (authError) {
+    const errorMsg = authError.message || 'Google authentication failed.';
+    res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorMsg)}`);
+  }
 });

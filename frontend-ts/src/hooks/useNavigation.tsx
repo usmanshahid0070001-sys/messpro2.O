@@ -3,12 +3,10 @@ import { useSelector } from 'react-redux';
 import {
   Globe,
   Shield,
-  FileText,
   Settings2,
   Building2,
   Utensils,
   BedDouble,
-  PieChart,
   LayoutDashboard,
   FileTextIcon,
   UserCheck,

@@ -27,6 +27,8 @@ export const useCreateUser = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['myHostel'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'hostels'] });
       toast.success('User created successfully and email notification sent');
     },
     onError: (error: any) => {

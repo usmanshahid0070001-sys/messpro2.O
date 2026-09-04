@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useSEO } from '@/hooks/useSEO';
 import {
-  BookOpen,
   Search,
   Building2,
   Utensils,
@@ -12,7 +11,6 @@ import {
   AlertCircle,
   Users,
   Smartphone,
-  ShieldCheck,
   ArrowRight,
   ArrowLeft,
   CheckCircle2,
@@ -23,10 +21,8 @@ import {
   Info,
   Sparkles,
   HelpCircle,
-  FileText,
   Sliders,
   Layers,
-  Activity,
   UserCheck,
   Printer
 } from 'lucide-react';

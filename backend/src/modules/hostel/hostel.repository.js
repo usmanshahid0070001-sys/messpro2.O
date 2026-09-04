@@ -44,6 +44,14 @@ class HostelRepository{
         }
     )
   }
+
+  async updateLimitCount(id, field, count) {
+    return await Hostel.findByIdAndUpdate(
+      id,
+      { $set: { [field]: count } },
+      { new: true }
+    );
+  }
 }
 
 export default new HostelRepository();

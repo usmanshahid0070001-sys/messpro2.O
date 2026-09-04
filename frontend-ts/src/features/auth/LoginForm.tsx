@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useSEO } from '@/hooks/useSEO';
 import { setCredentials } from '../../store/slices/AuthSlice';
@@ -20,40 +20,57 @@ const loginSchema = z.object({
     password: z
         .string()
         .min(1, 'Password is required')
-        .min(7, 'Password must be at least 7 characters'),
+        .min(6, 'Password must be at least 6 characters'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-// Maps known API error shapes to a friendly message.
-// Falls back to a generic message rather than leaking raw server/network errors.
+// Maps API error shapes to a user-friendly message.
 function getErrorMessage(error: unknown): string {
     if (error && typeof error === 'object') {
-        const err = error as { status?: number; data?: { message?: string } };
-        if (err.status === 401 || err.status === 400) {
-            return 'Incorrect email or password. Please try again.';
+        const axiosErr = error as {
+            response?: {
+                status?: number;
+                data?: { message?: string; error?: string };
+            };
+            message?: string;
+        };
+
+        const status = axiosErr.response?.status;
+        const serverMessage = axiosErr.response?.data?.message || axiosErr.response?.data?.error;
+
+        if (status === 429) {
+            return serverMessage || 'Too many attempts. Please wait a moment and try again.';
         }
-        if (err.status === 429) {
-            return 'Too many attempts. Please wait a moment and try again.';
+        if (status === 401 || status === 400) {
+            return serverMessage || 'Incorrect email or password. Please try again.';
         }
-        if (err.status && err.status >= 500) {
+        if (status && status >= 500) {
             return 'Something went wrong on our end. Please try again shortly.';
         }
-        if (err.data?.message) {
-            return err.data.message;
+        if (serverMessage) {
+            return serverMessage;
         }
-    }
-    if (error instanceof Error && error.message === 'Failed to fetch') {
-        return 'Unable to reach the server. Check your connection and try again.';
+        if (axiosErr.message === 'Network Error' || axiosErr.message === 'Failed to fetch') {
+            return 'Unable to reach the server. Check your connection and try again.';
+        }
     }
     return 'Invalid credentials. Please try again.';
 }
 
 export default function LoginForm() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const dispatch = useDispatch();
     const loginMutation = useLoginMutation();
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        const errorParam = searchParams.get('error');
+        if (errorParam) {
+            toast.error(errorParam);
+        }
+    }, [searchParams]);
 
     useSEO({
         title: 'Sign In — MessPro 2.0',

@@ -14,7 +14,6 @@ import {
   ArrowRight,
   ChevronRight,
   Printer,
-  Sparkles,
   ExternalLink,
   CheckCircle2,
   Mail,

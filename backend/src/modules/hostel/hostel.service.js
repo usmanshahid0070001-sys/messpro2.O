@@ -213,6 +213,24 @@ class HostelService {
     const hostel = await hostelRepository.findById(hostelId);
     if (!hostel) throw new Error('Hostel not found.');
 
+    const role = userData.role;
+    if (role === 'student' || role === 'manager') {
+      const maxLimit = role === 'manager'
+        ? hostel.plan?.limits?.maxManagers
+        : hostel.plan?.limits?.maxStudents;
+
+      const currentCount = await User.countDocuments({
+        hostelId: hostelId.toString(),
+        role,
+      });
+
+      if (maxLimit !== undefined && maxLimit !== -1 && currentCount >= maxLimit) {
+        const error = new Error(`Upgrade required. Your current plan only allows ${maxLimit} ${role}(s).`);
+        error.statusCode = 402;
+        throw error;
+      }
+    }
+
     const enabledFeatures = hostel.plan?.features || [];
     const normalize = (str) => (str || '').toLowerCase().replace(/ /g, '_');
 
@@ -251,6 +269,19 @@ class HostelService {
       },
       { upsert: true, new: true }
     );
+
+    if (role === 'student' || role === 'manager') {
+      const updatedCount = await User.countDocuments({
+        hostelId: hostelId.toString(),
+        role,
+      });
+      const countField = role === 'manager' ? 'plan.limits.managers' : 'plan.limits.students';
+      await hostelRepository.updateLimitCount(hostelId, countField, updatedCount);
+
+      if (hostelId) {
+        await cache.del(`hostel:config:${hostelId}`);
+      }
+    }
 
     const lineItems = [
       `Hostel: ${hostelName}`, `Role: ${userData.role}`, `Email: ${userData.email}`,
