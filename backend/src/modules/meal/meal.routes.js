@@ -1,16 +1,27 @@
 import express from 'express';
 import * as mealController from './meal.controller.js';
-// Assuming 'protect' is your standard login verification middleware
-import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js'; 
+import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
-// Both routes require the user to be logged in
+// All meal endpoints require authentication
 router.use(protect);
 
+// 1. View weekly menu schedule (Superadmin, Admin, Manager, Student)
 router.get('/', mealController.getMealSchedule);
-router.put('/', requirePermission('meal_settings'), mealController.updateMealSchedule);
-// Add this under your // Manager endpoints section
-router.get('/violations', requirePermission('manual_attendance'), mealController.getMealViolationsSheet);
+
+// 2. Update weekly meal schedule (Admin & Manager with 'meal_settings' permission, or Superadmin)
+router.put(
+    '/',
+    requirePermission('meal_settings'),
+    mealController.updateMealSchedule
+);
+
+// 3. Managerial meal violation and wastage tracker
+router.get(
+    '/violations',
+    requirePermission('manual_attendance'),
+    mealController.getMealViolationsSheet
+);
 
 export default router;

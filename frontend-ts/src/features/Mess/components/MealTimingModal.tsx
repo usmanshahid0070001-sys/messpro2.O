@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Plus, Trash2, Clock, Utensils, AlertCircle, Sparkles, Check } from 'lucide-react'
+import { X, Plus, Trash2, Clock, Utensils, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { TimeWindow } from '@/hooks/queries/useMealQueries'

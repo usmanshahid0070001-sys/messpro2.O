@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/api/client'
 import type { MealSchedule, MenuItem } from '../queries/useMealQueries'
+import { extractApiErrorMessage } from './useHostelMutations'
 import { toast } from 'sonner'
 
 export interface UpdateMealSchedulePayload {
@@ -8,7 +9,7 @@ export interface UpdateMealSchedulePayload {
   numberOfMeals?: number
   mealNames?: string[]
   selectionTiming?: Array<{ start?: string; end?: string } | string>
-  servingTiming?: Array<{ start?: string; end?: string }>
+  servingTiming?: Array<{ start?: string; end?: string } | string>
   maxMealSelection?: number
   menu?: {
     Monday?: MenuItem[]
@@ -51,10 +52,11 @@ export const useUpdateMealSchedule = () => {
     },
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['mealSchedule'] })
+      queryClient.invalidateQueries({ queryKey: ['studentSelections'] })
       toast.success(res.message || 'Weekly meal schedule updated successfully!')
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to update meal schedule.'
+      const msg = extractApiErrorMessage(error, 'Failed to update meal schedule.')
       toast.error(msg)
     },
   })
@@ -75,10 +77,12 @@ export const useBulkSelectMeals = () => {
     },
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['studentSelections'] })
+      queryClient.invalidateQueries({ queryKey: ['studentMonthlyRecords'] })
+      queryClient.invalidateQueries({ queryKey: ['managerLiveOverview'] })
       toast.success(res.message || 'Meal selections saved successfully!')
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to save meal selections.'
+      const msg = extractApiErrorMessage(error, 'Failed to save meal selections.')
       toast.error(msg)
     },
   })
@@ -139,7 +143,13 @@ export const useScanManagerQR = () => {
       if ('success' in res && res.success) {
         queryClient.invalidateQueries({ queryKey: ['studentMonthlyRecords'] })
         queryClient.invalidateQueries({ queryKey: ['studentSelections'] })
+        queryClient.invalidateQueries({ queryKey: ['managerLiveOverview'] })
+        toast.success(res.message || 'Attendance verified successfully!')
       }
+    },
+    onError: (error: any) => {
+      const msg = extractApiErrorMessage(error, 'QR verification failed.')
+      toast.error(msg)
     },
   })
 }
@@ -163,9 +173,8 @@ export const useRequestGuestPermission = () => {
       toast.success(res.message || 'Permission request sent to manager!')
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to send permission request.'
+      const msg = extractApiErrorMessage(error, 'Failed to send permission request.')
       toast.error(msg)
     },
   })
 }
-

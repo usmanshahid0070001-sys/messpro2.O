@@ -1,54 +1,85 @@
 import { catchAsync } from '../../utils/catchAsync.js';
 import mealService from './meal.service.js';
-import mealRecordService from '../mealRecord/mealRecord.service.js';
-import { mealScheduleSchema } from './meal.validation.js';
+import {
+  mealScheduleSchema,
+  mealViolationQuerySchema,
+  mealScheduleQuerySchema,
+} from './meal.validation.js';
 
+const resolveHostelId = (req) => {
+  if (req.user.role === 'superadmin' && req.query.hostelId) {
+    return req.query.hostelId;
+  }
+  return req.user.hostelId || req.user.hostelid;
+};
+
+/**
+ * Get hostel weekly meal schedule (Admins, Managers, Students, Superadmin)
+ */
 export const getMealSchedule = catchAsync(async (req, res) => {
-  // Everyone (Admins, Managers, Students) can view the menu
-  const hostelId = req.user.hostelId;
+  const validatedQuery = mealScheduleQuerySchema.parse(req.query);
+  const hostelId = req.user.role === 'superadmin' && validatedQuery.hostelId
+    ? validatedQuery.hostelId
+    : (req.user.hostelId || req.user.hostelid);
+
+  if (!hostelId) {
+    const error = new Error('You must be associated with a hostel to view its meal schedule.');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const schedule = await mealService.getScheduleByHostel(hostelId);
 
   res.status(200).json({
     success: true,
-    data: schedule || null // Returns null if the manager hasn't created one yet
+    data: schedule || null,
   });
 });
 
+/**
+ * Update / Upsert hostel weekly meal schedule (Admin / Manager with 'meal_settings' permission)
+ */
 export const updateMealSchedule = catchAsync(async (req, res) => {
-  const hostelId = req.user.hostelId;
-  const validatedData = mealScheduleSchema.parse(req.body);
+  const hostelId = resolveHostelId(req);
 
+  if (!hostelId) {
+    const error = new Error('You must be associated with a hostel to configure its meal schedule.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const validatedData = mealScheduleSchema.parse(req.body);
   const updatedSchedule = await mealService.upsertSchedule(hostelId, validatedData);
 
   res.status(200).json({
     success: true,
     message: 'Meal schedule updated successfully.',
-    data: updatedSchedule
+    data: updatedSchedule,
   });
 });
 
-
-
-// ==========================================
-// 5. MEAL CONTROL (VIOLATION TRACKER)
-// ==========================================
-
+/**
+ * Manager / Admin / Superadmin: Generate Meal Violations & Wastage Sheet
+ */
 export const getMealViolationsSheet = catchAsync(async (req, res) => {
-  const { date } = req.query;
-  const { hostelId } = req.user;
+  const validatedQuery = mealViolationQuerySchema.parse(req.query);
+  const hostelId = req.user.role === 'superadmin' && validatedQuery.hostelId
+    ? validatedQuery.hostelId
+    : (req.user.hostelId || req.user.hostelid);
 
-  if (!date) {
-    const error = new Error('Please provide a date to fetch violations.');
+  if (!hostelId) {
+    const error = new Error('You must be associated with a hostel to fetch violations sheet.');
     error.statusCode = 400;
     throw error;
   }
 
-  const violations = await mealService.getMealViolations(hostelId, date);
+  const violations = await mealService.getMealViolations(hostelId, validatedQuery.date);
 
   res.status(200).json({
+    success: true,
     status: 'success',
     message: 'Violation sheet generated successfully.',
     results: violations.length,
-    data: violations
+    data: violations,
   });
 });

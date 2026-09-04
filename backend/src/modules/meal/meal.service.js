@@ -1,34 +1,44 @@
-import MealSchedule from './meal.model.js';
-import mongoose from 'mongoose';
-import MealRecord from '../mealRecord/mealRecord.model.js';
+import mealRepository from './meal.repository.js';
 import cache from '../../config/cache.js';
 
 class MealService {
+  /**
+   * Fetch hostel weekly meal schedule with read-through caching
+   */
   async getScheduleByHostel(hostelId) {
-    if (!hostelId) return null;
+    if (!hostelId) {
+      const error = new Error('Hostel ID is required to retrieve meal schedule.');
+      error.statusCode = 400;
+      throw error;
+    }
+
     const cacheKey = `hostel:meal_schedule:${hostelId}`;
 
     // Read through cache with 30m base TTL + 5m jitter
     return await cache.getOrSet(
       cacheKey,
       async () => {
-        return await MealSchedule.findOne({ hostelId }).lean();
+        return await mealRepository.findScheduleByHostel(hostelId);
       },
       1800,
       300
     );
   }
 
+  /**
+   * Upsert hostel weekly meal schedule with write-through caching
+   */
   async upsertSchedule(hostelId, updateData) {
-    // UPSERT: update or create in MongoDB
-    const schedule = await MealSchedule.findOneAndUpdate(
-      { hostelId },
-      { $set: updateData },
-      { new: true, upsert: true, runValidators: true }
-    ).lean();
+    if (!hostelId) {
+      const error = new Error('Hostel ID is required to update meal schedule.');
+      error.statusCode = 400;
+      throw error;
+    }
 
-    // Instantly sync/update in-memory cache (Write-through)
-    if (schedule && hostelId) {
+    const schedule = await mealRepository.upsertSchedule(hostelId, updateData);
+
+    // Write-through cache synchronization
+    if (schedule) {
       const cacheKey = `hostel:meal_schedule:${hostelId}`;
       await cache.set(cacheKey, schedule, 1800, 300);
     }
@@ -36,90 +46,24 @@ class MealService {
     return schedule;
   }
 
-
-// ==========================================
-  // 5. MEAL CONTROL & VIOLATION TRACKER
-  // ==========================================
-  
+  /**
+   * Query meal violations comparing student booking portions against dining attendance
+   */
   async getMealViolations(hostelId, date) {
-    const pipeline = [
-      {
-        $match: {
-          hostelId: new mongoose.Types.ObjectId(hostelId),
-          date: date // You can also upgrade this to take a startDate and endDate later
-        }
-      },
-      // 1. Do the Math: Compare Selection vs. Attendance
-      {
-        $project: {
-          date: 1,
-          mealType: 1,
-          rollNumber: 1,
-          studentId: 1,
-          selectionCount: { $ifNull: ['$selection.count', 0] },
-          attendanceCount: { $ifNull: ['$attendance.count', 0] },
-          
-          // Missed Meals (Wastage): If they selected 3 but ate 1, returns 2.
-          missedMeals: {
-            $max: [0, { $subtract: [{ $ifNull: ['$selection.count', 0] }, { $ifNull: ['$attendance.count', 0] }] }]
-          },
-          
-          // Extra Meals (Violations): If they selected 1 but ate 4, returns 3.
-          extraMeals: {
-            $max: [0, { $subtract: [{ $ifNull: ['$attendance.count', 0] }, { $ifNull: ['$selection.count', 0] }] }]
-          }
-        }
-      },
-      // 2. Filter: Only keep students who actually have a violation > 0
-      {
-        $match: {
-          $or: [
-            { missedMeals: { $gt: 0 } },
-            { extraMeals: { $gt: 0 } }
-          ]
-        }
-      },
-      // 3. Populate Student Details for the Printable Sheet
-      {
-        $lookup: {
-          from: 'users', // Must match your auth.model collection name
-          localField: 'studentId',
-          foreignField: '_id',
-          as: 'studentInfo'
-        }
-      },
-      {
-        $unwind: { path: '$studentInfo', preserveNullAndEmptyArrays: true }
-      },
-      // 4. Format the final output for the frontend
-      {
-        $project: {
-          _id: 1,
-          date: 1,
-          mealType: 1,
-          rollNumber: 1,
-          studentName: '$studentInfo.name',
-          selectionCount: 1,
-          attendanceCount: 1,
-          missedMeals: 1,
-          extraMeals: 1,
-          violationType: {
-            $cond: [
-              { $gt: ['$extraMeals', 0] }, 'Extra/Unselected Eaten', 'Missed/Wasted'
-            ]
-          }
-        }
-      },
-      { $sort: { rollNumber: 1 } }
-    ];
+    if (!hostelId) {
+      const error = new Error('Hostel ID is required to query meal violations.');
+      error.statusCode = 400;
+      throw error;
+    }
 
-    const violations = await MealRecord.aggregate(pipeline);
-    return violations;
+    if (!date) {
+      const error = new Error('Date is required to fetch meal violations.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return await mealRepository.getMealViolations(hostelId, date);
   }
-
-
-
 }
 
 export default new MealService();
-

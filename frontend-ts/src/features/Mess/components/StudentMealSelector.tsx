@@ -3,25 +3,20 @@ import {
   Utensils,
   Save,
   Clock,
-  CheckCircle2,
-  Lock,
-  Calendar,
   AlertCircle,
-  Sparkles,
-  ShoppingBag,
-  RotateCcw,
   Check,
-  Plus,
-  Minus,
-  Sun,
+  CheckCheck,
   Sunrise,
+  Sun,
   Moon,
   Coffee,
-  CheckCheck,
-  ChevronRight,
-  TrendingUp,
   Layers,
-  Filter,
+  Calendar,
+  Lock,
+  CheckCircle2,
+  Minus,
+  Plus,
+  RotateCcw,
 } from 'lucide-react'
 import type { MealSchedule, StudentSelectionRecord } from '@/hooks/queries/useMealQueries'
 import { useBulkSelectMeals } from '@/hooks/mutations/useMealMutations'
@@ -43,8 +38,6 @@ const STATIC_DAYS = [
   'Friday',
   'Saturday',
 ] as const
-
-type DayOfWeek = (typeof STATIC_DAYS)[number]
 
 const formatTimeRange = (range?: { start?: string; end?: string } | string) => {
   if (!range) return '—'
@@ -368,6 +361,12 @@ export default function StudentMealSelector({
           </div>
 
           <div className="flex items-center gap-1.5 ml-auto sm:ml-2">
+            {isSelectionsLoading && (
+              <span className="text-[11px] text-muted-foreground animate-pulse flex items-center gap-1 mr-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                Syncing...
+              </span>
+            )}
             <span
               className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
                 !isInactive

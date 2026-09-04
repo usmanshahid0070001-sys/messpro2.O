@@ -7,13 +7,6 @@ import {
   Settings2,
   Copy,
   Trash2,
-  CheckCircle2,
-  AlertCircle,
-  Eye,
-  Sliders,
-  Sparkles,
-  ChevronRight,
-  ShieldCheck,
 } from 'lucide-react'
 import type { MealSchedule, MenuItem } from '@/hooks/queries/useMealQueries'
 import { useUpdateMealSchedule } from '@/hooks/mutations/useMealMutations'
