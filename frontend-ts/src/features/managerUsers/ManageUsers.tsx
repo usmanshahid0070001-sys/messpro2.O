@@ -10,13 +10,17 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import { exportUsersToExcel } from '@/utils/exportUtils'
 
-// Import extracted sub-components
 import MetricsHeader from './components/MetricsHeader'
 import FilterSection from './components/FilterSection'
 import UserTable from './components/UserTable'
 import AddUserModal from './components/AddUserModal'
 import EditUserModal from './components/EditUserModal'
+import type { ManageableUser } from '@/hooks/queries/useUserQueries'
 
+/**
+ * ManageUsers - Administrative control center for member enrollment, role assignment,
+ * status moderation (suspend/reactivate), and custom registration data management.
+ */
 export default function ManageUsers() {
   const { user: currentUser } = useSelector((s: RootState) => s.auth)
   const currentRole = currentUser?.role || 'student'
@@ -46,7 +50,7 @@ export default function ManageUsers() {
   // Modal Open states
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<any | null>(null)
+  const [selectedUser, setSelectedUser] = useState<ManageableUser | null>(null)
 
   // Counts for tabs
   const counts = useMemo(() => {
@@ -138,7 +142,7 @@ export default function ManageUsers() {
     }
   }
 
-  const openEditModal = (user: any) => {
+  const openEditModal = (user: ManageableUser) => {
     setSelectedUser(user)
     setIsEditOpen(true)
   }
@@ -272,6 +276,7 @@ export default function ManageUsers() {
         }}
         user={selectedUser}
         hostel={hostel}
+        currentRole={currentRole}
       />
     </div>
   )

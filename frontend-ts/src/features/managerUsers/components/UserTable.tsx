@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  Mail,
   ShieldAlert,
   Trash2,
   ChevronLeft,
@@ -16,7 +15,6 @@ import {
   Settings2,
   MoreHorizontal,
   MoreVertical,
-  Loader2,
 } from 'lucide-react'
 import type { ManageableUser } from '@/hooks/queries/useUserQueries'
 import { useUpdateUser, useDeleteUser } from '@/hooks/mutations/useUserMutations'
@@ -31,6 +29,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 
+export interface CustomFieldConfig {
+  name: string
+  isRequired?: boolean
+  type?: string
+}
+
 interface UserTableProps {
   paginatedUsers: ManageableUser[]
   currentPage: number
@@ -38,9 +42,12 @@ interface UserTableProps {
   totalCount: number
   onPageChange: (page: number) => void
   onEditClick: (user: ManageableUser) => void
-  customFieldConfigs: any[]
+  customFieldConfigs: CustomFieldConfig[]
 }
 
+/**
+ * Returns role badge styles, avatar background, and iconography.
+ */
 const getRoleConfig = (role: string) => {
   switch (role) {
     case 'superadmin':
@@ -75,6 +82,10 @@ const getRoleConfig = (role: string) => {
   }
 }
 
+/**
+ * High-density desktop table & responsive mobile card list for managing hostel residents,
+ * managers, and administrative personnel.
+ */
 export default function UserTable({
   paginatedUsers,
   currentPage,
@@ -85,8 +96,24 @@ export default function UserTable({
   customFieldConfigs,
 }: UserTableProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [inputPage, setInputPage] = useState<string>(String(currentPage))
   const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser()
   const { mutateAsync: deleteUser, isPending: isDeleting } = useDeleteUser()
+
+  useEffect(() => {
+    setInputPage(String(currentPage))
+  }, [currentPage])
+
+  const handlePageInputCommit = () => {
+    const pageNum = parseInt(inputPage, 10)
+    if (!isNaN(pageNum)) {
+      const target = Math.max(1, Math.min(totalPages, pageNum))
+      onPageChange(target)
+      setInputPage(String(target))
+    } else {
+      setInputPage(String(currentPage))
+    }
+  }
 
   const handleCopyEmail = (email: string, id: string) => {
     navigator.clipboard.writeText(email)
@@ -456,7 +483,7 @@ export default function UserTable({
             Showing Page <strong className="text-foreground">{currentPage}</strong> of{' '}
             <strong className="text-foreground">{totalPages}</strong> ({totalCount} total members)
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -467,6 +494,27 @@ export default function UserTable({
               <ChevronLeft className="h-3.5 w-3.5" />
               <span>Previous</span>
             </Button>
+
+            <div className="flex items-center gap-1.5 px-1 text-xs">
+              <span className="text-muted-foreground font-medium">Page</span>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={inputPage}
+                onChange={(e) => setInputPage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePageInputCommit()
+                  }
+                }}
+                onBlur={handlePageInputCommit}
+                className="w-12 h-8 text-center text-xs font-semibold bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                aria-label="Go to page number"
+              />
+              <span className="text-muted-foreground font-medium">of {totalPages}</span>
+            </div>
+
             <Button
               variant="outline"
               size="sm"

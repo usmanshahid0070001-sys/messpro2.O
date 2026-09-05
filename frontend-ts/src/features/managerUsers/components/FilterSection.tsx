@@ -19,6 +19,10 @@ interface FilterSectionProps {
   }
 }
 
+/**
+ * FilterSection - Search bar, role filter tab pills with count badges,
+ * alphabetical/room sorting toggle, and Excel export trigger.
+ */
 export default function FilterSection({
   searchTerm,
   onSearchChange,

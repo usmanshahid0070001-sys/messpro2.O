@@ -117,34 +117,40 @@ const App = () => {
                   <Route path="meals/schedule" element={<WeeklySchedule />} />
                   <Route path="meals/history" element={<MealHistoryPage />} />
 
-                  {/* Staff / Admin / Management Routes */}
-                  <Route element={<ProtectedRoute allowedRoles={['superadmin', 'admin', 'manager']} />}>
+                  {/* Staff / Admin / Management Routes — accessible to permitted roles and students */}
+                  <Route element={<ProtectedRoute allowedRoles={['superadmin', 'admin', 'manager', 'student']} />}>
                     {/* User Directory — Requires user_management */}
                     <Route element={<ProtectedRoute requiredPermission="user_management" />}>
                       <Route path="users" element={<ManageUsers />} />
                     </Route>
 
-                    {/* Residence Management — Requires residence_management */}
+                    {/* Residence Management */}
                     <Route element={<ProtectedRoute requiredPermission="residence_management" requiredFeature="residence_management" />}>
                       <Route path="residence/allocation" element={<RoomAllocation />} />
+                    </Route>
+                    <Route element={<ProtectedRoute requiredPermission="service_management" requiredFeature="service_management" />}>
                       <Route path="residence/services" element={<RoomService />} />
                     </Route>
 
                     {/* Dining Management */}
-                    <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
-                    <Route path="meals/control" element={<MealControlPage />} />
+                    <Route element={<ProtectedRoute requiredPermission="meal_settings" requiredFeature="meal_settings" />}>
+                      <Route path="meals/manage-schedule" element={<ManageMealSchedule />} />
+                    </Route>
+                    <Route element={<ProtectedRoute requiredPermission="meal_control" requiredFeature="meal_control" />}>
+                      <Route path="meals/control" element={<MealControlPage />} />
+                    </Route>
                     <Route path="meals/violations" element={<Navigate to="/app/meals/control" replace />} />
                     <Route path="meals/overview" element={<Navigate to="/app/meals/control" replace />} />
 
                     {/* Attendance Methods */}
-                    <Route element={<ProtectedRoute requiredFeature="qr_attendance" />}>
+                    <Route element={<ProtectedRoute requiredPermission="qr_attendance" requiredFeature="qr_attendance" />}>
                       <Route path="attendance/qr" element={<QRAttendancePage />} />
                     </Route>
-                    <Route element={<ProtectedRoute requiredFeature="manual_attendance" />}>
+                    <Route element={<ProtectedRoute requiredPermission="manual_attendance" requiredFeature="manual_attendance" />}>
                       <Route path="attendance/manual" element={<ManualAttendancePage />} />
                       <Route path="meals/manual-attendance" element={<Navigate to="/app/attendance/manual" replace />} />
                     </Route>
-                    <Route element={<ProtectedRoute requiredFeature="biometric_attendance" />}>
+                    <Route element={<ProtectedRoute requiredPermission="biometric_attendance" requiredFeature="biometric_attendance" />}>
                       <Route path="attendance/biometric" element={<BiometricAttendancePage />} />
                       <Route path="meals/biometric" element={<Navigate to="/app/attendance/biometric" replace />} />
                     </Route>
@@ -154,16 +160,16 @@ const App = () => {
                       <Route path="finance/bills" element={<BillManagementPage />} />
                       <Route path="finance/manage-bills" element={<Navigate to="/app/finance/bills" replace />} />
                     </Route>
-                    <Route path="finance/meal-prices" element={<MealPricesPage />} />
                     <Route element={<ProtectedRoute requiredPermission="bill_generation" requiredFeature="bill_generation" />}>
+                      <Route path="finance/meal-prices" element={<MealPricesPage />} />
                       <Route path="finance/generate-bills" element={<BillGenerationPage />} />
                       <Route path="finance/bills/generate" element={<Navigate to="/app/finance/generate-bills" replace />} />
                     </Route>
-                  </Route>
 
-                  {/* Hostel Administrator Configuration Only */}
-                  <Route element={<ProtectedRoute allowedRoles={['admin']} requiredPermission="hostel_configuration" />}>
-                    <Route path="hostel-configuration" element={<HostelConfiguration />} />
+                    {/* Hostel Configuration */}
+                    <Route element={<ProtectedRoute requiredPermission="hostel_configuration" />}>
+                      <Route path="hostel-configuration" element={<HostelConfiguration />} />
+                    </Route>
                   </Route>
 
                   {/* Resident / Student Accessible Routes */}
