@@ -947,6 +947,11 @@ export default function HostelConfiguration() {
                   onToggle={() => toggleFeature(feat.name)}
                 />
               ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* ── 7. GPS Geofence & Security Controls ── */}
       <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/60">

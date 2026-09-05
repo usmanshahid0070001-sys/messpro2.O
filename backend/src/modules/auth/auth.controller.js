@@ -17,6 +17,12 @@ const createAuthCookieOptions = () => ({
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 
+const createClearCookieOptions = () => ({
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
+});
+
 export const register = catchAsync(async (req, res) => {
   const data = registerSchema.parse(req.body);
   const result = await registerUser(data);  
@@ -65,7 +71,7 @@ export const verify = catchAsync(async (req, res) => {
 });
 
 export const logout = catchAsync(async (req, res) => {
-  res.clearCookie('token', createAuthCookieOptions());
+  res.clearCookie('token', createClearCookieOptions());
   
   res.status(200).json({ 
     success: true, 

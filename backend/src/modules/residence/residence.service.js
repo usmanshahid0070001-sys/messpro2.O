@@ -1,27 +1,27 @@
 import mongoose from 'mongoose';
 import residenceRepository from './residence.repository.js';
+import { supportsTransactions } from '../../config/db.js';
 
 class ResidenceService {
   // Helper to execute with transaction if MongoDB replica set is available,
   // or execute with compensating rollback for standalone MongoDB
   async _executeWithTransaction(workFn, compensateFn = null) {
+    const canUseTx = await supportsTransactions();
     let session = null;
-    let supportsTransactions = false;
 
-    try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-      supportsTransactions = true;
-    } catch {
-      // Standalone MongoDB without replica set does not support multi-doc transactions
-      if (session) {
-        await session.endSession().catch(() => {});
-        session = null;
+    if (canUseTx) {
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+      } catch {
+        if (session) {
+          await session.endSession().catch(() => {});
+          session = null;
+        }
       }
-      supportsTransactions = false;
     }
 
-    if (supportsTransactions && session) {
+    if (session) {
       try {
         const result = await workFn(session);
         await session.commitTransaction();

@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import authRepository from './auth.repository.js';
 import hostelRepository from '../hostel/hostel.repository.js';
 import { cache } from '../../config/cache.js';
+import { supportsTransactions } from '../../config/db.js';
 
 const createToken = (userId) => {
   if (!process.env.JWT_SECRET) {
@@ -53,15 +54,19 @@ export const registerUser = async (data) => {
   }
 
   // Transaction support with safe compensating fallback for standalone MongoDB
+  const txSupported = await supportsTransactions();
   let session = null;
   let useTransaction = false;
-  try {
-    session = await authRepository.startSession();
-    session.startTransaction();
-    useTransaction = true;
-  } catch {
-    session = null;
-    useTransaction = false;
+
+  if (txSupported) {
+    try {
+      session = await authRepository.startSession();
+      session.startTransaction();
+      useTransaction = true;
+    } catch {
+      session = null;
+      useTransaction = false;
+    }
   }
 
   let createdUser = null;
@@ -209,7 +214,11 @@ export const verifyUser = async (req) => {
 };
 
 export const logoutUser = async (req, res) => {
-  res.clearCookie('token', createAuthCookieOptions());
+  res.clearCookie('token', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
   return { success: true, message: 'Logged out successfully.' };
 };
 

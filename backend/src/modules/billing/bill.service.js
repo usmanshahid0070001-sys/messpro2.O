@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import billRepository from './bill.repository.js';
+import { supportsTransactions } from '../../config/db.js';
 
 /**
  * Utility to eliminate JavaScript floating-point inaccuracies in financial calculations.
@@ -284,16 +285,16 @@ class BillService {
     }
 
     // 6. Atomic Transaction & Compensating Rollback Shield
+    const canUseTx = await supportsTransactions();
     let session = null;
-    let supportsTransactions = true;
 
-    try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-    } catch (err) {
-      // Standalone MongoDB (e.g. without replica set in local testing)
-      supportsTransactions = false;
-      session = null;
+    if (canUseTx) {
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+      } catch (err) {
+        session = null;
+      }
     }
 
     let generatedBills = [];
@@ -306,11 +307,11 @@ class BillService {
         await billRepository.markBillsAdjustedInBalance(hostelId, oldBillIdsToUpdate, session);
       }
 
-      if (session && supportsTransactions) {
+      if (session) {
         await session.commitTransaction();
       }
     } catch (error) {
-      if (session && supportsTransactions) {
+      if (session) {
         await session.abortTransaction();
       } else if (generatedBills.length > 0) {
         // Compensating rollback for environments without replica set transactions
