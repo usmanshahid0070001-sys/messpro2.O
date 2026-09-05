@@ -1,11 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/api/client';
 
+export interface ContactChannel {
+  label: string;
+  value: string;
+}
+
 export interface SupportContact {
   name: string;
   email: string;
   phone: string;
   whatsapp: string;
+  whatsappNumbers?: ContactChannel[];
+  phoneNumbers?: ContactChannel[];
+  emailAddresses?: ContactChannel[];
   additionalInfo: Array<{ key: string; value: string }>;
 }
 

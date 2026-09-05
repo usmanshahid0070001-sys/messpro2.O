@@ -11,15 +11,19 @@ import {
   FileText,
   Lock,
   ArrowRight,
-  Scale
+  Scale,
+  Headphones,
+  MessageCircle,
 } from 'lucide-react';
 import logoUrl from '@/assets/pwa-192x192.png';
+import type { SupportContextReason } from '@/components/SupportUpgradeModal';
 
 interface FooterProps {
   onNavigate?: (id: any) => void;
+  onSupportClick?: (reason?: SupportContextReason) => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, onSupportClick }) => {
   const handleNav = (id: string) => {
     if (onNavigate) {
       onNavigate(id);
@@ -203,20 +207,39 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <span className="font-bold text-foreground uppercase tracking-wider block text-[11px]">
               Direct Support
             </span>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-primary" />
-                <a href="mailto:support@messpro.io" className="hover:text-foreground transition-colors truncate">
-                  support@messpro.io
-                </a>
-              </li>
-              <li className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <a href="mailto:security@messpro.io" className="hover:text-foreground transition-colors truncate">
-                  security@messpro.io
-                </a>
-              </li>
-              <li className="pt-2">
+            <ul className="space-y-2.5 text-muted-foreground">
+              {onSupportClick ? (
+                <>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => onSupportClick('general')}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/20 font-semibold transition-colors cursor-pointer w-full text-left"
+                    >
+                      <Headphones className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                      <span>Support & Helpdesk</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => onSupportClick('upgrade')}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted/60 hover:bg-muted text-foreground border border-border/70 transition-colors cursor-pointer w-full text-left font-medium"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>Plan Upgrades & Renewals</span>
+                    </button>
+                  </li>
+                </>
+              ) : (
+                <li className="flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-primary" />
+                  <a href="mailto:support@messpro.io" className="hover:text-foreground transition-colors truncate">
+                    support@messpro.io
+                  </a>
+                </li>
+              )}
+              <li className="pt-1">
                 <Link
                   to="/login"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground font-bold hover:opacity-90 transition-opacity"

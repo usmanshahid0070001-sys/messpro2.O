@@ -9,6 +9,7 @@ import { FaqSection } from './components/FaqSection';
 import { CtaSection } from './components/CtaSection';
 import { Footer } from './components/Footer';
 import { SetupHostelModal } from './components/SetupHostelModal';
+import SupportUpgradeModal, { type SupportContextReason } from '@/components/SupportUpgradeModal';
 import type { SectionId } from './types';
 
 const LANDING_STRUCTURED_DATA = {
@@ -92,6 +93,15 @@ const LANDING_STRUCTURED_DATA = {
 export const LandingPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<SectionId>('hero');
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [supportReason, setSupportReason] = useState<SupportContextReason>('general');
+  const [supportFeature, setSupportFeature] = useState<string | undefined>(undefined);
+
+  const handleOpenSupport = (reason: SupportContextReason = 'general', featName?: string) => {
+    setSupportReason(reason);
+    setSupportFeature(featName);
+    setIsSupportModalOpen(true);
+  };
 
   useSEO({
     title: 'MessPro 2.0 — Smart Hostel & Mess Management System',
@@ -169,6 +179,7 @@ export const LandingPage: React.FC = () => {
         activeSection={activeSection}
         onNavigate={handleNavigate}
         onSetupClick={() => setIsSetupModalOpen(true)}
+        onSupportClick={() => handleOpenSupport('general')}
       />
 
       {/* Main Sections */}
@@ -181,17 +192,28 @@ export const LandingPage: React.FC = () => {
         <ProblemSection />
         <SolutionSection />
         <HowItWorksSection />
-        <FaqSection />
+        <FaqSection onSupportClick={() => handleOpenSupport('general')} />
         <CtaSection onSetupClick={() => setIsSetupModalOpen(true)} />
       </main>
 
       {/* Branded Footer */}
-      <Footer onNavigate={handleNavigate} />
+      <Footer
+        onNavigate={handleNavigate}
+        onSupportClick={(reason) => handleOpenSupport(reason || 'general')}
+      />
 
       {/* Public Hostel Setup Modal */}
       <SetupHostelModal
         isOpen={isSetupModalOpen}
         onClose={() => setIsSetupModalOpen(false)}
+      />
+
+      {/* Public Superadmin Support & Helpline Modal */}
+      <SupportUpgradeModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+        initialReason={supportReason}
+        featureName={supportFeature}
       />
     </div>
   );

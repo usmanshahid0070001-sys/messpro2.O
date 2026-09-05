@@ -9,8 +9,13 @@ import {
   Sparkles,
   BookOpen,
   ArrowRight,
-  Mail
+  Mail,
+  Headphones,
 } from 'lucide-react';
+
+interface FaqSectionProps {
+  onSupportClick?: () => void;
+}
 
 interface FaqItem {
   id: number;
@@ -58,7 +63,7 @@ const FAQS: FaqItem[] = [
   },
 ];
 
-export const FaqSection: React.FC = () => {
+export const FaqSection: React.FC<FaqSectionProps> = ({ onSupportClick }) => {
   const [openId, setOpenId] = useState<number | null>(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -98,40 +103,39 @@ export const FaqSection: React.FC = () => {
         </div>
 
         {/* Filter Controls */}
-        <div className="space-y-3">
-          {/* Search Bar with Glass Finish */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search questions (e.g. offline, QR, billing, Excel)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-card/60 dark:bg-neutral-900/60 border border-border/70 dark:border-white/10 text-xs text-foreground placeholder:text-muted-foreground backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-primary shadow-xs glass-bevel"
-            />
-          </div>
-
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="flex items-center gap-1.5 p-1 bg-muted/50 dark:bg-white/5 rounded-2xl border border-border/60 dark:border-white/10 w-full sm:w-auto overflow-x-auto">
             {[
-              { key: 'all', label: 'All Questions' },
-              { key: 'mess', label: 'Mess & Dining' },
-              { key: 'hostel', label: 'Rooms & Residence' },
-              { key: 'billing', label: 'Billing & Reports' },
+              { id: 'all', label: 'All FAQs' },
+              { id: 'general', label: 'General' },
+              { id: 'mess', label: 'Dining & QR' },
+              { id: 'billing', label: 'Billing' },
+              { id: 'hostel', label: 'Hostel' },
             ].map((cat) => (
               <button
-                key={cat.key}
+                key={cat.id}
                 type="button"
-                onClick={() => setSelectedCategory(cat.key)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  selectedCategory === cat.key
-                    ? 'bg-foreground text-background dark:bg-white dark:text-black shadow-xs'
-                    : 'bg-muted/50 dark:bg-white/5 border border-border/50 dark:border-white/5 text-muted-foreground hover:text-foreground'
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  selectedCategory === cat.id
+                    ? 'bg-background dark:bg-neutral-900 text-foreground shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {cat.label}
               </button>
             ))}
+          </div>
+
+          <div className="relative w-full sm:w-64">
+            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search questions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8.5 pr-4 py-1.5 text-xs bg-muted/40 dark:bg-white/5 border border-border/60 dark:border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
           </div>
         </div>
 
@@ -143,10 +147,10 @@ export const FaqSection: React.FC = () => {
               return (
                 <div
                   key={faq.id}
-                  className={`rounded-3xl border transition-all duration-300 backdrop-blur-xl glass-bevel ${
+                  className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                     isOpen
-                      ? 'border-primary/50 dark:border-primary/40 bg-card/80 dark:bg-neutral-900/80 shadow-md'
-                      : 'border-border/70 dark:border-white/10 bg-card/50 dark:bg-neutral-900/40 hover:border-border'
+                      ? 'bg-card/90 dark:bg-neutral-900/90 border-primary/40 shadow-xs'
+                      : 'bg-card/50 dark:bg-neutral-900/50 border-border/70 dark:border-white/10 hover:border-border'
                   }`}
                 >
                   <button
@@ -182,7 +186,7 @@ export const FaqSection: React.FC = () => {
               Still have questions about how MessPro works?
             </span>
             <span className="text-xs text-muted-foreground block">
-              Explore our step-by-step feature guides, setup walk-throughs, and role permissions.
+              Explore our step-by-step feature guides, setup walk-throughs, or chat directly with our team.
             </span>
           </div>
 
@@ -195,13 +199,24 @@ export const FaqSection: React.FC = () => {
               <span>Read Docs</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
-            <a
-              href="mailto:support@messpro.io"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/70 bg-card hover:bg-muted text-foreground text-xs font-semibold transition-colors"
-            >
-              <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>Email Team</span>
-            </a>
+            {onSupportClick ? (
+              <button
+                type="button"
+                onClick={onSupportClick}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <Headphones className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span>Talk to Support</span>
+              </button>
+            ) : (
+              <a
+                href="mailto:support@messpro.io"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/70 bg-card hover:bg-muted text-foreground text-xs font-semibold transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Email Team</span>
+              </a>
+            )}
           </div>
         </div>
 

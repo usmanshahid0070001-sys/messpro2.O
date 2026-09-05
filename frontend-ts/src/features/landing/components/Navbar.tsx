@@ -10,7 +10,8 @@ import {
   Sparkles,
   LayoutDashboard,
   LogIn,
-  BookOpen
+  BookOpen,
+  Headphones,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeProvider';
 import type { RootState } from '@/store';
@@ -21,6 +22,7 @@ interface NavbarProps {
   activeSection: SectionId;
   onNavigate: (id: SectionId) => void;
   onSetupClick?: () => void;
+  onSupportClick?: () => void;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -31,7 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'faqs', label: 'FAQs' },
 ];
 
-export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSetupClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSetupClick, onSupportClick }) => {
 
   const { theme, setTheme } = useTheme();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
@@ -193,6 +195,19 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSet
             )}
           </button>
 
+          {/* Support Helpline Trigger */}
+          {onSupportClick && (
+            <button
+              type="button"
+              onClick={onSupportClick}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/20 transition-all cursor-pointer"
+              title="Platform Support & Helpline"
+            >
+              <Headphones className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+              <span>Support</span>
+            </button>
+          )}
+
           {/* Setup Hostel Button */}
           {onSetupClick && (
             <button
@@ -283,6 +298,24 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSet
               <span>Documentation</span>
               <BookOpen className="w-3 h-3" />
             </Link>
+
+            {/* Mobile Support Helpline */}
+            {onSupportClick && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onSupportClick();
+                }}
+                className="col-span-2 flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20 transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Headphones className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>Support Helpline & Upgrades</span>
+                </div>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
 
             {/* Mobile Terms & Privacy */}
             <Link

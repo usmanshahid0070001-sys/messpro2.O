@@ -539,6 +539,11 @@ class HostelService {
       throw error;
     }
 
+    // Security Guard: Only admin and superadmin can assign user permissions
+    if (userData.permissions && creatorRole !== 'admin' && creatorRole !== 'superadmin') {
+      delete userData.permissions;
+    }
+
     const hostel = await hostelRepository.findById(hostelId);
     if (!hostel) {
       const error = new Error('Hostel not found.');
