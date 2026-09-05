@@ -8,11 +8,11 @@ class AuthRepository {
     if (email) conditions.push({ email });
     if (id) conditions.push({ id });
     if (conditions.length === 0) return null;
-    return await User.findOne({ $or: conditions });
+    return await User.findOne({ $or: conditions }).populate('room', 'roomName capacity status');
   }
 
   async findByEmail(email, includePassword = false) {
-    const query = User.findOne({ email });
+    const query = User.findOne({ email }).populate('room', 'roomName capacity status');
     if (includePassword) {
       query.select('+password');
     }
@@ -20,7 +20,7 @@ class AuthRepository {
   }
 
   async findById(id) {
-    return await User.findById(id);
+    return await User.findById(id).populate('room', 'roomName capacity status');
   }
 
   async countByRole(hostelId, role) {

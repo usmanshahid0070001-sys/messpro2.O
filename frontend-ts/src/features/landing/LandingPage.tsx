@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useSEO } from '@/hooks/useSEO';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { ProblemSection } from './components/ProblemSection';
 import { SolutionSection } from './components/SolutionSection';
+import { PlansSection } from './components/PlansSection';
 import { HowItWorksSection } from './components/HowItWorksSection';
 import { FaqSection } from './components/FaqSection';
 import { CtaSection } from './components/CtaSection';
@@ -91,11 +93,18 @@ const LANDING_STRUCTURED_DATA = {
 };
 
 export const LandingPage: React.FC = () => {
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState<SectionId>('hero');
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+  const [selectedSetupPlan, setSelectedSetupPlan] = useState<string | undefined>(undefined);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [supportReason, setSupportReason] = useState<SupportContextReason>('general');
   const [supportFeature, setSupportFeature] = useState<string | undefined>(undefined);
+
+  const handleOpenSetup = (requestedPlan?: string) => {
+    setSelectedSetupPlan(requestedPlan);
+    setIsSetupModalOpen(true);
+  };
 
   const handleOpenSupport = (reason: SupportContextReason = 'general', featName?: string) => {
     setSupportReason(reason);
@@ -115,9 +124,40 @@ export const LandingPage: React.FC = () => {
     structuredData: LANDING_STRUCTURED_DATA,
   });
 
+  const handleNavigate = (id: SectionId) => {
+    setActiveSection(id);
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // Check URL hash or query params on load to jump directly to plans/billing section
+  useEffect(() => {
+    const hash = window.location.hash || location.hash;
+    const search = window.location.search || location.search;
+    if (
+      hash === '#plans' ||
+      hash === '#pricing' ||
+      hash === '#billing' ||
+      search.includes('plans') ||
+      search.includes('billing') ||
+      search.includes('pricing')
+    ) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById('plans');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setActiveSection('plans');
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
+
   // IntersectionObserver for scroll spy
   useEffect(() => {
-    const sectionIds: SectionId[] = ['hero', 'problem', 'solution', 'how-it-works', 'faqs', 'cta'];
+    const sectionIds: SectionId[] = ['hero', 'problem', 'solution', 'plans', 'how-it-works', 'faqs', 'cta'];
     const observers: IntersectionObserver[] = [];
 
     sectionIds.forEach((id) => {
@@ -148,21 +188,6 @@ export const LandingPage: React.FC = () => {
     };
   }, []);
 
-  const handleNavigate = (id: SectionId) => {
-    setActiveSection(id);
-    const element = document.getElementById(id);
-    if (element) {
-      const navOffset = 75; // Height of compact floating header + margin
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - navOffset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth',
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary scroll-smooth relative overflow-x-hidden">
       
@@ -178,7 +203,7 @@ export const LandingPage: React.FC = () => {
       <Navbar
         activeSection={activeSection}
         onNavigate={handleNavigate}
-        onSetupClick={() => setIsSetupModalOpen(true)}
+        onSetupClick={() => handleOpenSetup()}
         onSupportClick={() => handleOpenSupport('general')}
       />
 
@@ -187,13 +212,17 @@ export const LandingPage: React.FC = () => {
         <HeroSection
           onExploreClick={() => handleNavigate('solution')}
           onCalculateClick={() => handleNavigate('problem')}
-          onSetupClick={() => setIsSetupModalOpen(true)}
+          onSetupClick={() => handleOpenSetup()}
         />
         <ProblemSection />
         <SolutionSection />
+        <PlansSection
+          onSetupClick={(planName) => handleOpenSetup(planName)}
+          onSupportClick={handleOpenSupport}
+        />
         <HowItWorksSection />
         <FaqSection onSupportClick={() => handleOpenSupport('general')} />
-        <CtaSection onSetupClick={() => setIsSetupModalOpen(true)} />
+        <CtaSection onSetupClick={() => handleOpenSetup()} />
       </main>
 
       {/* Branded Footer */}
@@ -205,7 +234,11 @@ export const LandingPage: React.FC = () => {
       {/* Public Hostel Setup Modal */}
       <SetupHostelModal
         isOpen={isSetupModalOpen}
-        onClose={() => setIsSetupModalOpen(false)}
+        onClose={() => {
+          setIsSetupModalOpen(false);
+          setSelectedSetupPlan(undefined);
+        }}
+        initialPlan={selectedSetupPlan}
       />
 
       {/* Public Superadmin Support & Helpline Modal */}

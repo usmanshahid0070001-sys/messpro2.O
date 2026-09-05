@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   X,
   Building2,
@@ -13,16 +13,18 @@ import {
   ArrowLeft,
   Loader2,
   ShieldCheck,
-  Layers,
   Users,
   Check,
   Lock,
   Search,
+  Flame,
+  UserCheck,
+  Sliders,
 } from 'lucide-react';
 import { TIMEZONE_OPTIONS } from '@/utils/timezones';
 import { useSubmitHostelRequest } from '@/hooks/mutations/useSuperadminMutations';
-import { useGetPlans } from '@/hooks/queries/useSuperadminQueries';
 import { ALL_PLAN_FEATURES } from '@/features/superadmin/components/PlanFormModal';
+import { PRICING_PLANS, type PricingPlanTier } from '../data/plansData';
 import { toast } from 'sonner';
 
 const RESERVED_SUBDOMAINS = [
@@ -57,31 +59,47 @@ const RESERVED_SUBDOMAINS = [
 ];
 
 interface SetupHostelModalProps {
+  /** Controls modal visibility */
   isOpen: boolean;
+  /** Callback to close the modal */
   onClose: () => void;
+  /** Optional initial plan identifier to pre-select upon opening */
+  initialPlan?: string;
 }
 
-export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onClose }) => {
+/**
+ * SetupHostelModal Component
+ *
+ * Multi-step onboarding wizard for new hostel and mess facility administrators:
+ * - Step 1: Facility Name, Custom Subdomain Slug, Timezone & Physical Location.
+ * - Step 2: Primary Administrator Details & Optional Operational Manager.
+ * - Step 3: Subscription Plan Selection (all 5 tiers) + Custom Quota & Module Configuration.
+ * - Complete DNS MX mailbox verification, reserved subdomain protection, and auto-provisioning workflow.
+ */
+export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({
+  isOpen,
+  onClose,
+  initialPlan,
+}) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-  // Form State
+  // Form State: Facility
   const [hostelName, setHostelName] = useState('');
   const [subdomain, setSubdomain] = useState('');
   const [location, setLocation] = useState('Asia/Karachi');
   const [address, setAddress] = useState('');
 
-  // Admin / Manager State
+  // Form State: Administrator & Manager Contacts
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPhone, setAdminPhone] = useState('');
   const [managerName, setManagerName] = useState('');
   const [managerEmail, setManagerEmail] = useState('');
 
-  // Plan selection
-  const [planType, setPlanType] = useState<'10_day_trial' | 'standard' | 'custom'>('10_day_trial');
-  const [selectedPlanId, setSelectedPlanId] = useState<string>('');
+  // Form State: Plan Selection & Capabilities
+  const [selectedPlanKey, setSelectedPlanKey] = useState<string>('free_trial');
   const [estimatedStudents, setEstimatedStudents] = useState<number>(100);
   const [estimatedManagers, setEstimatedManagers] = useState<number>(2);
   const [desiredFeatures, setDesiredFeatures] = useState<string[]>(
@@ -89,11 +107,28 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onCl
   );
   const [notes, setNotes] = useState('');
 
-  // Timezone search
+  // Timezone search query
   const [tzSearch, setTzSearch] = useState('');
 
-  const { data: activePlans } = useGetPlans(isOpen);
   const { mutateAsync: submitRequest, isPending: isSubmitting } = useSubmitHostelRequest();
+
+  // Pre-select plan when opened with an initialPlan prop
+  useEffect(() => {
+    if (!initialPlan) return;
+    const clean = initialPlan.toLowerCase().trim();
+    const matched = PRICING_PLANS.find(
+      (p) =>
+        p.id === clean ||
+        p.name.toLowerCase() === clean ||
+        clean.includes(p.id) ||
+        clean.includes(p.name.toLowerCase())
+    );
+    if (matched) {
+      setSelectedPlanKey(matched.id);
+      setEstimatedStudents(matched.limits.defaultStudents);
+      setEstimatedManagers(matched.limits.defaultManagers);
+    }
+  }, [initialPlan, isOpen]);
 
   // Auto-generate subdomain from hostel name if not edited
   const handleHostelNameChange = (val: string) => {
@@ -171,6 +206,8 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onCl
     e.preventDefault();
     setSubmissionError(null);
 
+    const selectedPlan = PRICING_PLANS.find((p) => p.id === selectedPlanKey) || PRICING_PLANS[0];
+
     const payload = {
       hostelName: hostelName.trim(),
       subdomain: subdomain.trim().toLowerCase(),
@@ -182,14 +219,13 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onCl
       managerName: managerName.trim() || undefined,
       managerEmail: managerEmail.trim() ? managerEmail.trim().toLowerCase() : undefined,
       requestedPlan: {
-        planType,
-        planId: planType === 'standard' && selectedPlanId ? selectedPlanId : undefined,
-        estimatedStudents: Number(estimatedStudents) || 100,
-        estimatedManagers: Number(estimatedManagers) || 2,
-        desiredFeatures:
-          planType === 'custom'
-            ? Array.from(new Set(['user_management', 'hostel_configuration', ...desiredFeatures]))
-            : undefined,
+        planType: selectedPlan.id,
+        planName: selectedPlan.name,
+        estimatedStudents: Number(estimatedStudents) || selectedPlan.limits.defaultStudents,
+        estimatedManagers: Number(estimatedManagers) || selectedPlan.limits.defaultManagers,
+        desiredFeatures: selectedPlan.isCustom
+          ? Array.from(new Set(['user_management', 'hostel_configuration', ...desiredFeatures]))
+          : selectedPlan.features.included,
         notes: notes.trim() || undefined,
       },
     };
@@ -219,16 +255,26 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onCl
     setAdminPhone('');
     setManagerName('');
     setManagerEmail('');
-    setPlanType('10_day_trial');
+    setSelectedPlanKey('free_trial');
+    setEstimatedStudents(100);
+    setEstimatedManagers(2);
     onClose();
   };
 
+  const currentSelectedPlan =
+    PRICING_PLANS.find((p) => p.id === selectedPlanKey) || PRICING_PLANS[0];
+
+  const handleSelectPlan = (plan: PricingPlanTier) => {
+    setSelectedPlanKey(plan.id);
+    setEstimatedStudents(plan.limits.defaultStudents);
+    setEstimatedManagers(plan.limits.defaultManagers);
+  };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl max-h-[92vh] bg-card border border-border/80 dark:border-white/15 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 glass-bevel">
+      <div className="relative w-full max-w-3xl max-h-[92vh] bg-card border border-border/80 dark:border-white/15 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 glass-bevel">
         
         {/* Header */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border/60 dark:border-white/10 bg-muted/20 shrink-0">
@@ -242,7 +288,7 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onCl
                   Setup Your Hostel on MessPro
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-primary/10 text-primary border border-primary/20">
-                  10-Day Free Trial
+                  10-Day Free Trial Included
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -270,7 +316,7 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onCl
                 Hostel Setup Request Received!
               </h3>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Thank you, <strong className="text-foreground">{adminName}</strong>. We have registered your request for <strong className="text-foreground">{hostelName}</strong>.
+                Thank you, <strong className="text-foreground">{adminName}</strong>. We have registered your request for <strong className="text-foreground">{hostelName}</strong> under the <strong className="text-primary">{currentSelectedPlan.name}</strong> plan.
               </p>
             </div>
 
@@ -303,7 +349,7 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onCl
               {[
                 { num: 1, label: 'Hostel Details' },
                 { num: 2, label: 'Admin Contact' },
-                { num: 3, label: 'Plan & Quotas' },
+                { num: 3, label: 'Choose Plan & Quotas' },
               ].map((s, idx) => (
                 <div key={s.num} className="flex items-center gap-2 flex-1">
                   <div
@@ -426,7 +472,6 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onCl
                       <span className="text-primary font-medium">(Can be changed afterwards)</span>
                     </p>
                   </div>
-
 
                   {/* Location as Timezone */}
                   <div className="space-y-1.5">
@@ -601,192 +646,237 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onCl
                       type="submit"
                       className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 transition-all cursor-pointer"
                     >
-                      <span>Next: Plan & Features</span>
+                      <span>Next: Select Plan</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </form>
               )}
 
-              {/* STEP 3: Plan & Quotas */}
+              {/* STEP 3: Plan & Quotas (5 Tiers Included) */}
               {step === 3 && (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-foreground">Step 3: Select Plan & Capabilities</h3>
+                    <h3 className="text-sm font-bold text-foreground">Step 3: Select Your Operating Plan</h3>
                     <p className="text-xs text-muted-foreground">
-                      Choose your preferred onboarding tier. All requests automatically qualify for an initial 10-day full feature trial.
+                      Pick the tier tailored for your facility. All workspaces include an initial 10-day full-feature trial to explore MessPro before billing.
                     </p>
                   </div>
 
-                  {/* Plan Options Selector */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {/* 10-Day Free Trial */}
-                    <div
-                      onClick={() => setPlanType('10_day_trial')}
-                      className={`p-3 rounded-2xl border text-xs cursor-pointer transition-all ${
-                        planType === '10_day_trial'
-                          ? 'border-primary bg-primary/10 text-foreground ring-1 ring-primary shadow-xs'
-                          : 'border-border/80 bg-card/60 hover:bg-muted/40 text-muted-foreground'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between pb-1">
-                        <span className="font-bold text-foreground">10-Day Free Trial</span>
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                      </div>
-                      <span className="text-[11px] text-muted-foreground block leading-tight">
-                        Instant full-featured access for 10 days at zero cost.
-                      </span>
-                    </div>
-
-                    {/* Standard Tier */}
-                    <div
-                      onClick={() => setPlanType('standard')}
-                      className={`p-3 rounded-2xl border text-xs cursor-pointer transition-all ${
-                        planType === 'standard'
-                          ? 'border-purple-500 bg-purple-500/10 text-foreground ring-1 ring-purple-500 shadow-xs'
-                          : 'border-border/80 bg-card/60 hover:bg-muted/40 text-muted-foreground'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between pb-1">
-                        <span className="font-bold text-foreground">Standard Plans</span>
-                        <Layers className="w-3.5 h-3.5 text-purple-500" />
-                      </div>
-                      <span className="text-[11px] text-muted-foreground block leading-tight">
-                        Select from pre-configured pricing tiers.
-                      </span>
-                    </div>
-
-                    {/* Custom Enterprise */}
-                    <div
-                      onClick={() => setPlanType('custom')}
-                      className={`p-3 rounded-2xl border text-xs cursor-pointer transition-all ${
-                        planType === 'custom'
-                          ? 'border-teal-500 bg-teal-500/10 text-foreground ring-1 ring-teal-500 shadow-xs'
-                          : 'border-border/80 bg-card/60 hover:bg-muted/40 text-muted-foreground'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between pb-1">
-                        <span className="font-bold text-foreground">Custom / Tailored</span>
-                        <Building2 className="w-3.5 h-3.5 text-teal-500" />
-                      </div>
-                      <span className="text-[11px] text-muted-foreground block leading-tight">
-                        Custom capacity quotas and modular feature toggles.
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Standard Plan Dropdown */}
-                  {planType === 'standard' && (
-                    <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/80 space-y-2 animate-in fade-in duration-150">
-                      <label className="text-xs font-semibold text-foreground">Choose Standard Plan</label>
-                      <select
-                        value={selectedPlanId}
-                        onChange={(e) => setSelectedPlanId(e.target.value)}
-                        className="w-full h-10 px-3 rounded-xl border border-border/80 bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      >
-                        <option value="">-- Choose active plan tier --</option>
-                        {activePlans?.map((p) => (
-                          <option key={p._id} value={p._id}>
-                            {p.name} — ${p.price}/mo ({p.limits.maxStudents === -1 ? 'Unlimited' : p.limits.maxStudents} Students, {p.limits.maxManagers === -1 ? 'Unlimited' : p.limits.maxManagers} Staff)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Capacity inputs */}
-                  <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/60 space-y-3">
-                    <span className="text-xs font-bold text-foreground uppercase tracking-wider block flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-blue-500" /> Estimated Facility Scale
-                    </span>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-semibold text-muted-foreground">
-                          Estimated Student Residents
-                        </label>
-                        <input
-                          type="number"
-                          min={1}
-                          value={estimatedStudents}
-                          onChange={(e) => setEstimatedStudents(parseInt(e.target.value, 10) || 0)}
-                          className="w-full h-9 px-3 rounded-xl border border-border/80 bg-background text-foreground text-xs font-mono"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-semibold text-muted-foreground">
-                          Operational Managers / Staff
-                        </label>
-                        <input
-                          type="number"
-                          min={1}
-                          value={estimatedManagers}
-                          onChange={(e) => setEstimatedManagers(parseInt(e.target.value, 10) || 0)}
-                          className="w-full h-9 px-3 rounded-xl border border-border/80 bg-background text-foreground text-xs font-mono"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Custom Features Checkboxes */}
-                  {planType === 'custom' && (
-                    <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-foreground">Desired Modules</span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {desiredFeatures.length} of {ALL_PLAN_FEATURES.length} selected
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {ALL_PLAN_FEATURES.map((f) => {
-                          const isSelected = desiredFeatures.includes(f.id);
-                          const isLocked = Boolean(f.isCore);
-                          return (
-                            <div
-                              key={f.id}
-                              onClick={() => !isLocked && toggleFeature(f.id)}
-                              className={`p-2.5 rounded-xl border text-xs font-medium flex items-center justify-between gap-2 transition-all select-none ${
-                                isLocked
-                                  ? 'border-blue-500/30 bg-blue-500/10 text-foreground cursor-default'
-                                  : isSelected
-                                  ? 'border-teal-500 bg-teal-500/10 text-foreground cursor-pointer'
-                                  : 'border-border/60 bg-muted/10 text-muted-foreground cursor-pointer hover:bg-muted/30'
-                              }`}
-                            >
-                              <div className="flex items-center gap-1.5 pr-1">
-                                <span className="text-xs font-semibold text-foreground">{f.label}</span>
-                                {isLocked && (
-                                  <span className="inline-flex items-center gap-0.5 text-[8px] font-bold uppercase tracking-wider px-1 py-0.2 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400">
-                                    <Lock className="w-2 h-2" /> Core
-                                  </span>
-                                )}
-                              </div>
-                              <div
-                                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                                  isLocked || isSelected
-                                    ? 'bg-primary border-primary text-primary-foreground'
-                                    : 'border-muted-foreground/40 bg-background'
-                                }`}
+                  {/* 5-Plan Card Grid / Selector */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {PRICING_PLANS.map((plan) => {
+                      const isSelected = selectedPlanKey === plan.id;
+                      return (
+                        <div
+                          key={plan.id}
+                          onClick={() => handleSelectPlan(plan)}
+                          className={`p-2.5 rounded-2xl border text-xs cursor-pointer transition-all duration-200 flex flex-col justify-between ${
+                            isSelected
+                              ? 'border-primary bg-primary/10 ring-2 ring-primary/30 shadow-md scale-[1.02]'
+                              : 'border-border/70 bg-card hover:border-primary/40 hover:bg-muted/30'
+                          }`}
+                        >
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between gap-1 min-h-[18px]">
+                              <span
+                                className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${plan.badgeColor}`}
                               >
-                                {(isLocked || isSelected) && <Check className="w-2.5 h-2.5" />}
-                              </div>
+                                {plan.badge}
+                              </span>
+                              {plan.isPopular && <Flame className="w-3 h-3 text-amber-500 fill-amber-500" />}
                             </div>
-                          );
-                        })}
+                            <span className="font-bold text-foreground text-xs block leading-tight">
+                              {plan.name}
+                            </span>
+                          </div>
+
+                          <div className="pt-2 mt-2 border-t border-border/40">
+                            <span className="text-sm font-black text-foreground block">
+                              {plan.priceMonthly}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground block truncate">
+                              {plan.limits.students}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Active Selected Plan Detailed Specification Panel */}
+                  <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-md space-y-3.5 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border/50">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-base font-extrabold text-foreground">
+                            {currentSelectedPlan.name}
+                          </h4>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${currentSelectedPlan.badgeColor}`}
+                          >
+                            {currentSelectedPlan.badge}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {currentSelectedPlan.tagline}
+                        </p>
+                      </div>
+
+                      <div className="text-left sm:text-right">
+                        <div className="text-xl font-extrabold text-foreground">
+                          {currentSelectedPlan.priceMonthly}
+                          <span className="text-xs font-normal text-muted-foreground ml-1">
+                            {currentSelectedPlan.billingPeriod}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  )}
+
+                    {/* Limits Highlight Strip */}
+                    <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-muted/40 border border-border/60">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                          <Users className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-muted-foreground block font-medium">
+                            {currentSelectedPlan.id === 'mess_basic' ? 'Diners Limit' : 'Resident Limit'}
+                          </span>
+                          <span className="text-xs font-bold text-foreground block truncate">
+                            {currentSelectedPlan.limits.students}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                          <UserCheck className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-muted-foreground block font-medium">
+                            Staff Accounts
+                          </span>
+                          <span className="text-xs font-bold text-foreground block truncate">
+                            {currentSelectedPlan.limits.managers}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Included Modules Grid */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                        Included In This Plan:
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {currentSelectedPlan.features.included.map((feature, idx) => (
+                          <div key={idx} className="flex items-start gap-1.5 text-xs text-foreground/90">
+                            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5 stroke-[2.5]" />
+                            <span className="leading-tight text-[11px]">{feature}</span>
+                          </div>
+                        ))}
+
+                        {currentSelectedPlan.features.excluded?.map((feature, idx) => (
+                          <div key={`ex-${idx}`} className="flex items-start gap-1.5 text-xs text-muted-foreground/50">
+                            <Lock className="w-3 h-3 text-muted-foreground/40 shrink-0 mt-0.5" />
+                            <span className="leading-tight text-[11px] line-through">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Custom Quota & Module Controls for Custom / Enterprise */}
+                    {currentSelectedPlan.isCustom && (
+                      <div className="pt-3 border-t border-border/50 space-y-3 animate-in fade-in duration-150">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                          <Sliders className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Customize Scale & Module Selection</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-muted-foreground">
+                              Requested Student Capacity
+                            </label>
+                            <input
+                              type="number"
+                              min={100}
+                              step={50}
+                              value={estimatedStudents}
+                              onChange={(e) => setEstimatedStudents(parseInt(e.target.value, 10) || 500)}
+                              className="w-full h-9 px-3 rounded-xl border border-border/80 bg-background text-foreground text-xs font-mono"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-muted-foreground">
+                              Requested Staff Accounts
+                            </label>
+                            <input
+                              type="number"
+                              min={2}
+                              value={estimatedManagers}
+                              onChange={(e) => setEstimatedManagers(parseInt(e.target.value, 10) || 5)}
+                              className="w-full h-9 px-3 rounded-xl border border-border/80 bg-background text-foreground text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 pt-1">
+                          <span className="text-[11px] font-bold text-foreground block">
+                            Pick Specific Desired Modules:
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-1">
+                            {ALL_PLAN_FEATURES.map((f) => {
+                              const isSelected = desiredFeatures.includes(f.id);
+                              const isLocked = Boolean(f.isCore);
+                              return (
+                                <div
+                                  key={f.id}
+                                  onClick={() => !isLocked && toggleFeature(f.id)}
+                                  className={`p-2 rounded-xl border text-xs font-medium flex items-center justify-between gap-2 transition-all select-none ${
+                                    isLocked
+                                      ? 'border-blue-500/30 bg-blue-500/10 text-foreground cursor-default'
+                                      : isSelected
+                                      ? 'border-primary bg-primary/10 text-foreground cursor-pointer font-bold'
+                                      : 'border-border/60 bg-muted/10 text-muted-foreground cursor-pointer hover:bg-muted/30'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-[11px] font-semibold text-foreground truncate">{f.label}</span>
+                                    {isLocked && (
+                                      <span className="inline-flex items-center gap-0.5 text-[8px] font-bold uppercase tracking-wider px-1 py-0.2 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 shrink-0">
+                                        <Lock className="w-2 h-2" /> Core
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div
+                                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                                      isLocked || isSelected
+                                        ? 'bg-primary border-primary text-primary-foreground'
+                                        : 'border-muted-foreground/40 bg-background'
+                                    }`}
+                                  >
+                                    {(isLocked || isSelected) && <Check className="w-2.5 h-2.5" />}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Additional notes */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-medium text-muted-foreground">
-                      Special Requirements / Inquiries (Optional)
+                      Special Inquiries / Hardware Integration Notes (Optional)
                     </label>
                     <textarea
                       rows={2}
-                      placeholder="e.g. Need migration help from Excel or custom meal rules..."
+                      placeholder="e.g. Need help importing student roster from Excel or connecting ZKTeco biometric gate..."
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       className="w-full p-2.5 rounded-xl border border-border/80 bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
@@ -794,18 +884,18 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({ isOpen, onCl
                   </div>
 
                   {/* Superadmin Approval Disclaimer */}
-                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
                     <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                     <div className="space-y-0.5 text-[11px]">
-                      <span className="font-bold block">Superadmin Verification Workflow</span>
+                      <span className="font-bold block">10-Day Full Access Trial Workflow</span>
                       <span>
-                        Submitting this request alerts our management team. Once approved, your tenant is provisioned, 10-day trial initialized, and official login details sent to <strong>{adminEmail}</strong>.
+                        All setup requests automatically receive a 10-day full-access trial upon approval. Official login details and custom subdomain link will be sent to <strong>{adminEmail}</strong>.
                       </span>
                     </div>
                   </div>
 
                   {/* Submit Button */}
-                  <div className="flex items-center justify-between pt-3">
+                  <div className="flex items-center justify-between pt-2">
                     <button
                       type="button"
                       onClick={() => setStep(2)}

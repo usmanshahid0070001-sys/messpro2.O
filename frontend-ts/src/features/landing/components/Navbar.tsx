@@ -29,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'hero', label: 'Overview' },
   { id: 'problem', label: 'The Pain' },
   { id: 'solution', label: 'Features' },
+  { id: 'plans', label: 'Plans' },
   { id: 'how-it-works', label: 'How It Works' },
   { id: 'faqs', label: 'FAQs' },
 ];
@@ -86,52 +87,41 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSet
     onNavigate(id);
   };
 
-  const isCtaActive = activeSection === 'cta';
-
   return (
-    <div className="fixed top-3 sm:top-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
+    <div className="fixed top-2.5 sm:top-4 inset-x-0 z-50 flex justify-center px-2 sm:px-4 pointer-events-none">
       {/* Compact Apple Dynamic Island Capsule */}
       <header
-        className={`pointer-events-auto flex items-center justify-between gap-3 sm:gap-6 rounded-full border transition-all duration-300 ${
+        className={`pointer-events-auto flex items-center justify-between gap-1.5 sm:gap-4 lg:gap-6 rounded-full border transition-all duration-300 max-w-[calc(100vw-1rem)] sm:max-w-max mx-auto shrink-0 ${
           scrolled
-            ? 'py-1 px-3 bg-background/90 dark:bg-neutral-950/90 backdrop-blur-2xl border-white/30 dark:border-white/20 shadow-[0_12px_36px_rgba(0,0,0,0.15)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.6)] scale-[0.99]'
-            : 'py-1.5 px-3.5 bg-background/75 dark:bg-neutral-950/75 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]'
+            ? 'py-1 px-2.5 sm:px-3 bg-background/90 dark:bg-neutral-950/90 backdrop-blur-2xl border-white/30 dark:border-white/20 shadow-[0_12px_36px_rgba(0,0,0,0.15)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.6)] scale-[0.99]'
+            : 'py-1.5 px-3 sm:px-3.5 bg-background/80 dark:bg-neutral-950/80 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]'
         }`}
       >
         
-        {/* Left: Brand Lockup with rotating ambient conic border */}
+        {/* Left: Brand Lockup */}
         <a
           href="#hero"
           onClick={(e) => {
             e.preventDefault();
             handleNavClick('hero');
           }}
-          className="flex items-center gap-2 group focus:outline-none rounded-full pr-1 shrink-0"
+          className="flex items-center gap-1.5 sm:gap-2 group focus:outline-none rounded-full pr-0.5 sm:pr-1 shrink-0"
         >
-          <div className="relative w-7 h-7 rounded-full p-[1px] overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform">
-            {/* Animated conic gradient ring (12s idle, 2s if reached CTA) */}
-            <div
-              className={`absolute inset-[-50%] bg-[conic-gradient(from_0deg,#b8842a,#2e6b57,#b8842a)] ${
-                isCtaActive ? 'animate-spin' : 'animate-spin-conic'
-              } opacity-75`}
-              style={{ animationDuration: isCtaActive ? '2s' : '10s' }}
+          <div className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shrink-0">
+            <img
+              src={logoUrl}
+              alt="MessPro"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
             />
-            <div className="relative w-full h-full rounded-full bg-background dark:bg-neutral-950 flex items-center justify-center p-1">
-              <img
-                src={logoUrl}
-                alt="MessPro"
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
-            </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5">
             <span className="font-extrabold tracking-tight text-xs sm:text-sm text-foreground">
               MessPro
             </span>
-            <span className="px-1.5 py-0.2 text-[9px] font-bold uppercase rounded-full bg-primary/10 text-primary border border-primary/20">
+            <span className="hidden xs:inline-block px-1.5 py-0.2 text-[9px] font-bold uppercase rounded-full bg-primary/10 text-primary border border-primary/20">
               2.0
             </span>
           </div>
@@ -180,12 +170,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSet
         </nav>
 
         {/* Right: Actions & Theme Toggle */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Theme Toggle */}
           <button
             type="button"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-1.5 rounded-full border border-border/60 dark:border-white/10 hover:bg-muted/60 dark:hover:bg-white/10 text-foreground transition-all cursor-pointer focus:outline-none"
+            className="p-1 sm:p-1.5 rounded-full border border-border/60 dark:border-white/10 hover:bg-muted/60 dark:hover:bg-white/10 text-foreground transition-all cursor-pointer focus:outline-none shrink-0"
             aria-label="Toggle dark mode"
           >
             {theme === 'dark' ? (
@@ -195,25 +185,25 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSet
             )}
           </button>
 
-          {/* Support Helpline Trigger */}
+          {/* Support Helpline Trigger (Desktop only) */}
           {onSupportClick && (
             <button
               type="button"
               onClick={onSupportClick}
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/20 transition-all cursor-pointer"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/20 transition-all cursor-pointer shrink-0"
               title="Platform Support & Helpline"
             >
-              <Headphones className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+              <Headphones className="w-3 h-3 text-blue-600 dark:text-blue-400" />
               <span>Support</span>
             </button>
           )}
 
-          {/* Setup Hostel Button */}
+          {/* Setup Hostel Button (Hidden on small mobile, prominent in mobile menu) */}
           {onSetupClick && (
             <button
               type="button"
               onClick={onSetupClick}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full bg-amber-500 hover:bg-amber-600 text-neutral-950 shadow-xs active:scale-[0.97] transition-all cursor-pointer relative overflow-hidden"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-amber-500 hover:bg-amber-600 text-neutral-950 shadow-xs active:scale-[0.97] transition-all cursor-pointer relative overflow-hidden shrink-0"
             >
               <Sparkles className="w-3 h-3 text-neutral-950" />
               <span>Setup Hostel</span>
@@ -224,16 +214,16 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSet
           {isAuthenticated ? (
             <Link
               to="/app"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full bg-primary text-primary-foreground shadow-xs hover:opacity-90 active:scale-[0.97] transition-all cursor-pointer relative overflow-hidden group"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-xs font-bold rounded-full bg-primary text-primary-foreground shadow-xs hover:opacity-90 active:scale-[0.97] transition-all cursor-pointer relative overflow-hidden group shrink-0"
             >
               <LayoutDashboard className="w-3 h-3" />
               <span>Dashboard</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight className="w-3 h-3 hidden sm:inline-block group-hover:translate-x-0.5 transition-transform" />
             </Link>
           ) : (
             <Link
               to="/login"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full bg-muted/60 dark:bg-white/10 hover:bg-muted text-foreground border border-border/60 dark:border-white/10 shadow-xs hover:opacity-90 active:scale-[0.97] transition-all cursor-pointer relative overflow-hidden group"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-full bg-muted/60 dark:bg-white/10 hover:bg-muted text-foreground border border-border/60 dark:border-white/10 shadow-xs hover:opacity-90 active:scale-[0.97] transition-all cursor-pointer relative overflow-hidden group shrink-0"
             >
               <LogIn className="w-3 h-3" />
               <span>Sign In</span>
@@ -244,7 +234,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSet
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 rounded-full border border-border/60 dark:border-white/10 text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus:outline-none"
+            className="md:hidden p-1.5 rounded-full border border-border/60 dark:border-white/10 text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus:outline-none shrink-0"
             aria-label="Open navigation menu"
           >
             {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -307,10 +297,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSet
                   setMobileMenuOpen(false);
                   onSupportClick();
                 }}
-                className="col-span-2 flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20 transition-all cursor-pointer"
+                className="col-span-2 flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-1.5">
-                  <Headphones className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <Headphones className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   <span>Support Helpline & Upgrades</span>
                 </div>
                 <ArrowRight className="w-3 h-3" />

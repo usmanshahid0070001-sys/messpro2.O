@@ -106,6 +106,15 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSupportClick }) =>
               <li>
                 <button
                   type="button"
+                  onClick={() => handleNav('plans')}
+                  className="hover:text-foreground transition-colors cursor-pointer text-foreground font-semibold"
+                >
+                  Plans & Pricing
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
                   onClick={() => handleNav('how-it-works')}
                   className="hover:text-foreground transition-colors cursor-pointer"
                 >
@@ -214,9 +223,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSupportClick }) =>
                     <button
                       type="button"
                       onClick={() => onSupportClick('general')}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/20 font-semibold transition-colors cursor-pointer w-full text-left"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/20 font-semibold transition-colors cursor-pointer w-full text-left"
                     >
-                      <Headphones className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                      <Headphones className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                       <span>Support & Helpdesk</span>
                     </button>
                   </li>

@@ -54,8 +54,24 @@ const hostelRequestSchema = new mongoose.Schema(
     requestedPlan: {
       planType: {
         type: String,
-        enum: ['trial', '10_day_trial', 'standard', 'enterprise', 'custom'],
+        enum: [
+          'trial',
+          '10_day_trial',
+          'free_trial',
+          'standard',
+          'hostel_basic',
+          'mess_basic',
+          'standard_complete',
+          'enterprise',
+          'premium_enterprise',
+          'custom',
+        ],
         default: '10_day_trial',
+      },
+      planName: {
+        type: String,
+        default: '',
+        trim: true,
       },
       planId: {
         type: mongoose.Schema.Types.ObjectId,

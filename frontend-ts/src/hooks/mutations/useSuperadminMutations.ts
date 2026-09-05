@@ -173,7 +173,8 @@ export interface SubmitHostelRequestPayload {
   managerName?: string;
   managerEmail?: string;
   requestedPlan: {
-    planType: '10_day_trial' | 'standard' | 'custom';
+    planType: string;
+    planName?: string;
     planId?: string;
     estimatedStudents?: number;
     estimatedManagers?: number;

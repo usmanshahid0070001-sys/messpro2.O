@@ -203,9 +203,9 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onSupportClick }) => {
               <button
                 type="button"
                 onClick={onSupportClick}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-semibold transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-semibold transition-colors cursor-pointer"
               >
-                <Headphones className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <Headphones className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>Talk to Support</span>
               </button>
             ) : (
