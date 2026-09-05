@@ -79,7 +79,7 @@ export default function AllotModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div
         className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
@@ -229,14 +229,19 @@ export default function AllotModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={onClose}>
+          <div className="pt-3 flex justify-end gap-2.5 border-t border-border/60">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="h-9 px-4 text-xs font-semibold border-border hover:bg-muted text-foreground cursor-pointer"
+            >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isPending || !selectedStudent || !targetRoomId}
-              className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-9"
+              className="h-9 px-4 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs cursor-pointer disabled:opacity-50"
             >
               {isPending ? (
                 <>

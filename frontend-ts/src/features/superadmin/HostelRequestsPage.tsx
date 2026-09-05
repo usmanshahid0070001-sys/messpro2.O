@@ -465,7 +465,7 @@ export default function HostelRequestsPage() {
 
       {/* ── APPROVE MODAL ───────────────────────────────────────── */}
       {approvingRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="relative w-full max-w-xl max-h-[90vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-emerald-500/5 shrink-0">
               <div className="flex items-center gap-2.5">
@@ -709,7 +709,7 @@ export default function HostelRequestsPage() {
 
       {/* ── REJECT MODAL ────────────────────────────────────────── */}
       {rejectingRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-rose-500/5 shrink-0">
               <div className="flex items-center gap-2.5">
@@ -783,7 +783,7 @@ export default function HostelRequestsPage() {
 
       {/* ── DETAILS MODAL ───────────────────────────────────────── */}
       {viewingRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="relative w-full max-w-lg max-h-[85vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/20 shrink-0">
               <div className="flex items-center gap-2.5">

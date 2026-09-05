@@ -1,20 +1,16 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import {
   X,
   Loader2,
   CreditCard,
   Check,
-  Users,
   Shield,
   Layers,
-  Infinity as InfinityIcon,
-  CheckCircle2,
   Lock,
   Building2,
   Utensils,
   QrCode,
   UserCheck,
-  Sparkles,
 } from 'lucide-react'
 import {
   useCreatePlan,
@@ -300,7 +296,7 @@ export default function PlanFormModal({ isOpen, onClose, plan }: PlanFormModalPr
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="relative w-full max-w-2xl max-h-[92vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/20 shrink-0">

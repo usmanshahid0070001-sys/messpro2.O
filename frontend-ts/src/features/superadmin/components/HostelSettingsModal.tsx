@@ -168,7 +168,7 @@ export default function HostelSettingsModal({
     : 'Not Set / Lifetime'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in-0">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in-0">
       <div className="relative w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/60">

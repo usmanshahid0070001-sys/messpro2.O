@@ -22,6 +22,13 @@ export interface ChangeRoomPayload {
   newRoomId: string;
 }
 
+export interface UpdateRoomPayload {
+  roomId: string;
+  roomName?: string;
+  capacity?: number;
+  status?: 'Available' | 'Full' | 'Maintenance';
+}
+
 export const useCreateRoom = () => {
   const queryClient = useQueryClient();
 
@@ -38,6 +45,27 @@ export const useCreateRoom = () => {
     },
     onError: (error: any) => {
       const msg = extractApiErrorMessage(error, 'Failed to create room.');
+      toast.error(msg);
+    },
+  });
+};
+
+export const useUpdateRoom = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ roomId, ...payload }: UpdateRoomPayload) => {
+      const response = await apiClient.patch(`/residence/${roomId}`, payload);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['residence'] });
+      toast.success('Room updated successfully', {
+        description: `Room "${data.data?.roomName}" configuration and capacity updated.`,
+      });
+    },
+    onError: (error: any) => {
+      const msg = extractApiErrorMessage(error, 'Failed to update room.');
       toast.error(msg);
     },
   });

@@ -14,7 +14,7 @@ export function StorageWarningModal() {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="bg-card text-card-foreground border shadow-lg rounded-xl max-w-md w-full p-6 mx-4 animate-in fade-in zoom-in duration-200">
         <div className="flex items-center gap-3 mb-4 text-destructive">
           <AlertTriangle className="w-8 h-8" />

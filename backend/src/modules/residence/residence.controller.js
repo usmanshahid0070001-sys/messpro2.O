@@ -2,6 +2,7 @@ import { catchAsync } from '../../utils/catchAsync.js';
 import residenceService from './residence.service.js';
 import {
   createRoomSchema,
+  updateRoomSchema,
   alloteRoomSchema,
   disalloteRoomSchema,
   changeRoomSchema,
@@ -17,6 +18,20 @@ export const buildNewRoom = catchAsync(async (req, res) => {
     success: true,
     message: `Room '${newRoom.roomName}' created successfully.`,
     data: newRoom,
+  });
+});
+
+export const updateRoomDetails = catchAsync(async (req, res) => {
+  const { id: roomId } = roomIdParamSchema.parse({ id: req.params.id });
+  const validatedData = updateRoomSchema.parse(req.body);
+
+  const updatedRoom = await residenceService.updateRoom(req.user.hostelId, roomId, validatedData);
+
+  res.status(200).json({
+    status: 'success',
+    success: true,
+    message: `Room '${updatedRoom.roomName}' updated successfully.`,
+    data: updatedRoom,
   });
 });
 

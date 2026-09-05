@@ -72,6 +72,68 @@ class ResidenceService {
     return await residenceRepository.getRooms(hostelId);
   }
 
+  // 2.1 UPDATE ROOM (Edit name, capacity, and status with capacity guardrails)
+  async updateRoom(hostelId, roomId, updateData) {
+    const room = await residenceRepository.findRoomByIdAndHostel(roomId, hostelId);
+    if (!room) {
+      const error = new Error('Room not found in this hostel.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // 1. If roomName is changed, ensure uniqueness within this hostel
+    if (updateData.roomName && updateData.roomName !== room.roomName) {
+      const existingRoom = await residenceRepository.findRoomByName(hostelId, updateData.roomName);
+      if (existingRoom && existingRoom._id.toString() !== roomId.toString()) {
+        const error = new Error(`Room '${updateData.roomName}' already exists in your hostel.`);
+        error.statusCode = 409;
+        throw error;
+      }
+      room.roomName = updateData.roomName;
+    }
+
+    // 2. If capacity is modified, enforce capacity >= currently allotted occupants
+    if (updateData.capacity !== undefined) {
+      const currentOccupants = room.occupants || 0;
+      if (updateData.capacity < currentOccupants) {
+        const error = new Error(
+          `Room capacity (${updateData.capacity} beds) cannot be set lower than the current allotted resident count (${currentOccupants} residents). Please disallot or transfer residents first.`
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+      room.capacity = updateData.capacity;
+    }
+
+    // 3. Status updates & automatic 100% occupancy resolution
+    if (updateData.status) {
+      if (updateData.status === 'Available') {
+        if (room.occupants >= room.capacity) {
+          const error = new Error(
+            `Cannot set room status to 'Available' because all ${room.capacity} beds are occupied (100% full).`
+          );
+          error.statusCode = 400;
+          throw error;
+        }
+        room.status = 'Available';
+      } else {
+        room.status = updateData.status;
+      }
+    } else {
+      // Auto-update status according to occupancy if not under Maintenance
+      if (room.status !== 'Maintenance') {
+        if (room.occupants >= room.capacity) {
+          room.status = 'Full';
+        } else {
+          room.status = 'Available';
+        }
+      }
+    }
+
+    await room.save();
+    return room;
+  }
+
   // 3. ALLOTE A ROOM TO A RESIDENT (Atomic with Rollback)
   async alloteRoom(hostelId, studentId, roomId) {
     const room = await residenceRepository.findRoomByIdAndHostel(roomId, hostelId);

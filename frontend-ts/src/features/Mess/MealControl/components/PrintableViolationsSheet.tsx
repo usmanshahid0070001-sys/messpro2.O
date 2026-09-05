@@ -1,5 +1,4 @@
-import React from 'react'
-import { Printer, X, Utensils, AlertTriangle } from 'lucide-react'
+import { Printer, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { MealViolationRecord } from '@/hooks/queries/useMealQueries'
 
@@ -29,7 +28,7 @@ export default function PrintableViolationsSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       <div className="bg-card text-card-foreground border border-border w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Modal Header */}
         <div className="p-4 border-b border-border flex items-center justify-between gap-3 bg-muted/30 shrink-0">

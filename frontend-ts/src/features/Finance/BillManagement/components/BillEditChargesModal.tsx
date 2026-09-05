@@ -100,7 +100,7 @@ export default function BillEditChargesModal({
   const studentName = bill.studentId?.name || (bill.isGuest ? 'Dining Guest' : 'Resident')
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-purple-500/5 shrink-0">

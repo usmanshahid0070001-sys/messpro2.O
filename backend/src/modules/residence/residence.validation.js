@@ -39,6 +39,31 @@ export const changeRoomSchema = z.object({
     .regex(objectIdRegex, 'Invalid New Room ID structure'),
 }).strict();
 
+export const updateRoomSchema = z
+  .object({
+    roomName: z
+      .string()
+      .trim()
+      .min(1, 'Room name cannot be empty')
+      .max(50, 'Room name cannot exceed 50 characters')
+      .optional(),
+    capacity: z
+      .number()
+      .int('Capacity must be a whole number')
+      .min(1, 'Room capacity must be at least 1 bed')
+      .max(50, 'Room capacity cannot exceed 50 beds')
+      .optional(),
+    status: z
+      .enum(['Available', 'Full', 'Maintenance'], {
+        errorMap: () => ({ message: 'Status must be Available, Full, or Maintenance' }),
+      })
+      .optional(),
+  })
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field (roomName, capacity, status) must be provided for update',
+  });
+
 export const roomIdParamSchema = z.object({
   id: z
     .string({ required_error: 'Room ID parameter is required' })
