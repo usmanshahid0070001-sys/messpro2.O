@@ -2,18 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sparkles,
-  ShieldCheck,
   Mail,
-  Heart,
   ArrowUpRight,
-  Building2,
   BookOpen,
-  FileText,
-  Lock,
   ArrowRight,
   Scale,
   Headphones,
-  MessageCircle,
 } from 'lucide-react';
 import logoUrl from '@/assets/pwa-192x192.png';
 import type { SupportContextReason } from '@/components/SupportUpgradeModal';

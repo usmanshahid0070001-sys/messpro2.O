@@ -52,12 +52,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onSet
 
   // Track scroll position for dynamic island compaction
   useEffect(() => {
-    let lastScrollY = window.scrollY;
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setScrolled(currentScrollY > 40);
-      lastScrollY = currentScrollY;
+      setScrolled(window.scrollY > 40);
     };
+    handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);

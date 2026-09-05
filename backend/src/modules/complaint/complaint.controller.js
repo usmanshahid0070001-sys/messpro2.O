@@ -43,16 +43,24 @@ export const getStudentComplaints = catchAsync(async (req, res) => {
   const rollNumber = req.user.id || req.user.roll_number;
   const hostelId = req.user.hostelId || req.user.hostelid;
 
+  if (!hostelId) {
+    const error = new Error('You must belong to a hostel to view complaints.');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const complaints = await complaintService.getStudentComplaints(studentId, rollNumber, hostelId);
   res.json(complaints);
 });
 
 export const getComplaintStats = catchAsync(async (req, res) => {
   let targetHostelId = req.user.hostelId || req.user.hostelid;
-  if (req.user.role === 'superadmin' && req.query.hostelId) {
-    targetHostelId = req.query.hostelId;
-  } else if (req.user.role === 'superadmin' && !req.query.hostelId) {
-    targetHostelId = null;
+  if (req.user.role === 'superadmin') {
+    targetHostelId = req.query.hostelId || null;
+  } else if (!targetHostelId) {
+    const error = new Error('Hostel context is required to view complaint statistics.');
+    error.statusCode = 400;
+    throw error;
   }
 
   const stats = await complaintService.getComplaintStats(targetHostelId);
@@ -65,6 +73,10 @@ export const getComplaints = catchAsync(async (req, res) => {
   let targetHostelId = req.user.hostelId || req.user.hostelid;
   if (req.user.role === 'superadmin') {
     targetHostelId = req.query.hostelId || null;
+  } else if (!targetHostelId) {
+    const error = new Error('Hostel context is required to view complaints.');
+    error.statusCode = 400;
+    throw error;
   }
 
   const complaints = await complaintService.getComplaints({
@@ -93,6 +105,11 @@ export const updateComplaintStatus = catchAsync(async (req, res) => {
   const { status } = updateComplaintStatusSchema.parse(req.body);
 
   const hostelId = req.user.role === 'superadmin' ? null : (req.user.hostelId || req.user.hostelid);
+  if (req.user.role !== 'superadmin' && !hostelId) {
+    const error = new Error('Hostel context is required to update complaints.');
+    error.statusCode = 400;
+    throw error;
+  }
 
   const complaint = await complaintService.updateComplaintStatus(id, status, hostelId);
   res.status(200).json({ success: true, data: complaint });

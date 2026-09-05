@@ -9,24 +9,13 @@ import {
   BedDouble,
   Receipt,
   Sparkles,
-  Users,
   Utensils,
   Flame,
-  Activity,
   Check,
   Lock,
   Clock,
   Radio,
-  Layers,
-  Wifi,
-  ChevronRight,
   Copy,
-  TrendingUp,
-  UserCheck,
-  AlertCircle,
-  Plus,
-  RefreshCw,
-  Sliders,
 } from 'lucide-react';
 import type { RecentScan } from '../types';
 import { toast } from 'sonner';
@@ -352,7 +341,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <Lock className="w-2.5 h-2.5 text-emerald-500" />
                     <span className="text-foreground font-semibold">falcon-hall</span>
                     <span>.messpro.app</span>
-                    <Copy className="w-2.5 h-2.5 ml-1 text-muted-foreground" />
+                    {isCopied ? (
+                      <Check className="w-2.5 h-2.5 ml-1 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-2.5 h-2.5 ml-1 text-muted-foreground" />
+                    )}
                   </button>
                 </div>
 

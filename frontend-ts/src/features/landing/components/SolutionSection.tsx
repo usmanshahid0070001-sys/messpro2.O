@@ -8,12 +8,11 @@ import {
   Receipt,
   ClipboardList,
   Layers,
-  CheckCircle2,
   Sparkles,
-  ShieldCheck,
-  Zap,
+  CheckCircle2,
   ArrowRight,
-  BookOpen
+  BookOpen,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface FeatureTab {

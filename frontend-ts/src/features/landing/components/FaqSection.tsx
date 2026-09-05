@@ -5,8 +5,6 @@ import {
   Plus,
   Minus,
   Search,
-  CheckCircle2,
-  Sparkles,
   BookOpen,
   ArrowRight,
   Mail,
