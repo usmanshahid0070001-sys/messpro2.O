@@ -78,6 +78,12 @@ class UserRepository {
     await Hostel.findByIdAndUpdate(hostelId, { $set: { [countField]: count } });
     await cache.del(`hostel:config:${hostelId}`);
   }
+
+  async findSuperadminContact() {
+    return User.findOne({ role: 'superadmin' })
+      .select('name email additionalInfo')
+      .lean();
+  }
 }
 
 export default new UserRepository();

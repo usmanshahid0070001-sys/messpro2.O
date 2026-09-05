@@ -204,3 +204,32 @@ export const getSystemHealth = async () => {
     }
   };
 };
+
+export const getSuperadminContact = async () => {
+  const superadmin = await userRepository.findSuperadminContact();
+  if (!superadmin) {
+    return {
+      name: 'Platform Support',
+      email: process.env.SUPPORT_EMAIL || 'support@messpro.com',
+      phone: process.env.SUPPORT_PHONE || '',
+      whatsapp: process.env.SUPPORT_WHATSAPP || '',
+      additionalInfo: [],
+    };
+  }
+
+  const additionalInfo = superadmin.additionalInfo || [];
+  const findField = (...keys) => {
+    const field = additionalInfo.find((f) =>
+      keys.some((k) => f.key.toLowerCase().replace(/[\s-_]+/g, '') === k.toLowerCase().replace(/[\s-_]+/g, ''))
+    );
+    return field ? field.value : '';
+  };
+
+  return {
+    name: superadmin.name || 'Platform Support',
+    email: superadmin.email || process.env.SUPPORT_EMAIL || 'support@messpro.com',
+    phone: findField('phone', 'contact', 'mobile', 'support_phone') || '',
+    whatsapp: findField('whatsapp', 'whats_app', 'wa', 'support_whatsapp') || '',
+    additionalInfo,
+  };
+};
