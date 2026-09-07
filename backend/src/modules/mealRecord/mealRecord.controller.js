@@ -152,15 +152,15 @@ export const getManagerLiveOverview = catchAsync(async (req, res) => {
 });
 
 export const scanManagerQR = catchAsync(async (req, res) => {
-  const { h: targetHostelId, s: scannedSecret, lat, lng } = scanManagerQRSchema.parse(req.body);
+  const parsed = scanManagerQRSchema.parse(req.body);
+  const targetHostelId = parsed.hostelId || parsed.h;
+  const scannedSecret = parsed.s || parsed.qrSecret;
   const student = req.user;
 
   const result = await mealRecordService.processStudentScan(
     student, 
     targetHostelId, 
-    scannedSecret, 
-    lat, 
-    lng
+    scannedSecret
   );
   
   return res.status(200).json(result);
@@ -196,13 +196,14 @@ export const respondGuestPermission = catchAsync(async (req, res) => {
 });
 
 export const scanStudentQR = catchAsync(async (req, res) => {
-  const { studentRollNumber } = scanStudentQRSchema.parse(req.body);
+  const parsed = scanStudentQRSchema.parse(req.body);
+  const studentIdentifier = parsed.studentRollNumber || parsed.studentId || parsed.rollNumber || parsed.id;
   const managerHostelId = req.user.hostelId;
 
   const result = await mealRecordService.scanStudentQR(
     managerHostelId,
     req.user._id,
-    studentRollNumber
+    studentIdentifier
   );
 
   return res.status(200).json(result);

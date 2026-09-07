@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import MealRecord from './mealRecord.model.js';
 import User from '../auth/auth.model.js';
 import Hostel from '../hostel/hostel.model.js';
@@ -110,8 +111,34 @@ class MealRecordRepository {
     return User.find({ hostelId, role: 'student' }).select('name id').lean();
   }
 
-  async findStudentByRollNumber(rollNumber) {
-    return User.findOne({ id: rollNumber, role: 'student' });
+  async findStudentByRollNumber(identifier) {
+    if (!identifier) return null;
+    let str = String(identifier).trim();
+
+    try {
+      const parsed = JSON.parse(str);
+      if (parsed && typeof parsed === 'object') {
+        str = String(parsed.rollNumber || parsed.id || parsed.studentRollNumber || parsed.studentId || str).trim();
+      }
+    } catch {}
+
+    const orConditions = [
+      { id: str },
+      { id: str.toLowerCase() },
+      { email: str.toLowerCase() }
+    ];
+
+    if (mongoose.isValidObjectId(str)) {
+      orConditions.push({ _id: new mongoose.Types.ObjectId(str) });
+    }
+
+    // Escape regex characters and do case-insensitive exact match
+    const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    orConditions.push({ id: { $regex: new RegExp(`^${escaped}$`, 'i') } });
+
+    return User.findOne({
+      $or: orConditions
+    });
   }
 
   async findUserById(id) {

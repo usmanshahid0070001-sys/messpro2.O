@@ -7,19 +7,8 @@ import mealRecordRepository from './mealRecord.repository.js';
 import { bulkSelectMealsSchema, processBiometricAttendanceSchema } from './mealRecord.validation.js';
 
 // ==========================================
-// HELPER: Haversine Formula for GPS distance
+// HELPER: Time conversion to minutes
 // ==========================================
-function calculateDistanceInMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371e3; // Earth's radius in meters
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c);
-}
 
 // Helper to convert any time format ("07:30 AM", "07:30", "19:30", "7:30pm") into minutes from midnight
 function parseTimeToMinutes(timeStr) {
@@ -339,7 +328,7 @@ class MealRecordService {
   // ==========================================
   // 3. STUDENT SCAN FEATURE (UNBREAKABLE QR LOGIC)
   // ==========================================
-  async processStudentScan(student, hostelId, scannedSecret, studentLat, studentLng) {
+  async processStudentScan(student, hostelId, scannedSecret) {
     if (student.status === 'Suspended') {
       const error = new Error('Your account is currently suspended. You cannot scan for meals while suspended.');
       error.statusCode = 403;
@@ -349,49 +338,28 @@ class MealRecordService {
     const hostel = await hostelService.getHostelById(hostelId);
     if (!hostel) throw new Error('Hostel not found.');
 
-    // 🛡️ SECURITY 1: Anti-Forgery (Matches the printed static string)
-    if (hostel.qrSecret !== scannedSecret) {
+    // 🛡️ Optional Secret validation if both configured and scanned
+    if (scannedSecret && hostel.qrSecret && hostel.qrSecret !== scannedSecret) {
       const error = new Error('Invalid or expired QR Code.');
       error.statusCode = 401;
       throw error;
     }
 
-    // 🛡️ SECURITY 2: Geofencing (Must be within 30 meters)
-    if (hostel.locationCoords && hostel.locationCoords.lat && hostel.locationCoords.lng) {
-      const distance = calculateDistanceInMeters(
-        hostel.locationCoords.lat, hostel.locationCoords.lng,
-        studentLat, studentLng
-      );
-
-      if (distance > 30) {
-        const error = new Error(`Scan rejected. You are ${distance} meters away. You must be within 30 meters of the dining hall.`);
-        error.statusCode = 403;
-        throw error;
-      }
-    }
-
-    // 🛡️ SECURITY 3: Time Validation (Determine current meal)
+    // 🛡️ Time Validation (Determine current active meal window)
     const mealData = await this.calculateCurrentMeal(hostelId);
 
     const isGuest = student.hostelId.toString() !== hostelId.toString();
-    const room = io.sockets.adapter.rooms.get(`hostel:${hostelId}`);
-    const isManagerOnline = room && room.size > 0;
-    const autoVerification = hostel.settings?.autoVerification || false;
+    const autoVerification = Boolean(hostel.settings?.autoVerification);
 
-    // GUEST LOGIC
+    // 🛡️ GUEST LOGIC: Different Hostel -> Always Request Manager Permission via Socket
     if (isGuest) {
-      if (isManagerOnline) {
-        return {
-          status: 'requires_permission',
-          reason: 'guest',
-          managerHostelId: hostelId,
-          message: 'You are not registered in this hostel. Do you want to request guest permission?'
-        };
-      } else {
-        const error = new Error('Guest scan rejected: Manager is offline.');
-        error.statusCode = 403;
-        throw error;
-      }
+      this.requestGuestPermission(student, hostelId, 'guest');
+      return {
+        status: 'requires_permission',
+        reason: 'guest',
+        managerHostelId: hostelId,
+        message: 'You are registered in a different hostel. Request sent to manager for guest dining approval.'
+      };
     }
 
     // 🛡️ FIND TODAY'S RECORD FOR REGISTERED STUDENT
@@ -403,22 +371,18 @@ class MealRecordService {
     });
 
     if (!record) {
-      // 🛡️ WALK-IN SCENARIO (No Record Exists)
+      // 🛡️ WALK-IN SCENARIO (No Pre-Selection for Today)
       if (!autoVerification) {
-        if (isManagerOnline) {
-          return {
-            status: 'requires_permission',
-            reason: 'unselected',
-            managerHostelId: hostelId,
-            message: 'You did not reserve this meal. Request permission?'
-          };
-        } else {
-          const error = new Error('Unselected meal rejected: Manager is offline.');
-          error.statusCode = 403;
-          throw error;
-        }
+        this.requestGuestPermission(student, hostelId, 'unselected');
+        return {
+          status: 'requires_permission',
+          reason: 'unselected',
+          managerHostelId: hostelId,
+          message: 'You did not pre-reserve this meal. Request sent to manager for walk-in approval.'
+        };
       }
 
+      // Auto-verification is ON -> mark walk-in attendance immediately
       record = await mealRecordRepository.createRecord({
         hostelId,
         date: mealData.date,
@@ -439,34 +403,24 @@ class MealRecordService {
 
       if (isUnselected) {
         if (!autoVerification) {
-          if (isManagerOnline) {
-            return {
-              status: 'requires_permission',
-              reason: 'unselected',
-              managerHostelId: hostelId,
-              message: 'You did not reserve this meal. Request permission?'
-            };
-          } else {
-            const error = new Error('Unselected meal rejected: Manager is offline.');
-            error.statusCode = 403;
-            throw error;
-          }
+          this.requestGuestPermission(student, hostelId, 'unselected');
+          return {
+            status: 'requires_permission',
+            reason: 'unselected',
+            managerHostelId: hostelId,
+            message: 'You did not pre-reserve this meal. Request sent to manager for approval.'
+          };
         }
       } else if (isLimitReached) {
         // EXTRA MEAL (Attendance >= Selection)
         if (!autoVerification) {
-          if (isManagerOnline) {
-            return {
-              status: 'requires_permission',
-              reason: 'extra_meal',
-              managerHostelId: hostelId,
-              message: `You have reached your limit of ${record.selection.count} meals. Request extra meal?`
-            };
-          } else {
-            const error = new Error('Meal limit reached. Manager is offline to approve extra meals.');
-            error.statusCode = 403;
-            throw error;
-          }
+          this.requestGuestPermission(student, hostelId, 'extra_meal');
+          return {
+            status: 'requires_permission',
+            reason: 'extra_meal',
+            managerHostelId: hostelId,
+            message: `You have already claimed your reserved portion (${record.selection.count}). Request sent to manager for extra portion.`
+          };
         }
       }
 
@@ -526,8 +480,9 @@ class MealRecordService {
       throw error;
     }
     return {
-      h: hostel._id,
-      s: hostel.qrSecret
+      hostelId: hostel._id.toString(),
+      h: hostel._id.toString(),
+      s: hostel.qrSecret || undefined
     };
   }
 
@@ -583,7 +538,8 @@ class MealRecordService {
     }
 
     // 2. If serving timing was not configured for some or all slots, evaluate sensible default serving windows:
-    if (selectedMealIndex === -1 && servingTimes.length === 0) {
+    const hasConfiguredTimes = servingTimes.some((w) => w && (w.start || w.end));
+    if (selectedMealIndex === -1 && !hasConfiguredTimes) {
       if (mealNames.length === 2) {
         // 2 slots: Lunch (11:30 - 15:30) & Dinner (18:30 - 22:30)
         if (currentMinutes >= 690 && currentMinutes <= 930) selectedMealIndex = 0;
@@ -598,7 +554,16 @@ class MealRecordService {
 
     // 🛡️ REJECT: If scan occurs outside any active dining hall serving window
     if (selectedMealIndex === -1) {
-      const error = new Error('No meal is currently being served at this time. Please scan during the scheduled serving hours.');
+      const scheduleSummary = mealNames
+        .map((name, idx) => {
+          const time = servingTimes[idx];
+          return time && time.start && time.end ? `${name} (${time.start} - ${time.end})` : name;
+        })
+        .join(', ');
+
+      const error = new Error(
+        `No meal is currently being served at this time (${localTimeParts.join(':')}). Scheduled serving hours: ${scheduleSummary || 'Check Mess Schedule'}. Please scan during active dining hours.`
+      );
       error.statusCode = 400;
       throw error;
     }

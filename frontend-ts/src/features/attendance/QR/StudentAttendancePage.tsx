@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
-import { useSelector } from 'react-redux'
-import type { RootState } from '@/store'
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store';
 import {
   Scan,
   QrCode,
@@ -11,220 +11,232 @@ import {
   Send,
   Loader2,
   Info,
-} from 'lucide-react'
-import { toast } from 'sonner'
+  RotateCcw,
+  Clock,
+  ShieldAlert,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useScanManagerQR,
   useRequestGuestPermission,
   type ScanManagerQRPermissionResponse,
-} from '@/hooks/mutations/useMealMutations'
-import QRCodeSVG from './components/QRCodeSVG'
+} from '@/hooks/mutations/useMealMutations';
+import QRCodeSVG from './components/QRCodeSVG';
+import { QRReaderEngine } from './utils/qrReaderEngine';
+import { playScanSuccessSound, playScanNoticeSound, triggerHaptic } from './utils/qrFeedback';
 
-export default function StudentAttendancePage() {
-  const { user } = useSelector((state: RootState) => state.auth)
-  const { currentHostel } = useSelector((state: RootState) => state.hostel)
+// ── Helper: Safe Manager QR Payload Parser ──────────────────────────────
+export function parseManagerQRPayload(rawText: string): { h: string; s?: string } | null {
+  if (!rawText || typeof rawText !== 'string') return null;
+  const trimmed = rawText.trim();
 
-  const [activeTab, setActiveTab] = useState<'scan' | 'my-qr'>('scan')
-
-  // ── Camera Scanner State ─────────────────────────────────────────────
-  const [isScanning, setIsScanning] = useState(false)
-  const [cameraError, setCameraError] = useState<string | null>(null)
-  const [isVerifying, setIsVerifying] = useState(false)
-
-  // ── Results & Prompts ────────────────────────────────────────────────
-  const [permissionPrompt, setPermissionPrompt] =
-    useState<ScanManagerQRPermissionResponse | null>(null)
-  const [successRecord, setSuccessRecord] = useState<any | null>(null)
-  const [isWaitingForManager, setIsWaitingForManager] = useState(false)
-
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const scanIntervalRef = useRef<number | null>(null)
-
-  const scanManagerMutation = useScanManagerQR()
-  const requestPermissionMutation = useRequestGuestPermission()
-
-  // ── 1. Geolocation Helper ─────────────────────────────────────────────
-  const getCoordinates = (): Promise<{ lat: number; lng: number } | null> => {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        resolve(null)
-        return
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          resolve({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          })
-        },
-        () => {
-          // Fallback if denied or unavailable
-          resolve(null)
-        },
-        { timeout: 8000, enableHighAccuracy: true }
-      )
-    })
+  // 1. Plain 24-character hexadecimal MongoDB ObjectId
+  if (/^[a-f0-9]{24}$/i.test(trimmed)) {
+    return { h: trimmed };
   }
 
-  // ── 2. Process Scanned QR Payload ────────────────────────────────────
-  const processScannedData = async (rawScannedText: string) => {
-    if (isVerifying || permissionPrompt || successRecord) return
-
-    setIsVerifying(true)
-    const toastId = toast.loading('Verifying dining hall QR code...')
-
-    let qrData: { h?: string; s?: string } | null = null
-
-    try {
-      // Parse JSON string
-      const parsed = JSON.parse(rawScannedText)
-      if (parsed.h && parsed.s) {
-        qrData = parsed
-      }
-    } catch {
-      // Try URL parameters fallback or comma-separated
-      if (rawScannedText.includes('h=') && rawScannedText.includes('s=')) {
-        const urlParams = new URLSearchParams(rawScannedText.split('?')[1] || rawScannedText)
-        qrData = {
-          h: urlParams.get('h') || undefined,
-          s: urlParams.get('s') || undefined,
-        }
+  // 2. Direct JSON parse
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && typeof parsed === 'object') {
+      const h = parsed.hostelId || parsed.h || parsed.hostel || parsed._id;
+      const s = parsed.s || parsed.secret || parsed.qrSecret;
+      if (h) {
+        return { h: String(h).trim(), s: s ? String(s).trim() : undefined };
       }
     }
+  } catch {
+    // Continue to query / regex parsing
+  }
 
-    if (!qrData?.h || !qrData?.s) {
-      toast.error('Invalid QR Code. Please scan the official Manager QR code.', {
-        id: toastId,
-      })
-      setIsVerifying(false)
-      return
+  // 3. Query param or URL format (?hostelId=... or ?h=...)
+  try {
+    if (trimmed.includes('h=') || trimmed.includes('hostelId=')) {
+      const queryString = trimmed.includes('?') ? trimmed.split('?')[1] : trimmed;
+      const params = new URLSearchParams(queryString);
+      const h = params.get('hostelId') || params.get('h');
+      const s = params.get('s') || params.get('secret');
+      if (h) {
+        return { h: h.trim(), s: s ? s.trim() : undefined };
+      }
+    }
+  } catch {
+    // Continue
+  }
+
+  // 4. Regex extraction for malformed JSON or key-value pairs
+  const hMatch = trimmed.match(/"?(?:hostelId|h)"?\s*[:=]\s*"?([a-f0-9]{24}|[a-zA-Z0-9_-]+)"?/i);
+  const sMatch = trimmed.match(/"?(?:secret|s)"?\s*[:=]\s*"?([a-zA-Z0-9_-]+)"?/i);
+  if (hMatch && hMatch[1]) {
+    return { h: hMatch[1].trim(), s: sMatch && sMatch[1] ? sMatch[1].trim() : undefined };
+  }
+
+  return null;
+}
+
+export default function StudentAttendancePage() {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { currentHostel } = useSelector((state: RootState) => state.hostel);
+
+  const [activeTab, setActiveTab] = useState<'scan' | 'my-qr'>('scan');
+
+  // ── Camera Scanner State ─────────────────────────────────────────────
+  const [isScanning, setIsScanning] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isFlashing, setIsFlashing] = useState(false);
+
+  // ── Results, Prompts & Errors ────────────────────────────────────────
+  const [permissionPrompt, setPermissionPrompt] =
+    useState<ScanManagerQRPermissionResponse | null>(null);
+  const [successRecord, setSuccessRecord] = useState<any | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isWaitingForManager, setIsWaitingForManager] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const qrEngineRef = useRef<QRReaderEngine | null>(null);
+
+  const scanManagerMutation = useScanManagerQR();
+  const requestPermissionMutation = useRequestGuestPermission();
+
+  // ── 1. Process Scanned QR Payload (Instant Execution) ────────────────
+  const processScannedData = (rawScannedText: string) => {
+    if (isVerifying || permissionPrompt || successRecord) return;
+
+    const qrData = parseManagerQRPayload(rawScannedText);
+
+    // If frame doesn't contain a valid manager payload, keep scanning silently
+    if (!qrData) {
+      return;
     }
 
-    // Stop camera once valid QR found
-    stopCamera()
+    // Immediate Audio & Haptic Feedback (< 10ms)
+    playScanSuccessSound();
+    triggerHaptic('success');
+    setIsFlashing(true);
+    setTimeout(() => setIsFlashing(false), 300);
 
-    // Retrieve Geolocation coordinates
-    const coords = await getCoordinates()
+    // Stop camera stream once successfully captured
+    stopCamera();
+    setIsVerifying(true);
+    setErrorMessage(null);
 
     scanManagerMutation.mutate(
       {
         h: qrData.h,
         s: qrData.s,
-        lat: coords?.lat,
-        lng: coords?.lng,
       },
       {
         onSuccess: (res) => {
-          setIsVerifying(false)
-          toast.dismiss(toastId)
+          setIsVerifying(false);
 
           if (res.status === 'requires_permission') {
-            setPermissionPrompt(res)
+            playScanNoticeSound();
+            triggerHaptic('warning');
+            setPermissionPrompt(res);
           } else {
-            setSuccessRecord((res as any).record || (res as any).data)
+            playScanSuccessSound();
+            triggerHaptic('success');
+            setSuccessRecord((res as any).record || (res as any).data);
           }
         },
-        onError: () => {
-          setIsVerifying(false)
-          toast.dismiss(toastId)
+        onError: (err: any) => {
+          setIsVerifying(false);
+          triggerHaptic('error');
+          const msg =
+            err?.response?.data?.message ||
+            err?.message ||
+            'Meal verification was rejected by the server.';
+          setErrorMessage(msg);
+          toast.error(msg);
         },
       }
-    )
-  }
+    );
+  };
 
-  // ── 3. Camera Stream & Barcode Detection ──────────────────────────────
+  // ── 2. Camera Stream & QR Engine Controller ──────────────────────────
   const startCamera = async () => {
-    setCameraError(null)
-    setPermissionPrompt(null)
-    setSuccessRecord(null)
+    setCameraError(null);
+    setPermissionPrompt(null);
+    setSuccessRecord(null);
+    setErrorMessage(null);
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError('Camera API is not supported by your browser or connection is not secure (requires HTTPS or localhost).')
-      return
+      setCameraError(
+        'Camera API is not supported by your browser or connection is not secure (requires HTTPS or localhost).'
+      );
+      return;
     }
 
     try {
-      let stream: MediaStream
+      let stream: MediaStream;
       try {
         // Try environment camera (ideal for mobile phone scanning)
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        })
+        });
       } catch {
         // Fallback to any available camera (for laptops, webcams, desktop browsers)
-        stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
       }
 
-      streamRef.current = stream
-      setIsScanning(true)
+      streamRef.current = stream;
+      setIsScanning(true);
     } catch (err: any) {
-      console.error('Camera error:', err)
+      console.error('Camera error:', err);
       setCameraError(
         err.name === 'NotAllowedError'
           ? 'Camera permission denied. Please enable camera access in your browser settings.'
           : err.name === 'NotFoundError'
             ? 'No camera found on this device.'
-            : 'Unable to access camera. You can also paste the QR code string manually below.'
-      )
-      setIsScanning(false)
+            : 'Unable to access camera.'
+      );
+      setIsScanning(false);
     }
-  }
+  };
 
-  // Attach stream to video element whenever isScanning is true
+  // Attach stream to video element and launch fast QR reader engine
   useEffect(() => {
     if (isScanning && streamRef.current && videoRef.current) {
-      videoRef.current.srcObject = streamRef.current
+      videoRef.current.srcObject = streamRef.current;
       videoRef.current
         .play()
-        .catch((e) => console.log('Video play interrupted or auto-play prevented:', e))
-
-      // Start BarcodeDetector loop if supported by browser
-      if ('BarcodeDetector' in window) {
-        const barcodeDetector = new (window as any).BarcodeDetector({
-          formats: ['qr_code'],
-        })
-
-        scanIntervalRef.current = window.setInterval(async () => {
-          if (videoRef.current && videoRef.current.readyState >= 2) {
-            try {
-              const barcodes = await barcodeDetector.detect(videoRef.current)
-              if (barcodes.length > 0 && barcodes[0].rawValue) {
-                processScannedData(barcodes[0].rawValue)
-              }
-            } catch {
-              // Ignore frame detection errors
-            }
+        .then(() => {
+          if (videoRef.current) {
+            qrEngineRef.current = new QRReaderEngine(videoRef.current, (detectedText) => {
+              processScannedData(detectedText);
+            });
+            qrEngineRef.current.start();
           }
-        }, 350)
-      }
+        })
+        .catch((e) => console.log('Video play interrupted:', e));
     }
-  }, [isScanning])
+  }, [isScanning]);
 
   const stopCamera = () => {
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current)
-      scanIntervalRef.current = null
+    if (qrEngineRef.current) {
+      qrEngineRef.current.stop();
+      qrEngineRef.current = null;
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop())
-      streamRef.current = null
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
     }
-    setIsScanning(false)
-  }
+    setIsScanning(false);
+  };
 
   useEffect(() => {
     return () => {
-      stopCamera()
-    }
-  }, [])
+      stopCamera();
+    };
+  }, []);
 
-  // ── 4. Permission Handlers ────────────────────────────────────────────
+  // ── 3. Permission Handlers ────────────────────────────────────────────
   const handleRequestPermission = () => {
-    if (!permissionPrompt) return
+    if (!permissionPrompt) return;
 
-    setIsWaitingForManager(true)
+    setIsWaitingForManager(true);
     requestPermissionMutation.mutate(
       {
         managerHostelId: permissionPrompt.managerHostelId,
@@ -233,24 +245,30 @@ export default function StudentAttendancePage() {
       {
         onSuccess: () => {
           setTimeout(() => {
-            setIsWaitingForManager(false)
-            setPermissionPrompt(null)
-          }, 3000)
+            setIsWaitingForManager(false);
+            setPermissionPrompt(null);
+          }, 3000);
         },
         onError: () => {
-          setIsWaitingForManager(false)
+          setIsWaitingForManager(false);
         },
       }
-    )
-  }
+    );
+  };
 
   // Student QR Code Payload for Manager Scanner
-  const studentQRPayload = JSON.stringify({
-    studentRollNumber: user?.id,
-    rollNumber: user?.id,
-    name: user?.name,
-    hostelId: user?.hostelId,
-  })
+  const studentQRPayload = useMemo(() => {
+    const sId = user?._id || user?.id || '';
+    const rNum = user?.id || '';
+    const hId = user?.hostelId || currentHostel?._id || '';
+    return JSON.stringify({
+      studentId: sId,
+      rollNumber: rNum,
+      id: rNum,
+      name: user?.name || 'Resident',
+      hostelId: hId,
+    });
+  }, [user, currentHostel]);
 
   return (
     <div className="space-y-5 pb-16 w-full max-w-full min-w-0 animate-in fade-in duration-300">
@@ -276,12 +294,13 @@ export default function StudentAttendancePage() {
         <button
           type="button"
           onClick={() => {
-            setActiveTab('scan')
+            setActiveTab('scan');
           }}
-          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'scan'
+          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'scan'
               ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground'
-            }`}
+          }`}
         >
           <Scan className="w-4 h-4" />
           <span>Scan Manager QR</span>
@@ -290,13 +309,14 @@ export default function StudentAttendancePage() {
         <button
           type="button"
           onClick={() => {
-            stopCamera()
-            setActiveTab('my-qr')
+            stopCamera();
+            setActiveTab('my-qr');
           }}
-          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'my-qr'
+          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'my-qr'
               ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground'
-            }`}
+          }`}
         >
           <QrCode className="w-4 h-4" />
           <span>My Student QR Code</span>
@@ -330,26 +350,36 @@ export default function StudentAttendancePage() {
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Meal Session:</span>
                   <span className="font-bold text-foreground">
-                    {successRecord.mealType} &bull; {successRecord.mealInfo?.name || 'Standard Menu'}
+                    {successRecord.mealType} &bull; {successRecord.mealInfo?.name || successRecord.meal || 'Standard Menu'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Portions Taken:</span>
                   <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {successRecord.attendance?.count || 1} portion(s)
+                    {successRecord.attendance?.count || successRecord.count || 1} portion(s)
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Method:</span>
-                  <span className="font-semibold text-foreground">Geofenced QR Verification</span>
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">Claimed & Logged</span>
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 flex items-center justify-center gap-3">
                 <button
                   type="button"
                   onClick={() => {
-                    setSuccessRecord(null)
+                    setSuccessRecord(null);
+                    startCamera();
+                  }}
+                  className="px-5 py-2.5 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-all cursor-pointer"
+                >
+                  Scan Another
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSuccessRecord(null);
                   }}
                   className="px-6 py-2.5 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer"
                 >
@@ -371,6 +401,8 @@ export default function StudentAttendancePage() {
                 <h2 className="text-xl font-bold text-foreground mt-1">
                   {permissionPrompt.reason === 'guest'
                     ? 'Cross-Hostel Dining Request'
+                    : permissionPrompt.reason === 'extra_meal'
+                    ? 'Extra Meal Limit Reached'
                     : 'Unreserved Walk-In Meal'}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
@@ -387,7 +419,10 @@ export default function StudentAttendancePage() {
                 <div className="flex justify-center gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setPermissionPrompt(null)}
+                    onClick={() => {
+                      setPermissionPrompt(null);
+                      startCamera();
+                    }}
                     className="px-5 py-2 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-colors cursor-pointer"
                   >
                     Cancel
@@ -407,6 +442,49 @@ export default function StudentAttendancePage() {
                 </div>
               )}
             </div>
+          ) : errorMessage ? (
+            /* Error / Outside Serving Hours Dialog */
+            <div className="bg-card border border-destructive/30 p-6 sm:p-8 rounded-2xl shadow-lg text-center space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto shadow-xs">
+                {errorMessage.includes('suspended') ? (
+                  <ShieldAlert className="w-8 h-8" />
+                ) : errorMessage.includes('serving') || errorMessage.includes('time') ? (
+                  <Clock className="w-8 h-8" />
+                ) : (
+                  <AlertCircle className="w-8 h-8" />
+                )}
+              </div>
+
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-destructive">
+                  Meal Access Notice
+                </span>
+                <h2 className="text-xl font-bold text-foreground mt-1">
+                  {errorMessage.includes('suspended')
+                    ? 'Account Suspended'
+                    : errorMessage.includes('serving') || errorMessage.includes('time')
+                    ? 'Dining Hall Currently Closed'
+                    : 'Attendance Not Marked'}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
+                  {errorMessage}
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMessage(null);
+                    startCamera();
+                  }}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer active:scale-95"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Scan Again</span>
+                </button>
+              </div>
+            </div>
           ) : (
             /* Camera Viewfinder & Scan Controller */
             <div className="bg-card border border-border p-6 sm:p-8 rounded-2xl shadow-xs text-center space-y-6">
@@ -421,9 +499,14 @@ export default function StudentAttendancePage() {
                       playsInline
                       muted
                       onLoadedMetadata={() => {
-                        videoRef.current?.play().catch(() => { })
+                        videoRef.current?.play().catch(() => {});
                       }}
                     />
+
+                    {/* Flash effect upon scan */}
+                    {isFlashing && (
+                      <div className="absolute inset-0 bg-emerald-400/40 backdrop-blur-xs transition-opacity duration-300 pointer-events-none z-10" />
+                    )}
 
                     {/* Framing corners */}
                     <div className="absolute top-4 left-4 w-8 h-8 border-t-3 border-l-3 border-emerald-400 rounded-tl-lg pointer-events-none" />
@@ -435,10 +518,10 @@ export default function StudentAttendancePage() {
                     <div className="absolute left-6 right-6 h-0.5 bg-emerald-400/80 shadow-[0_0_8px_#10b981] animate-pulse pointer-events-none" />
 
                     {isVerifying && (
-                      <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
+                      <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-20">
                         <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
                         <span className="text-xs font-bold text-foreground">
-                          Verifying Geofence & Session...
+                          Verifying Attendance...
                         </span>
                       </div>
                     )}
@@ -465,7 +548,7 @@ export default function StudentAttendancePage() {
                       Dining Hall QR Scanner
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                      Scan the manager&apos;s dining hall QR code with your camera. GPS geofencing will automatically verify your location.
+                      Scan the manager&apos;s dining hall counter QR code with your camera for instant meal claiming.
                     </p>
                   </div>
 
@@ -544,5 +627,5 @@ export default function StudentAttendancePage() {
         </div>
       )}
     </div>
-  )
+  );
 }

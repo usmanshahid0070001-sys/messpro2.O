@@ -67,10 +67,12 @@ export const dateQuerySchema = z.object({
 
 // ── 4. QR Attendance & Overrides Schemas ─────────────────────────────────────
 export const scanManagerQRSchema = z.object({
-  h: z.string().regex(objectIdRegex, "Invalid target hostel ID"),
-  s: z.string().trim().min(1, "QR Secret is required"),
-  lat: z.coerce.number().min(-90).max(90).optional(),
-  lng: z.coerce.number().min(-180).max(180).optional(),
+  hostelId: z.string().regex(objectIdRegex, "Invalid target hostel ID").optional(),
+  h: z.string().regex(objectIdRegex, "Invalid target hostel ID").optional(),
+  s: z.string().trim().optional(),
+  qrSecret: z.string().trim().optional(),
+}).refine((data) => Boolean(data.hostelId || data.h), {
+  message: "hostelId is required",
 });
 
 export const requestGuestPermissionSchema = z.object({
@@ -85,7 +87,12 @@ export const respondGuestPermissionSchema = z.object({
 });
 
 export const scanStudentQRSchema = z.object({
-  studentRollNumber: z.string().trim().min(1, "studentRollNumber is required"),
+  studentRollNumber: z.string().trim().optional(),
+  studentId: z.string().trim().optional(),
+  rollNumber: z.string().trim().optional(),
+  id: z.string().trim().optional(),
+}).refine((data) => Boolean(data.studentRollNumber || data.studentId || data.rollNumber || data.id), {
+  message: "Student roll number or ID is required",
 });
 
 // ── 5. Biometric Attendance Schema ───────────────────────────────────────────

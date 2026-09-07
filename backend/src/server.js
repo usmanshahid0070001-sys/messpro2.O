@@ -166,10 +166,16 @@ io.use(async (socket, next) => {
 io.on('connection', (socket) => {
   console.log(`🔌 New client connected: ${socket.id}`);
   
-  // Clients will join a room based on their hostelId to receive targeted notifications
-  socket.on('join_hostel_room', () => {
-    if (!['admin', 'manager'].includes(socket.user.role)) return;
+  // Admins and managers automatically join their hostel room
+  if (socket.user && ['admin', 'manager'].includes(socket.user.role) && socket.user.hostelId) {
     socket.join(`hostel:${socket.user.hostelId}`);
+  }
+
+  // Clients can also explicitly join their hostel room
+  socket.on('join_hostel_room', () => {
+    if (socket.user && ['admin', 'manager'].includes(socket.user.role) && socket.user.hostelId) {
+      socket.join(`hostel:${socket.user.hostelId}`);
+    }
   });
 
   socket.on('disconnect', () => {

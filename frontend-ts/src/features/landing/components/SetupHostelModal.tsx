@@ -100,7 +100,7 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({
 
   // Form State: Plan Selection & Capabilities
   const [selectedPlanKey, setSelectedPlanKey] = useState<string>('free_trial');
-  const [estimatedStudents, setEstimatedStudents] = useState<number>(100);
+  const [estimatedStudents, setEstimatedStudents] = useState<number>(50);
   const [estimatedManagers, setEstimatedManagers] = useState<number>(2);
   const [desiredFeatures, setDesiredFeatures] = useState<string[]>(
     ALL_PLAN_FEATURES.map((f) => f.id)
@@ -256,7 +256,7 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({
     setManagerName('');
     setManagerEmail('');
     setSelectedPlanKey('free_trial');
-    setEstimatedStudents(100);
+    setEstimatedStudents(50);
     setEstimatedManagers(2);
     onClose();
   };

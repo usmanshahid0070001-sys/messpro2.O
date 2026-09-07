@@ -7,28 +7,18 @@ import {
   Activity,
   Calendar,
   Utensils,
-  CheckCircle2,
   AlertCircle,
   Clock,
-  Sparkles,
   Users,
   Search,
   Maximize2,
   Minimize2,
   RefreshCw,
   Camera,
-  RotateCcw,
   Check,
-  X,
-  Radio,
   Loader2,
   Info,
-  Shield,
   Download,
-  Building2,
-  SlidersHorizontal,
-  ChevronRight,
-  TrendingUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -43,9 +33,10 @@ import {
   useRespondGuestPermission,
   type ScanStudentQRPermission,
 } from '@/hooks/mutations/useAttendanceMutations';
-import { useGetMealSchedule } from '@/hooks/queries/useMealQueries';
 import QRCodeSVG from './components/QRCodeSVG';
 import { Skeleton } from '@/components/ui/skeleton';
+import { QRReaderEngine } from './utils/qrReaderEngine';
+import { playScanSuccessSound, playScanNoticeSound, triggerHaptic } from './utils/qrFeedback';
 
 export default function QRAttendancePage() {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -72,16 +63,19 @@ export default function QRAttendancePage() {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [manualRollInput, setManualRollInput] = useState('');
   const [guestPrompt, setGuestPrompt] = useState<ScanStudentQRPermission['student'] | null>(null);
+  const [isFlashing, setIsFlashing] = useState(false);
   const [lastScannedResult, setLastScannedResult] = useState<{
     name?: string;
     rollNumber: string;
     message: string;
     timestamp: string;
+    isPending?: boolean;
+    isError?: boolean;
   } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const scanIntervalRef = useRef<number | null>(null);
+  const qrEngineRef = useRef<QRReaderEngine | null>(null);
 
   // ── Queries ──────────────────────────────────────────────────────────────
   const {
@@ -93,7 +87,6 @@ export default function QRAttendancePage() {
 
   const {
     data: liveData,
-    isLoading: isLiveLoading,
     refetch: refetchLive,
   } = useGetLiveQRAttendance(selectedDate);
 
@@ -102,8 +95,6 @@ export default function QRAttendancePage() {
     isLoading: isOverviewLoading,
     refetch: refetchOverview,
   } = useGetDailyOverview(selectedDate);
-
-  const { data: mealSchedule } = useGetMealSchedule();
 
   // ── Mutations ────────────────────────────────────────────────────────────
   const scanStudentMutation = useScanStudentQR();
@@ -120,14 +111,19 @@ export default function QRAttendancePage() {
     }
   };
 
-  // QR Payload String for counter screen
+  // QR Payload String for counter screen (pure hostelId)
   const counterQRPayload = useMemo(() => {
-    if (!managerQRData?.h || !managerQRData?.s) return '';
+    const targetHostelId =
+      managerQRData?.h ||
+      managerQRData?.hostelId ||
+      currentHostel?._id ||
+      user?.hostelId;
+    if (!targetHostelId) return '';
     return JSON.stringify({
-      h: managerQRData.h,
-      s: managerQRData.s,
+      hostelId: String(targetHostelId).trim(),
+      h: String(targetHostelId).trim(),
     });
-  }, [managerQRData]);
+  }, [managerQRData, currentHostel, user]);
 
   // ── Camera Scanner Logic for Staff ──────────────────────────────────────
   const startCamera = async () => {
@@ -159,9 +155,9 @@ export default function QRAttendancePage() {
   };
 
   const stopCamera = () => {
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
+    if (qrEngineRef.current) {
+      qrEngineRef.current.stop();
+      qrEngineRef.current = null;
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
@@ -176,36 +172,37 @@ export default function QRAttendancePage() {
     };
   }, []);
 
-  // Barcode detection loop
+  // Barcode / QR detection loop using high performance QRReaderEngine
   useEffect(() => {
     if (isScanning && streamRef.current && videoRef.current) {
       videoRef.current.srcObject = streamRef.current;
-      videoRef.current.play().catch(() => {});
-
-      if ('BarcodeDetector' in window) {
-        const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
-        scanIntervalRef.current = window.setInterval(async () => {
-          if (videoRef.current && videoRef.current.readyState >= 2) {
-            try {
-              const barcodes = await detector.detect(videoRef.current);
-              if (barcodes.length > 0 && barcodes[0].rawValue) {
-                handleStudentScanned(barcodes[0].rawValue);
-              }
-            } catch {
-              // ignore frame read issues
-            }
+      videoRef.current
+        .play()
+        .then(() => {
+          if (videoRef.current) {
+            qrEngineRef.current = new QRReaderEngine(videoRef.current, (detectedText) => {
+              handleStudentScanned(detectedText);
+            });
+            qrEngineRef.current.start();
           }
-        }, 400);
-      }
+        })
+        .catch(() => {});
     }
   }, [isScanning]);
 
   const handleStudentScanned = (rawText: string) => {
-    let roll = rawText.trim();
+    if (!rawText || !rawText.trim()) return;
+    const trimmed = rawText.trim();
+    let roll = trimmed;
     try {
-      const parsed = JSON.parse(rawText);
-      if (parsed.studentRollNumber || parsed.rollNumber) {
-        roll = parsed.studentRollNumber || parsed.rollNumber;
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object') {
+        roll =
+          parsed.rollNumber ||
+          parsed.id ||
+          parsed.studentRollNumber ||
+          parsed.studentId ||
+          trimmed;
       }
     } catch {
       // not JSON, use direct string
@@ -213,19 +210,47 @@ export default function QRAttendancePage() {
 
     if (!roll) return;
 
+    // Instant Feedback (< 10ms)
+    playScanSuccessSound();
+    triggerHaptic('success');
+    setIsFlashing(true);
+    setTimeout(() => setIsFlashing(false), 300);
+
+    // Optimistic status update
+    setLastScannedResult({
+      rollNumber: roll,
+      message: 'Verifying student attendance...',
+      timestamp: new Date().toLocaleTimeString(),
+      isPending: true,
+    });
+
     scanStudentMutation.mutate(
       { studentRollNumber: roll },
       {
         onSuccess: (res) => {
           if (res.status === 'requires_permission') {
+            playScanNoticeSound();
+            triggerHaptic('warning');
             setGuestPrompt(res.student);
+            setLastScannedResult(null);
           } else {
             setLastScannedResult({
               rollNumber: roll,
-              message: res.message || 'Attendance verified',
+              message: res.message || 'Attendance verified (Meal logged)',
               timestamp: new Date().toLocaleTimeString(),
+              isPending: false,
             });
           }
+        },
+        onError: (err: any) => {
+          triggerHaptic('error');
+          setLastScannedResult({
+            rollNumber: roll,
+            message: err?.response?.data?.message || err?.message || 'Verification failed',
+            timestamp: new Date().toLocaleTimeString(),
+            isPending: false,
+            isError: true,
+          });
         },
       }
     );
@@ -246,13 +271,16 @@ export default function QRAttendancePage() {
         isApproved,
       },
       {
-        onSuccess: (res) => {
+        onSuccess: () => {
           if (isApproved) {
+            playScanSuccessSound();
+            triggerHaptic('success');
             setLastScannedResult({
               name: guestPrompt.name,
               rollNumber: guestPrompt.rollNumber,
               message: 'Approved guest entry & attendance marked',
               timestamp: new Date().toLocaleTimeString(),
+              isPending: false,
             });
           } else {
             toast.info('Guest attendance declined');
@@ -275,7 +303,7 @@ export default function QRAttendancePage() {
       let totalAtt = 0;
       const allStudents: LiveStudentAttendanceItem[] = [];
 
-      Object.entries(liveData.data).forEach(([mType, val]) => {
+      Object.values(liveData.data).forEach((val) => {
         totalSel += val.summary.totalSelections;
         totalAtt += val.summary.totalAttendance;
         val.data.forEach((item) => {
@@ -642,6 +670,11 @@ export default function QRAttendancePage() {
                   <div className="relative w-full max-w-sm aspect-square mx-auto rounded-2xl overflow-hidden bg-black border-2 border-emerald-500/50 shadow-md flex items-center justify-center">
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
 
+                    {/* Flash effect upon successful scan */}
+                    {isFlashing && (
+                      <div className="absolute inset-0 bg-emerald-400/40 backdrop-blur-xs transition-opacity duration-300 pointer-events-none z-10" />
+                    )}
+
                     {/* Framing corners */}
                     <div className="absolute top-4 left-4 w-8 h-8 border-t-3 border-l-3 border-emerald-400 rounded-tl-lg pointer-events-none" />
                     <div className="absolute top-4 right-4 w-8 h-8 border-t-3 border-r-3 border-emerald-400 rounded-tr-lg pointer-events-none" />
@@ -651,7 +684,7 @@ export default function QRAttendancePage() {
                     <div className="absolute left-6 right-6 h-0.5 bg-emerald-400 shadow-[0_0_8px_#10b981] animate-pulse pointer-events-none" />
 
                     {scanStudentMutation.isPending && (
-                      <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
+                      <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-20">
                         <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
                         <span className="text-xs font-bold text-foreground">Logging Attendance...</span>
                       </div>
@@ -719,16 +752,48 @@ export default function QRAttendancePage() {
 
               {/* Last Scanned Feedback Banner */}
               {lastScannedResult && (
-                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-left flex items-center justify-between gap-3 animate-in fade-in">
+                <div
+                  className={`p-4 rounded-2xl border text-left flex items-center justify-between gap-3 animate-in fade-in ${
+                    lastScannedResult.isPending
+                      ? 'bg-amber-500/10 border-amber-500/20'
+                      : lastScannedResult.isError
+                      ? 'bg-destructive/10 border-destructive/20'
+                      : 'bg-emerald-500/10 border-emerald-500/20'
+                  }`}
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-                      <Check className="w-4 h-4" />
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                        lastScannedResult.isPending
+                          ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                          : lastScannedResult.isError
+                          ? 'bg-destructive/20 text-destructive'
+                          : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                      }`}
+                    >
+                      {lastScannedResult.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : lastScannedResult.isError ? (
+                        <AlertCircle className="w-4 h-4" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
                     </div>
                     <div>
                       <span className="font-bold text-foreground text-xs block">
-                        {lastScannedResult.name ? `${lastScannedResult.name} (${lastScannedResult.rollNumber})` : lastScannedResult.rollNumber}
+                        {lastScannedResult.name
+                          ? `${lastScannedResult.name} (${lastScannedResult.rollNumber})`
+                          : lastScannedResult.rollNumber}
                       </span>
-                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      <span
+                        className={`text-[11px] font-medium ${
+                          lastScannedResult.isPending
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : lastScannedResult.isError
+                            ? 'text-destructive'
+                            : 'text-emerald-600 dark:text-emerald-400'
+                        }`}
+                      >
                         {lastScannedResult.message}
                       </span>
                     </div>
