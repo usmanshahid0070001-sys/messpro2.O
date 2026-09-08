@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
 import { toast } from 'sonner'
 import {
   Fingerprint,
@@ -18,14 +19,17 @@ import {
   ArrowLeft,
   Loader2,
   ChevronDown,
+  Sparkles,
 } from 'lucide-react'
 
 import { useGetMealSchedule } from '@/hooks/queries/useMealQueries'
 import { useGetUsers } from '@/hooks/queries/useUserQueries'
 import {
-  useProcessBiometricAttendance,
+  useChunkedBiometricSync,
   type BiometricAttendanceItem,
+  BIOMETRIC_CHUNK_SIZE,
 } from '@/hooks/mutations/useAttendanceMutations'
+import { resetSyncState } from '@/store/slices/BiometricSyncSlice'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,13 +42,21 @@ import {
 
 export default function BiometricAttendancePage() {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const { data: schedule } = useGetMealSchedule()
   const { data: usersList = [] } = useGetUsers()
 
-  const processBiometricMutation = useProcessBiometricAttendance()
+  const { startSync, biometricSyncState } = useChunkedBiometricSync()
 
   // ── Step State ───────────────────────────────────────────────────────────
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1)
+
+  // Automatically keep Step 4 active if sync is running in background or completed
+  useEffect(() => {
+    if (biometricSyncState.isSyncing || biometricSyncState.isCompleted) {
+      setCurrentStep(4)
+    }
+  }, [biometricSyncState.isSyncing, biometricSyncState.isCompleted])
 
   // ── Step 1: Raw File & Parsed Data ───────────────────────────────────────
   const [file, setFile] = useState<File | null>(null)
@@ -98,7 +110,10 @@ export default function BiometricAttendancePage() {
   const enrolledStudentRolls = useMemo(() => {
     const set = new Set<string>()
     usersList.forEach((u) => {
-      if (u.id) set.add(u.id.trim())
+      if (u.id) {
+        set.add(u.id.trim().toLowerCase())
+        set.add(u.id.trim())
+      }
     })
     return set
   }, [usersList])
@@ -309,7 +324,9 @@ export default function BiometricAttendancePage() {
       const explicitMeal = mealColIdx >= 0 ? row[mealColIdx] : undefined
       const resolvedMeal = resolveMealSlot(timeStr, explicitMeal)
       const countVal = countColIdx >= 0 ? Number(row[countColIdx]) || 1 : 1
-      const isEnrolled = enrolledStudentRolls.has(rawRoll)
+      const isEnrolled =
+        enrolledStudentRolls.has(rawRoll.trim().toLowerCase()) ||
+        enrolledStudentRolls.has(rawRoll.trim())
 
       datesSet.add(parsedDate)
       rollsSet.add(rawRoll)
@@ -346,8 +363,8 @@ export default function BiometricAttendancePage() {
     enrolledStudentRolls,
   ])
 
-  // ── Step 4: Commit to API ────────────────────────────────────────────────
-  const handleCommitBiometricSync = () => {
+  // ── Step 4: Commit to API via Chunked Upload ───────────────────────────
+  const handleCommitBiometricSync = async () => {
     if (previewData.validItems.length === 0) {
       toast.error('No valid attendance rows to sync.')
       return
@@ -361,19 +378,18 @@ export default function BiometricAttendancePage() {
       punchTime: item.timeStr,
     }))
 
-    processBiometricMutation.mutate(
-      {
+    setCurrentStep(4)
+
+    try {
+      await startSync({
         records: payloadRecords,
         unrecognizedStudentAction: unrecognizedAction,
         duplicatePunchStrategy: deduplicateStrategy,
-      },
-      {
-        onSuccess: (res) => {
-          setSyncResult(res.stats)
-          setCurrentStep(4)
-        },
-      }
-    )
+        fileName: file?.name || 'biometric_data.xlsx',
+      })
+    } catch {
+      // Error handled inside hook/store
+    }
   }
 
   return (
@@ -1043,7 +1059,8 @@ export default function BiometricAttendancePage() {
           <div className="flex justify-between items-center pt-2">
             <button
               onClick={() => setCurrentStep(2)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-colors cursor-pointer"
+              disabled={biometricSyncState.isSyncing}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-colors cursor-pointer disabled:opacity-50"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Mapping</span>
@@ -1051,13 +1068,13 @@ export default function BiometricAttendancePage() {
 
             <button
               onClick={handleCommitBiometricSync}
-              disabled={processBiometricMutation.isPending}
-              className="inline-flex items-center gap-2 px-7 py-3 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-md cursor-pointer active:scale-95 disabled:opacity-50"
+              disabled={biometricSyncState.isSyncing}
+              className="inline-flex items-center gap-2 px-7 py-3 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-md cursor-pointer active:scale-95 disabled:opacity-60"
             >
-              {processBiometricMutation.isPending ? (
+              {biometricSyncState.isSyncing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Processing Biometric Batch...</span>
+                  <span>Syncing Chunks ({biometricSyncState.progressPct}%)...</span>
                 </>
               ) : (
                 <>
@@ -1070,81 +1087,182 @@ export default function BiometricAttendancePage() {
         </div>
       )}
 
-      {/* ── STEP 4: POST-SYNC CELEBRATION & REPORT ───────────────────────────── */}
-      {currentStep === 4 && syncResult && (
-        <div className="bg-card border border-emerald-500/30 p-8 rounded-3xl shadow-xl text-center space-y-6 animate-in zoom-in-95 duration-200">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-xs">
-            <CheckCircle2 className="w-8 h-8" />
-          </div>
+      {/* ── STEP 4: POST-SYNC CELEBRATION, LIVE PROGRESS & REPORT ────────────── */}
+      {currentStep === 4 && (
+        <div className="space-y-6 animate-in zoom-in-95 duration-200 max-w-3xl mx-auto">
+          {/* SYNC IN PROGRESS STATE */}
+          {biometricSyncState.isSyncing && (
+            <div className="bg-card border border-border/80 p-8 rounded-3xl shadow-xl text-center space-y-6">
+              <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping" />
+                <div className="relative w-16 h-16 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs">
+                  <Fingerprint className="w-8 h-8 animate-pulse" />
+                </div>
+              </div>
 
-          <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-              Sync Completed Successfully
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
-              Biometric Attendance Integrated
-            </h2>
-            <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
-              All biometric machine logs have been processed, meal selections preserved, and attendance counts logged.
-            </p>
-          </div>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+                  Chunked Database Sync in Progress
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
+                  Uploading Attendance Records
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                  Batching attendance logs in chunks of {BIOMETRIC_CHUNK_SIZE} to ensure smooth processing and database reliability.
+                </p>
+              </div>
 
-          {/* Sync Stats Breakdown */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto text-xs">
-            <div className="p-4 bg-muted/40 rounded-2xl border border-border/80">
-              <span className="text-muted-foreground text-[11px] block">Total Processed</span>
-              <span className="text-xl font-bold text-foreground font-mono mt-1 block">
-                {syncResult.totalProcessed}
-              </span>
+              {/* Progress Metric and Bar */}
+              <div className="max-w-md mx-auto space-y-2.5">
+                <div className="flex justify-between items-center text-xs font-semibold">
+                  <span className="text-muted-foreground">
+                    Batch {biometricSyncState.currentChunkIndex} of {biometricSyncState.totalChunks}
+                  </span>
+                  <span className="text-blue-600 dark:text-blue-400 font-bold font-mono text-sm">
+                    {biometricSyncState.progressPct}%
+                  </span>
+                </div>
+
+                <div className="w-full h-3 bg-muted rounded-full overflow-hidden border border-border/60">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${biometricSyncState.progressPct}%` }}
+                  />
+                </div>
+
+                <div className="flex justify-between items-center text-[11px] text-muted-foreground">
+                  <span>{biometricSyncState.processedRecords} of {biometricSyncState.totalRecords} records committed</span>
+                  <span>{biometricSyncState.fileName}</span>
+                </div>
+              </div>
+
+              {/* Background safe notice */}
+              <div className="p-3.5 bg-blue-500/5 border border-blue-500/20 rounded-2xl max-w-md mx-auto flex items-start gap-2.5 text-left text-xs text-muted-foreground">
+                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-foreground">Background Sync Active:</strong> You can safely browse other sections of MessPro. Uploading will continue in the background and notify you when complete.
+                </span>
+              </div>
             </div>
+          )}
 
-            <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-              <span className="text-emerald-600 dark:text-emerald-400 text-[11px] block">Updated (Pre-selected)</span>
-              <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-1 block">
-                {syncResult.recordsUpdated}
-              </span>
+          {/* SYNC ERROR STATE */}
+          {biometricSyncState.error && !biometricSyncState.isSyncing && (
+            <div className="bg-card border border-rose-500/30 p-8 rounded-3xl shadow-xl text-center space-y-6">
+              <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-xs">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-rose-600 dark:text-rose-400">
+                  Sync Encountered An Error
+                </span>
+                <h2 className="text-2xl font-bold text-foreground mt-1">
+                  Upload Interrupted
+                </h2>
+                <p className="text-xs text-rose-600 dark:text-rose-400 mt-2 max-w-md mx-auto bg-rose-500/10 p-3 rounded-xl border border-rose-500/20 font-mono">
+                  {biometricSyncState.error}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => setCurrentStep(3)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Return to Preview</span>
+                </button>
+                <button
+                  onClick={handleCommitBiometricSync}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-xs cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Retry Sync</span>
+                </button>
+              </div>
             </div>
+          )}
 
-            <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-              <span className="text-blue-600 dark:text-blue-400 text-[11px] block">Created (Walk-ins)</span>
-              <span className="text-xl font-bold text-blue-600 dark:text-blue-400 font-mono mt-1 block">
-                {syncResult.recordsCreated}
-              </span>
+          {/* SYNC COMPLETED STATE */}
+          {biometricSyncState.isCompleted && !biometricSyncState.isSyncing && (
+            <div className="bg-card border border-emerald-500/30 p-8 rounded-3xl shadow-xl text-center space-y-6">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-xs">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                  Sync Completed Successfully
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
+                  Biometric Attendance Integrated
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                  All biometric machine logs have been processed in chunks, meal selections preserved, and attendance counts logged.
+                </p>
+              </div>
+
+              {/* Sync Stats Breakdown */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto text-xs">
+                <div className="p-4 bg-muted/40 rounded-2xl border border-border/80">
+                  <span className="text-muted-foreground text-[11px] block">Total Processed</span>
+                  <span className="text-xl font-bold text-foreground font-mono mt-1 block">
+                    {biometricSyncState.aggregatedStats.totalProcessed}
+                  </span>
+                </div>
+
+                <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                  <span className="text-emerald-600 dark:text-emerald-400 text-[11px] block">Updated (Pre-selected)</span>
+                  <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-1 block">
+                    {biometricSyncState.aggregatedStats.recordsUpdated}
+                  </span>
+                </div>
+
+                <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                  <span className="text-blue-600 dark:text-blue-400 text-[11px] block">Created (Walk-ins)</span>
+                  <span className="text-xl font-bold text-blue-600 dark:text-blue-400 font-mono mt-1 block">
+                    {biometricSyncState.aggregatedStats.recordsCreated}
+                  </span>
+                </div>
+
+                <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                  <span className="text-amber-600 dark:text-amber-400 text-[11px] block">Guests / Skipped</span>
+                  <span className="text-xl font-bold text-amber-600 dark:text-amber-400 font-mono mt-1 block">
+                    {biometricSyncState.aggregatedStats.guestsMarked} / {biometricSyncState.aggregatedStats.skippedCount}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Links */}
+              <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
+                <button
+                  onClick={() => {
+                    dispatch(resetSyncState())
+                    setFile(null)
+                    setRawRows([])
+                    setSyncResult(null)
+                    setCurrentStep(1)
+                  }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Import Another Extract</span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/app/attendance/qr')}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer"
+                >
+                  <span>View Attendance Hub</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-
-            <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20">
-              <span className="text-amber-600 dark:text-amber-400 text-[11px] block">Guests / Skipped</span>
-              <span className="text-xl font-bold text-amber-600 dark:text-amber-400 font-mono mt-1 block">
-                {syncResult.guestsMarked} / {syncResult.skippedCount}
-              </span>
-            </div>
-          </div>
-
-          {/* Action Links */}
-          <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
-            <button
-              onClick={() => {
-                setFile(null)
-                setRawRows([])
-                setSyncResult(null)
-                setCurrentStep(1)
-              }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-colors cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Import Another Extract</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/app/attendance/qr')}
-              className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer"
-            >
-              <span>View Attendance Hub</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          )}
         </div>
       )}
     </div>
   )
 }
+

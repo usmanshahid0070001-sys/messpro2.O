@@ -713,13 +713,19 @@ function AdminManagerDashboard({
     perms.includes('qr_attendance') ||
     perms.includes('biometric_attendance')
 
+  const showTodayMealsCard =
+    hasMealPerm ||
+    hasAttendancePerm ||
+    role === 'admin' ||
+    role === 'manager'
+
   // Real Queries
   const { data: rooms = [] } = useGetRooms(hasResidencePerm)
   const { data: adminComplaints = [] } = useGetAdminComplaints('all', hasComplaintPerm)
   const { data: usersList = [] } = useGetUsers(hasUserPerm)
   const { data: bills = [] } = useGetBills(undefined, hasBillPerm)
-  const { data: mealSchedule } = useGetMealSchedule(hasMealPerm)
-  const { data: dailyOverview } = useGetDailyOverview(todayDateStr, hasMealPerm || hasAttendancePerm)
+  const { data: mealSchedule } = useGetMealSchedule(showTodayMealsCard)
+  const { data: dailyOverview } = useGetDailyOverview(todayDateStr, showTodayMealsCard)
 
   const daysRemaining = calculateDaysRemaining(hostel?.subscriptionExpiresAt || hostel?.trialExpiresAt)
   const isExpired = hostel?.status === 'Expired' || daysRemaining === 0
@@ -841,6 +847,20 @@ function AdminManagerDashboard({
   const currentMinute = now.getMinutes()
   const timeInMinutes = currentHour * 60 + currentMinute
 
+  const getMealOverview = (mealName: string) => {
+    if (!dailyOverview?.data) return { totalSelections: 0, totalAttendance: 0 }
+    const key = Object.keys(dailyOverview.data).find(
+      (k) => k.toLowerCase() === mealName.toLowerCase()
+    )
+    if (key && dailyOverview.data[key]) {
+      return {
+        totalSelections: dailyOverview.data[key].summary?.totalSelections || 0,
+        totalAttendance: dailyOverview.data[key].summary?.totalAttendance || 0,
+      }
+    }
+    return { totalSelections: 0, totalAttendance: 0 }
+  }
+
   const todaysMeals = mealNames.map((mealName, idx) => {
     const dishItem = todayMenuDishes[idx]
     const dishText = dishItem?.meal && dishItem.meal !== 'none' ? dishItem.meal : 'No dish scheduled'
@@ -886,11 +906,19 @@ function AdminManagerDashboard({
       status = 'Upcoming'
     }
 
+    const overview = getMealOverview(mealName)
+    const reservedCount = overview.totalSelections
+    const attendedCount = overview.totalAttendance
+    const turnoutPct = reservedCount > 0 ? Math.round((attendedCount / reservedCount) * 100) : 0
+
     return {
       name: mealName,
       time: `Serving: ${servingTimeRange}`,
       menu: `${dishText}${priceText}`,
       status,
+      reservedCount,
+      attendedCount,
+      turnoutPct,
     }
   })
 
@@ -933,10 +961,11 @@ function AdminManagerDashboard({
             </span>
             {daysRemaining !== null && (
               <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${daysRemaining <= 7
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  daysRemaining <= 7
                     ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                     : 'bg-muted text-muted-foreground'
-                  }`}
+                }`}
               >
                 <Clock className="h-3 w-3 text-amber-500" />
                 {daysRemaining} days remaining
@@ -1009,16 +1038,16 @@ function AdminManagerDashboard({
       </div>
 
       {/* Main Hub: Quick Launch + Today's Mess Schedule with Natural Top Alignment */}
-      <div className={`grid grid-cols-1 ${hasMealPerm ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-6 items-start`}>
+      <div className={`grid grid-cols-1 ${showTodayMealsCard ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-6 items-start`}>
         {/* Quick Launch Actions (derived from navMain) */}
-        <div className={`${hasMealPerm ? 'lg:col-span-2' : 'w-full'} space-y-4`}>
+        <div className={`${showTodayMealsCard ? 'lg:col-span-2' : 'w-full'} space-y-4`}>
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-foreground">Operational Shortcuts</h2>
             <span className="text-xs text-muted-foreground">Permitted feature control</span>
           </div>
 
           {quickActions.length > 0 ? (
-            <div className={`grid grid-cols-1 ${hasMealPerm ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'} gap-3.5`}>
+            <div className={`grid grid-cols-1 ${showTodayMealsCard ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'} gap-3.5`}>
               {quickActions.map((action, i) => {
                 const Icon = action.icon
                 return (
@@ -1081,8 +1110,8 @@ function AdminManagerDashboard({
           )}
         </div>
 
-        {/* Today's Mess Schedule: Shown ONLY if user.permissions includes meal_settings */}
-        {hasMealPerm && (
+        {/* Today's Mess & Attendance Schedule Card */}
+        {showTodayMealsCard && (
           <div className="rounded-2xl bg-card border border-border/80 p-5 space-y-4 shadow-xs lg:sticky lg:top-16">
             <div className="space-y-3.5">
               <div className="flex items-center justify-between pb-2 border-b border-border/60">
@@ -1090,10 +1119,13 @@ function AdminManagerDashboard({
                   <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                     <Utensils className="h-4 w-4" />
                   </div>
-                  <h2 className="text-base font-semibold text-foreground">Today's Menu</h2>
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground">Today's Meals</h2>
+                    <p className="text-[11px] text-muted-foreground font-medium">Menu & Live Turnout</p>
+                  </div>
                 </div>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                  Live Mess
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-mono">
+                  {totalAttendanceToday}/{totalSelectionsToday} Attended
                 </span>
               </div>
 
@@ -1101,17 +1133,19 @@ function AdminManagerDashboard({
                 {todaysMeals.map((meal, index) => (
                   <div
                     key={index}
-                    className="p-3.5 rounded-xl border border-border/70 bg-muted/20 space-y-1.5 hover:bg-muted/40 transition-colors"
+                    className="p-3.5 rounded-xl border border-border/70 bg-muted/20 space-y-2 hover:bg-muted/40 transition-colors shadow-2xs"
                   >
+                    {/* Header: Name & Serving Status */}
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-foreground">{meal.name}</span>
                       <span
-                        className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${meal.status === 'Serving'
+                        className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          meal.status === 'Serving'
                             ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                             : meal.status === 'Completed'
-                              ? 'bg-muted text-muted-foreground'
-                              : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                          }`}
+                            ? 'bg-muted text-muted-foreground'
+                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                        }`}
                       >
                         {meal.status === 'Serving' && (
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
@@ -1119,10 +1153,72 @@ function AdminManagerDashboard({
                         {meal.status}
                       </span>
                     </div>
+
+                    {/* Dish & Price */}
                     <p className="text-xs text-foreground font-medium">{meal.menu}</p>
-                    <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                      <Clock className="h-3 w-3" />
-                      {meal.time}
+
+                    {/* Live Attendance & Reserved Counts */}
+                    <div className="grid grid-cols-2 gap-2 pt-0.5">
+                      <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                          <UserCheck className="w-3 h-3 text-blue-500 shrink-0" />
+                          <span>Reserved:</span>
+                        </span>
+                        <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                          {meal.reservedCount}
+                        </span>
+                      </div>
+
+                      <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                          <span>Attended:</span>
+                        </span>
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          {meal.attendedCount}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Turnout Progress Bar */}
+                    {meal.reservedCount > 0 && (
+                      <div className="space-y-1 pt-0.5">
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-medium">
+                          <span>Meal Turnout</span>
+                          <span className="font-mono font-semibold text-foreground">
+                            {meal.turnoutPct}%
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              meal.turnoutPct >= 80
+                                ? 'bg-emerald-500'
+                                : meal.turnoutPct >= 50
+                                ? 'bg-teal-500'
+                                : 'bg-amber-500'
+                            }`}
+                            style={{ width: `${Math.min(100, meal.turnoutPct)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Serving Time & Quick Link */}
+                    <div className="text-[11px] text-muted-foreground flex items-center justify-between pt-1 border-t border-border/40">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span>{meal.time}</span>
+                      </div>
+                      {hasAttendancePerm && (
+                        <button
+                          type="button"
+                          onClick={() => navigate('/app/attendance/qr')}
+                          className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <QrCode className="w-3 h-3" /> Scanner &rarr;
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

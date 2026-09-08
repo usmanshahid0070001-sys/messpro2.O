@@ -19,6 +19,7 @@ import {
 import { useNavigation } from "@/hooks/useNavigation"
 import { useSEO } from "@/hooks/useSEO"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { BiometricSyncFloatingWidget } from "@/features/attendance/Biometric/components/BiometricSyncFloatingWidget"
 import logoUrl from "@/assets/pwa-512x512.png"
 
 export default function AppLayout() {
@@ -182,6 +183,7 @@ export default function AppLayout() {
           </ErrorBoundary>
         </div>
       </div>
+      <BiometricSyncFloatingWidget />
     </SidebarProvider>
   )
 }
