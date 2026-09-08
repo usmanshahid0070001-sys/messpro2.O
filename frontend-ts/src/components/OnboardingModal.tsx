@@ -438,37 +438,48 @@ export default function OnboardingModal() {
             </div>
           )}
 
-          {/* STEP 3: LEGAL AGREEMENT */}
+          {/* STEP 3: LEGAL & SAAS PLATFORM AGREEMENT */}
           {currentStep === 3 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-3 duration-200">
               <div className="space-y-1">
                 <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                   <FileCheck2 className="w-4 h-4 text-emerald-500" />
-                  Hostel Resident & Portal Agreement
+                  MessPro Platform Terms & Anti-Abuse Policy
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Please review and accept the official terms of residence, dining protocols, and portal usage policy.
+                  Please review and accept the official MessPro SaaS End-User Agreement, Cybersecurity Standards, and Platform Policy.
                 </p>
               </div>
 
               {/* Scrollable Terms Container */}
-              <div className="p-4 rounded-xl bg-muted/40 border border-border text-xs text-muted-foreground space-y-3 max-h-48 overflow-y-auto leading-relaxed">
-                <p className="font-semibold text-foreground">1. Dining & Attendance Compliance</p>
-                <p>
-                  As a registered resident/member of MessPro, you agree to follow the designated meal schedules and scan dynamic QR or biometric terminal authentication during dining hours.
-                </p>
-                <p className="font-semibold text-foreground">2. Financial Responsibilities & Due Dates</p>
-                <p>
-                  Monthly mess bills and hostel residence dues must be cleared within the stipulated grace period to avoid suspension of dining services or room privileges.
-                </p>
-                <p className="font-semibold text-foreground">3. Account Integrity & Security</p>
-                <p>
-                  You are solely responsible for maintaining the confidentiality of your login credentials. Sharing biometric access, QR codes, or accounts is strictly prohibited.
-                </p>
-                <p className="font-semibold text-foreground">4. Maintenance & Grievance Redressal</p>
-                <p>
-                  Any maintenance complaints or service requests must be formally logged via the portal for SLA tracking and administrative transparency.
-                </p>
+              <div className="p-4 rounded-xl bg-muted/40 border border-border text-xs text-muted-foreground space-y-3.5 max-h-52 overflow-y-auto leading-relaxed">
+                <div>
+                  <p className="font-semibold text-foreground">1. Software Provider Scope (MessPro SaaS)</p>
+                  <p className="mt-0.5">
+                    MessPro is a cloud-based Software-as-a-Service (SaaS) and IoT technology provider. MessPro is <strong>not</strong> the physical hostel owner, caterer, or educational institution. Physical hostel administration, meal preparation, room assignments, and offline financial transactions are managed solely by your independent hostel administration.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-semibold text-foreground">2. Cybersecurity & Anti-Abuse Prohibition</p>
+                  <p className="mt-0.5">
+                    Users shall strictly refrain from any malicious platform interference. You agree not to attempt attack serialization, injection attacks, session hijacking, replay or duplication attacks against QR attendance or biometric terminal sync endpoints, automated scraping, brute forcing, or unauthorized vulnerability probing. Any breach will lead to immediate account termination and reporting to the facility authority.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-semibold text-foreground">3. Account Integrity & Non-Transferability</p>
+                  <p className="mt-0.5">
+                    Your login credentials, QR dining tokens, and registered biometrics are strictly personal. Sharing, loaning, transferring, or generating proxy attendance scans for third parties is an explicit violation of platform integrity.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-semibold text-foreground">4. System Logs & Audit Telemetry</p>
+                  <p className="mt-0.5">
+                    MessPro maintains automated cryptographic audit logs of all meal check-ins, attendance sync events, and security access attempts to maintain multi-tenant ledger transparency and dispute resolution for your hostel administration.
+                  </p>
+                </div>
               </div>
 
               {/* Mandatory Checkbox */}
@@ -481,7 +492,7 @@ export default function OnboardingModal() {
                   className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
                 />
                 <label htmlFor="agreementCheckbox" className="text-xs text-foreground leading-snug cursor-pointer font-medium">
-                  I confirm that I have read, understood, and solemnly agree to adhere to all terms, code of conduct, and hostel regulations specified above.
+                  I have read and solemnly agree to the MessPro SaaS Platform Terms, Cybersecurity & Anti-Abuse Policies, and understand MessPro operates as the software technology provider.
                 </label>
               </div>
 

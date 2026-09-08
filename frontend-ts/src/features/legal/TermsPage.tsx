@@ -215,127 +215,140 @@ export const TermsPage: React.FC = () => {
             <section id="acceptance" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span>1. Acceptance of Terms</span>
+                <span>1. Acceptance of Terms & Master SaaS Agreement</span>
               </h2>
               <p>
-                By registering an organization, creating an administrator or student account, installing the Progressive Web Application (PWA), or utilizing the digital dining gate scanner, you agree to be bound by these Terms of Service. If you are accepting on behalf of an educational institution, university hostel, or private residential facility, you represent and warrant that you possess full administrative authority to bind that entity.
+                By registering an account, provisioning a hostel tenant, logging in as an administrator, manager, or resident, installing the Progressive Web Application (PWA), or connecting terminal hardware, you agree to be legally bound by these Terms of Service. If you access the platform on behalf of an educational institution, hostel organization, or enterprise residential facility, you represent and warrant that you possess full administrative authority to bind that entity.
               </p>
             </section>
 
             <section id="saas-scope" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <Building className="w-4 h-4 text-primary" />
-                <span>2. Platform Service Scope</span>
+                <span>2. Platform Service Scope & Software Identity</span>
               </h2>
               <p>
-                MessPro provides cloud-hosted and edge-cached software for managing student housing inventory, floor and bed allocations, dining hall weekly menu schedules, dynamic QR code attendance validation, meal cancellation/skipping cutoffs, billing calculation, maintenance ticketing, and audit-proof ledger reports.
+                <strong>MessPro is strictly a Software-as-a-Service (SaaS) and IoT technology provider.</strong> MessPro is <em>not</em> a physical hostel operator, landlord, property manager, catering company, or educational board.
               </p>
               <p>
-                MessPro reserves the right to introduce feature enhancements, performance optimizations, and security patches at any time. We maintain a target uptime service level agreement (SLA) of 99.9% for core dining attendance verification services.
+                MessPro delivers cloud computing software for room allocation tracking, weekly dining menu configuration, cryptographic dynamic QR attendance, biometric gate terminal synchronization, automated billing arithmetic, and maintenance ticketing. MessPro is not responsible for physical property management, food preparation quality, or offline financial dealings.
               </p>
             </section>
 
             <section id="accounts" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <Lock className="w-4 h-4 text-primary" />
-                <span>3. User Accounts & Credentials</span>
+                <span>3. User Accounts, Credentials & Initial Onboarding</span>
               </h2>
               <p>
-                Each hostel organization operates within a dedicated tenant sandbox. Users are strictly responsible for maintaining the confidentiality of their authentication credentials (passwords, session tokens, and student PINs).
+                Each registered hostel operates within an isolated multi-tenant database sandbox. Users are strictly responsible for maintaining the confidentiality of their authentication credentials.
               </p>
               <ul className="list-disc pl-5 space-y-1.5">
-                <li>Sharing student digital QR codes or screenshots to facilitate proxy meal collection is strictly prohibited.</li>
-                <li>Administrator accounts with "Superadmin" or "Bill Management" privileges must adhere to standard security protocols.</li>
-                <li>Hostel operators must immediately revoke credentials of departed staff members or alumni.</li>
+                <li><strong>One-Time Onboarding Credential Setup:</strong> Users may self-update their email and password during first-time login prior to signing the digital agreement. Once signed, self-modifications are locked, and credential resets must be authorized by an institutional administrator.</li>
+                <li><strong>Non-Transferability:</strong> Personal user accounts, student PINs, and active session tokens are non-transferable and may not be shared, loaned, or sold.</li>
+                <li><strong>Credential Revocation:</strong> Hostel administrators must immediately deactivate departing staff, alumni, or vacated residents.</li>
               </ul>
             </section>
 
             <section id="hostel-duties" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <Scale className="w-4 h-4 text-primary" />
-                <span>4. Hostel Operator Responsibilities</span>
+                <span>4. Hostel Operator Responsibilities & Facility Authority</span>
               </h2>
               <p>
-                Hostel Administrators and wardens represent that student roster information imported via batch CSV or manual entry is accurate, lawfully collected, and compliant with applicable regional educational privacy laws.
+                Hostel Administrators and wardens represent that student roster information imported via batch CSV or manual entry is accurate, lawfully collected, and compliant with applicable educational privacy regulations.
               </p>
               <p>
-                The hostel operator maintains sole responsibility for food preparation hygiene, actual meal serving standards, room condition warranties, and the physical safety of resident students.
+                The hostel tenant maintains sole responsibility for physical building security, room hygiene, actual meal preparation quality, dietary health standards, offline fee collections, and student disciplinary actions. MessPro acts solely as the technical data processor.
               </p>
             </section>
 
             <section id="resident-duties" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <Shield className="w-4 h-4 text-primary" />
-                <span>5. Student & Resident Code of Conduct</span>
+                <span>5. Acceptable Use, Cybersecurity & Anti-Abuse Policy</span>
               </h2>
               <p>
-                Residents must utilize the student portal in good faith. Falsifying maintenance complaint photos, attempting to tamper with attendance scanner tokens, or abusing dietary meal leave rules to defraud the mess ledger may result in disciplinary suspension by the hostel warden.
+                Users agree to interact with the MessPro platform strictly in good faith and adhere to strict cybersecurity standards. The following activities are strictly prohibited and constitute grounds for immediate termination and legal referral:
               </p>
+              <ul className="list-disc pl-5 space-y-1.5">
+                <li><strong>No Cyberattacks or Exploits:</strong> Attempting attack serialization/deserialization exploits, SQL/NoSQL injection, cross-site scripting (XSS), cross-site request forgery (CSRF), or buffer overflow attacks against MessPro servers or client interfaces.</li>
+                <li><strong>No Attendance Spoofing or Replay Attacks:</strong> Forging, duplicating, intercepting, or replaying dynamic QR dining tokens, biometric sync payloads, or attendance API requests.</li>
+                <li><strong>No Automated Scraping or Botting:</strong> Using automated bots, scrapers, crawlers, or headless scripts to extract platform data or bypass rate limits.</li>
+                <li><strong>No Infrastructure Flooding or Denial of Service:</strong> Intentionally overloading, stressing, or launching Denial of Service (DoS/DDoS) attacks against MessPro APIs, gate endpoints, or hosting infrastructure.</li>
+                <li><strong>No Reverse Engineering:</strong> Decompiling, disassembling, reverse engineering, or attempting to derive the source code or proprietary mathematical engines of MessPro.</li>
+              </ul>
             </section>
 
             <section id="attendance-dining" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary" />
-                <span>6. Dining & QR Attendance Rules</span>
+                <span>6. Dining & Attendance Verification Records</span>
               </h2>
               <p>
-                MessPro attendance records generated via cryptographic dynamic QR scan or biometric hardware timestamp serve as prima facie verification of meal consumption.
+                MessPro attendance records generated via cryptographic dynamic QR scan or biometric terminal synchronization serve as prima facie verification of meal consumption.
               </p>
               <p>
-                Meal cancellation/skip cutoffs set by hostel administrators are enforced automatically by the server clock. Cancellation requests made after designated cutoff hours cannot be retroactively adjusted unless authorized by an administrator override.
+                Meal cancellation and skip cutoffs configured by hostel administrators are enforced automatically by the server clock. Cancellation requests submitted after designated cutoff hours cannot be retroactively adjusted unless authorized by an administrator override.
               </p>
             </section>
 
             <section id="billing-fees" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-primary" />
-                <span>7. Invoicing, Payments & SaaS Fees</span>
+                <span>7. Invoicing, Payments & SaaS Subscription Fees</span>
               </h2>
               <p>
-                MessPro computes monthly bills based on pricing parameters defined by the hostel operator (e.g. room rent, meal consumption counts, fines, late fees, and amenities).
+                MessPro computes monthly resident bills mathematically based on pricing parameters defined by the hostel operator (e.g. room rent, meal pricing, fine adjustments, and amenities). MessPro does not hold resident escrow funds or manage physical bank transfers between students and hostels.
               </p>
               <p>
-                Subscription billing for the MessPro SaaS platform is billed according to active resident capacity or institutional tier packages. All subscription fees are non-refundable once the billing cycle commences.
+                Hostel subscriptions to the MessPro SaaS platform are billed according to active resident capacity or institutional plan tiers. All SaaS subscription fees are non-refundable once the active billing cycle commences.
               </p>
             </section>
 
             <section id="ip-rights" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <Lock className="w-4 h-4 text-primary" />
-                <span>8. Intellectual Property</span>
+                <span>8. Proprietary Intellectual Property Rights</span>
               </h2>
               <p>
-                The MessPro brand, interface design, scanning algorithms, billing mathematical engines, source code, documentation, and database schemas remain the sole proprietary intellectual property of MessPro Technologies.
+                The MessPro name, logos, UI designs, dynamic scanning algorithms, biometric sync protocols, billing mathematical models, source code, database architectures, and documentation remain the exclusive intellectual property of MessPro Technologies.
               </p>
             </section>
 
             <section id="data-privacy" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <Shield className="w-4 h-4 text-primary" />
-                <span>9. Data Ownership & Privacy</span>
+                <span>9. Data Ownership & Multi-Tenant Privacy</span>
               </h2>
               <p>
-                Hostel operators retain exclusive ownership of resident identity records, phone numbers, room history, and payment ledgers. MessPro does not sell, lease, or monetize tenant student data. For comprehensive data handling practices, refer to our <Link to="/privacy" className="text-primary font-bold hover:underline">Privacy Policy</Link>.
+                Hostel operators retain exclusive ownership of resident identity rosters, phone directories, room history, and payment ledgers. MessPro does not sell, lease, or monetize tenant student data. For comprehensive data handling practices, refer to our <Link to="/privacy" className="text-primary font-bold hover:underline">Privacy Policy</Link>.
               </p>
             </section>
 
             <section id="limitation-liability" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
-                <span>10. Limitation of Liability</span>
+                <span>10. Limitation of Liability & Indemnification</span>
               </h2>
               <p>
-                To the maximum extent permitted by applicable law, MessPro shall not be held liable for indirect, incidental, punitive, or consequential damages resulting from local network outages, food preparation disputes between students and kitchen contractors, or unverified manual attendance overrides.
+                To the maximum extent permitted by applicable law, MessPro Technologies shall not be held liable for indirect, incidental, punitive, or consequential damages resulting from local network outages, kitchen food preparation disputes, landlord-resident lease disagreements, or off-platform physical payments.
+              </p>
+              <p>
+                Hostel operators agree to indemnify and hold harmless MessPro from any third-party claims arising out of the hostel's physical facility operations, catering negligence, or unauthorized administrative actions.
               </p>
             </section>
 
             <section id="termination" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <Scale className="w-4 h-4 text-primary" />
-                <span>11. Suspension & Termination</span>
+                <span>11. Account Suspension & Service Termination</span>
               </h2>
               <p>
-                Either party may terminate the SaaS subscription with 30 days written notice. Upon termination, hostel operators have 60 days to export student attendance archives, ledger balance sheets, and complaint records in Excel/PDF formats.
+                MessPro reserves the right to immediately suspend or terminate any user account or tenant workspace that violates cybersecurity standards, attempts platform attacks, or engages in fraudulent activity.
+              </p>
+              <p>
+                Upon regular institutional contract termination, hostel operators receive a 60-day data retrieval window to export student attendance logs, financial statements, and complaint records in standard formats.
               </p>
             </section>
 
@@ -345,7 +358,7 @@ export const TermsPage: React.FC = () => {
                 <span>12. Governing Law & Dispute Resolution</span>
               </h2>
               <p>
-                This Agreement shall be governed by and construed in accordance with the commercial laws of the jurisdiction in which the principal SaaS contracting entity is registered. Disputes will first be subjected to good-faith mediation prior to formal arbitration.
+                This Agreement shall be governed by and construed in accordance with applicable commercial software laws. Any dispute arising under this Agreement shall first be submitted to good-faith mediation prior to binding commercial arbitration.
               </p>
             </section>
 

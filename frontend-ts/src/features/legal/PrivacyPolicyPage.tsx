@@ -205,7 +205,7 @@ export const PrivacyPolicyPage: React.FC = () => {
             </div>
 
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              MessPro Technologies ("MessPro", "we", "our") is dedicated to safeguarding the personal identity, attendance logs, dietary preferences, and financial ledgers of educational institutions, hostel operators, managers, and resident students. We never sell or share resident data with ad networks.
+              MessPro Technologies ("MessPro", "we", "our") is a cloud Software-as-a-Service (SaaS) provider. In privacy frameworks (including GDPR, FERPA, and regional student protection standards), your educational institution or hostel administration acts as the <strong>Data Controller</strong>, while MessPro acts as the <strong>Data Processor</strong>. We never sell, lease, or monetize tenant student data.
             </p>
           </div>
 
@@ -215,10 +215,10 @@ export const PrivacyPolicyPage: React.FC = () => {
             <section id="data-collected" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <Database className="w-4 h-4 text-emerald-500" />
-                <span>1. Information We Collect</span>
+                <span>1. Information Processed on Behalf of Hostels</span>
               </h2>
               <p>
-                To provide our automated hostel management capabilities, we process the following categories of information:
+                To provide automated multi-tenant hostel management capabilities, MessPro processes the following categories of data on behalf of your institution:
               </p>
               <ul className="list-disc pl-5 space-y-1.5">
                 <li><strong>Resident Identity Data:</strong> Full name, institutional roll number, email address, phone number, and allocated room/bed identifier.</li>
@@ -226,6 +226,7 @@ export const PrivacyPolicyPage: React.FC = () => {
                 <li><strong>Staff & Administrator Credentials:</strong> Authorized email address, hashed passwords, and assigned feature permissions.</li>
                 <li><strong>Financial & Invoice Records:</strong> Room rent ledger, meal cost calculations, payment receipts, discount allowances, and fee status.</li>
                 <li><strong>Maintenance Reports:</strong> Student submitted ticket descriptions, category tags, and optional uploaded facility issue images.</li>
+                <li><strong>Security & Telemetry Audit Logs:</strong> IP address, device user-agent, session timestamps, and cryptographic scan signatures to detect unauthorized platform tampering.</li>
               </ul>
             </section>
 
@@ -235,11 +236,11 @@ export const PrivacyPolicyPage: React.FC = () => {
                 <span>2. Attendance & Biometric Data Handling</span>
               </h2>
               <p>
-                Dining attendance is recorded via cryptographic rotating QR tokens or integrated biometric scanners.
+                Dining attendance is recorded via cryptographic rotating QR tokens or integrated biometric hardware terminals.
               </p>
               <ul className="list-disc pl-5 space-y-1.5">
                 <li><strong>QR Code Scans:</strong> Each scan stores the meal type (Breakfast, Lunch, Dinner), exact timestamp, gate device ID, and resident ID.</li>
-                <li><strong>Biometric Data:</strong> If your hostel utilizes hardware biometric terminals, MessPro processes mathematical cryptographic template hashes only. Raw raw fingerprint images or facial photographs are NEVER captured or stored on our servers.</li>
+                <li><strong>Biometric Data:</strong> If your hostel utilizes hardware biometric terminals, MessPro processes mathematical cryptographic template hashes or user IDs only. Raw fingerprint images or facial photographs are NEVER captured or stored on MessPro cloud servers.</li>
               </ul>
             </section>
 
@@ -249,24 +250,24 @@ export const PrivacyPolicyPage: React.FC = () => {
                 <span>3. How We Use Information</span>
               </h2>
               <p>
-                Information is strictly used for core operational workflows:
+                Information is strictly processed to execute core software operations:
               </p>
               <ul className="list-disc pl-5 space-y-1.5">
-                <li>Validating dining hall access during active meal windows.</li>
-                <li>Preventing duplicate proxy scans and food resource wastage.</li>
-                <li>Calculating transparent, dispute-free monthly resident billing statements.</li>
-                <li>Dispatching maintenance personnel to resolve resident room complaints.</li>
-                <li>Providing emergency resident location registers to hostel wardens.</li>
+                <li>Validating dining hall access during active meal windows and preventing proxy scans.</li>
+                <li>Executing multi-tenant billing arithmetic and ledger balance updates.</li>
+                <li>Maintaining cybersecurity defensive barriers against attack serialization, replay tampering, and unauthorized access.</li>
+                <li>Routing maintenance complaints and tracking facility SLA resolution.</li>
+                <li>Providing audit-ready export files for institutional administrators.</li>
               </ul>
             </section>
 
             <section id="data-storage" className="rounded-3xl bg-card/40 dark:bg-neutral-900/40 border border-border/60 dark:border-white/10 p-6 sm:p-8 space-y-3">
               <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
                 <Server className="w-4 h-4 text-emerald-500" />
-                <span>4. Storage, Encryption & Security</span>
+                <span>4. Storage, Encryption & Multi-Tenant Security</span>
               </h2>
               <p>
-                All data is encrypted in transit using TLS 1.3 and at rest utilizing AES-256 industry-standard encryption algorithms. Passwords are salted and hashed with Argon2/Bcrypt. We implement role-based access control (RBAC) ensuring staff members only see information required for their specific job duties.
+                All data is encrypted in transit using TLS 1.3 and at rest utilizing AES-256 industry-standard encryption algorithms. Passwords are salted and hashed with Bcrypt. We enforce strict multi-tenant database isolation and role-based access control (RBAC) ensuring staff and students can only access records pertinent to their authorized tenant workspace.
               </p>
             </section>
 

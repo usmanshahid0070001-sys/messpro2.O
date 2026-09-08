@@ -24,7 +24,9 @@ import {
   Sliders,
   Layers,
   UserCheck,
-  Printer
+  Printer,
+  ShieldCheck,
+  Lock,
 } from 'lucide-react';
 import type { RootState } from '@/store';
 import logoUrl from '@/assets/pwa-192x192.png';
@@ -458,6 +460,54 @@ const DOCS_DATA: DocSection[] = [
       '1-click export to Excel (.xlsx) and CSV across all major tables',
       'Institutional-grade PDF receipts ready for accounting audits and parent billing',
       'Custom date range and status filtering before initiating data extraction'
+    ]
+  },
+  {
+    id: 'platform-security',
+    category: 'Security & Governance',
+    categoryIcon: <ShieldCheck className="w-4 h-4" />,
+    categoryColor: 'text-rose-500 bg-rose-500/10 border-rose-500/20',
+    title: 'Platform Cybersecurity, Anti-Abuse & Data Governance',
+    summary: 'Multi-tenant database isolation, dynamic QR token rotation, zero raw biometric storage, anti-abuse protocols, and onboarding EULA compliance.',
+    readTime: '6 min read',
+    roles: ['Superadmin', 'Admin', 'Manager', 'Student'],
+    steps: [
+      {
+        title: '1. Multi-Tenant Database Isolation',
+        description: 'Every hostel facility operates in a strictly scoped multi-tenant data sandbox. Resident ledgers, attendance records, and room inventories are partitioned at the database layer, ensuring no cross-tenant data leakage.',
+      },
+      {
+        title: '2. Dynamic QR Cryptographic Rotation & Anti-Replay Tokens',
+        description: 'Student dining QR codes regenerate with time-sensitive cryptographic hashes. Static screenshots or forwarded images are automatically rejected by gate scanners to eliminate proxy meal collection.',
+        tip: 'Gate scanners verify tokens in <300ms even when running in offline IndexedDB cached mode.'
+      },
+      {
+        title: '3. Biometric Gate Integration Privacy Standards',
+        description: 'MessPro integrates with terminal hardware using mathematical template hashes or user IDs. Raw fingerprint biometric images and facial scans are NEVER stored on or transmitted to MessPro cloud servers.',
+      },
+      {
+        title: '4. First-Time Login Onboarding & Credential Locking',
+        description: 'Upon first login, residents can update their email (with 6-digit OTP verification) and set a secure password (min 8 chars). After accepting the digital MessPro SaaS Agreement, self-modifications are permanently locked to preserve administrative audit integrity.',
+      },
+      {
+        title: '5. Strict Anti-Abuse & Cybersecurity Safeguards',
+        description: 'MessPro employs real-time rate limiters, anti-scraping defenses, and anomaly monitors. Any attempt at attack serialization, injection attacks, session tampering, or unauthorized vulnerability scanning triggers instant account suspension.',
+      }
+    ],
+    keyPoints: [
+      'Zero raw biometric data stored on cloud infrastructure',
+      'Anti-tamper cryptographic QR tokens prevent duplicate meal check-ins',
+      'Strict legal boundary: MessPro is the software technology provider, not the physical hostel operator'
+    ],
+    faqs: [
+      {
+        q: 'Can a student change their password after signing the agreement?',
+        a: 'No. To maintain audit integrity, once the agreement is signed, only hostel administrators or managers can reset student credentials.'
+      },
+      {
+        q: 'How does MessPro protect against attendance replay attacks?',
+        a: 'Each QR code contains a time-bounded cryptographic token validated against server clocks and duplicate scan detection algorithms.'
+      }
     ]
   },
   {
