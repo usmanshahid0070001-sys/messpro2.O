@@ -96,12 +96,3 @@ export const getHealthCheck = catchAsync(async (req, res) => {
   });
 });
 
-export const getSuperadminContactHandler = catchAsync(async (req, res) => {
-  const contact = await userService.getSuperadminContact();
-
-  res.status(200).json({
-    status: 'success',
-    success: true,
-    data: contact,
-  });
-});

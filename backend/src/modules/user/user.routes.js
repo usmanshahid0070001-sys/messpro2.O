@@ -6,15 +6,10 @@ import {
   createUser,
   signAgreementHandler,
   getHealthCheck,
-  getSuperadminContactHandler,
 } from './user.controller.js';
 import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
-
-// ─── Public Support Contact ───────────────────────────────────────────────────
-// Accessible publicly to get platform superadmin contact details (email, WhatsApp, phone)
-router.get('/support-contact', getSuperadminContactHandler);
 
 // All user routes below require a valid JWT session
 router.use(protect);

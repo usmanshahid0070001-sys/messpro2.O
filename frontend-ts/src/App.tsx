@@ -7,6 +7,7 @@ import { PublicRoute } from "./features/auth/components/PublicRoute";
 import { AuthSync } from "./features/auth/components/AuthSync";
 import { Toaster } from "@/components/ui/sonner";
 import { StorageWarningModal } from "@/components/StorageWarningModal";
+import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Route-based Code Splitting (Lazy-loaded per Section 8 of AGENTS.md)
@@ -37,6 +38,7 @@ const LandingPage = React.lazy(() => import("./features/landing/LandingPage"));
 
 const TermsPage = React.lazy(() => import("./features/legal/TermsPage"));
 const PrivacyPolicyPage = React.lazy(() => import("./features/legal/PrivacyPolicyPage"));
+const CookiePolicyPage = React.lazy(() => import("./features/legal/CookiePolicyPage"));
 const DocumentationPage = React.lazy(() => import("./features/docs/DocumentationPage"));
 
 
@@ -63,8 +65,9 @@ const App = () => {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-        <StorageWarningModal />
         <BrowserRouter>
+          <StorageWarningModal />
+          <CookieConsentBanner />
           <AuthSync>
             <Routes>
               {/* Landing & Informational Public Routes */}
@@ -83,6 +86,14 @@ const App = () => {
                 element={
                   <Suspense fallback={<div className="min-h-screen bg-background" />}>
                     <PrivacyPolicyPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/cookies"
+                element={
+                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                    <CookiePolicyPage />
                   </Suspense>
                 }
               />

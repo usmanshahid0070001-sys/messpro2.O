@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import Hostel from './hostel.model.js';
-import HostelRequest from './hostelRequest.model.js';
 import User from '../auth/auth.model.js';
 import PlainUser from '../auth/plainUser.model.js';
 import Plan from '../plan/plan.model.js';
@@ -187,51 +186,6 @@ class HostelRepository {
 
   async findDefaultPlan() {
     return await Plan.findOne();
-  }
-
-  // ── Hostel Onboarding Requests Operations ──────────────────────────────────
-  async createHostelRequest(data) {
-    return await HostelRequest.create(data);
-  }
-
-  async findHostelRequests({ filter = {}, sort = { createdAt: -1 }, skip = 0, limit = 0 } = {}) {
-    let query = HostelRequest.find(filter).populate('requestedPlan.planId', 'name price limits features').sort(sort);
-    if (skip > 0) query = query.skip(skip);
-    if (limit > 0) query = query.limit(limit);
-    return await query.lean();
-  }
-
-  async countHostelRequests(filter = {}) {
-    return await HostelRequest.countDocuments(filter);
-  }
-
-  async findHostelRequestById(id) {
-    if (!mongoose.Types.ObjectId.isValid(id)) return null;
-    return await HostelRequest.findById(id).populate('requestedPlan.planId', 'name price limits features');
-  }
-
-  async findPendingHostelRequestByEmail(email) {
-    if (!email || typeof email !== 'string') return null;
-    return await HostelRequest.findOne({
-      adminEmail: email.toLowerCase().trim(),
-      status: 'pending',
-    });
-  }
-
-  async findPendingHostelRequestBySubdomain(subdomain) {
-    if (!subdomain || typeof subdomain !== 'string') return null;
-    return await HostelRequest.findOne({
-      subdomain: subdomain.toLowerCase().trim(),
-      status: 'pending',
-    });
-  }
-
-  async updateHostelRequest(id, updateData) {
-    return await HostelRequest.findByIdAndUpdate(
-      id,
-      { $set: updateData },
-      { new: true, runValidators: true }
-    );
   }
 }
 

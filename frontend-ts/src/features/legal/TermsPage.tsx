@@ -376,6 +376,7 @@ export const TermsPage: React.FC = () => {
           <span>&copy; {new Date().getFullYear()} MessPro Technologies. All rights reserved.</span>
           <div className="flex items-center gap-4 text-[11px]">
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link to="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link>
             <Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link>
             <Link to="/" className="hover:text-foreground transition-colors">Landing Page</Link>
           </div>

@@ -10,7 +10,6 @@ import { HowItWorksSection } from './components/HowItWorksSection';
 import { FaqSection } from './components/FaqSection';
 import { CtaSection } from './components/CtaSection';
 import { Footer } from './components/Footer';
-import { SetupHostelModal } from './components/SetupHostelModal';
 import SupportUpgradeModal, { type SupportContextReason } from '@/components/SupportUpgradeModal';
 import type { SectionId } from './types';
 
@@ -95,15 +94,14 @@ const LANDING_STRUCTURED_DATA = {
 export const LandingPage: React.FC = () => {
   const location = useLocation();
   const [activeSection, setActiveSection] = useState<SectionId>('hero');
-  const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
-  const [selectedSetupPlan, setSelectedSetupPlan] = useState<string | undefined>(undefined);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
-  const [supportReason, setSupportReason] = useState<SupportContextReason>('general');
+  const [supportReason, setSupportReason] = useState<SupportContextReason>('setup');
   const [supportFeature, setSupportFeature] = useState<string | undefined>(undefined);
 
   const handleOpenSetup = (requestedPlan?: string) => {
-    setSelectedSetupPlan(requestedPlan);
-    setIsSetupModalOpen(true);
+    setSupportReason('setup');
+    setSupportFeature(requestedPlan);
+    setIsSupportModalOpen(true);
   };
 
   const handleOpenSupport = (reason: SupportContextReason = 'general', featName?: string) => {
@@ -231,17 +229,7 @@ export const LandingPage: React.FC = () => {
         onSupportClick={(reason) => handleOpenSupport(reason || 'general')}
       />
 
-      {/* Public Hostel Setup Modal */}
-      <SetupHostelModal
-        isOpen={isSetupModalOpen}
-        onClose={() => {
-          setIsSetupModalOpen(false);
-          setSelectedSetupPlan(undefined);
-        }}
-        initialPlan={selectedSetupPlan}
-      />
-
-      {/* Public Superadmin Support & Helpline Modal */}
+      {/* Public Support & Hostel Setup Modal */}
       <SupportUpgradeModal
         isOpen={isSupportModalOpen}
         onClose={() => setIsSupportModalOpen(false)}

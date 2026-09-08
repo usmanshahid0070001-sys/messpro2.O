@@ -1,5 +1,4 @@
 import express from 'express';
-import rateLimit from 'express-rate-limit';
 import {
   createHostel,
   getHostels,
@@ -8,36 +7,11 @@ import {
   addHostelUser,
   getMyHostel,
   updateMyHostelSettings,
-  submitHostelRequest,
-  getHostelRequests,
-  approveHostelRequest,
-  rejectHostelRequest,
   deleteHostel,
 } from './hostel.controller.js';
 import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
-
-// Strict Rate Limiter for public onboarding requests (max 5 requests per 15 minutes per IP)
-const setupRequestLimiter = rateLimit({
-  windowMs: 30 * 60 * 1000,
-  max: 2,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    status: 'fail',
-    message: 'Too many hostel setup requests from this IP address. Please try again after 30 minutes.',
-  },
-});
-
-// ─── Public Hostel Setup Request Route ────────────────────────────────────────
-router.post('/requests', setupRequestLimiter, submitHostelRequest);
-
-
-// ─── Superadmin Request Management Routes ─────────────────────────────────────
-router.get('/requests', protect, restrictTo('superadmin'), getHostelRequests);
-router.post('/requests/:id/approve', protect, restrictTo('superadmin'), approveHostelRequest);
-router.post('/requests/:id/reject', protect, restrictTo('superadmin'), rejectHostelRequest);
 
 // Tenant routes for current logged-in user's hostel
 router.get('/my-hostel', protect, restrictTo('admin', 'manager', 'student'), getMyHostel);

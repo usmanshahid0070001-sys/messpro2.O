@@ -188,6 +188,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSupportClick }) =>
                 </Link>
               </li>
               <li>
+                <Link to="/cookies" className="hover:text-foreground transition-colors flex items-center gap-1">
+                  <span>Cookie Policy</span>
+                  <ArrowUpRight className="w-2.5 h-2.5 opacity-60" />
+                </Link>
+              </li>
+              <li>
                 <Link to="/privacy#attendance-data" className="hover:text-foreground transition-colors">
                   Biometric & QR Data Security
                 </Link>
@@ -196,11 +202,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSupportClick }) =>
                 <Link to="/terms#saas-scope" className="hover:text-foreground transition-colors">
                   SLA & Availability
                 </Link>
-              </li>
-              <li>
-                <a href="mailto:privacy@messpro.io" className="hover:text-foreground transition-colors">
-                  DPA Requests
-                </a>
               </li>
             </ul>
           </div>

@@ -109,33 +109,12 @@ export interface HostelSetupRequest {
 }
 
 
-export const useGetHostelRequests = (params?: { status?: string; search?: string }, enabled = true) => {
+export const useGetHostelRequests = (_params?: { status?: string; search?: string }, _enabled = true) => {
   return useQuery<{ requests: HostelSetupRequest[]; total: number }>({
-    queryKey: ['superadmin', 'hostel-requests', params],
+    queryKey: ['superadmin', 'hostel-requests'],
     queryFn: async () => {
-      const response = await apiClient.get('/hostels/requests', { params });
-      const resData = response.data;
-      if (Array.isArray(resData?.data)) {
-        return {
-          requests: resData.data,
-          total: typeof resData.total === 'number' ? resData.total : resData.data.length,
-        };
-      }
-      if (Array.isArray(resData?.requests)) {
-        return {
-          requests: resData.requests,
-          total: typeof resData.total === 'number' ? resData.total : resData.requests.length,
-        };
-      }
-      if (Array.isArray(resData)) {
-        return {
-          requests: resData,
-          total: resData.length,
-        };
-      }
       return { requests: [], total: 0 };
     },
-    enabled,
-    staleTime: 1000 * 30, // 30 seconds
+    staleTime: Infinity,
   });
 };
