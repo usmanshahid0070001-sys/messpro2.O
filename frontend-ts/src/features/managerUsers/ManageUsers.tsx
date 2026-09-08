@@ -257,6 +257,7 @@ export default function ManageUsers() {
         onPageChange={setCurrentPage}
         onEditClick={openEditModal}
         customFieldConfigs={customFieldConfigs}
+        isSuperAdmin={currentRole === 'superadmin'}
       />
 
       {/* Add User Modal */}

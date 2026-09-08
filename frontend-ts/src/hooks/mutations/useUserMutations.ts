@@ -15,6 +15,7 @@ export interface CreateUserPayload {
 export interface UpdateUserPayload {
   name?: string;
   status?: 'Active' | 'Suspended';
+  password?: string;
   permissions?: string[];
   additionalInfo?: Array<{ key: string; value: any }>;
 }

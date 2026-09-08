@@ -9,6 +9,9 @@ import {
   logout,
   googleAuth,
   googleCallback,
+  sendEmailOtpHandler,
+  verifyEmailOtpHandler,
+  updateOnboardingPasswordHandler,
 } from './auth.controller.js';
 
 const router = express.Router();
@@ -27,5 +30,10 @@ router.get('/verify', verify);
 router.post('/logout', logout);
 router.get('/google', googleAuth);
 router.get('/google/callback', googleCallback);
+
+// ─── First-Time Onboarding (Active only before agreement is signed) ───────────
+router.post('/onboarding/send-email-otp', protect, sendEmailOtpHandler);
+router.post('/onboarding/verify-email-otp', protect, verifyEmailOtpHandler);
+router.post('/onboarding/update-password', protect, updateOnboardingPasswordHandler);
 
 export default router;

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from '../auth/auth.model.js';
 import PlainUser from '../auth/plainUser.model.js';
 import Bill from '../billing/bill.model.js';
@@ -7,10 +8,33 @@ import { cache } from '../../config/cache.js';
 
 class UserRepository {
   async findUsers(query = {}) {
-    return User.find(query)
+    const users = await User.find(query)
       .populate('room', 'roomName capacity status')
       .select('-password')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const hostelIds = [...new Set(users.map((u) => u.hostelId).filter(Boolean))];
+    if (hostelIds.length > 0) {
+      const validObjectIds = hostelIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+      const hostels = await Hostel.find({ _id: { $in: validObjectIds } }).select('name subdomain').lean();
+      const hostelMap = hostels.reduce((acc, h) => {
+        acc[h._id.toString()] = h.name;
+        return acc;
+      }, {});
+
+      return users.map((u) => ({
+        ...u,
+        hostelName: hostelMap[u.hostelId?.toString()] || '',
+      }));
+    }
+
+    return users;
+  }
+
+  async findPlainUserByEmail(email) {
+    if (!email || typeof email !== 'string') return null;
+    return PlainUser.findOne({ email: email.toLowerCase().trim() }).lean();
   }
 
   async findById(userId) {

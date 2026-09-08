@@ -61,10 +61,6 @@ class MealRecordRepository {
   }
 
   async findRecordsByDatesAndRolls(hostelId, dates, rollNumbers) {
-    const cleanRolls = (rollNumbers || []).map((r) => String(r).trim()).filter(Boolean);
-    const lowerRolls = cleanRolls.map((r) => r.toLowerCase());
-    const allRolls = [...new Set([...cleanRolls, ...lowerRolls])];
-
     const hostelIdStr = hostelId ? hostelId.toString() : '';
     const hostelQuery = mongoose.isValidObjectId(hostelIdStr)
       ? { $in: [hostelIdStr, new mongoose.Types.ObjectId(hostelIdStr)] }
@@ -73,7 +69,6 @@ class MealRecordRepository {
     return MealRecord.find({
       hostelId: hostelQuery,
       date: { $in: dates },
-      rollNumber: { $in: allRolls },
     }).lean();
   }
 
@@ -101,30 +96,32 @@ class MealRecordRepository {
         { id: { $in: lowerRolls } },
         ...(objectIdRolls.length > 0 ? [{ _id: { $in: objectIdRolls } }] : [])
       ]
-    }).select('_id id name hostelId role').lean();
+    }).select('_id id name hostelId role email').lean();
   }
 
   async findUsersByIdsList(rolls) {
     const cleanRolls = (rolls || []).map((r) => String(r).trim()).filter(Boolean);
     const lowerRolls = cleanRolls.map((r) => r.toLowerCase());
     const allRolls = [...new Set([...cleanRolls, ...lowerRolls])];
-    return User.find({ id: { $in: allRolls } }).select('_id id name hostelId role').lean();
+    return User.find({
+      $or: [
+        { id: { $in: allRolls } },
+        { email: { $in: lowerRolls } }
+      ]
+    }).select('_id id name hostelId role email').lean();
   }
 
   async findEnrolledStudents(hostelId, rollNumbers) {
-    const cleanRolls = (rollNumbers || []).map((r) => String(r).trim()).filter(Boolean);
-    const lowerRolls = cleanRolls.map((r) => r.toLowerCase());
-    const allRolls = [...new Set([...cleanRolls, ...lowerRolls])];
-
     const hostelIdStr = hostelId ? hostelId.toString() : '';
     const hostelQuery = mongoose.isValidObjectId(hostelIdStr)
       ? { $in: [hostelIdStr, new mongoose.Types.ObjectId(hostelIdStr)] }
       : hostelIdStr;
 
+    // Fetch all student users for this hostel to guarantee 100% case-insensitive JavaScript map matching
     return User.find({
-      id: { $in: allRolls },
       hostelId: hostelQuery,
-    }).select('_id id name hostelId role').lean();
+      role: 'student',
+    }).select('_id id name hostelId role email').lean();
   }
 
   async findStudentsByHostel(hostelId) {

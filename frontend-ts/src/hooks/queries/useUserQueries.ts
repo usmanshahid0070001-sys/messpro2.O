@@ -9,6 +9,7 @@ export interface ManageableUser {
   role: 'student' | 'manager' | 'admin' | 'superadmin';
   status?: 'Active' | 'Suspended';
   hostelId: string;
+  hostelName?: string;
   permissions: string[];
   additionalInfo?: Array<{ key: string; value: any }>;
   room?: {
@@ -31,5 +32,25 @@ export const useGetUsers = (enabled = true) => {
     queryKey: ['users'],
     queryFn: fetchUsers,
     enabled,
+  });
+};
+
+export const fetchUserPassword = async (userId: string) => {
+  const response = await apiClient.get(`/users/${userId}/password`);
+  return response.data.data as {
+    userId: string;
+    email: string;
+    name: string;
+    role: string;
+    password: string | null;
+  };
+};
+
+export const useGetUserPassword = (userId: string | null, enabled = false) => {
+  return useQuery({
+    queryKey: ['userPassword', userId],
+    queryFn: () => fetchUserPassword(userId!),
+    enabled: Boolean(userId) && enabled,
+    staleTime: 0,
   });
 };

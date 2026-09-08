@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getTargetedUsers,
+  getUserPassword,
   updateExistingUser,
   deleteExistingUser,
   createUser,
@@ -22,6 +23,7 @@ router.post('/sign-agreement', signAgreementHandler);
 
 // ─── User Management ──────────────────────────────────────────────────────────
 router.get('/', requirePermission('user_management'), getTargetedUsers);
+router.get('/:id/password', requirePermission('user_management'), getUserPassword);
 router.patch('/:id', requirePermission('user_management'), updateExistingUser);
 router.delete('/:id', requirePermission('user_management'), deleteExistingUser);
 router.post('/add', requirePermission('user_management'), createUser);

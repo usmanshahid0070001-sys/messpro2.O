@@ -7,13 +7,17 @@ import {
   UserCheck,
   ShieldCheck,
   Check,
-  Sparkles,
   Lock,
   Headphones,
   Settings,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Copy,
+  Sparkles,
 } from 'lucide-react'
 import { useUpdateUser } from '@/hooks/mutations/useUserMutations'
-import type { ManageableUser } from '@/hooks/queries/useUserQueries'
+import { fetchUserPassword, type ManageableUser } from '@/hooks/queries/useUserQueries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
@@ -160,6 +164,14 @@ export default function EditUserModal({
   const [customFields, setCustomFields] = useState<Record<string, string>>({})
   const [permissions, setPermissions] = useState<string[]>([])
 
+  // Password inspection and reset state
+  const [revealedPassword, setRevealedPassword] = useState<string | null>(null)
+  const [isFetchingPassword, setIsFetchingPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [copiedPassword, setCopiedPassword] = useState(false)
+
   // Support & Upgrade Modal state
   const [isSupportOpen, setIsSupportOpen] = useState(false)
   const [supportReason, setSupportReason] = useState<SupportContextReason>('upgrade')
@@ -212,6 +224,12 @@ export default function EditUserModal({
     if (isOpen && user) {
       setName(user.name)
       setPermissions(user.permissions || [])
+      setRevealedPassword(null)
+      setIsFetchingPassword(false)
+      setShowPassword(false)
+      setNewPassword('')
+      setShowNewPassword(false)
+      setCopiedPassword(false)
 
       const initFields: Record<string, string> = {}
       customFieldConfigs.forEach((config: any) => {
@@ -249,10 +267,39 @@ export default function EditUserModal({
     setIsSupportOpen(true)
   }
 
+  const handleFetchPassword = async () => {
+    if (!user) return
+    setIsFetchingPassword(true)
+    try {
+      const res = await fetchUserPassword(user._id)
+      setRevealedPassword(res.password)
+      setShowPassword(true)
+      if (!res.password) {
+        toast.info('No plain password record found for this account.')
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to retrieve password.')
+    } finally {
+      setIsFetchingPassword(false)
+    }
+  }
+
+  const handleCopyPassword = (pwd: string) => {
+    navigator.clipboard.writeText(pwd)
+    setCopiedPassword(true)
+    toast.success('Password copied to clipboard')
+    setTimeout(() => setCopiedPassword(false), 2000)
+  }
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
       toast.error('Name cannot be empty')
+      return
+    }
+
+    if (newPassword.trim() && newPassword.trim().length < 8) {
+      toast.error('New password must be at least 8 characters long')
       return
     }
 
@@ -295,6 +342,10 @@ export default function EditUserModal({
     const payload: any = {
       name: name.trim(),
       additionalInfo: additionalInfoPayload,
+    }
+
+    if (newPassword.trim()) {
+      payload.password = newPassword.trim()
     }
 
     if (isAdmin && (user.role === 'manager' || user.role === 'student')) {
@@ -385,6 +436,111 @@ export default function EditUserModal({
                 />
               </div>
             )}
+          </div>
+
+          {/* Account Password & Security Section */}
+          <div className="space-y-3 pt-2 border-t border-border/60">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-amber-500" /> Account Password & Security
+              </span>
+              {revealedPassword === null ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFetchPassword}
+                  disabled={isFetchingPassword}
+                  className="h-7 px-2.5 text-[11px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20 cursor-pointer rounded-lg gap-1.5"
+                >
+                  {isFetchingPassword ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Checking Password...</span>
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="w-3 h-3" />
+                      <span>Check Password</span>
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  <span>{showPassword ? 'Hide Password' : 'Show Password'}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Revealed Password Card */}
+            {revealedPassword !== null && (
+              <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-1.5 animate-in fade-in-50">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-muted-foreground">Current Account Password</span>
+                  {revealedPassword && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopyPassword(revealedPassword)}
+                      className="text-[11px] font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedPassword ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-500" />
+                          <span className="text-emerald-500">Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-xs font-bold text-foreground bg-background px-2.5 py-1 rounded-lg border border-border flex-1 select-all">
+                    {revealedPassword
+                      ? showPassword
+                        ? revealedPassword
+                        : '••••••••••••'
+                      : 'No plain password recorded'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Reset Password Input */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                <span>Reset / Change Password</span>
+                <span className="text-[10px] font-normal text-muted-foreground">Optional (min 8 chars)</span>
+              </label>
+              <div className="relative">
+                <Input
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Leave blank to keep existing password"
+                  className="h-9 text-xs font-mono pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  title={showNewPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Only updates if filled. Minimum 8 characters standard security protocol.
+              </p>
+            </div>
           </div>
 
           {/* Dynamic Custom Registration Fields */}

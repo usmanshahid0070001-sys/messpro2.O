@@ -17,6 +17,8 @@ export interface PlanFeatureConfig {
 export interface UpdateHostelSettingsPayload {
   subdomain?: string;
   location?: string;
+  password?: string;
+  adminPassword?: string;
   customRegistrationFields?: CustomRegistrationField[];
   'plan.features'?: PlanFeatureConfig[];
   planFeatures?: PlanFeatureConfig[];

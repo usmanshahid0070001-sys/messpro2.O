@@ -22,6 +22,8 @@ export interface UpdateHostelSettingsPayload {
     additionalDays?: number;
     subdomain?: string;
     location?: string;
+    password?: string;
+    adminPassword?: string;
     status?: 'Active' | 'Trial' | 'Suspended' | 'Expired';
     settings?: {
       authMethod?: 'Email' | 'RollNumber';

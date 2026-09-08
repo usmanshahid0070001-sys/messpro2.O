@@ -14,6 +14,9 @@ import {
   ChevronDown,
   LocateFixed,
   ExternalLink,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import { useUpdateHostelSettings } from '@/hooks/mutations/useSuperadminMutations'
 import { useGetPlans, type HostelTenant } from '@/hooks/queries/useSuperadminQueries'
@@ -53,6 +56,8 @@ export default function HostelSettingsModal({
   const [qrSecret, setQrSecret] = useState<string>('')
   const [isLocating, setIsLocating] = useState<boolean>(false)
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
+  const [adminPassword, setAdminPassword] = useState<string>('')
+  const [showPassword, setShowPassword] = useState<boolean>(false)
 
   const { data: plans = [] } = useGetPlans(isOpen)
   const { mutateAsync: updateSettings, isPending: isSaving } = useUpdateHostelSettings()
@@ -75,6 +80,8 @@ export default function HostelSettingsModal({
       setLng(hostel.locationCoords?.lng !== undefined ? String(hostel.locationCoords.lng) : '')
       setQrSecret(hostel.qrSecret || '')
       setGpsAccuracy(null)
+      setAdminPassword('')
+      setShowPassword(false)
     }
   }, [hostel, isOpen])
 
@@ -129,6 +136,11 @@ export default function HostelSettingsModal({
 
   const handleSave = async () => {
     try {
+      if (adminPassword.trim() && adminPassword.trim().length < 8) {
+        toast.error('Admin password must be at least 8 characters long')
+        return
+      }
+
       const parsedLat = lat.trim() ? parseFloat(lat) : undefined
       const parsedLng = lng.trim() ? parseFloat(lng) : undefined
 
@@ -140,6 +152,8 @@ export default function HostelSettingsModal({
           additionalDays: !isNaN(numDays) && numDays >= 0 ? numDays : 0,
           location: location.trim() || undefined,
           subdomain: subdomain.trim() || undefined,
+          password: adminPassword.trim() ? adminPassword.trim() : undefined,
+          adminPassword: adminPassword.trim() ? adminPassword.trim() : undefined,
           settings: {
             autoMealVerification,
             maxMealSelection: Number(maxMealSelection) || 4,
@@ -329,6 +343,40 @@ export default function HostelSettingsModal({
                 placeholder="e.g. al-razi or @student.uet.edu.pk"
                 className="text-xs font-mono"
               />
+            </div>
+          </div>
+
+          {/* Admin Account Password Security */}
+          <div className="space-y-3 pt-2 border-t border-border/60">
+            <h3 className="font-bold text-foreground flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5 text-amber-500" /> Admin Account Password
+            </h3>
+
+            <div className="space-y-1.5">
+              <label className="font-semibold text-foreground flex items-center justify-between">
+                <span>Change Administrator Password</span>
+                <span className="text-[10px] font-normal text-muted-foreground">Optional (min 8 chars)</span>
+              </label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Leave blank to keep existing password"
+                  className="text-xs font-mono pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Only updates if filled. Minimum 8 characters with standard hashing protocol.
+              </p>
             </div>
           </div>
 

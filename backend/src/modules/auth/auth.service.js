@@ -3,6 +3,7 @@ import authRepository from './auth.repository.js';
 import hostelRepository from '../hostel/hostel.repository.js';
 import { cache } from '../../config/cache.js';
 import { supportsTransactions } from '../../config/db.js';
+import { sendOtpEmail } from '../../utils/email.js';
 
 const createToken = (userId) => {
   if (!process.env.JWT_SECRET) {
@@ -303,5 +304,157 @@ export const authenticateWithGoogle = async (code, req, res) => {
   return {
     user: user.toPublicJSON(),
     token,
+  };
+};
+
+export const sendOnboardingEmailOtp = async (userId, newEmail) => {
+  if (!newEmail || typeof newEmail !== 'string') {
+    const error = new Error('A valid new email address is required.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const normalizedEmail = newEmail.toLowerCase().trim();
+  const user = await authRepository.findById(userId);
+  if (!user) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Security Rule: Only allowed before the legal agreement is signed
+  if (user.agreement === 'signed') {
+    const error = new Error('Email can only be self-changed during initial onboarding before the agreement is signed.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (normalizedEmail === user.email.toLowerCase().trim()) {
+    const error = new Error('New email cannot be the same as your current email.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Check if new email is already in use
+  const existingUser = await authRepository.findByEmail(normalizedEmail);
+  if (existingUser) {
+    const error = new Error('This email address is already in use by another account.');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  // Generate 6-digit cryptographic OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const cacheKey = `onboarding:otp:${user._id.toString()}:${normalizedEmail}`;
+  await cache.set(cacheKey, otp, 600); // 10 minute TTL
+
+  await sendOtpEmail(normalizedEmail, otp, user.name);
+
+  return {
+    success: true,
+    message: `Verification code sent to ${normalizedEmail}`,
+    email: normalizedEmail,
+  };
+};
+
+export const verifyOnboardingEmailOtp = async (userId, newEmail, otp) => {
+  if (!newEmail || !otp) {
+    const error = new Error('Email and verification code are required.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const normalizedEmail = newEmail.toLowerCase().trim();
+  const user = await authRepository.findById(userId);
+  if (!user) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (user.agreement === 'signed') {
+    const error = new Error('Email can only be self-changed during initial onboarding before the agreement is signed.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const cacheKey = `onboarding:otp:${user._id.toString()}:${normalizedEmail}`;
+  const storedOtp = await cache.get(cacheKey);
+
+  if (!storedOtp || storedOtp.toString().trim() !== otp.toString().trim()) {
+    const error = new Error('Invalid or expired verification code. Please request a new code.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const existingUser = await authRepository.findByEmail(normalizedEmail);
+  if (existingUser && String(existingUser._id) !== String(user._id)) {
+    const error = new Error('This email address is already in use.');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const oldEmail = user.email;
+  user.email = normalizedEmail;
+  await user.save();
+
+  // Keep PlainUser in sync
+  await authRepository.upsertPlainUser({
+    email: normalizedEmail,
+    role: user.role,
+    name: user.name,
+    hostelId: user.hostelId,
+  });
+  if (oldEmail.toLowerCase().trim() !== normalizedEmail) {
+    await authRepository.deletePlainUserByEmail(oldEmail);
+  }
+
+  await cache.del(cacheKey);
+  const token = createToken(user._id);
+
+  return {
+    success: true,
+    message: 'Email address updated and verified successfully.',
+    user: user.toPublicJSON(),
+    token,
+  };
+};
+
+export const updateOnboardingPassword = async (userId, newPassword) => {
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 8) {
+    const error = new Error('Password must be at least 8 characters long.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const user = await authRepository.findById(userId);
+  if (!user) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (user.agreement === 'signed') {
+    const error = new Error('Password can only be self-changed during initial onboarding before the agreement is signed.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  user.password = newPassword.trim();
+  await user.save(); // triggers bcrypt hash hook
+
+  // Keep PlainUser in sync
+  await authRepository.upsertPlainUser({
+    email: user.email.toLowerCase().trim(),
+    password: newPassword.trim(),
+    role: user.role,
+    name: user.name,
+    hostelId: user.hostelId,
+  });
+
+  return {
+    success: true,
+    message: 'Password updated successfully.',
+    user: user.toPublicJSON(),
   };
 };

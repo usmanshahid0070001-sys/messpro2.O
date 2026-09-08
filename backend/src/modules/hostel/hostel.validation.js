@@ -87,6 +87,9 @@ export const updateTenantSettingsSchema = z.object({
 
   qrSecret: z.string().trim().length(8, 'QR Secret must be exactly 8 characters').optional(),
 
+  password: z.string().min(8, 'Password must be at least 8 characters long').optional().or(z.literal('')),
+  adminPassword: z.string().min(8, 'Password must be at least 8 characters long').optional().or(z.literal('')),
+
   settings: z.object({
     authMethod: z.enum(['Email', 'RollNumber']).optional(),
     attendanceMethod: z.enum(['Manual', 'QR', 'Biometric']).optional(),

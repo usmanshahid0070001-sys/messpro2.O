@@ -29,6 +29,8 @@ import {
   LocateFixed,
   ExternalLink,
   Loader2,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import type { RootState } from '@/store'
 import { useGetMyHostel } from '@/hooks/queries/useHostelQueries'
@@ -284,6 +286,8 @@ export default function HostelConfiguration() {
   const [lng, setLng] = useState('')
   const [isLocating, setIsLocating] = useState(false)
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   // Seed from server data
   useEffect(() => {
@@ -294,6 +298,8 @@ export default function HostelConfiguration() {
     setLat(hostel.locationCoords?.lat !== undefined ? String(hostel.locationCoords.lat) : '')
     setLng(hostel.locationCoords?.lng !== undefined ? String(hostel.locationCoords.lng) : '')
     setGpsAccuracy(null)
+    setPassword('')
+    setShowPassword(false)
     setCustomFields(
       (hostel.customRegistrationFields || []).map((f: any) => ({
         name: f.name || '',
@@ -381,6 +387,7 @@ export default function HostelConfiguration() {
   // Dirty tracking
   const hasChanges = useMemo(() => {
     if (!hostel) return false
+    if (password.trim().length > 0) return true
     if (subdomain !== (hostel.subdomain || '')) return true
     if (location !== (hostel.location || 'Asia/Karachi')) return true
     if (autoMealVerification !== (hostel.settings?.autoMealVerification ?? true)) return true
@@ -399,7 +406,7 @@ export default function HostelConfiguration() {
       isEnabled: isCore(f.name) ? true : Boolean(f.isEnabled),
     }))
     return JSON.stringify(features) !== JSON.stringify(initFeats)
-  }, [subdomain, location, autoMealVerification, lat, lng, customFields, features, hostel])
+  }, [password, subdomain, location, autoMealVerification, lat, lng, customFields, features, hostel])
 
   // Custom field handlers
   const addField = () => {
@@ -422,6 +429,8 @@ export default function HostelConfiguration() {
 
   const handleDiscard = () => {
     if (!hostel) return
+    setPassword('')
+    setShowPassword(false)
     setSubdomain(hostel.subdomain || '')
     setLocation(hostel.location || 'Asia/Karachi')
     setAutoMeal(hostel.settings?.autoMealVerification ?? true)
@@ -444,6 +453,11 @@ export default function HostelConfiguration() {
   }
 
   const handleSave = () => {
+    if (password.trim() && password.trim().length < 8) {
+      toast.error('Admin password must be at least 8 characters long')
+      return
+    }
+
     for (let i = 0; i < customFields.length; i++) {
       if (!customFields[i].name.trim()) {
         toast.error(`Custom registration field #${i + 1} requires a valid name`)
@@ -468,23 +482,32 @@ export default function HostelConfiguration() {
     const parsedLat = lat.trim() ? parseFloat(lat) : undefined
     const parsedLng = lng.trim() ? parseFloat(lng) : undefined
 
-    mutation.mutate({
-      subdomain: sub.toLowerCase(),
-      location: location.trim(),
-      locationCoords:
-        parsedLat !== undefined && parsedLng !== undefined
-          ? { lat: parsedLat, lng: parsedLng }
-          : undefined,
-      customRegistrationFields: customFields.map((f) => ({
-        name: f.name.trim(),
-        isRequired: f.isRequired,
-      })),
-      planFeatures: features.map((f) => ({
-        name: f.name,
-        isEnabled: isCore(f.name) ? true : f.isEnabled,
-      })),
-      settings: { autoMealVerification },
-    })
+    mutation.mutate(
+      {
+        subdomain: sub.toLowerCase(),
+        location: location.trim(),
+        locationCoords:
+          parsedLat !== undefined && parsedLng !== undefined
+            ? { lat: parsedLat, lng: parsedLng }
+            : undefined,
+        password: password.trim() ? password.trim() : undefined,
+        customRegistrationFields: customFields.map((f) => ({
+          name: f.name.trim(),
+          isRequired: f.isRequired,
+        })),
+        planFeatures: features.map((f) => ({
+          name: f.name,
+          isEnabled: isCore(f.name) ? true : f.isEnabled,
+        })),
+        settings: { autoMealVerification },
+      },
+      {
+        onSuccess: () => {
+          setPassword('')
+          setShowPassword(false)
+        },
+      }
+    )
   }
 
   const handleCopyQrSecret = () => {
@@ -761,38 +784,83 @@ export default function HostelConfiguration() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── 4. Mess & Counter Terminal Automations ── */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <Utensils className="h-5 w-5" />
+        {/* Admin Account Password Security */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              <Lock className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Change Admin Password</h3>
+              <p className="text-xs text-muted-foreground">
+                Update the primary administrator credentials for this hostel.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-foreground">Dining & Terminal Automations</h3>
-            <p className="text-xs text-muted-foreground">
-              Configure counter POS behavior and automated meal validation rules.
-            </p>
+
+          <div className="space-y-2 pt-1">
+            <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+              <span>New Password</span>
+              <span className="text-[11px] font-normal text-muted-foreground">Optional (min 8 chars)</span>
+            </label>
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Leave blank to keep existing password"
+                className="font-mono text-xs h-9 pr-9"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-2">
+              <Info className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                Leave blank to keep existing password. If entered, must meet standard security protocol (min 8 characters).
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="pt-2 divide-y divide-border/60">
-          <div className="flex items-center justify-between py-3">
-            <div className="space-y-0.5 pr-4">
-              <span className="text-xs font-bold text-foreground block">
-                Instant Auto-Verification on QR Token Scan
-              </span>
-              <p className="text-[11px] text-muted-foreground">
-                When enabled, scanned student QR tokens at dining hall counters immediately mark meals
-                as served without requiring secondary manager confirmation.
+        {/* Mess & Counter Terminal Automations */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <Utensils className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Dining & Terminal Automations</h3>
+              <p className="text-xs text-muted-foreground">
+                Configure counter POS behavior and automated meal validation rules.
               </p>
             </div>
-            <Switch
-              checked={autoMealVerification}
-              onCheckedChange={setAutoMeal}
-              className="cursor-pointer shrink-0"
-            />
+          </div>
+
+          <div className="pt-2 divide-y divide-border/60">
+            <div className="flex items-center justify-between py-3">
+              <div className="space-y-0.5 pr-4">
+                <span className="text-xs font-bold text-foreground block">
+                  Instant Auto-Verification on QR Scan
+                </span>
+                <p className="text-[11px] text-muted-foreground">
+                  When enabled, scanned student QR tokens at dining counters immediately mark meals
+                  as served without requiring secondary confirmation.
+                </p>
+              </div>
+              <Switch
+                checked={autoMealVerification}
+                onCheckedChange={setAutoMeal}
+                className="cursor-pointer shrink-0"
+              />
+            </div>
           </div>
         </div>
       </div>

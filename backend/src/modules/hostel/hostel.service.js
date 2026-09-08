@@ -258,6 +258,12 @@ class HostelService {
     const updatedHostel = await hostelRepository.updateHostel(hostelId, updatePayload);
     await cache.del(`hostel:config:${hostelId}`);
 
+    // Update admin password if provided (min 8 chars)
+    const superadminNewPassword = (validatedData.adminPassword || validatedData.password)?.trim();
+    if (superadminNewPassword && superadminNewPassword.length >= 8) {
+      await hostelRepository.updateAdminPassword(hostelId, superadminNewPassword);
+    }
+
     // Sync admin permissions if features changed
     const finalFeatures = updatedHostel?.plan?.features;
     if (finalFeatures) {
@@ -409,6 +415,12 @@ class HostelService {
 
     const updatedHostel = await hostelRepository.updateHostel(hostelId, updatePayload);
     await cache.del(`hostel:config:${hostelId}`);
+
+    // Update admin password if provided (min 8 chars)
+    const tenantNewPassword = (newSettingsData.password || newSettingsData.adminPassword)?.trim();
+    if (tenantNewPassword && tenantNewPassword.length >= 8) {
+      await hostelRepository.updateAdminPassword(hostelId, tenantNewPassword);
+    }
 
     if (updatedHostel?.plan?.features) {
       await this._syncAdminPermissions(hostelId, updatedHostel.plan.features);

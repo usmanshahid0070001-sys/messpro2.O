@@ -14,9 +14,10 @@ const additionalInfoItemSchema = z.object({
 export const updateUserSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters.').max(100, 'Name cannot exceed 100 characters.').optional(),
   status: z.enum(['Active', 'Suspended']).optional(),
+  password: z.string().min(8, 'Password must be at least 8 characters long.').optional().or(z.literal('')),
   additionalInfo: z.array(additionalInfoItemSchema).optional(),
   permissions: z.array(z.string().trim().min(1)).max(50).optional(),
-}).strict(); // .strict() drops any unlisted fields, keeping you 100% secure!
+}).strict();
 
 export const addUserSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters.').max(100, 'Name cannot exceed 100 characters.'),

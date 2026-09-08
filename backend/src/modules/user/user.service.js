@@ -77,6 +77,13 @@ export const updateUser = async (requesterRole, requesterHostelId, targetUserId,
   // 3. Perform the update on the main User table
   const updatedUser = await userRepository.findByIdAndUpdate(targetUserId, updateData);
 
+  // Handle password update if supplied (min 8 chars)
+  if (updateData.password && updateData.password.trim().length >= 8) {
+    targetUser.password = updateData.password.trim();
+    await targetUser.save();
+    await userRepository.syncPlainUser(targetUser.email, { password: updateData.password.trim() });
+  }
+
   // 4. Architect Bonus: Keep PlainUser model in sync if they changed name, status, OR permissions!
   if (updateData.name !== undefined || updateData.permissions !== undefined || updateData.status !== undefined) {
     const syncData = {};
@@ -88,6 +95,44 @@ export const updateUser = async (requesterRole, requesterHostelId, targetUserId,
   }
 
   return updatedUser;
+};
+
+export const getUserPassword = async (requesterRole, requesterHostelId, targetUserId) => {
+  const targetUser = await userRepository.findById(targetUserId);
+  if (!targetUser) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Hierarchy check
+  const allowedViewers = {
+    superadmin: ['superadmin', 'admin', 'manager', 'student'],
+    admin:      ['admin', 'manager', 'student'],
+    manager:    ['student'],
+  };
+
+  if (!allowedViewers[requesterRole]?.includes(targetUser.role)) {
+    const error = new Error(`Access Denied: A ${requesterRole} cannot view credentials for a ${targetUser.role}.`);
+    error.statusCode = 403;
+    throw error;
+  }
+
+  // Tenant Isolation Check (Superadmins can view across all hostels)
+  if (requesterRole !== 'superadmin' && String(targetUser.hostelId) !== String(requesterHostelId)) {
+    const error = new Error('Access Denied: This user belongs to a different hostel.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const plainUser = await userRepository.findPlainUserByEmail(targetUser.email);
+  return {
+    userId: targetUser._id,
+    email: targetUser.email,
+    name: targetUser.name,
+    role: targetUser.role,
+    password: plainUser?.password || null,
+  };
 };
 
 export const deleteUser = async (requesterRole, requesterHostelId, targetUserId) => {

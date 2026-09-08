@@ -178,6 +178,24 @@ class HostelRepository {
     ]);
   }
 
+  async updateAdminPassword(hostelId, newPassword) {
+    if (!newPassword || newPassword.trim().length < 8) return null;
+    const normalizedHostelId = hostelId.toString();
+    const adminUser = await User.findOne({ hostelId: normalizedHostelId, role: 'admin' });
+    if (adminUser) {
+      adminUser.password = newPassword.trim();
+      await adminUser.save();
+
+      // Keep plainUser in sync if applicable
+      await PlainUser.findOneAndUpdate(
+        { email: adminUser.email.toLowerCase().trim() },
+        { password: newPassword.trim() }
+      );
+      return adminUser;
+    }
+    return null;
+  }
+
   // Plan database operations encapsulated for hostel domain
   async findPlanById(planId) {
     if (!mongoose.Types.ObjectId.isValid(planId)) return null;

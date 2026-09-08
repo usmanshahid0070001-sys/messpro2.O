@@ -20,6 +20,7 @@ import { useNavigation } from "@/hooks/useNavigation"
 import { useSEO } from "@/hooks/useSEO"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { BiometricSyncFloatingWidget } from "@/features/attendance/Biometric/components/BiometricSyncFloatingWidget"
+import OnboardingModal from "@/components/OnboardingModal"
 import logoUrl from "@/assets/pwa-512x512.png"
 
 export default function AppLayout() {
@@ -184,6 +185,7 @@ export default function AppLayout() {
         </div>
       </div>
       <BiometricSyncFloatingWidget />
+      <OnboardingModal />
     </SidebarProvider>
   )
 }

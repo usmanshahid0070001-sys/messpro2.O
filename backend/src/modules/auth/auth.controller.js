@@ -8,6 +8,9 @@ import {
   logoutUser,
   buildGoogleAuthUrl,
   authenticateWithGoogle,
+  sendOnboardingEmailOtp,
+  verifyOnboardingEmailOtp,
+  updateOnboardingPassword,
 } from './auth.service.js';
 
 const createAuthCookieOptions = () => ({
@@ -101,4 +104,39 @@ export const googleCallback = catchAsync(async (req, res) => {
     const errorMsg = authError.message || 'Google authentication failed.';
     res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorMsg)}`);
   }
+});
+
+export const sendEmailOtpHandler = catchAsync(async (req, res) => {
+  const { newEmail } = req.body;
+  const result = await sendOnboardingEmailOtp(req.user._id, newEmail);
+
+  res.status(200).json({
+    status: 'success',
+    success: true,
+    data: result,
+  });
+});
+
+export const verifyEmailOtpHandler = catchAsync(async (req, res) => {
+  const { newEmail, otp } = req.body;
+  const result = await verifyOnboardingEmailOtp(req.user._id, newEmail, otp);
+
+  res.cookie('token', result.token, createAuthCookieOptions());
+
+  res.status(200).json({
+    status: 'success',
+    success: true,
+    data: result,
+  });
+});
+
+export const updateOnboardingPasswordHandler = catchAsync(async (req, res) => {
+  const { newPassword } = req.body;
+  const result = await updateOnboardingPassword(req.user._id, newPassword);
+
+  res.status(200).json({
+    status: 'success',
+    success: true,
+    data: result,
+  });
 });

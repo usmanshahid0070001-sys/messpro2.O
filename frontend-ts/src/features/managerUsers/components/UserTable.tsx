@@ -15,6 +15,7 @@ import {
   Settings2,
   MoreHorizontal,
   MoreVertical,
+  Building2,
 } from 'lucide-react'
 import type { ManageableUser } from '@/hooks/queries/useUserQueries'
 import { useUpdateUser, useDeleteUser } from '@/hooks/mutations/useUserMutations'
@@ -43,6 +44,7 @@ interface UserTableProps {
   onPageChange: (page: number) => void
   onEditClick: (user: ManageableUser) => void
   customFieldConfigs: CustomFieldConfig[]
+  isSuperAdmin?: boolean
 }
 
 /**
@@ -94,6 +96,7 @@ export default function UserTable({
   onPageChange,
   onEditClick,
   customFieldConfigs,
+  isSuperAdmin = false,
 }: UserTableProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [inputPage, setInputPage] = useState<string>(String(currentPage))
@@ -123,30 +126,27 @@ export default function UserTable({
   }
 
   const handleToggleStatus = async (user: ManageableUser) => {
-    const isCurrentlySuspended = user.status === 'Suspended'
-    const nextStatus = isCurrentlySuspended ? 'Active' : 'Suspended'
+    const newStatus = user.status === 'Suspended' ? 'Active' : 'Suspended'
     try {
-      await updateUser({ id: user._id, payload: { status: nextStatus } })
-      toast.success(
-        isCurrentlySuspended
-          ? `${user.name}'s account has been reactivated.`
-          : `${user.name}'s account has been suspended.`
-      )
+      await updateUser({
+        id: user._id,
+        payload: { status: newStatus },
+      })
     } catch {
-      // Toast handled by mutation
+      // Error handled by mutation hook toast
     }
   }
 
   const handleDelete = async (user: ManageableUser) => {
     const confirmed = window.confirm(
-      `Are you sure you want to permanently delete ${user.name} (${user.role})?\n\nNOTE: If this user has unpaid bills or pending dues, deletion will be rejected until dues are settled.`
+      `Are you sure you want to delete ${user.name} (${user.role})? This action cannot be undone.`
     )
     if (!confirmed) return
 
     try {
       await deleteUser(user._id)
     } catch {
-      // Toast handled by mutation
+      // Error handled by mutation hook toast
     }
   }
 
@@ -175,12 +175,18 @@ export default function UserTable({
             <tr className="border-b border-border bg-muted/30 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               <th className="px-5 py-3.5">Member</th>
               <th className="px-5 py-3.5">Role</th>
-              <th className="px-5 py-3.5">Roll / ID</th>
-              {/* Dynamic custom field headers */}
-              {customFieldConfigs.slice(0, 2).map((config: any) => (
-                <th key={config.name} className="px-5 py-3.5">{config.name}</th>
-              ))}
-              <th className="px-5 py-3.5">Room Allotment</th>
+              {isSuperAdmin ? (
+                <th className="px-5 py-3.5">Hostel</th>
+              ) : (
+                <>
+                  <th className="px-5 py-3.5">Roll / ID</th>
+                  {/* Dynamic custom field headers */}
+                  {customFieldConfigs.slice(0, 2).map((config: any) => (
+                    <th key={config.name} className="px-5 py-3.5">{config.name}</th>
+                  ))}
+                  <th className="px-5 py-3.5">Room Allotment</th>
+                </>
+              )}
               <th className="px-5 py-3.5 text-right w-16">Actions</th>
             </tr>
           </thead>
@@ -252,50 +258,71 @@ export default function UserTable({
                     </div>
                   </td>
 
-                  {/* Roll Number */}
-                  <td className="px-5 py-3.5 font-mono text-xs text-foreground">
-                    {user.role === 'student' ? (
-                      user.id ? (
-                        <span className="px-2 py-0.5 rounded-md bg-muted/60 border border-border/60">
-                          {user.id}
+                  {/* Superadmin View: Hostel Column vs Regular View: Roll / Custom / Room */}
+                  {isSuperAdmin ? (
+                    <td className="px-5 py-3.5">
+                      {user.hostelName ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                          <Building2 className="h-3.5 w-3.5 shrink-0" />
+                          <span>{user.hostelName}</span>
+                        </span>
+                      ) : user.hostelId ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-muted/60 text-muted-foreground border border-border">
+                          <Building2 className="h-3.5 w-3.5 shrink-0" />
+                          <span>Hostel #{user.hostelId.slice(-6)}</span>
                         </span>
                       ) : (
                         <span className="text-muted-foreground/60">—</span>
-                      )
-                    ) : (
-                      <span className="text-muted-foreground/60">—</span>
-                    )}
-                  </td>
-
-                  {/* Custom fields */}
-                  {customFieldConfigs.slice(0, 2).map((config: any) => {
-                    const field = (user.additionalInfo || []).find((f: any) => f.key === config.name)
-                    return (
-                      <td key={config.name} className="px-5 py-3.5 text-xs font-medium text-foreground">
-                        {field?.value ? (
-                          <span className="truncate block max-w-[140px]">{field.value}</span>
+                      )}
+                    </td>
+                  ) : (
+                    <>
+                      {/* Roll Number */}
+                      <td className="px-5 py-3.5 font-mono text-xs text-foreground">
+                        {user.role === 'student' ? (
+                          user.id ? (
+                            <span className="px-2 py-0.5 rounded-md bg-muted/60 border border-border/60">
+                              {user.id}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/60">—</span>
+                          )
                         ) : (
                           <span className="text-muted-foreground/60">—</span>
                         )}
                       </td>
-                    )
-                  })}
 
-                  {/* Room Allotment */}
-                  <td className="px-5 py-3.5">
-                    {user.role === 'student' || user.role === 'manager' ? (
-                      user.room ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
-                          <BedDouble className="h-3 w-3" />
-                          <span>{user.room.roomName}</span>
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/70 italic">Unassigned</span>
-                      )
-                    ) : (
-                      <span className="text-muted-foreground/60">—</span>
-                    )}
-                  </td>
+                      {/* Custom fields */}
+                      {customFieldConfigs.slice(0, 2).map((config: any) => {
+                        const field = (user.additionalInfo || []).find((f: any) => f.key === config.name)
+                        return (
+                          <td key={config.name} className="px-5 py-3.5 text-xs font-medium text-foreground">
+                            {field?.value ? (
+                              <span className="truncate block max-w-[140px]">{field.value}</span>
+                            ) : (
+                              <span className="text-muted-foreground/60">—</span>
+                            )}
+                          </td>
+                        )
+                      })}
+
+                      {/* Room Allotment */}
+                      <td className="px-5 py-3.5">
+                        {user.role === 'student' || user.role === 'manager' ? (
+                          user.room ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+                              <BedDouble className="h-3 w-3" />
+                              <span>{user.room.roomName}</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/70 italic">Unassigned</span>
+                          )
+                        ) : (
+                          <span className="text-muted-foreground/60">—</span>
+                        )}
+                      </td>
+                    </>
+                  )}
 
                   {/* Space-Friendly Action Menu */}
                   <td className="px-5 py-3.5 text-right">
@@ -459,18 +486,28 @@ export default function UserTable({
               </div>
 
               {/* Specs row */}
-              <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-2.5 rounded-xl border border-border/40">
-                <div>
-                  <span className="text-[10px] text-muted-foreground uppercase block font-semibold">Roll Number</span>
-                  <span className="font-mono text-foreground font-medium">{user.id || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-muted-foreground uppercase block font-semibold">Room Allotment</span>
-                  <span className="text-foreground font-medium">
-                    {user.room ? user.room.roomName : 'Unassigned'}
+              {isSuperAdmin ? (
+                <div className="text-xs bg-muted/40 p-2.5 rounded-xl border border-border/40 flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground uppercase font-semibold">Hostel</span>
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-blue-600 dark:text-blue-400 text-xs">
+                    <Building2 className="h-3.5 w-3.5" />
+                    {user.hostelName || (user.hostelId ? `Hostel #${user.hostelId.slice(-6)}` : '—')}
                   </span>
                 </div>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-2.5 rounded-xl border border-border/40">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase block font-semibold">Roll Number</span>
+                    <span className="font-mono text-foreground font-medium">{user.id || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase block font-semibold">Room Allotment</span>
+                    <span className="text-foreground font-medium">
+                      {user.room ? user.room.roomName : 'Unassigned'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )
         })}

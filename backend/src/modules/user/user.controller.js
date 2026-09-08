@@ -86,6 +86,22 @@ export const signAgreementHandler = catchAsync(async (req, res) => {
   });
 });
 
+export const getUserPassword = catchAsync(async (req, res) => {
+  const { id: targetUserId } = userIdParamSchema.parse(req.params);
+
+  const result = await userService.getUserPassword(
+    req.user.role,
+    req.user.hostelId,
+    targetUserId
+  );
+
+  res.status(200).json({
+    status: 'success',
+    success: true,
+    data: result,
+  });
+});
+
 export const getHealthCheck = catchAsync(async (req, res) => {
   const healthData = await userService.getSystemHealth();
 

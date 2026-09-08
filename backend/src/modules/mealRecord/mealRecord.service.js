@@ -1008,6 +1008,9 @@ class MealRecordService {
         enrolledStudentMap.set(String(s.id).toLowerCase().trim(), s);
         enrolledStudentMap.set(String(s.id).trim(), s);
       }
+      if (s.email) {
+        enrolledStudentMap.set(String(s.email).toLowerCase().trim(), s);
+      }
     });
 
     // Also check global users for guest info
@@ -1017,6 +1020,9 @@ class MealRecordService {
       if (u.id) {
         globalUserMap.set(String(u.id).toLowerCase().trim(), u);
         globalUserMap.set(String(u.id).trim(), u);
+      }
+      if (u.email) {
+        globalUserMap.set(String(u.email).toLowerCase().trim(), u);
       }
     });
 
@@ -1095,6 +1101,10 @@ class MealRecordService {
         existingRecordMap.set(`${rNorm}_${r.date}_${r.mealType}`, r);
         existingRecordMap.set(`${String(r.rollNumber).trim()}_${r.date}_${r.mealType}`, r);
       }
+      if (r.studentId) {
+        const sIdStr = String(r.studentId).trim();
+        existingRecordMap.set(`${sIdStr}_${r.date}_${r.mealType}`, r);
+      }
     });
 
     // 5. Build Atomic Bulk Write Operations
@@ -1104,9 +1114,16 @@ class MealRecordService {
 
     aggregatedPunches.forEach((punch) => {
       const { rollNumber, normRoll, date, mealType, count: punchCount, isGuest } = punch;
+      const enrolledUser = enrolledStudentMap.get(normRoll) || enrolledStudentMap.get(rollNumber);
+      const globalUser = globalUserMap.get(normRoll) || globalUserMap.get(rollNumber);
+      const studentId = enrolledUser?._id || globalUser?._id || null;
+      const canonicalRollNumber = enrolledUser?.id || rollNumber;
+
       const existing =
         existingRecordMap.get(`${normRoll}_${date}_${mealType}`) ||
-        existingRecordMap.get(`${rollNumber}_${date}_${mealType}`);
+        existingRecordMap.get(`${String(canonicalRollNumber).toLowerCase().trim()}_${date}_${mealType}`) ||
+        existingRecordMap.get(`${rollNumber}_${date}_${mealType}`) ||
+        (studentId ? existingRecordMap.get(`${String(studentId).trim()}_${date}_${mealType}`) : null);
 
       // Resolve mealInfo from schedule
       let mealInfoName = mealType;
@@ -1125,11 +1142,6 @@ class MealRecordService {
       } catch {
         // fallback
       }
-
-      const enrolledUser = enrolledStudentMap.get(normRoll) || enrolledStudentMap.get(rollNumber);
-      const globalUser = globalUserMap.get(normRoll) || globalUserMap.get(rollNumber);
-      const studentId = enrolledUser?._id || globalUser?._id || null;
-      const canonicalRollNumber = enrolledUser?.id || existing?.rollNumber || rollNumber;
 
       if (existing) {
         recordsUpdated++;
