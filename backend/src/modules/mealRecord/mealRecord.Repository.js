@@ -61,10 +61,19 @@ class MealRecordRepository {
   }
 
   async findRecordsByDatesAndRolls(hostelId, dates, rollNumbers) {
+    const cleanRolls = (rollNumbers || []).map((r) => String(r).trim()).filter(Boolean);
+    const lowerRolls = cleanRolls.map((r) => r.toLowerCase());
+    const allRolls = [...new Set([...cleanRolls, ...lowerRolls])];
+
+    const hostelIdStr = hostelId ? hostelId.toString() : '';
+    const hostelQuery = mongoose.isValidObjectId(hostelIdStr)
+      ? { $in: [hostelIdStr, new mongoose.Types.ObjectId(hostelIdStr)] }
+      : hostelIdStr;
+
     return MealRecord.find({
-      hostelId,
+      hostelId: hostelQuery,
       date: { $in: dates },
-      rollNumber: { $in: rollNumbers }
+      rollNumber: { $in: allRolls },
     }).lean();
   }
 
@@ -92,19 +101,30 @@ class MealRecordRepository {
         { id: { $in: lowerRolls } },
         ...(objectIdRolls.length > 0 ? [{ _id: { $in: objectIdRolls } }] : [])
       ]
-    }).select('_id id name hostelId').lean();
+    }).select('_id id name hostelId role').lean();
   }
 
   async findUsersByIdsList(rolls) {
-    return User.find({ id: { $in: rolls } }).select('_id id name hostelId').lean();
+    const cleanRolls = (rolls || []).map((r) => String(r).trim()).filter(Boolean);
+    const lowerRolls = cleanRolls.map((r) => r.toLowerCase());
+    const allRolls = [...new Set([...cleanRolls, ...lowerRolls])];
+    return User.find({ id: { $in: allRolls } }).select('_id id name hostelId role').lean();
   }
 
   async findEnrolledStudents(hostelId, rollNumbers) {
+    const cleanRolls = (rollNumbers || []).map((r) => String(r).trim()).filter(Boolean);
+    const lowerRolls = cleanRolls.map((r) => r.toLowerCase());
+    const allRolls = [...new Set([...cleanRolls, ...lowerRolls])];
+
+    const hostelIdStr = hostelId ? hostelId.toString() : '';
+    const hostelQuery = mongoose.isValidObjectId(hostelIdStr)
+      ? { $in: [hostelIdStr, new mongoose.Types.ObjectId(hostelIdStr)] }
+      : hostelIdStr;
+
     return User.find({
-      id: { $in: rollNumbers },
-      hostelId,
-      role: 'student'
-    }).select('_id id name hostelId').lean();
+      id: { $in: allRolls },
+      hostelId: hostelQuery,
+    }).select('_id id name hostelId role').lean();
   }
 
   async findStudentsByHostel(hostelId) {

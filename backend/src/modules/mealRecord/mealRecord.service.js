@@ -29,6 +29,9 @@ function parseTimeToMinutes(timeStr) {
   return hours * 60 + minutes;
 }
 
+// In-memory cooldown map for guest / walk-in permission socket requests
+const permissionCooldownMap = new Map();
+
 class MealRecordService {
   // ==========================================
   // 1. STUDENT FEATURE: SELECT MEAL IN ADVANCE
@@ -424,10 +427,21 @@ class MealRecordService {
         }
       }
 
-      record.attendance.hasEaten = true;
-      record.attendance.method = 'QR';
-      record.attendance.count = (record.attendance.count || 0) + 1;
-      await record.save();
+      // Atomically update existing record to prevent concurrency race conditions
+      const updatedRecord = await mealRecordRepository.findOneAndUpdate(
+        { _id: record._id },
+        {
+          $set: {
+            'attendance.hasEaten': true,
+            'attendance.method': 'QR'
+          },
+          $inc: { 'attendance.count': 1 }
+        },
+        { new: true }
+      );
+      if (updatedRecord) {
+        record = updatedRecord;
+      }
     }
 
     // Emit live socket event to Manager's Dashboard
@@ -814,6 +828,18 @@ class MealRecordService {
   // ==========================================
 
   requestGuestPermission(student, managerHostelId, reason) {
+    const studentKey = `${student._id}_${managerHostelId}_${reason || 'guest'}`;
+    const now = Date.now();
+    const lastRequestTime = permissionCooldownMap.get(studentKey);
+
+    // Cooldown: prevent socket flooding if a duplicate request is dispatched within 15 seconds
+    if (lastRequestTime && (now - lastRequestTime) < 15000) {
+      return { message: 'Permission request already sent to manager. Please wait.' };
+    }
+
+    permissionCooldownMap.set(studentKey, now);
+    setTimeout(() => permissionCooldownMap.delete(studentKey), 60000);
+
     io.to(`hostel:${managerHostelId}`).emit('guest_permission_request', {
       requestId: `${student._id}_${Date.now()}`,
       rollNumber: student.id,
@@ -898,6 +924,12 @@ class MealRecordService {
       throw error;
     }
 
+    if (student.status === 'Suspended') {
+      const error = new Error('Student account is currently suspended. Attendance cannot be marked.');
+      error.statusCode = 403;
+      throw error;
+    }
+
     // 1. Verify that a meal is actively being served right now
     const mealData = await this.calculateCurrentMeal(managerHostelId);
 
@@ -966,29 +998,42 @@ class MealRecordService {
     const menu = schedule.menu || {};
 
     // 2. Fetch hostel residents for roster check
-    const rawRollNumbers = records.map((r) => r.rollNumber);
+    const rawRollNumbers = records.map((r) => String(r.rollNumber).trim()).filter(Boolean);
     const uniqueRollNumbers = [...new Set(rawRollNumbers)];
 
     const enrolledStudents = await mealRecordRepository.findEnrolledStudents(hostelId, uniqueRollNumbers);
     const enrolledStudentMap = new Map();
-    enrolledStudents.forEach((s) => enrolledStudentMap.set(s.id, s));
+    enrolledStudents.forEach((s) => {
+      if (s.id) {
+        enrolledStudentMap.set(String(s.id).toLowerCase().trim(), s);
+        enrolledStudentMap.set(String(s.id).trim(), s);
+      }
+    });
 
     // Also check global users for guest info
     const globalUsers = await mealRecordRepository.findUsersByIdsList(uniqueRollNumbers);
     const globalUserMap = new Map();
-    globalUsers.forEach((u) => globalUserMap.set(u.id, u));
+    globalUsers.forEach((u) => {
+      if (u.id) {
+        globalUserMap.set(String(u.id).toLowerCase().trim(), u);
+        globalUserMap.set(String(u.id).trim(), u);
+      }
+    });
 
     // 3. Aggregate / Deduplicate Punches
-    // Key: `${rollNumber}_${date}_${mealType}`
+    // Key: `${normRoll}_${date}_${mealType}`
     const punchAggregationMap = new Map();
     let skippedCount = 0;
     let guestsMarked = 0;
 
     records.forEach((record) => {
-      const { rollNumber, date, mealType, count = 1, punchTime } = record;
-      const key = `${rollNumber}_${date}_${mealType}`;
+      const { rollNumber: rawRoll, date, mealType, count = 1, punchTime } = record;
+      const rollNumber = String(rawRoll).trim();
+      const normRoll = rollNumber.toLowerCase();
+      const key = `${normRoll}_${date}_${mealType}`;
 
-      const isEnrolled = enrolledStudentMap.has(rollNumber);
+      const enrolledUser = enrolledStudentMap.get(normRoll) || enrolledStudentMap.get(rollNumber);
+      const isEnrolled = !!enrolledUser;
       if (!isEnrolled) {
         if (unrecognizedStudentAction === 'skip') {
           skippedCount++;
@@ -1008,7 +1053,8 @@ class MealRecordService {
           guestsMarked++;
         }
         punchAggregationMap.set(key, {
-          rollNumber,
+          rollNumber: enrolledUser?.id || rollNumber,
+          normRoll,
           date,
           mealType,
           count: duplicatePunchStrategy === 'accumulate' ? count : 1,
@@ -1044,7 +1090,11 @@ class MealRecordService {
 
     const existingRecordMap = new Map();
     existingRecords.forEach((r) => {
-      existingRecordMap.set(`${r.rollNumber}_${r.date}_${r.mealType}`, r);
+      if (r.rollNumber) {
+        const rNorm = String(r.rollNumber).toLowerCase().trim();
+        existingRecordMap.set(`${rNorm}_${r.date}_${r.mealType}`, r);
+        existingRecordMap.set(`${String(r.rollNumber).trim()}_${r.date}_${r.mealType}`, r);
+      }
     });
 
     // 5. Build Atomic Bulk Write Operations
@@ -1053,8 +1103,10 @@ class MealRecordService {
     let recordsUpdated = 0;
 
     aggregatedPunches.forEach((punch) => {
-      const { rollNumber, date, mealType, count: punchCount, isGuest } = punch;
-      const existing = existingRecordMap.get(`${rollNumber}_${date}_${mealType}`);
+      const { rollNumber, normRoll, date, mealType, count: punchCount, isGuest } = punch;
+      const existing =
+        existingRecordMap.get(`${normRoll}_${date}_${mealType}`) ||
+        existingRecordMap.get(`${rollNumber}_${date}_${mealType}`);
 
       // Resolve mealInfo from schedule
       let mealInfoName = mealType;
@@ -1074,15 +1126,16 @@ class MealRecordService {
         // fallback
       }
 
-      const enrolledUser = enrolledStudentMap.get(rollNumber);
-      const globalUser = globalUserMap.get(rollNumber);
+      const enrolledUser = enrolledStudentMap.get(normRoll) || enrolledStudentMap.get(rollNumber);
+      const globalUser = globalUserMap.get(normRoll) || globalUserMap.get(rollNumber);
       const studentId = enrolledUser?._id || globalUser?._id || null;
+      const canonicalRollNumber = enrolledUser?.id || existing?.rollNumber || rollNumber;
 
       if (existing) {
         recordsUpdated++;
         bulkOps.push({
           updateOne: {
-            filter: { hostelId, date, mealType, rollNumber },
+            filter: { _id: existing._id },
             update: {
               $set: {
                 studentId: studentId || existing.studentId,
@@ -1100,13 +1153,13 @@ class MealRecordService {
         recordsCreated++;
         bulkOps.push({
           updateOne: {
-            filter: { hostelId, date, mealType, rollNumber },
+            filter: { hostelId, date, mealType, rollNumber: canonicalRollNumber },
             update: {
               $set: {
                 hostelId,
                 date,
                 mealType,
-                rollNumber,
+                rollNumber: canonicalRollNumber,
                 studentId,
                 isGuest,
                 mealInfo: { name: mealInfoName, price: mealInfoPrice },

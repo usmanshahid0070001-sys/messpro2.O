@@ -74,7 +74,7 @@ const globalLimiter = rateLimit({
 app.use('/api', globalLimiter);
 
 // 5. Body Parser & Payload Limits (Prevents RAM Overloading)
-app.use(express.json({ limit: '10kb' })); 
+app.use(express.json({ limit: '2mb' })); 
 app.use(cookieParser());
 
 // 6. Data Sanitization against NoSQL Query Injection
