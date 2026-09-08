@@ -10,17 +10,24 @@ import {
   Loader2,
   BedDouble,
   RotateCcw,
+  Calendar,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGetRooms, type Room } from '@/hooks/queries/useResidenceQueries'
 
 // Extracted Components
 import ResidenceMetrics, { type MetricConfig } from './components/ResidenceMetrics'
-import ServiceFilterBar from './components/ServiceFilterBar'
+import ServiceFilterBar, {
+  type ServiceFilterType,
+  type ServiceSortType,
+  type MonthOption,
+} from './components/ServiceFilterBar'
 import CleaningLog from './components/CleaningLog'
 
-type ServiceFilterType = 'all' | 'cleaned-today' | 'pending-today' | 'never'
-type ServiceSortType = 'recent' | 'name' | 'least'
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+]
 
 export default function RoomService() {
   const { data: rooms = [], isLoading, isError, refetch } = useGetRooms()
@@ -30,12 +37,52 @@ export default function RoomService() {
   const deferredSearchTerm = useDeferredValue(searchTerm)
   const [cleaningFilter, setCleaningFilter] = useState<ServiceFilterType>('all')
   const [sortOrder, setSortOrder] = useState<ServiceSortType>('recent')
+  const [selectedMonth, setSelectedMonth] = useState<string>('all')
 
   // Selected Room for History Modal
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+
+  // Extract all distinct months across all rooms in the hostel
+  const availableMonths = useMemo<MonthOption[]>(() => {
+    if (!rooms || rooms.length === 0) return []
+    const map = new Map<string, MonthOption>()
+
+    rooms.forEach((r) => {
+      if (!r.cleaningDates) return
+      r.cleaningDates.forEach((dateStr) => {
+        const d = new Date(dateStr)
+        if (isNaN(d.getTime())) return
+        const year = d.getFullYear()
+        const monthIndex = d.getMonth()
+        const key = `${year}-${String(monthIndex + 1).padStart(2, '0')}`
+
+        if (map.has(key)) {
+          map.get(key)!.totalHostelLogs += 1
+        } else {
+          map.set(key, {
+            key,
+            year,
+            monthIndex,
+            label: `${MONTH_NAMES[monthIndex]} ${year}`,
+            shortLabel: `${MONTH_NAMES[monthIndex].slice(0, 3)} ${year}`,
+            totalHostelLogs: 1,
+          })
+        }
+      })
+    })
+
+    return Array.from(map.values()).sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year
+      return b.monthIndex - a.monthIndex
+    })
+  }, [rooms])
+
+  const activeMonth = useMemo(() => {
+    return availableMonths.find((m) => m.key === selectedMonth)
+  }, [availableMonths, selectedMonth])
 
   const isRoomCleanedToday = (room: Room): boolean => {
     if (!room.cleaningDates || room.cleaningDates.length === 0) return false
@@ -51,6 +98,20 @@ export default function RoomService() {
     const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
     return room.cleaningDates.some((d) => new Date(d).getTime() >= oneWeekAgo.getTime())
+  }
+
+  const getRoomCleaningCountForMonth = (room: Room, monthKey: string): number => {
+    if (!room.cleaningDates || room.cleaningDates.length === 0) return 0
+    if (monthKey === 'all') return room.cleaningDates.length
+
+    return room.cleaningDates.reduce((count, dateStr) => {
+      const d = new Date(dateStr)
+      if (isNaN(d.getTime())) return count
+      const year = d.getFullYear()
+      const monthIndex = d.getMonth()
+      const key = `${year}-${String(monthIndex + 1).padStart(2, '0')}`
+      return key === monthKey ? count + 1 : count
+    }, 0)
   }
 
   // Summary Metrics Computation
@@ -158,10 +219,14 @@ export default function RoomService() {
         return lastB - lastA
       })
     } else if (sortOrder === 'least') {
-      list.sort((a, b) => (a.cleaningDates?.length || 0) - (b.cleaningDates?.length || 0))
+      list.sort((a, b) => {
+        const countA = getRoomCleaningCountForMonth(a, selectedMonth)
+        const countB = getRoomCleaningCountForMonth(b, selectedMonth)
+        return countA - countB
+      })
     }
     return list
-  }, [filteredRooms, sortOrder])
+  }, [filteredRooms, sortOrder, selectedMonth])
 
   return (
     <div className="space-y-4 pb-12 w-full max-w-full min-w-0">
@@ -204,7 +269,7 @@ export default function RoomService() {
       {/* Metrics Strip */}
       <ResidenceMetrics metrics={metricConfigs} />
 
-      {/* Filter and Search Bar */}
+      {/* Filter and Search Bar with Month Selector */}
       <ServiceFilterBar
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -212,10 +277,34 @@ export default function RoomService() {
         onFilterChange={setCleaningFilter}
         sortOrder={sortOrder}
         onSortChange={setSortOrder}
+        selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
+        availableMonths={availableMonths}
         totalCount={rooms.length}
         cleanedCount={metrics.cleanedToday}
         pendingCount={metrics.pendingToday}
       />
+
+      {/* Active Month Filter Badge indicator above Table */}
+      {selectedMonth !== 'all' && (
+        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-700 dark:text-teal-300 text-xs">
+          <div className="flex items-center gap-2 font-medium">
+            <Calendar className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+            <span>
+              Showing cleaning log numbers for <strong>{activeMonth?.label || selectedMonth}</strong> ({activeMonth?.totalHostelLogs || 0} logs recorded across all rooms).
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedMonth('all')}
+            className="h-7 px-2 text-xs font-semibold text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5 mr-1" />
+            Show All Logs
+          </Button>
+        </div>
+      )}
 
       {/* Table List */}
       {isLoading ? (
@@ -242,7 +331,16 @@ export default function RoomService() {
                   <th className="py-3 px-4">Room Name</th>
                   <th className="py-3 px-4">Today's Status</th>
                   <th className="py-3 px-4">Last Cleaned</th>
-                  <th className="py-3 px-4">Total Logs</th>
+                  <th className="py-3 px-4">
+                    {selectedMonth === 'all' ? (
+                      'Total Logs'
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400 font-bold">
+                        <Calendar className="w-3.5 h-3.5" />
+                        Logs ({activeMonth?.shortLabel || selectedMonth})
+                      </span>
+                    )}
+                  </th>
                   <th className="py-3 px-4">Occupancy</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
@@ -251,6 +349,7 @@ export default function RoomService() {
                 {sortedRooms.map((room) => {
                   const cleanedToday = isRoomCleanedToday(room)
                   const totalLogs = room.cleaningDates?.length || 0
+                  const monthLogs = getRoomCleaningCountForMonth(room, selectedMonth)
 
                   const lastCleanDate =
                     totalLogs > 0 ? new Date(room.cleaningDates[totalLogs - 1]) : null
@@ -294,8 +393,27 @@ export default function RoomService() {
                         {formattedLastDate}
                       </td>
 
-                      <td className="py-3 px-4 font-mono text-xs text-foreground">
-                        {totalLogs} logs
+                      <td className="py-3 px-4 text-xs">
+                        {selectedMonth === 'all' ? (
+                          <span className="font-mono font-medium text-foreground">
+                            {totalLogs} logs
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`font-mono font-bold text-xs px-2 py-0.5 rounded-md ${
+                                monthLogs > 0
+                                  ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/25'
+                                  : 'bg-muted/50 text-muted-foreground border border-border/40'
+                              }`}
+                            >
+                              {monthLogs} logs
+                            </span>
+                            <span className="text-[11px] text-muted-foreground">
+                              ({totalLogs} total)
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 text-xs text-muted-foreground">
@@ -326,7 +444,7 @@ export default function RoomService() {
       {selectedRoom && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200"
+            className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-border bg-muted/20">
@@ -354,7 +472,11 @@ export default function RoomService() {
             </div>
 
             <div className="p-4 bg-background/50">
-              <CleaningLog cleaningDates={selectedRoom.cleaningDates} maxHeightClass="max-h-72" />
+              <CleaningLog
+                cleaningDates={selectedRoom.cleaningDates}
+                maxHeightClass="max-h-72"
+                initialSelectedMonth={selectedMonth}
+              />
             </div>
 
             <div className="p-3 border-t border-border bg-muted/20 flex justify-end">
