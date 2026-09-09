@@ -15,7 +15,7 @@ const DEFAULT_ORIGIN = 'https://messpro.app';
 const DEFAULT_TITLE = 'MessPro 2.0 — Smart Hostel & Mess Management System';
 const DEFAULT_DESCRIPTION =
   'MessPro 2.0 is a modern SaaS platform designed for university and private hostel mess operations. Automate meal scheduling, QR & biometric attendance, billing, room management, and analytics.';
-const DEFAULT_IMAGE = `${DEFAULT_ORIGIN}/og-image.png`;
+const DEFAULT_IMAGE = `${DEFAULT_ORIGIN}/pwa-512x512.png`;
 
 function setOrUpdateMetaTag(attrName: 'name' | 'property', attrValue: string, content: string) {
   let element = document.querySelector(`meta[${attrName}="${attrValue}"]`) as HTMLMetaElement | null;
