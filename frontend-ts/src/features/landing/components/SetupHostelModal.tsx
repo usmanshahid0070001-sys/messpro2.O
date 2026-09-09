@@ -110,6 +110,17 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({
   // Timezone search query
   const [tzSearch, setTzSearch] = useState('');
 
+  // Anti-Spam Security State
+  const [honeypot, setHoneypot] = useState('');
+  const [formMountTime, setFormMountTime] = useState<number>(Date.now());
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormMountTime(Date.now());
+      setHoneypot('');
+    }
+  }, [isOpen]);
+
   const { mutateAsync: submitRequest, isPending: isSubmitting } = useSubmitHostelRequest();
 
   // Pre-select plan when opened with an initialPlan prop
@@ -205,6 +216,33 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmissionError(null);
+
+    // Anti-Spam Check 1: Honeypot trap
+    if (honeypot.trim()) {
+      // Simulate submission delay and pretend success for automated bots
+      await new Promise((r) => setTimeout(r, 1200));
+      setIsSuccess(true);
+      return;
+    }
+
+    // Anti-Spam Check 2: Submission velocity (submitting faster than 2 seconds indicates bot automation)
+    if (Date.now() - formMountTime < 2000) {
+      toast.error('Submission rejected. Please fill out the form naturally.');
+      return;
+    }
+
+    // Anti-Spam Check 3: Local Submission Rate Limiter (Max 3 submissions per 15 minutes)
+    const SUBMISSION_KEY = 'messpro_setup_submissions';
+    try {
+      const pastSubmissions: number[] = JSON.parse(localStorage.getItem(SUBMISSION_KEY) || '[]');
+      const now = Date.now();
+      const recent = pastSubmissions.filter((ts) => now - ts < 15 * 60 * 1000);
+      if (recent.length >= 3) {
+        toast.error('Too many requests submitted recently. Please wait a few minutes or contact support directly.');
+        return;
+      }
+      localStorage.setItem(SUBMISSION_KEY, JSON.stringify([...recent, now]));
+    } catch (_) {}
 
     const selectedPlan = PRICING_PLANS.find((p) => p.id === selectedPlanKey) || PRICING_PLANS[0];
 
@@ -381,6 +419,21 @@ export const SetupHostelModal: React.FC<SetupHostelModalProps> = ({
 
             {/* Step Content */}
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+              {/* Anti-Spam Honeypot (Invisible to human users, traps automated scrapers/bots) */}
+              <div
+                className="opacity-0 absolute -left-[9999px] -top-[9999px] w-0 h-0 overflow-hidden pointer-events-none"
+                aria-hidden="true"
+              >
+                <input
+                  type="text"
+                  name="website_url_hp"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
               {/* Submission Error Alert */}
               {submissionError && (
                 <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-800 dark:text-rose-300 text-xs flex items-start gap-2.5 animate-in fade-in duration-200">

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Cookie, ShieldCheck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+import { initAnalytics } from '@/lib/analytics';
+
 export const COOKIE_CONSENT_KEY = 'messpro_cookie_consent';
 
 export const CookieConsentBanner: React.FC = () => {
@@ -17,6 +19,14 @@ export const CookieConsentBanner: React.FC = () => {
         setIsVisible(true);
       }, 1000);
       return () => clearTimeout(timer);
+    } else {
+      // If user had previously accepted all cookies, initialize analytics
+      try {
+        const parsed = JSON.parse(consent);
+        if (parsed.type === 'all') {
+          initAnalytics();
+        }
+      } catch (_) {}
     }
   }, []);
 
@@ -25,6 +35,7 @@ export const CookieConsentBanner: React.FC = () => {
       COOKIE_CONSENT_KEY,
       JSON.stringify({ type: 'all', timestamp: new Date().toISOString() })
     );
+    initAnalytics();
     setIsVisible(false);
   };
 

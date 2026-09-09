@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useSEO } from '@/hooks/useSEO';
 import { setCredentials } from '../../store/slices/AuthSlice';
@@ -8,8 +8,9 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Loader2, User, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader2, User, Lock, Headphones, Sparkles } from 'lucide-react';
 import logoUrl from '@/assets/pwa-192x192.png';
+import SupportUpgradeModal from '@/components/SupportUpgradeModal';
 
 const loginSchema = z.object({
     email: z
@@ -64,6 +65,7 @@ export default function LoginForm() {
     const dispatch = useDispatch();
     const loginMutation = useLoginMutation();
     const [showPassword, setShowPassword] = useState(false);
+    const [isSupportOpen, setIsSupportOpen] = useState(false);
 
     useEffect(() => {
         const errorParam = searchParams.get('error');
@@ -254,10 +256,26 @@ export default function LoginForm() {
                     </div>
                 </form>
 
-                <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Register Hostel? <a href="https://messprouet.vercel.app/register" target="_blank" rel="noopener noreferrer" className="font-bold text-foreground hover:underline">Click here</a>
+                <div className="mt-5 pt-4 border-t border-border/60 text-center space-y-2">
+                    <div className="text-xs text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap">
+                        <span>Register a new hostel?</span>
+                        <Link
+                            to="/?action=setup"
+                            className="font-bold text-primary hover:underline transition-colors inline-flex items-center gap-1"
+                        >
+                            <Sparkles className="w-3 h-3 text-primary" />
+                            <span>Setup your Hostel</span>
+                        </Link>
+                    </div>
                 </div>
             </div>
+
+            {/* Support / Setup Helpline Modal */}
+            <SupportUpgradeModal
+                isOpen={isSupportOpen}
+                onClose={() => setIsSupportOpen(false)}
+                initialReason="setup"
+            />
         </div>
     );
 }

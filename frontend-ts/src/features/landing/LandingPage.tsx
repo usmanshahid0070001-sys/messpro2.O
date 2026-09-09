@@ -134,6 +134,19 @@ export const LandingPage: React.FC = () => {
   useEffect(() => {
     const hash = window.location.hash || location.hash;
     const search = window.location.search || location.search;
+
+    if (
+      search.includes('action=setup') ||
+      search.includes('setup') ||
+      search.includes('register') ||
+      search.includes('support')
+    ) {
+      const timer = setTimeout(() => {
+        handleOpenSetup();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+
     if (
       hash === '#plans' ||
       hash === '#pricing' ||

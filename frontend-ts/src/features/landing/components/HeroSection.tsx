@@ -247,37 +247,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Action Buttons: Unified One Clear Call to Action */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              {/* Primary Setup Hostel CTA */}
-              <div className="relative p-[1px] rounded-full overflow-hidden inline-flex group shadow-lg shadow-primary/10">
+              {/* Dominant Primary CTA: Setup & Start Free Trial */}
+              <div className="relative p-[1.5px] rounded-full overflow-hidden inline-flex group shadow-xl shadow-primary/20">
                 <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,#b8842a,#ff9800,#b8842a)] animate-spin-conic opacity-90 group-hover:opacity-100 transition-opacity" />
                 <button
                   type="button"
                   onClick={onSetupClick || onExploreClick}
-                  className="relative z-10 inline-flex items-center justify-center gap-2 px-6 py-3 text-xs sm:text-sm font-extrabold rounded-full bg-primary text-primary-foreground shadow-md hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer"
+                  className="relative z-10 inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-xs sm:text-sm font-black rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>Setup Hostel (10-Day Free Trial)</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  <span>Start 10-Day Free Trial</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
 
+              {/* Single Clear Secondary Action */}
               <button
                 type="button"
                 onClick={onExploreClick}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-full border border-border/80 dark:border-white/15 bg-card/60 dark:bg-white/5 hover:bg-muted/80 backdrop-blur-md text-foreground transition-all cursor-pointer glass-bevel"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 text-xs sm:text-sm font-semibold rounded-full border border-border/80 dark:border-white/15 bg-card/60 dark:bg-white/5 hover:bg-muted/80 backdrop-blur-md text-foreground transition-all cursor-pointer glass-bevel"
               >
                 <span>Explore Features</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onCalculateClick}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-full border border-border/80 dark:border-white/15 bg-card/60 dark:bg-white/5 hover:bg-muted/80 backdrop-blur-md text-foreground transition-all cursor-pointer glass-bevel"
-              >
-                <Calculator className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>Calculate ROI</span>
               </button>
             </div>
 

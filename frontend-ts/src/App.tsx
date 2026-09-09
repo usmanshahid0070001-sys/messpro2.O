@@ -40,6 +40,7 @@ const TermsPage = React.lazy(() => import("./features/legal/TermsPage"));
 const PrivacyPolicyPage = React.lazy(() => import("./features/legal/PrivacyPolicyPage"));
 const CookiePolicyPage = React.lazy(() => import("./features/legal/CookiePolicyPage"));
 const DocumentationPage = React.lazy(() => import("./features/docs/DocumentationPage"));
+const NotFoundPage = React.lazy(() => import("./features/error/NotFoundPage"));
 
 
 const LandingRouteWrapper: React.FC = () => {
@@ -205,8 +206,15 @@ const App = () => {
                 </Route>
               </Route>
 
-              {/* Catch-all redirect to Landing Page */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/* Catch-all route to Custom 404 page */}
+              <Route
+                path="*"
+                element={
+                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                    <NotFoundPage />
+                  </Suspense>
+                }
+              />
             </Routes>
           </AuthSync>
         </BrowserRouter>

@@ -4,7 +4,7 @@ import { logout } from '../store/slices/AuthSlice';
 import { clearHostel } from '../store/slices/HostelSlice';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api', 
+  baseURL: import.meta.env.VITE_API_URL, 
   withCredentials: true, // Required to send/receive the HTTP-only auth cookies
   headers: {
     'Content-Type': 'application/json',
