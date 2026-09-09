@@ -1,1 +1,7 @@
 node_modules
+dist
+dist-ssr
+coverage
+.DS_Store
+*.pem
+*.key

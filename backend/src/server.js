@@ -40,10 +40,29 @@ const app = express();
 // ==========================================
 
 // 1. Trust Reverse Proxy (Required for rate limiting behind Nginx/Cloudflare)
-app.set('trust proxy', process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) : false);
+app.set('trust proxy', process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) : 1);
 
-// 2. Set Security HTTP Headers
-app.use(helmet());
+// 2. Production HTTPS Redirection
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    if (!isHttps) {
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
+
+// 3. Set Security HTTP Headers & HSTS
+app.use(
+  helmet({
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
 
 // 3. Cross-Origin Resource Sharing (CORS)
 const allowedOriginPattern = /^(https?:\/\/localhost:\d+|https?:\/\/127\.0\.0\.1:\d+|https?:\/\/192\.168\.\d+\.\d+:\d+)$/;
