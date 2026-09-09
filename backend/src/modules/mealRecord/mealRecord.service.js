@@ -82,7 +82,7 @@ class MealRecordService {
 
     const maxAllowed = schedule.maxMealSelection || 1;
     const bulkOps = [];
-
+    
     // Fetch existing records for checking attendance before zeroing out selection
     const existingRecords = await MealRecord.find({
       hostelId,
