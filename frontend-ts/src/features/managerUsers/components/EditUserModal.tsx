@@ -7,131 +7,229 @@ import {
   UserCheck,
   ShieldCheck,
   Check,
+  Lock,
+  Headphones,
+  Settings,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Copy,
+  Sparkles,
 } from 'lucide-react'
 import { useUpdateUser } from '@/hooks/mutations/useUserMutations'
-import type { ManageableUser } from '@/hooks/queries/useUserQueries'
+import { fetchUserPassword, type ManageableUser } from '@/hooks/queries/useUserQueries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import SupportUpgradeModal, { type SupportContextReason } from '@/components/SupportUpgradeModal'
 
 interface EditUserModalProps {
   isOpen: boolean
   onClose: () => void
   user: ManageableUser | null
   hostel: any
+  currentRole?: string
 }
 
+/**
+ * Normalizes permission and feature name strings to snake_case format.
+ */
 const normalize = (str: string) => (str || '').toLowerCase().replace(/[\s-_]+/g, '_')
 
-const PERMISSION_CONFIG: Record<
-  string,
-  { label: string; desc: string; category: 'residence' | 'food' | 'attendance' | 'governance' }
-> = {
-  user_management: {
-    label: 'Manage Users',
-    desc: 'Invite, edit, and configure hostel member permissions',
-    category: 'governance',
-  },
-  hostel_configuration: {
-    label: 'Hostel Configuration',
-    desc: 'Update hostel profile, branding, and registration fields',
-    category: 'governance',
-  },
-  bill_management: {
-    label: 'Bill Management',
-    desc: 'Track student dues and payment reconciliation',
-    category: 'governance',
-  },
-  bill_generation: {
-    label: 'Bill Generation',
-    desc: 'Generate monthly invoices and hostel fee bills',
-    category: 'governance',
-  },
-  complaint_management: {
-    label: 'Complaint Tickets',
-    desc: 'Manage and resolve resident maintenance tickets',
-    category: 'governance',
-  },
-  residence_management: {
-    label: 'Residence Management',
-    desc: 'Build rooms, allot beds, and manage hostel occupancy',
-    category: 'residence',
-  },
-  service_management: {
-    label: 'Sanitation & Room Service',
-    desc: 'Track daily room cleaning and hygiene logs',
-    category: 'residence',
-  },
-  meal_settings: {
-    label: 'Meal Schedule & Menu',
-    desc: 'Configure weekly menu and dining hours',
-    category: 'food',
-  },
-  meal_control: {
-    label: 'Meal Control & Blocking',
-    desc: 'Block/unblock dining privileges based on dues',
-    category: 'food',
-  },
-  manual_attendance: {
-    label: 'Manual Attendance',
-    desc: 'Record manual mess attendance logs',
-    category: 'attendance',
-  },
-  qr_attendance: {
-    label: 'QR Code Attendance',
-    desc: 'Scan digital student QR tokens at dining hall',
-    category: 'attendance',
-  },
-  biometric_attendance: {
-    label: 'Biometric Scanner Sync',
-    desc: 'Hardware device attendance synchronization',
-    category: 'attendance',
-  },
+/**
+ * Feature Aliases for robust matching against backend plan features.
+ */
+const FEATURE_ALIASES: Record<string, string[]> = {
+  user_management: ['user_management', 'manage_users', 'users', 'user_staff_management'],
+  complaint_management: ['complaint_management', 'complaints', 'complaint_tickets', 'maintenance_complaint_tickets'],
+  residence_management: ['residence_management', 'rooms', 'room_allocation', 'residence_room_allocation'],
+  service_management: ['service_management', 'sanitation', 'room_sanitation_cleaning', 'sanitation_room_service'],
+  meal_settings: ['meal_settings', 'mess_settings', 'meal_schedule_menu', 'weekly_menu_meal_configuration'],
+  meal_control: ['meal_control', 'meal_restrictions_dining_control', 'dining_control', 'meal_control_blocking'],
+  bill_management: ['bill_management', 'dues', 'dues_management', 'student_bills'],
+  bill_generation: ['bill_generation', 'invoices', 'bill_generation_invoicing'],
+  manual_attendance: ['manual_attendance', 'manual_register_attendance'],
+  qr_attendance: ['qr_attendance', 'qr_code_attendance', 'dynamic_qr_attendance_scanner'],
+  biometric_attendance: ['biometric_attendance', 'biometric_scanner_sync', 'biometric_gate_terminal_sync'],
 }
 
+/**
+ * Full master list of MessPro Admin Features that can be delegated to managers and students.
+ */
+export const MESSPRO_ADMIN_FEATURES = [
+  {
+    id: 'user_management',
+    label: 'User Management',
+    desc: 'Invite, edit, and configure hostel member accounts and directory',
+  },
+  {
+    id: 'complaint_management',
+    label: 'Complaint Management',
+    desc: 'Track and resolve resident maintenance and facility tickets',
+  },
+  {
+    id: 'residence_management',
+    label: 'Residence Management',
+    desc: 'Room allocation, capacity planning, and bed assignments',
+  },
+  {
+    id: 'service_management',
+    label: 'Service Management',
+    desc: 'Daily room housekeeping, cleaning logs, and sanitation status',
+  },
+  {
+    id: 'meal_settings',
+    label: 'Mess Settings',
+    desc: 'Weekly menu schedule, meal timings, and dining hours',
+  },
+  {
+    id: 'meal_control',
+    label: 'Meal Control',
+    desc: 'Dining privilege enforcement and counter dining verification',
+  },
+  {
+    id: 'bill_management',
+    label: 'Bill Management',
+    desc: 'Student dues ledger, payment recording, and balance tracking',
+  },
+  {
+    id: 'bill_generation',
+    label: 'Bill Generation',
+    desc: 'Monthly fee invoices and automated student bill calculation',
+  },
+  {
+    id: 'manual_attendance',
+    label: 'Manual Attendance',
+    desc: 'Manual roll-call and register mess attendance logging',
+  },
+  {
+    id: 'qr_attendance',
+    label: 'QR Code Attendance',
+    desc: 'Digital student QR token scanning at dining hall',
+  },
+  {
+    id: 'biometric_attendance',
+    label: 'Biometric Attendance',
+    desc: 'Hardware biometric scanner terminal sync and attendance logs',
+  },
+] as const
+
+/**
+ * Returns role badge colors and display icons for existing profiles.
+ */
 const getRoleBadge = (role: string) => {
   switch (role) {
     case 'superadmin':
-      return { label: 'Super Admin', color: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20', icon: ShieldCheck }
+      return {
+        label: 'Super Admin',
+        color: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
+        icon: ShieldCheck,
+      }
     case 'admin':
-      return { label: 'Administrator', color: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20', icon: ShieldCheck }
+      return {
+        label: 'Administrator',
+        color: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20',
+        icon: ShieldCheck,
+      }
     case 'manager':
-      return { label: 'Manager', color: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20', icon: UserCheck }
+      return {
+        label: 'Manager',
+        color: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
+        icon: UserCheck,
+      }
     case 'student':
     default:
-      return { label: 'Student Resident', color: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20', icon: GraduationCap }
+      return {
+        label: 'Student Resident',
+        color: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20',
+        icon: GraduationCap,
+      }
   }
 }
 
-export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUserModalProps) {
+/**
+ * EditUserModal - Dialog for updating member profiles, dynamic registration metadata,
+ * and fine-grained feature permissions.
+ */
+export default function EditUserModal({
+  isOpen,
+  onClose,
+  user,
+  hostel,
+  currentRole = 'student',
+}: EditUserModalProps) {
   const updateUserMutation = useUpdateUser()
 
   const [name, setName] = useState('')
   const [customFields, setCustomFields] = useState<Record<string, string>>({})
   const [permissions, setPermissions] = useState<string[]>([])
 
+  // Password inspection and reset state
+  const [revealedPassword, setRevealedPassword] = useState<string | null>(null)
+  const [isFetchingPassword, setIsFetchingPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [copiedPassword, setCopiedPassword] = useState(false)
+
+  // Support & Upgrade Modal state
+  const [isSupportOpen, setIsSupportOpen] = useState(false)
+  const [supportReason, setSupportReason] = useState<SupportContextReason>('upgrade')
+  const [supportFeatureName, setSupportFeatureName] = useState<string | undefined>(undefined)
+
+  const isAdmin = currentRole === 'admin' || currentRole === 'superadmin'
+
   const customFieldConfigs = useMemo(() => hostel?.customRegistrationFields || [], [hostel])
 
-  const toggleablePermissions = useMemo(() => {
-    if (!hostel?.plan?.features) return []
-    const excludedNames = ['hostel_configuration', 'bill_management', 'bill_generation', 'meal_control']
-    return hostel.plan.features
-      .filter((f: any) => f.isEnabled && !excludedNames.includes(normalize(f.name)))
-      .map((f: any) => normalize(f.name))
-  }, [hostel])
+  // Applicable features list based on target user's role:
+  // - Students see all features EXCEPT bill_management & bill_generation
+  // - Managers see all 11 features
+  const applicableFeatures = useMemo(() => {
+    if (!user) return []
+    if (user.role === 'student') {
+      return MESSPRO_ADMIN_FEATURES.filter(
+        (f) => f.id !== 'bill_management' && f.id !== 'bill_generation'
+      )
+    }
+    return MESSPRO_ADMIN_FEATURES
+  }, [user])
+
+  // Check whether a permission is included and enabled in the active hostel plan
+  const getPermissionPlanStatus = (permKey: string) => {
+    const planFeatures = hostel?.plan?.features || []
+    const aliases = FEATURE_ALIASES[permKey] || [permKey]
+
+    const matched = planFeatures.find((f: any) => {
+      const rawName = typeof f === 'string' ? f : f?.name
+      const norm = normalize(rawName)
+      return aliases.some(
+        (a) => norm === normalize(a) || norm.includes(normalize(a)) || normalize(a).includes(norm)
+      )
+    })
+
+    if (!matched) {
+      return { isIncluded: false, isEnabled: false }
+    }
+
+    const isEnabled = typeof matched === 'string' ? true : Boolean(matched.isEnabled)
+    return { isIncluded: true, isEnabled }
+  }
+
+  // Permissions that are currently active/enabled in the hostel's plan
+  const activeEnabledFeatures = useMemo(() => {
+    return applicableFeatures.filter((f) => getPermissionPlanStatus(f.id).isEnabled)
+  }, [applicableFeatures, hostel])
 
   useEffect(() => {
     if (isOpen && user) {
       setName(user.name)
-
-      let userPerms = user.permissions || []
-      if (user.role === 'manager' && userPerms.length === 0) {
-        const defaultPerms: string[] = []
-        if (toggleablePermissions.includes('meal_settings')) defaultPerms.push('meal_settings')
-        if (toggleablePermissions.includes('qr_attendance')) defaultPerms.push('qr_attendance')
-        userPerms = defaultPerms
-      }
-      setPermissions(userPerms)
+      setPermissions(user.permissions || [])
+      setRevealedPassword(null)
+      setIsFetchingPassword(false)
+      setShowPassword(false)
+      setNewPassword('')
+      setShowNewPassword(false)
+      setCopiedPassword(false)
 
       const initFields: Record<string, string> = {}
       customFieldConfigs.forEach((config: any) => {
@@ -140,7 +238,7 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
       })
       setCustomFields(initFields)
     }
-  }, [isOpen, user, customFieldConfigs, toggleablePermissions])
+  }, [isOpen, user, customFieldConfigs])
 
   if (!isOpen || !user) return null
 
@@ -148,17 +246,49 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
   const RoleIcon = roleInfo.icon
 
   const handleTogglePermission = (permKey: string) => {
+    const status = getPermissionPlanStatus(permKey)
+    if (!status.isEnabled) return
     setPermissions((prev) =>
       prev.includes(permKey) ? prev.filter((p) => p !== permKey) : [...prev, permKey]
     )
   }
 
   const handleSelectAllPerms = () => {
-    setPermissions([...toggleablePermissions])
+    setPermissions(activeEnabledFeatures.map((f) => f.id))
   }
 
   const handleClearAllPerms = () => {
     setPermissions([])
+  }
+
+  const openSupportModal = (reason: SupportContextReason, featName?: string) => {
+    setSupportReason(reason)
+    setSupportFeatureName(featName)
+    setIsSupportOpen(true)
+  }
+
+  const handleFetchPassword = async () => {
+    if (!user) return
+    setIsFetchingPassword(true)
+    try {
+      const res = await fetchUserPassword(user._id)
+      setRevealedPassword(res.password)
+      setShowPassword(true)
+      if (!res.password) {
+        toast.info('No plain password record found for this account.')
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to retrieve password.')
+    } finally {
+      setIsFetchingPassword(false)
+    }
+  }
+
+  const handleCopyPassword = (pwd: string) => {
+    navigator.clipboard.writeText(pwd)
+    setCopiedPassword(true)
+    toast.success('Password copied to clipboard')
+    setTimeout(() => setCopiedPassword(false), 2000)
   }
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -168,11 +298,21 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
       return
     }
 
+    if (newPassword.trim() && newPassword.trim().length < 8) {
+      toast.error('New password must be at least 8 characters long')
+      return
+    }
+
     if (user.role === 'student') {
       const isPakistan = (location?: string) => {
         if (!location) return true
         const loc = location.toLowerCase()
-        return loc.includes('karachi') || loc.includes('pakistan') || loc.includes('pk') || loc.includes('asia/karachi')
+        return (
+          loc.includes('karachi') ||
+          loc.includes('pakistan') ||
+          loc.includes('pk') ||
+          loc.includes('asia/karachi')
+        )
       }
 
       for (const config of customFieldConfigs) {
@@ -196,7 +336,7 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
 
     const additionalInfoPayload = Object.entries(customFields).map(([key, value]) => ({
       key,
-      value: value.trim(),
+      value: (value ?? '').toString().trim(),
     }))
 
     const payload: any = {
@@ -204,20 +344,28 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
       additionalInfo: additionalInfoPayload,
     }
 
-    if (user.role === 'manager' || user.role === 'student') {
+    if (newPassword.trim()) {
+      payload.password = newPassword.trim()
+    }
+
+    if (isAdmin && (user.role === 'manager' || user.role === 'student')) {
       payload.permissions = permissions
     }
 
-    await updateUserMutation.mutateAsync({
-      id: user._id,
-      payload,
-    })
-
-    onClose()
+    try {
+      await updateUserMutation.mutateAsync({
+        id: user._id,
+        payload,
+      })
+      onClose()
+    } catch {
+      // Error is caught and surfaced via toast notification in useUpdateUser
+      // Modal stays open so the user doesn't lose entered inputs
+    }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div
         className="w-full max-w-xl bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -231,7 +379,9 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-foreground">Configure Profile</h2>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-semibold border ${roleInfo.color}`}>
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-semibold border ${roleInfo.color}`}
+                >
                   <RoleIcon className="w-3 h-3" />
                   {roleInfo.label}
                 </span>
@@ -265,9 +415,7 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Email Address
-                </label>
+                <label className="text-xs font-semibold text-foreground">Email Address</label>
                 <Input
                   value={user.email}
                   disabled
@@ -288,6 +436,111 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
                 />
               </div>
             )}
+          </div>
+
+          {/* Account Password & Security Section */}
+          <div className="space-y-3 pt-2 border-t border-border/60">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-amber-500" /> Account Password & Security
+              </span>
+              {revealedPassword === null ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFetchPassword}
+                  disabled={isFetchingPassword}
+                  className="h-7 px-2.5 text-[11px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20 cursor-pointer rounded-lg gap-1.5"
+                >
+                  {isFetchingPassword ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Checking Password...</span>
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="w-3 h-3" />
+                      <span>Check Password</span>
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  <span>{showPassword ? 'Hide Password' : 'Show Password'}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Revealed Password Card */}
+            {revealedPassword !== null && (
+              <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-1.5 animate-in fade-in-50">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-muted-foreground">Current Account Password</span>
+                  {revealedPassword && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopyPassword(revealedPassword)}
+                      className="text-[11px] font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedPassword ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-500" />
+                          <span className="text-emerald-500">Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-xs font-bold text-foreground bg-background px-2.5 py-1 rounded-lg border border-border flex-1 select-all">
+                    {revealedPassword
+                      ? showPassword
+                        ? revealedPassword
+                        : '••••••••••••'
+                      : 'No plain password recorded'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Reset Password Input */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                <span>Reset / Change Password</span>
+                <span className="text-[10px] font-normal text-muted-foreground">Optional (min 8 chars)</span>
+              </label>
+              <div className="relative">
+                <Input
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Leave blank to keep existing password"
+                  className="h-9 text-xs font-mono pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  title={showNewPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Only updates if filled. Minimum 8 characters standard security protocol.
+              </p>
+            </div>
           </div>
 
           {/* Dynamic Custom Registration Fields */}
@@ -321,27 +574,29 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
             </div>
           )}
 
-          {/* Permissions Section (Managers & Permitted Students) */}
-          {(user.role === 'manager' || user.role === 'student') && toggleablePermissions.length > 0 && (
-            <div className="space-y-3 pt-1 border-t border-border/60">
-              <div className="flex items-center justify-between">
+          {/* Permissions Section (Only Visible to Admin / Superadmin) */}
+          {isAdmin && (user.role === 'manager' || user.role === 'student') && (
+            <div className="space-y-3.5 pt-2 border-t border-border/60">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-                    {user.role === 'student' ? 'Student Administrative Permissions' : 'Manager Permissions'}
+                    {user.role === 'student'
+                      ? 'Student Administrative Permissions'
+                      : 'Manager Permissions'}
                   </span>
                   <p className="text-[11px] text-muted-foreground">
                     {user.role === 'student'
-                      ? 'Grant administrative privileges to this student (e.g. Mess Secretary, Residence Proctor, Attendance Monitor).'
+                      ? 'Grant administrative privileges to this student (e.g. Mess Secretary, Residence Proctor).'
                       : 'Customize granted feature gates for this manager.'}
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs">
+                <div className="flex items-center gap-2 text-xs shrink-0">
                   <button
                     type="button"
                     onClick={handleSelectAllPerms}
                     className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                   >
-                    Select All
+                    Select All Active
                   </button>
                   <span className="text-muted-foreground">•</span>
                   <button
@@ -354,38 +609,145 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {toggleablePermissions.map((permKey: string) => {
-                  const info = PERMISSION_CONFIG[permKey] || {
-                    label: permKey.replace(/_/g, ' '),
-                    desc: 'Feature capability permission',
-                  }
-                  const isChecked = permissions.includes(permKey)
+              {/* Support & Upgrade Info Banner */}
+              <div className="p-3 rounded-xl border border-purple-500/20 bg-purple-500/5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                  <span className="text-[11px] text-foreground font-medium truncate">
+                    Explore all MessPro features. Need plan upgrades or support?
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openSupportModal('upgrade')}
+                  className="h-7 px-2.5 text-[11px] font-semibold border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-500/10 cursor-pointer rounded-lg shrink-0 gap-1"
+                >
+                  <Headphones className="w-3 h-3" />
+                  <span>Support & Upgrades</span>
+                </Button>
+              </div>
 
-                  return (
-                    <label
-                      key={permKey}
-                      className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
-                        isChecked
-                          ? 'border-purple-500/40 bg-purple-500/5 ring-1 ring-purple-500/20'
-                          : 'border-border/70 bg-background hover:bg-muted/30'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleTogglePermission(permKey)}
-                        className="mt-0.5 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600"
-                      />
-                      <div className="min-w-0 select-none">
-                        <span className="text-xs font-semibold text-foreground block leading-tight">
-                          {info.label}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
-                          {info.desc}
-                        </span>
+              {/* All MessPro Features Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {applicableFeatures.map((feat) => {
+                  const isChecked = permissions.includes(feat.id)
+                  const planStatus = getPermissionPlanStatus(feat.id)
+
+                  // ── Case 1: Active & Enabled in Plan ──
+                  if (planStatus.isEnabled) {
+                    return (
+                      <label
+                        key={feat.id}
+                        className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
+                          isChecked
+                            ? 'border-purple-500/40 bg-purple-500/5 ring-1 ring-purple-500/20'
+                            : 'border-border/70 bg-background hover:bg-muted/30'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleTogglePermission(feat.id)}
+                          className="mt-0.5 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600"
+                        />
+                        <div className="min-w-0 select-none flex-1">
+                          <span className="text-xs font-semibold text-foreground block leading-tight">
+                            {feat.label}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                            {feat.desc}
+                          </span>
+                        </div>
+                      </label>
+                    )
+                  }
+
+                  // ── Case 2: In Plan Tier but Turned OFF in Hostel Configurations ──
+                  if (planStatus.isIncluded && !planStatus.isEnabled) {
+                    return (
+                      <div
+                        key={feat.id}
+                        className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 flex flex-col justify-between gap-2"
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={false}
+                            disabled
+                            className="mt-0.5 h-4 w-4 rounded text-muted-foreground opacity-50 cursor-not-allowed"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-semibold text-foreground">
+                                {feat.label}
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                                Disabled in Config
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                              {feat.desc}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1.5 border-t border-amber-500/20 text-[10px] text-amber-700 dark:text-amber-300">
+                          <div className="flex items-center gap-1">
+                            <Settings className="w-3 h-3 shrink-0" />
+                            <span>Turn on from Configurations first to assign this</span>
+                          </div>
+                        </div>
                       </div>
-                    </label>
+                    )
+                  }
+
+                  // ── Case 3: Not Included in Current Plan Tier ──
+                  return (
+                    <div
+                      key={feat.id}
+                      className="p-2.5 rounded-xl border border-border bg-muted/30 flex flex-col justify-between gap-2 hover:border-purple-500/30 transition-all group"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          disabled
+                          className="mt-0.5 h-4 w-4 rounded text-muted-foreground opacity-40 cursor-not-allowed"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-semibold text-foreground">
+                              {feat.label}
+                            </span>
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-muted text-muted-foreground border border-border flex items-center gap-1">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>Plan Upgrade Required</span>
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                            {feat.desc}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1.5 border-t border-border/60">
+                        <span className="text-[10px] text-muted-foreground italic">
+                          Not included in active plan
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openSupportModal('upgrade', feat.label)}
+                          className="h-6 px-2 text-[10px] font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-md gap-1 cursor-pointer"
+                        >
+                          <Sparkles className="w-2.5 h-2.5" />
+                          <span>Upgrade Plan</span>
+                        </Button>
+                      </div>
+                    </div>
                   )
                 })}
               </div>
@@ -418,6 +780,14 @@ export default function EditUserModal({ isOpen, onClose, user, hostel }: EditUse
           </Button>
         </div>
       </div>
+
+      {/* Support, Renewal & Plan Upgrade Modal */}
+      <SupportUpgradeModal
+        isOpen={isSupportOpen}
+        onClose={() => setIsSupportOpen(false)}
+        initialReason={supportReason}
+        featureName={supportFeatureName}
+      />
     </div>
   )
 }

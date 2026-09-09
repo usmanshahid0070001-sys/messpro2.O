@@ -1,27 +1,30 @@
-// import { z } from 'zod';
-
-// // We ONLY allow specific fields to be updated.
-// // We strictly block 'role', 'password', or 'hostelId' from being changed here.
-// export const updateUserSchema = z.object({
-//   name: z.string().min(2).optional(),
-//   additionalInfo: z.array(z.any()).optional(),
-//   additionalFunctionality: z.string().optional(),
-// }).strict();
-
-
 import { z } from 'zod';
+
+export const userIdParamSchema = z.object({
+  id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid User ID format.'),
+});
+
+const additionalInfoItemSchema = z.object({
+  key: z.string().trim().min(1, 'Field name/key is required.'),
+  value: z.any().optional().transform((v) => (v === undefined || v === null ? '' : String(v).trim())),
+});
 
 // We ONLY allow specific fields to be updated.
 // We strictly block 'role', 'password', or 'hostelId' from being changed here.
 export const updateUserSchema = z.object({
-  name: z.string().min(2).optional(),
-  additionalInfo: z.array(z.any()).optional(),
-  permissions: z.array(z.string()).optional(),
-}).strict(); // .strict() drops any unlisted fields, keeping you 100% secure!
+  name: z.string().trim().min(2, 'Name must be at least 2 characters.').max(100, 'Name cannot exceed 100 characters.').optional(),
+  status: z.enum(['Active', 'Suspended']).optional(),
+  password: z.string().min(8, 'Password must be at least 8 characters long.').optional().or(z.literal('')),
+  additionalInfo: z.array(additionalInfoItemSchema).optional(),
+  permissions: z.array(z.string().trim().min(1)).max(50).optional(),
+}).strict();
 
 export const addUserSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  role: z.enum(['student', 'manager']),
-  permissions: z.array(z.string()).max(50).optional(),
+  name: z.string().trim().min(2, 'Name must be at least 2 characters.').max(100, 'Name cannot exceed 100 characters.'),
+  email: z.string().trim().email('Valid email is required.').toLowerCase(),
+  role: z.enum(['student', 'manager', 'admin']),
+  id: z.string().trim().min(1, 'Roll number / ID cannot be empty.').max(50).optional(),
+  permissions: z.array(z.string().trim().min(1)).max(50).optional(),
+  additionalInfo: z.array(additionalInfoItemSchema).optional().default([]),
 }).strict();
+

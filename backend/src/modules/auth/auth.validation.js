@@ -7,7 +7,12 @@ export const registerSchema = z.object({
   role: z.enum(['student', 'manager', 'admin', 'superadmin']).default('student'),
   email: z.string().email('A valid email is required.'),
   password: z.string().min(6, 'Password must be at least 6 characters long.'),
-  additionalInfo: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
+  additionalInfo: z.array(
+    z.object({
+      key: z.string().trim().min(1),
+      value: z.any().optional().transform((v) => (v === undefined || v === null ? '' : String(v).trim())),
+    })
+  ).optional().default([]),
   additionalFunctionality: z.string().optional(),
 });
 

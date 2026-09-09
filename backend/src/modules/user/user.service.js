@@ -1,10 +1,5 @@
 import mongoose from 'mongoose';
-
-
-
-
-import User from '../auth/auth.model.js';
-import PlainUser from '../auth/plainUser.model.js'; // For syncing names & permissions
+import userRepository from './user.repository.js';
 
 export const getUsersByHierarchy = async (requesterRole, requesterHostelId) => {
   let query = {}; 
@@ -15,10 +10,20 @@ export const getUsersByHierarchy = async (requesterRole, requesterHostelId) => {
   } 
   // 2. Hostel Admin: Sees Managers & Students ONLY in their specific hostel
   else if (requesterRole === 'admin') {
+    if (!requesterHostelId) {
+      const error = new Error('No hostel associated with this administrator account.');
+      error.statusCode = 400;
+      throw error;
+    }
     query = { hostelId: requesterHostelId, role: { $in: ['manager', 'student'] } };
   } 
   // 3. Manager & Permitted Student: Sees Students ONLY in their specific hostel
   else if (requesterRole === 'manager' || requesterRole === 'student') {
+    if (!requesterHostelId) {
+      const error = new Error('No hostel associated with this account.');
+      error.statusCode = 400;
+      throw error;
+    }
     query = { hostelId: requesterHostelId, role: 'student' };
   } 
   else {
@@ -27,77 +32,185 @@ export const getUsersByHierarchy = async (requesterRole, requesterHostelId) => {
     throw error;
   }
 
-  // Execute the query, but hide the passwords from the frontend!
-  return await User.find(query).populate('room', 'roomName capacity status').select('-password').sort({ createdAt: -1 });
+  // Execute the query via repository, hiding passwords
+  return await userRepository.findUsers(query);
 };
 
-export const updateUser = async (requesterRole, requesterHostelId, targetUserId, updateData) => {
+export const updateUser = async (requesterRole, requesterHostelId, targetUserId, updateData, requesterUserId = null) => {
   // 1. Find the user they are trying to update
-  const targetUser = await User.findById(targetUserId);
+  const targetUser = await userRepository.findById(targetUserId);
   if (!targetUser) {
     const error = new Error('User not found.');
     error.statusCode = 404;
     throw error;
   }
 
+  const isSelf = requesterUserId && String(targetUser._id) === String(requesterUserId);
+
   // 2. THE SECURITY BOUNCER: Hierarchy & Tenant Isolation Check
   const allowedUpdates = {
-    superadmin: ['admin', 'manager'],
+    superadmin: ['superadmin', 'admin', 'manager', 'student'],
     admin:      ['manager', 'student'],
     manager:    ['student'],
     student:    ['student']
   };
 
-  // Rule A: Can this role edit that role?
-  if (!allowedUpdates[requesterRole]?.includes(targetUser.role)) {
+  // Rule A: Can this role edit that role? (Self-update of profile/additionalInfo is always allowed)
+  if (!isSelf && !allowedUpdates[requesterRole]?.includes(targetUser.role)) {
     const error = new Error(`Access Denied: A ${requesterRole} cannot update a ${targetUser.role}.`);
     error.statusCode = 403;
     throw error;
   }
 
-  // Rule B: Are they in the same hostel? (Superadmins bypass this rule)
-  if (requesterRole !== 'superadmin' && String(targetUser.hostelId) !== String(requesterHostelId)) {
+  // Security Guard: Only admin and superadmin can grant or update user permissions
+  if (updateData.permissions !== undefined && requesterRole !== 'admin' && requesterRole !== 'superadmin') {
+    delete updateData.permissions;
+  }
+
+  // Rule B: Are they in the same hostel? (Superadmins and self-updates bypass this rule)
+  if (!isSelf && requesterRole !== 'superadmin' && String(targetUser.hostelId) !== String(requesterHostelId)) {
     const error = new Error('Access Denied: This user belongs to a different hostel.');
     error.statusCode = 403;
     throw error;
   }
 
   // 3. Perform the update on the main User table
-  const updatedUser = await User.findByIdAndUpdate(
-    targetUserId,
-    { $set: updateData },
-    { new: true, runValidators: true }
-  ).select('-password');
+  const updatedUser = await userRepository.findByIdAndUpdate(targetUserId, updateData);
 
-  // 4. Architect Bonus: Keep PlainUser model in sync if they changed the name OR permissions!
-  if (updateData.name !== undefined || updateData.permissions !== undefined) {
+  // Handle password update if supplied (min 8 chars)
+  if (updateData.password && updateData.password.trim().length >= 8) {
+    targetUser.password = updateData.password.trim();
+    await targetUser.save();
+    await userRepository.syncPlainUser(targetUser.email, { password: updateData.password.trim() });
+  }
+
+  // 4. Architect Bonus: Keep PlainUser model in sync if they changed name, status, OR permissions!
+  if (updateData.name !== undefined || updateData.permissions !== undefined || updateData.status !== undefined) {
     const syncData = {};
     if (updateData.name !== undefined) syncData.name = updateData.name;
     if (updateData.permissions !== undefined) syncData.permissions = updateData.permissions;
+    if (updateData.status !== undefined) syncData.status = updateData.status;
 
-    await PlainUser.findOneAndUpdate(
-      { email: targetUser.email },
-      { $set: syncData }
-    );
+    await userRepository.syncPlainUser(targetUser.email, syncData);
   }
 
   return updatedUser;
+};
+
+export const getUserPassword = async (requesterRole, requesterHostelId, targetUserId) => {
+  const targetUser = await userRepository.findById(targetUserId);
+  if (!targetUser) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Hierarchy check
+  const allowedViewers = {
+    superadmin: ['superadmin', 'admin', 'manager', 'student'],
+    admin:      ['admin', 'manager', 'student'],
+    manager:    ['student'],
+  };
+
+  if (!allowedViewers[requesterRole]?.includes(targetUser.role)) {
+    const error = new Error(`Access Denied: A ${requesterRole} cannot view credentials for a ${targetUser.role}.`);
+    error.statusCode = 403;
+    throw error;
+  }
+
+  // Tenant Isolation Check (Superadmins can view across all hostels)
+  if (requesterRole !== 'superadmin' && String(targetUser.hostelId) !== String(requesterHostelId)) {
+    const error = new Error('Access Denied: This user belongs to a different hostel.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const plainUser = await userRepository.findPlainUserByEmail(targetUser.email);
+  return {
+    userId: targetUser._id,
+    email: targetUser.email,
+    name: targetUser.name,
+    role: targetUser.role,
+    password: plainUser?.password || null,
+  };
+};
+
+export const deleteUser = async (requesterRole, requesterHostelId, targetUserId) => {
+  // 1. Find target user
+  const targetUser = await userRepository.findById(targetUserId);
+  if (!targetUser) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // 2. Hierarchy & Tenant Isolation Check
+  const allowedDeletions = {
+    superadmin: ['admin', 'manager'],
+    admin:      ['manager', 'student'],
+    manager:    ['student'],
+  };
+
+  if (!allowedDeletions[requesterRole]?.includes(targetUser.role)) {
+    const error = new Error(`Access Denied: A ${requesterRole} is not permitted to delete a ${targetUser.role}.`);
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (requesterRole !== 'superadmin' && String(targetUser.hostelId) !== String(requesterHostelId)) {
+    const error = new Error('Access Denied: This user belongs to a different hostel.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  // 3. FINANCIAL GUARD: Ensure no pending dues or unpaid bills exist
+  const pendingBills = await userRepository.findPendingBillsByUser(
+    targetUser.hostelId,
+    targetUser._id,
+    targetUser.id
+  );
+
+  if (pendingBills && pendingBills.length > 0) {
+    const totalDues = pendingBills.reduce((acc, b) => acc + (b.remainingBill || 0), 0);
+    const error = new Error(
+      `Cannot delete user: ${targetUser.name} has ${pendingBills.length} unpaid bill(s) with pending dues totaling Rs. ${totalDues}. All pending dues must be cleared first before deleting the user.`
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 4. Room Occupancy Cleanup
+  if (targetUser.room) {
+    await userRepository.unassignRoomOccupant(targetUser.room);
+  }
+
+  // 5. Delete User Doc & PlainUser Doc (Preserving MealRecords and Bills intact)
+  await userRepository.deleteUserById(targetUserId);
+  await userRepository.deletePlainUserByEmail(targetUser.email);
+
+  // 6. Recalculate and sync hostel student / manager limits
+  if (targetUser.role === 'student' || targetUser.role === 'manager') {
+    await userRepository.syncHostelUserLimit(targetUser.hostelId, targetUser.role);
+  }
+
+  return {
+    success: true,
+    message: `User ${targetUser.name} (${targetUser.role}) has been deleted successfully.`,
+    userId: targetUserId,
+  };
 };
 
 // ─── Sign Legal Agreement ────────────────────────────────────────────────────
 // Called when the user clicks "I Agree" in the LegalAgreementModal.
 // Sets agreement = 'signed' and stamps agreementSignedAt timestamp.
 export const signAgreement = async (userId) => {
-  const updatedUser = await User.findByIdAndUpdate(
+  const updatedUser = await userRepository.findByIdAndUpdate(
     userId,
     {
-      $set: {
-        agreement: 'signed',
-        agreementSignedAt: new Date(),
-      },
-    },
-    { new: true, runValidators: true }
-  ).select('-password');
+      agreement: 'signed',
+      agreementSignedAt: new Date(),
+    }
+  );
 
   if (!updatedUser) {
     const error = new Error('User not found.');
@@ -107,8 +220,6 @@ export const signAgreement = async (userId) => {
 
   return updatedUser;
 };
-
-
 
 // ─── Superadmin System Health Check ──────────────────────────────────────────
 export const getSystemHealth = async () => {
@@ -143,3 +254,4 @@ export const getSystemHealth = async () => {
     }
   };
 };
+

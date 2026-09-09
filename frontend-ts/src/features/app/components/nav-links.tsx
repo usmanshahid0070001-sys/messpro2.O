@@ -1,8 +1,9 @@
 "use client"
 
+import { Link } from "react-router-dom"
 import {
   type LucideIcon,
-  ExternalLink,
+  ChevronRight,
 } from "lucide-react"
 
 import {
@@ -24,16 +25,16 @@ export function NavLinks({
 }) {
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>External Links</SidebarGroupLabel>
+      <SidebarGroupLabel>Resources & Policies</SidebarGroupLabel>
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <a href={item.url} target="_blank" rel="noopener noreferrer">
-                <item.icon />
+            <SidebarMenuButton asChild tooltip={item.name}>
+              <Link to={item.url}>
+                <item.icon className="size-4" />
                 <span>{item.name}</span>
-                <ExternalLink className="ml-auto size-4 opacity-50" />
-              </a>
+                <ChevronRight className="ml-auto size-3.5 opacity-40" />
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}

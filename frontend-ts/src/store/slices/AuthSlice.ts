@@ -10,6 +10,9 @@ export interface User {
   hostelStatus?: any; // You can type this more strictly if you know the status shape
   permissions?: string[];
   room?: string;
+  additionalInfo?: Array<{ key: string; value: string }>;
+  agreement?: 'pending' | 'signed';
+  agreementSignedAt?: string;
 }
 
 interface AuthState {
@@ -23,12 +26,16 @@ const getStoredAuth = (): { token: string | null; user: User | null; isAuthentic
     if (typeof window === 'undefined') {
       return { token: null, user: null, isAuthenticated: false };
     }
-    const token = localStorage.getItem('token');
+    const rawToken = localStorage.getItem('token');
+    const token = rawToken && rawToken !== 'undefined' && rawToken !== 'null' ? rawToken : null;
     const userStr = localStorage.getItem('user');
-    const user = userStr ? (JSON.parse(userStr) as User) : null;
+    const user =
+      userStr && userStr !== 'undefined' && userStr !== 'null'
+        ? (JSON.parse(userStr) as User)
+        : null;
     return {
-      token: token || null,
-      user: user || null,
+      token,
+      user,
       isAuthenticated: Boolean(token && user),
     };
   } catch (e) {
@@ -66,6 +73,16 @@ const authSlice = createSlice({
         console.warn('Could not save auth credentials to localStorage', e);
       }
     },
+    updateAuthUser: (state, action: PayloadAction<Partial<User>>) => {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+        try {
+          localStorage.setItem('user', JSON.stringify(state.user));
+        } catch (e) {
+          console.warn('Could not update auth user in localStorage', e);
+        }
+      }
+    },
     logout: (state) => {
       state.user = null;
       state.token = null;
@@ -80,6 +97,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, updateAuthUser, logout } = authSlice.actions;
 export default authSlice.reducer;
 

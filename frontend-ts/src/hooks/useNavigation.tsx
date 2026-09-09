@@ -3,19 +3,23 @@ import { useSelector } from 'react-redux';
 import {
   Globe,
   Shield,
-  FileText,
   Settings2,
   Building2,
   Utensils,
   BedDouble,
-  PieChart,
   LayoutDashboard,
   FileTextIcon,
   UserCheck,
   QrCode,
   Fingerprint,
   ClipboardCheck,
+  Layers,
+  BookOpen,
+  ShieldCheck,
+  Scale,
+  Inbox,
 } from 'lucide-react';
+
 import type { RootState } from '@/store';
 import type { PlanFeature } from '@/store/slices/HostelSlice';
 
@@ -82,8 +86,7 @@ export function useNavigation() {
         url: '#',
         items: [
           { title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' },
-          ...(role === 'manager' ? [{ title: "Meal Overview", url: '#' }] : []),
-          { title: 'Meal Control', url: '#' }
+          { title: 'Meal Control & Audit', url: '/app/meals/control' }
         ]
       });
     } else if (perms.includes("meal_settings")) {
@@ -91,9 +94,17 @@ export function useNavigation() {
         title: "Mess Meals & Schedule",
         icon: Utensils,
         url: '#',
-        items: role === 'manager'
-          ? [{ title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' }, { title: 'Meal Overview', url: '#' }]
-          : [{ title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' }]
+        items: [
+          { title: 'Manage Weekly Menu', url: '/app/meals/manage-schedule' },
+          { title: 'Meal Control & Audit', url: '/app/meals/control' }
+        ]
+      });
+    } else if (perms.includes("meal_control")) {
+      adminNav.push({
+        title: "Mess Meals & Schedule",
+        icon: Utensils,
+        url: '#',
+        items: [{ title: 'Meal Control & Audit', url: '/app/meals/control' }]
       });
     }
 
@@ -170,32 +181,33 @@ export function useNavigation() {
     if (role === 'superadmin') {
       return [
         {
-          title: "System Overview",
-          icon: PieChart,
-          isActive: true,
-          items: [
-            { title: "Dashboard", url: "/app" },
-            { title: "System Health", url: "/app/system-health" },
-          ]
+          title: "Dashboard",
+          url: "/app",
+          icon: LayoutDashboard
         },
         {
-          title: "Manage Hostels",
-          icon: Building2,
-          isActive: true,
-          items: [
-            { title: "All Hostels", url: "#" },
-            { title: "Manage Users", url: "/app/users" },
-          ],
+          title: "Hostel Requests",
+          url: "/app/superadmin/requests",
+          icon: Inbox
         },
         {
-          title: "Global Settings",
-          url: "#",
-          icon: Settings2,
-          isActive: true,
-          items: [{ title: "Manage Plans", url: "#" }]
+          title: "Hostel Tenants",
+          url: "/app/superadmin/hostels",
+          icon: Building2
+        },
+        {
+          title: "Subscription Plans",
+          url: "/app/superadmin/plans",
+          icon: Layers
+        },
+        {
+          title: "Manage Users",
+          url: "/app/users",
+          icon: Shield
         },
       ];
     }
+
 
     // ── Admin ───────────────────────────────────────────────────────────────
     if (role === 'admin') {
@@ -289,7 +301,7 @@ export function useNavigation() {
         adminFeatureItems.push({ title: "Manage Weekly Menu", url: "/app/meals/manage-schedule" });
       }
       if (perms.includes('meal_control')) {
-        adminFeatureItems.push({ title: "Meal Control", url: "#" });
+        adminFeatureItems.push({ title: "Meal Control & Audit", url: "/app/meals/control" });
       }
       if (perms.includes('residence_management')) {
         adminFeatureItems.push({ title: "Room Allocation", url: "/app/residence/allocation" });
@@ -336,9 +348,10 @@ export function useNavigation() {
   }, [role, isAuthenticated, features, perms]);
 
   const projects = [
-    { name: "Landing Page", url: "https://messprouet.vercel.app", icon: Globe },
-    { name: "Terms & Policy", url: "https://messprouet.vercel.app", icon: Shield },
-    { name: "Legal Doc", url: "https://messprouet.vercel.app", icon: FileText },
+    { name: "Landing Page", url: "/", icon: Globe },
+    { name: "Documentation", url: "/docs", icon: BookOpen },
+    { name: "Terms of Service", url: "/terms", icon: Scale },
+    { name: "Privacy Policy", url: "/privacy", icon: ShieldCheck },
   ];
 
   return { navMain, projects };

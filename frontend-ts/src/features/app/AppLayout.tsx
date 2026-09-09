@@ -5,7 +5,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Bell } from "lucide-react"
+import { Bell, ShieldAlert } from "lucide-react"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/store"
 import { GlobalSearch } from "@/features/app/components/global-search"
 import {
   Breadcrumb,
@@ -15,11 +17,16 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useNavigation } from "@/hooks/useNavigation"
+import { useSEO } from "@/hooks/useSEO"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { BiometricSyncFloatingWidget } from "@/features/attendance/Biometric/components/BiometricSyncFloatingWidget"
+import OnboardingModal from "@/components/OnboardingModal"
 import logoUrl from "@/assets/pwa-512x512.png"
 
 export default function AppLayout() {
   const location = useLocation()
   const { navMain } = useNavigation()
+  const { user: currentUser } = useSelector((s: RootState) => s.auth)
 
   // Resolve breadcrumbs dynamically based on active route and navigation items
   const breadcrumbs = React.useMemo(() => {
@@ -83,6 +90,13 @@ export default function AppLayout() {
     }
   }, [location.pathname, navMain])
 
+  // Ensure internal authenticated dashboard routes are protected from search indexing
+  useSEO({
+    title: `${breadcrumbs.current} — MessPro 2.0`,
+    description: 'MessPro 2.0 Authenticated Portal',
+    robots: 'noindex, nofollow',
+  })
+
   return (
     <SidebarProvider>
       <AppSidebar side="left" variant="sidebar" collapsible="icon" />
@@ -138,11 +152,40 @@ export default function AppLayout() {
           </div>
         </div>
 
+        {currentUser?.status === 'Suspended' && (
+          <div className="mx-1 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between text-xs text-amber-700 dark:text-amber-300">
+            <div className="flex items-center gap-2.5">
+              <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                <strong>Account Suspended:</strong> Your account is currently suspended. You have read-only access to view your dashboard and billing statements.
+              </span>
+            </div>
+          </div>
+        )}
+
         <div id="main-page-content" className="flex-1 min-w-0 max-w-full overflow-x-hidden">
-          {/* Main content — Dashboard, All Hostels, etc. */}
-          <Outlet />
+          {/* Main content — Dashboard, All Hostels, etc. protected by ErrorBoundary & Suspense */}
+          <ErrorBoundary>
+            <React.Suspense
+              fallback={
+                <div className="p-6 space-y-4 animate-pulse">
+                  <div className="h-8 w-48 bg-muted rounded-lg" />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="h-28 bg-muted/60 rounded-2xl" />
+                    <div className="h-28 bg-muted/60 rounded-2xl" />
+                    <div className="h-28 bg-muted/60 rounded-2xl" />
+                  </div>
+                  <div className="h-72 w-full bg-muted/40 rounded-2xl" />
+                </div>
+              }
+            >
+              <Outlet />
+            </React.Suspense>
+          </ErrorBoundary>
         </div>
       </div>
+      <BiometricSyncFloatingWidget />
+      <OnboardingModal />
     </SidebarProvider>
   )
 }

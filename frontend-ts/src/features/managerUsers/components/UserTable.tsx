@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  Mail,
   ShieldAlert,
   Trash2,
   ChevronLeft,
@@ -12,11 +11,14 @@ import {
   UserCheck,
   Copy,
   Check,
+  CheckCircle2,
   Settings2,
   MoreHorizontal,
   MoreVertical,
+  Building2,
 } from 'lucide-react'
 import type { ManageableUser } from '@/hooks/queries/useUserQueries'
+import { useUpdateUser, useDeleteUser } from '@/hooks/mutations/useUserMutations'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -28,6 +30,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 
+export interface CustomFieldConfig {
+  name: string
+  isRequired?: boolean
+  type?: string
+}
+
 interface UserTableProps {
   paginatedUsers: ManageableUser[]
   currentPage: number
@@ -35,9 +43,13 @@ interface UserTableProps {
   totalCount: number
   onPageChange: (page: number) => void
   onEditClick: (user: ManageableUser) => void
-  customFieldConfigs: any[]
+  customFieldConfigs: CustomFieldConfig[]
+  isSuperAdmin?: boolean
 }
 
+/**
+ * Returns role badge styles, avatar background, and iconography.
+ */
 const getRoleConfig = (role: string) => {
   switch (role) {
     case 'superadmin':
@@ -72,6 +84,10 @@ const getRoleConfig = (role: string) => {
   }
 }
 
+/**
+ * High-density desktop table & responsive mobile card list for managing hostel residents,
+ * managers, and administrative personnel.
+ */
 export default function UserTable({
   paginatedUsers,
   currentPage,
@@ -80,8 +96,27 @@ export default function UserTable({
   onPageChange,
   onEditClick,
   customFieldConfigs,
+  isSuperAdmin = false,
 }: UserTableProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [inputPage, setInputPage] = useState<string>(String(currentPage))
+  const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser()
+  const { mutateAsync: deleteUser, isPending: isDeleting } = useDeleteUser()
+
+  useEffect(() => {
+    setInputPage(String(currentPage))
+  }, [currentPage])
+
+  const handlePageInputCommit = () => {
+    const pageNum = parseInt(inputPage, 10)
+    if (!isNaN(pageNum)) {
+      const target = Math.max(1, Math.min(totalPages, pageNum))
+      onPageChange(target)
+      setInputPage(String(target))
+    } else {
+      setInputPage(String(currentPage))
+    }
+  }
 
   const handleCopyEmail = (email: string, id: string) => {
     navigator.clipboard.writeText(email)
@@ -90,12 +125,29 @@ export default function UserTable({
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const handleFreeze = (userName: string) => {
-    toast.info(`Status update: ${userName}'s account status has been marked.`)
+  const handleToggleStatus = async (user: ManageableUser) => {
+    const newStatus = user.status === 'Suspended' ? 'Active' : 'Suspended'
+    try {
+      await updateUser({
+        id: user._id,
+        payload: { status: newStatus },
+      })
+    } catch {
+      // Error handled by mutation hook toast
+    }
   }
 
-  const handleDelete = (userName: string) => {
-    toast.warning(`Request to remove ${userName} has been logged.`)
+  const handleDelete = async (user: ManageableUser) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${user.name} (${user.role})? This action cannot be undone.`
+    )
+    if (!confirmed) return
+
+    try {
+      await deleteUser(user._id)
+    } catch {
+      // Error handled by mutation hook toast
+    }
   }
 
   if (paginatedUsers.length === 0) {
@@ -123,12 +175,18 @@ export default function UserTable({
             <tr className="border-b border-border bg-muted/30 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               <th className="px-5 py-3.5">Member</th>
               <th className="px-5 py-3.5">Role</th>
-              <th className="px-5 py-3.5">Roll / ID</th>
-              {/* Dynamic custom field headers */}
-              {customFieldConfigs.slice(0, 2).map((config: any) => (
-                <th key={config.name} className="px-5 py-3.5">{config.name}</th>
-              ))}
-              <th className="px-5 py-3.5">Room Allotment</th>
+              {isSuperAdmin ? (
+                <th className="px-5 py-3.5">Hostel</th>
+              ) : (
+                <>
+                  <th className="px-5 py-3.5">Roll / ID</th>
+                  {/* Dynamic custom field headers */}
+                  {customFieldConfigs.slice(0, 2).map((config: any) => (
+                    <th key={config.name} className="px-5 py-3.5">{config.name}</th>
+                  ))}
+                  <th className="px-5 py-3.5">Room Allotment</th>
+                </>
+              )}
               <th className="px-5 py-3.5 text-right w-16">Actions</th>
             </tr>
           </thead>
@@ -144,12 +202,24 @@ export default function UserTable({
                     <div className="flex items-center gap-3">
                       <div className={`relative h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border select-none ${roleConfig.avatarBg}`}>
                         {user.name.substring(0, 2).toUpperCase()}
-                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+                        <span
+                          className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${
+                            user.status === 'Suspended' ? 'bg-rose-500' : 'bg-emerald-500'
+                          }`}
+                          title={user.status === 'Suspended' ? 'Account Suspended' : 'Account Active'}
+                        />
                       </div>
                       <div className="min-w-0">
-                        <span className="font-semibold text-foreground block truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {user.name}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-foreground truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {user.name}
+                          </span>
+                          {user.status === 'Suspended' && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                              Suspended
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <span className="truncate">{user.email}</span>
                           <button
@@ -188,50 +258,71 @@ export default function UserTable({
                     </div>
                   </td>
 
-                  {/* Roll Number */}
-                  <td className="px-5 py-3.5 font-mono text-xs text-foreground">
-                    {user.role === 'student' ? (
-                      user.id ? (
-                        <span className="px-2 py-0.5 rounded-md bg-muted/60 border border-border/60">
-                          {user.id}
+                  {/* Superadmin View: Hostel Column vs Regular View: Roll / Custom / Room */}
+                  {isSuperAdmin ? (
+                    <td className="px-5 py-3.5">
+                      {user.hostelName ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                          <Building2 className="h-3.5 w-3.5 shrink-0" />
+                          <span>{user.hostelName}</span>
+                        </span>
+                      ) : user.hostelId ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-muted/60 text-muted-foreground border border-border">
+                          <Building2 className="h-3.5 w-3.5 shrink-0" />
+                          <span>Hostel #{user.hostelId.slice(-6)}</span>
                         </span>
                       ) : (
                         <span className="text-muted-foreground/60">—</span>
-                      )
-                    ) : (
-                      <span className="text-muted-foreground/60">—</span>
-                    )}
-                  </td>
-
-                  {/* Custom fields */}
-                  {customFieldConfigs.slice(0, 2).map((config: any) => {
-                    const field = (user.additionalInfo || []).find((f: any) => f.key === config.name)
-                    return (
-                      <td key={config.name} className="px-5 py-3.5 text-xs font-medium text-foreground">
-                        {field?.value ? (
-                          <span className="truncate block max-w-[140px]">{field.value}</span>
+                      )}
+                    </td>
+                  ) : (
+                    <>
+                      {/* Roll Number */}
+                      <td className="px-5 py-3.5 font-mono text-xs text-foreground">
+                        {user.role === 'student' ? (
+                          user.id ? (
+                            <span className="px-2 py-0.5 rounded-md bg-muted/60 border border-border/60">
+                              {user.id}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/60">—</span>
+                          )
                         ) : (
                           <span className="text-muted-foreground/60">—</span>
                         )}
                       </td>
-                    )
-                  })}
 
-                  {/* Room Allotment */}
-                  <td className="px-5 py-3.5">
-                    {user.role === 'student' || user.role === 'manager' ? (
-                      user.room ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
-                          <BedDouble className="h-3 w-3" />
-                          <span>{user.room.roomName}</span>
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/70 italic">Unassigned</span>
-                      )
-                    ) : (
-                      <span className="text-muted-foreground/60">—</span>
-                    )}
-                  </td>
+                      {/* Custom fields */}
+                      {customFieldConfigs.slice(0, 2).map((config: any) => {
+                        const field = (user.additionalInfo || []).find((f: any) => f.key === config.name)
+                        return (
+                          <td key={config.name} className="px-5 py-3.5 text-xs font-medium text-foreground">
+                            {field?.value ? (
+                              <span className="truncate block max-w-[140px]">{field.value}</span>
+                            ) : (
+                              <span className="text-muted-foreground/60">—</span>
+                            )}
+                          </td>
+                        )
+                      })}
+
+                      {/* Room Allotment */}
+                      <td className="px-5 py-3.5">
+                        {user.role === 'student' || user.role === 'manager' ? (
+                          user.room ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+                              <BedDouble className="h-3 w-3" />
+                              <span>{user.room.roomName}</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/70 italic">Unassigned</span>
+                          )
+                        ) : (
+                          <span className="text-muted-foreground/60">—</span>
+                        )}
+                      </td>
+                    </>
+                  )}
 
                   {/* Space-Friendly Action Menu */}
                   <td className="px-5 py-3.5 text-right">
@@ -259,15 +350,26 @@ export default function UserTable({
                           <span>Configure Profile</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleFreeze(user.name)}
+                          onClick={() => handleToggleStatus(user)}
+                          disabled={isUpdating}
                           className="text-xs gap-2 px-2 py-1.5 rounded-lg cursor-pointer text-foreground focus:bg-amber-500/10 focus:text-amber-600 dark:focus:text-amber-400"
                         >
-                          <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
-                          <span>Suspend / Freeze</span>
+                          {user.status === 'Suspended' ? (
+                            <>
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                              <span>Reactivate Account</span>
+                            </>
+                          ) : (
+                            <>
+                              <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
+                              <span>Suspend Account</span>
+                            </>
+                          )}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="my-1 bg-border/60" />
                         <DropdownMenuItem
-                          onClick={() => handleDelete(user.name)}
+                          onClick={() => handleDelete(user)}
+                          disabled={isDeleting}
                           variant="destructive"
                           className="text-xs gap-2 px-2 py-1.5 rounded-lg cursor-pointer text-rose-600 dark:text-rose-400 focus:bg-rose-500/10 focus:text-rose-600"
                         >
@@ -294,13 +396,25 @@ export default function UserTable({
             <div key={user._id} className="p-4 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border ${roleConfig.avatarBg}`}>
+                  <div className={`relative h-10 w-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border ${roleConfig.avatarBg}`}>
                     {user.name.substring(0, 2).toUpperCase()}
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${
+                        user.status === 'Suspended' ? 'bg-rose-500' : 'bg-emerald-500'
+                      }`}
+                    />
                   </div>
                   <div className="min-w-0">
-                    <span className="font-semibold text-foreground text-sm block truncate">
-                      {user.name}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-foreground text-sm truncate">
+                        {user.name}
+                      </span>
+                      {user.status === 'Suspended' && (
+                        <span className="text-[8px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                          Suspended
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs text-muted-foreground truncate block">
                       {user.email}
                     </span>
@@ -339,12 +453,30 @@ export default function UserTable({
                         <Settings2 className="h-3.5 w-3.5 text-blue-500" />
                         <span>Configure</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleFreeze(user.name)} className="text-xs gap-2 px-2 py-1.5 cursor-pointer">
-                        <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
-                        <span>Suspend</span>
+                      <DropdownMenuItem
+                        onClick={() => handleToggleStatus(user)}
+                        disabled={isUpdating}
+                        className="text-xs gap-2 px-2 py-1.5 cursor-pointer"
+                      >
+                        {user.status === 'Suspended' ? (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                            <span>Reactivate</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
+                            <span>Suspend</span>
+                          </>
+                        )}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator className="my-1 bg-border/60" />
-                      <DropdownMenuItem onClick={() => handleDelete(user.name)} variant="destructive" className="text-xs gap-2 px-2 py-1.5 text-rose-600 cursor-pointer">
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(user)}
+                        disabled={isDeleting}
+                        variant="destructive"
+                        className="text-xs gap-2 px-2 py-1.5 text-rose-600 cursor-pointer"
+                      >
                         <Trash2 className="h-3.5 w-3.5" />
                         <span>Delete</span>
                       </DropdownMenuItem>
@@ -354,18 +486,28 @@ export default function UserTable({
               </div>
 
               {/* Specs row */}
-              <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-2.5 rounded-xl border border-border/40">
-                <div>
-                  <span className="text-[10px] text-muted-foreground uppercase block font-semibold">Roll Number</span>
-                  <span className="font-mono text-foreground font-medium">{user.id || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-muted-foreground uppercase block font-semibold">Room Allotment</span>
-                  <span className="text-foreground font-medium">
-                    {user.room ? user.room.roomName : 'Unassigned'}
+              {isSuperAdmin ? (
+                <div className="text-xs bg-muted/40 p-2.5 rounded-xl border border-border/40 flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground uppercase font-semibold">Hostel</span>
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-blue-600 dark:text-blue-400 text-xs">
+                    <Building2 className="h-3.5 w-3.5" />
+                    {user.hostelName || (user.hostelId ? `Hostel #${user.hostelId.slice(-6)}` : '—')}
                   </span>
                 </div>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-2.5 rounded-xl border border-border/40">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase block font-semibold">Roll Number</span>
+                    <span className="font-mono text-foreground font-medium">{user.id || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase block font-semibold">Room Allotment</span>
+                    <span className="text-foreground font-medium">
+                      {user.room ? user.room.roomName : 'Unassigned'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )
         })}
@@ -378,7 +520,7 @@ export default function UserTable({
             Showing Page <strong className="text-foreground">{currentPage}</strong> of{' '}
             <strong className="text-foreground">{totalPages}</strong> ({totalCount} total members)
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -389,6 +531,27 @@ export default function UserTable({
               <ChevronLeft className="h-3.5 w-3.5" />
               <span>Previous</span>
             </Button>
+
+            <div className="flex items-center gap-1.5 px-1 text-xs">
+              <span className="text-muted-foreground font-medium">Page</span>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={inputPage}
+                onChange={(e) => setInputPage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePageInputCommit()
+                  }
+                }}
+                onBlur={handlePageInputCommit}
+                className="w-12 h-8 text-center text-xs font-semibold bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                aria-label="Go to page number"
+              />
+              <span className="text-muted-foreground font-medium">of {totalPages}</span>
+            </div>
+
             <Button
               variant="outline"
               size="sm"

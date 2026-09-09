@@ -1,7 +1,9 @@
 import jwt from 'jsonwebtoken';
-import User from './auth.model.js';
-import PlainUser from './plainUser.model.js';
-import Hostel from '../hostel/hostel.model.js';
+import authRepository from './auth.repository.js';
+import hostelRepository from '../hostel/hostel.repository.js';
+import { cache } from '../../config/cache.js';
+import { supportsTransactions } from '../../config/db.js';
+import { sendOtpEmail } from '../../utils/email.js';
 
 const createToken = (userId) => {
   if (!process.env.JWT_SECRET) {
@@ -23,7 +25,8 @@ const normalizeIdentifier = (identifier) => identifier?.toString().trim().toLowe
 
 export const registerUser = async (data) => {
   const email = data.email?.toLowerCase().trim();
-  const existingUser = await User.findOne({ $or: [{ email }, { id: data.id?.toLowerCase().trim() }] });
+  const rollId = data.id?.toLowerCase().trim();
+  const existingUser = await authRepository.findByEmailOrId(email, rollId);
 
   if (existingUser) {
     const error = new Error('A user with this email or roll number already exists.');
@@ -34,88 +37,115 @@ export const registerUser = async (data) => {
   // 👇 THE SAAS LIMIT CHECK 👇
   const role = data.role || 'student';
   if (role === 'student' || role === 'manager') {
-    const hostel = await Hostel.findById(data.hostelId);
+    const hostel = await hostelRepository.findById(data.hostelId);
     if (!hostel) {
       const error = new Error('Hostel not found.');
       error.statusCode = 404;
       throw error;
     }
 
-    const limit = role === 'manager' ? hostel.plan.limits.maxManagers : hostel.plan.limits.maxStudents;
-    const current = role === 'manager' ? hostel.plan.limits.managers : hostel.plan.limits.students;
+    const limit = role === 'manager' ? hostel.plan?.limits?.maxManagers : hostel.plan?.limits?.maxStudents;
+    const current = await authRepository.countByRole(data.hostelId, role);
 
-    if (limit !== -1 && current >= limit) {
+    if (limit !== undefined && limit !== -1 && current >= limit) {
       const error = new Error(`Upgrade required. Your current plan only allows ${limit} ${role}(s).`);
       error.statusCode = 402;
       throw error;
     }
-
-    // Atomically increment the counter for this hostel
-    const incrementField = role === 'manager' ? 'plan.limits.managers' : 'plan.limits.students';
-    await Hostel.findByIdAndUpdate(data.hostelId, { $inc: { [incrementField]: 1 } });
   }
 
-  const user = await User.create({
-    ...data,
-    email,
-    password: data.password,
-    id: data.id?.toLowerCase().trim(),
-    hostelId: data.hostelId,
-    additionalInfo: Array.isArray(data.additionalInfo) ? data.additionalInfo : [],
-    additionalFunctionality: data.additionalFunctionality || 'none',
-  });
+  // Transaction support with safe compensating fallback for standalone MongoDB
+  const txSupported = await supportsTransactions();
+  let session = null;
+  let useTransaction = false;
 
-  await PlainUser.findOneAndUpdate(
-    { email },
-    {
+  if (txSupported) {
+    try {
+      session = await authRepository.startSession();
+      session.startTransaction();
+      useTransaction = true;
+    } catch {
+      session = null;
+      useTransaction = false;
+    }
+  }
+
+  let createdUser = null;
+  let isPlainUserCreated = false;
+
+  try {
+    const userPayload = {
+      ...data,
+      email,
       password: data.password,
-      role: data.role || 'student',
-      name: data.name,
+      id: rollId,
       hostelId: data.hostelId,
-    },
-    { upsert: true, new: true }
-  );
+      additionalInfo: Array.isArray(data.additionalInfo) ? data.additionalInfo : [],
+      additionalFunctionality: data.additionalFunctionality || 'none',
+    };
 
-  return {
-    user: user.toPublicJSON(),
-  };
+    createdUser = await authRepository.createUser(userPayload, session);
+
+    await authRepository.upsertPlainUser(
+      {
+        email,
+        password: data.password,
+        role: data.role || 'student',
+        name: data.name,
+        hostelId: data.hostelId,
+      },
+      session
+    );
+    isPlainUserCreated = true;
+
+    if (role === 'student' || role === 'manager') {
+      const updatedCount = await authRepository.countByRole(data.hostelId, role);
+      const countField = role === 'manager' ? 'plan.limits.managers' : 'plan.limits.students';
+      await hostelRepository.updateLimitCount(data.hostelId, countField, updatedCount);
+
+      if (data.hostelId) {
+        await cache.del(`hostel:config:${data.hostelId}`);
+      }
+    }
+
+    if (useTransaction && session) {
+      await session.commitTransaction();
+    }
+
+    return {
+      user: createdUser.toPublicJSON(),
+    };
+  } catch (error) {
+    if (useTransaction && session) {
+      try {
+        await session.abortTransaction();
+      } catch (abortErr) {
+        console.error('Failed to abort transaction', abortErr);
+      }
+    } else {
+      // Compensating rollback for standalone MongoDB
+      if (createdUser?._id) {
+        try {
+          await authRepository.deleteUserById(createdUser._id);
+        } catch (delErr) {
+          console.error('Compensating rollback failed for User', delErr);
+        }
+      }
+      if (isPlainUserCreated) {
+        try {
+          await authRepository.deletePlainUserByEmail(email);
+        } catch (delErr) {
+          console.error('Compensating rollback failed for PlainUser', delErr);
+        }
+      }
+    }
+    throw error;
+  } finally {
+    if (session) {
+      session.endSession();
+    }
+  }
 };
-
-// export const loginUser = async (credentials, req, res) => {
-//   const email = normalizeIdentifier(credentials.email);
-//   const password = credentials.password;
-
-//   if (!email || !password) {
-//     const error = new Error('Email and password are required.');
-//     error.statusCode = 400;
-//     throw error;
-//   }
-
-//   const user = await User.findOne({ email }).select('+password');
-
-//   if (!user) {
-//     const error = new Error('Invalid credentials.');
-//     error.statusCode = 401;
-//     throw error;
-//   }
-
-//   const isPasswordValid = await user.comparePassword(password);
-
-//   if (!isPasswordValid) {
-//     const error = new Error('Invalid credentials.');
-//     error.statusCode = 401;
-//     throw error;
-//   }
-
-//   const token = createToken(user._id);
-//   res.cookie('token', token, createAuthCookieOptions());
-
-//   return {
-//     user: user.toPublicJSON(),
-//     token,
-//   };
-// };
-
 
 export const loginUser = async (credentials) => {
   const email = normalizeIdentifier(credentials.email);
@@ -127,7 +157,7 @@ export const loginUser = async (credentials) => {
     throw error;
   }
 
-  const user = await User.findOne({ email }).select('+password');
+  const user = await authRepository.findByEmail(email, true);
 
   if (!user) {
     const error = new Error('Invalid credentials.');
@@ -152,7 +182,6 @@ export const loginUser = async (credentials) => {
   };
 };
 
-
 export const verifyUser = async (req) => {
   const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '');
 
@@ -171,7 +200,7 @@ export const verifyUser = async (req) => {
     throw authError;
   }
 
-  const user = await User.findById(payload.sub);
+  const user = await authRepository.findById(payload.sub);
 
   if (!user) {
     const error = new Error('User not found.');
@@ -186,7 +215,11 @@ export const verifyUser = async (req) => {
 };
 
 export const logoutUser = async (req, res) => {
-  res.clearCookie('token', createAuthCookieOptions());
+  res.clearCookie('token', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
   return { success: true, message: 'Logged out successfully.' };
 };
 
@@ -253,7 +286,7 @@ export const authenticateWithGoogle = async (code, req, res) => {
   }
 
   // 1. Check if the user is on the VIP list (already in our DB)
-  let user = await User.findOne({ email });
+  let user = await authRepository.findByEmail(email);
 
   // 2. THE SAAS BOUNCER: If they aren't in the DB, reject the login instantly.
   if (!user) {
@@ -271,5 +304,157 @@ export const authenticateWithGoogle = async (code, req, res) => {
   return {
     user: user.toPublicJSON(),
     token,
+  };
+};
+
+export const sendOnboardingEmailOtp = async (userId, newEmail) => {
+  if (!newEmail || typeof newEmail !== 'string') {
+    const error = new Error('A valid new email address is required.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const normalizedEmail = newEmail.toLowerCase().trim();
+  const user = await authRepository.findById(userId);
+  if (!user) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Security Rule: Only allowed before the legal agreement is signed
+  if (user.agreement === 'signed') {
+    const error = new Error('Email can only be self-changed during initial onboarding before the agreement is signed.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (normalizedEmail === user.email.toLowerCase().trim()) {
+    const error = new Error('New email cannot be the same as your current email.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Check if new email is already in use
+  const existingUser = await authRepository.findByEmail(normalizedEmail);
+  if (existingUser) {
+    const error = new Error('This email address is already in use by another account.');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  // Generate 6-digit cryptographic OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const cacheKey = `onboarding:otp:${user._id.toString()}:${normalizedEmail}`;
+  await cache.set(cacheKey, otp, 600); // 10 minute TTL
+
+  await sendOtpEmail(normalizedEmail, otp, user.name);
+
+  return {
+    success: true,
+    message: `Verification code sent to ${normalizedEmail}`,
+    email: normalizedEmail,
+  };
+};
+
+export const verifyOnboardingEmailOtp = async (userId, newEmail, otp) => {
+  if (!newEmail || !otp) {
+    const error = new Error('Email and verification code are required.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const normalizedEmail = newEmail.toLowerCase().trim();
+  const user = await authRepository.findById(userId);
+  if (!user) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (user.agreement === 'signed') {
+    const error = new Error('Email can only be self-changed during initial onboarding before the agreement is signed.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const cacheKey = `onboarding:otp:${user._id.toString()}:${normalizedEmail}`;
+  const storedOtp = await cache.get(cacheKey);
+
+  if (!storedOtp || storedOtp.toString().trim() !== otp.toString().trim()) {
+    const error = new Error('Invalid or expired verification code. Please request a new code.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const existingUser = await authRepository.findByEmail(normalizedEmail);
+  if (existingUser && String(existingUser._id) !== String(user._id)) {
+    const error = new Error('This email address is already in use.');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const oldEmail = user.email;
+  user.email = normalizedEmail;
+  await user.save();
+
+  // Keep PlainUser in sync
+  await authRepository.upsertPlainUser({
+    email: normalizedEmail,
+    role: user.role,
+    name: user.name,
+    hostelId: user.hostelId,
+  });
+  if (oldEmail.toLowerCase().trim() !== normalizedEmail) {
+    await authRepository.deletePlainUserByEmail(oldEmail);
+  }
+
+  await cache.del(cacheKey);
+  const token = createToken(user._id);
+
+  return {
+    success: true,
+    message: 'Email address updated and verified successfully.',
+    user: user.toPublicJSON(),
+    token,
+  };
+};
+
+export const updateOnboardingPassword = async (userId, newPassword) => {
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 8) {
+    const error = new Error('Password must be at least 8 characters long.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const user = await authRepository.findById(userId);
+  if (!user) {
+    const error = new Error('User not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (user.agreement === 'signed') {
+    const error = new Error('Password can only be self-changed during initial onboarding before the agreement is signed.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  user.password = newPassword.trim();
+  await user.save(); // triggers bcrypt hash hook
+
+  // Keep PlainUser in sync
+  await authRepository.upsertPlainUser({
+    email: user.email.toLowerCase().trim(),
+    password: newPassword.trim(),
+    role: user.role,
+    name: user.name,
+    hostelId: user.hostelId,
+  });
+
+  return {
+    success: true,
+    message: 'Password updated successfully.',
+    user: user.toPublicJSON(),
   };
 };

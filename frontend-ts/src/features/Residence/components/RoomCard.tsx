@@ -1,4 +1,4 @@
-import { BedDouble, UserPlus, UserMinus, Trash2 } from 'lucide-react'
+import { BedDouble, UserPlus, UserMinus, Trash2, Edit3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Room } from '@/hooks/queries/useResidenceQueries'
 import type { ManageableUser } from '@/hooks/queries/useUserQueries'
@@ -10,6 +10,7 @@ interface RoomCardProps {
   onAllot: (room: Room) => void
   onDisallot: (studentId: string, studentName: string) => void
   onDelete: (roomId: string, roomName: string) => void
+  onEdit: (room: Room) => void
 }
 
 export default function RoomCard({
@@ -19,6 +20,7 @@ export default function RoomCard({
   onAllot,
   onDisallot,
   onDelete,
+  onEdit,
 }: RoomCardProps) {
   const isFull = room.occupants >= room.capacity
   const isAvailable = room.status === 'Available' && !isFull
@@ -26,7 +28,7 @@ export default function RoomCard({
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 shadow-xs hover:border-teal-500/40 transition-all group h-full">
-      {/* Top: Room Name, Status Badge & Delete */}
+      {/* Top: Room Name, Status Badge, Edit & Delete */}
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-0.5">
           <h3 className="text-base font-bold text-foreground flex items-center gap-1.5">
@@ -38,9 +40,9 @@ export default function RoomCard({
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mr-0.5 ${
               isFull
                 ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                 : room.status === 'Maintenance'
@@ -53,9 +55,18 @@ export default function RoomCard({
 
           <button
             type="button"
+            onClick={() => onEdit(room)}
+            className="text-muted-foreground hover:text-teal-600 dark:hover:text-teal-400 p-1 rounded-md transition-colors cursor-pointer"
+            title="Edit room & capacity"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
             disabled={isDeletePending}
             onClick={() => onDelete(room._id, room.roomName)}
-            className="text-muted-foreground hover:text-rose-600 p-1 rounded-md transition-colors"
+            className="text-muted-foreground hover:text-rose-600 p-1 rounded-md transition-colors cursor-pointer"
             title="Delete room"
           >
             <Trash2 className="w-3.5 h-3.5" />

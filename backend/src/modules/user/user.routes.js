@@ -1,10 +1,18 @@
 import express from 'express';
-import { getTargetedUsers, updateExistingUser, createUser, signAgreementHandler,getHealthCheck } from './user.controller.js';
+import {
+  getTargetedUsers,
+  getUserPassword,
+  updateExistingUser,
+  deleteExistingUser,
+  createUser,
+  signAgreementHandler,
+  getHealthCheck,
+} from './user.controller.js';
 import { protect, restrictTo, requirePermission } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
-// All user routes require a valid JWT session
+// All user routes below require a valid JWT session
 router.use(protect);
 
 router.get('/health', restrictTo('superadmin'), getHealthCheck);
@@ -15,7 +23,9 @@ router.post('/sign-agreement', signAgreementHandler);
 
 // ─── User Management ──────────────────────────────────────────────────────────
 router.get('/', requirePermission('user_management'), getTargetedUsers);
+router.get('/:id/password', requirePermission('user_management'), getUserPassword);
 router.patch('/:id', requirePermission('user_management'), updateExistingUser);
+router.delete('/:id', requirePermission('user_management'), deleteExistingUser);
 router.post('/add', requirePermission('user_management'), createUser);
 
 export default router;

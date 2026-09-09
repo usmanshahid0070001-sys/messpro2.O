@@ -1,25 +1,40 @@
 import { useState, useMemo, useDeferredValue } from 'react'
 import { useSelector } from 'react-redux'
-import { Plus, Users, UserPlus } from 'lucide-react'
+import { Users, UserPlus, AlertCircle, RefreshCw } from 'lucide-react'
 import type { RootState } from '@/store'
 import { useGetUsers } from '@/hooks/queries/useUserQueries'
 import { useGetMyHostel } from '@/hooks/queries/useHostelQueries'
+import { usePermissions } from '@/hooks/usePermissions'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
+import { exportUsersToExcel } from '@/utils/exportUtils'
 
-// Import extracted sub-components
 import MetricsHeader from './components/MetricsHeader'
 import FilterSection from './components/FilterSection'
 import UserTable from './components/UserTable'
 import AddUserModal from './components/AddUserModal'
 import EditUserModal from './components/EditUserModal'
+import type { ManageableUser } from '@/hooks/queries/useUserQueries'
 
+/**
+ * ManageUsers - Administrative control center for member enrollment, role assignment,
+ * status moderation (suspend/reactivate), and custom registration data management.
+ */
 export default function ManageUsers() {
   const { user: currentUser } = useSelector((s: RootState) => s.auth)
   const currentRole = currentUser?.role || 'student'
+  const { hasPermission } = usePermissions()
+  const canManageUsers = hasPermission('user_management')
 
-  const { data: users = [], isLoading: usersLoading } = useGetUsers()
+  const {
+    data: users = [],
+    isLoading: usersLoading,
+    isError: usersError,
+    error: usersErrorObj,
+    refetch: refetchUsers,
+    isFetching: usersFetching,
+  } = useGetUsers()
   const { data: hostel, isLoading: hostelLoading } = useGetMyHostel(currentRole)
 
   // Search & Filtering State
@@ -30,12 +45,12 @@ export default function ManageUsers() {
   const itemsPerPage = 8
 
   // Sorting State
-  const [sortOrder, setSortOrder] = useState<'none' | 'asc' | 'desc'>('asc')
+  const [sortOrder, setSortOrder] = useState<'none' | 'asc' | 'desc' | 'room_asc'>('asc')
 
   // Modal Open states
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<any | null>(null)
+  const [selectedUser, setSelectedUser] = useState<ManageableUser | null>(null)
 
   // Counts for tabs
   const counts = useMemo(() => {
@@ -61,13 +76,33 @@ export default function ManageUsers() {
     })
   }, [users, deferredSearchTerm, roleFilter])
 
-  // Sort list alphabetically if selected
+  // Sort list alphabetically or by room
   const sortedUsers = useMemo(() => {
     const list = [...filteredUsers]
     if (sortOrder === 'asc') {
       list.sort((a, b) => a.name.localeCompare(b.name))
     } else if (sortOrder === 'desc') {
       list.sort((a, b) => b.name.localeCompare(a.name))
+    } else if (sortOrder === 'room_asc') {
+      list.sort((a, b) => {
+        const roomA = a.room && typeof a.room === 'object' && a.room.roomName ? String(a.room.roomName).trim() : ''
+        const roomB = b.room && typeof b.room === 'object' && b.room.roomName ? String(b.room.roomName).trim() : ''
+
+        // If neither has a room, fallback to name sort
+        if (!roomA && !roomB) {
+          return a.name.localeCompare(b.name)
+        }
+        // Unassigned students placed at the very end
+        if (!roomA) return 1
+        if (!roomB) return -1
+
+        // Alphanumeric natural comparison (e.g. "Room 2" before "Room 10", "1" before "2")
+        const roomComp = roomA.localeCompare(roomB, undefined, { numeric: true, sensitivity: 'base' })
+        if (roomComp !== 0) return roomComp
+
+        // If in same room, sort by student name
+        return a.name.localeCompare(b.name)
+      })
     }
     return list
   }, [filteredUsers, sortOrder])
@@ -88,51 +123,26 @@ export default function ManageUsers() {
     setSortOrder((current) => {
       if (current === 'none') return 'asc'
       if (current === 'asc') return 'desc'
+      if (current === 'desc') return 'room_asc'
       return 'none'
     })
   }
 
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     if (sortedUsers.length === 0) {
       toast.error('No users to export')
       return
     }
 
-    const headers = ['Name', 'Email', 'Role', 'Roll Number']
-    const customFieldNames = customFieldConfigs.slice(0, 2).map((c: any) => c.name)
-    const allHeaders = [...headers, ...customFieldNames, 'Room']
-
-    const csvRows = [allHeaders.join(',')]
-
-    sortedUsers.forEach((user) => {
-      const customFieldValues = customFieldConfigs.slice(0, 2).map((config: any) => {
-        const field = (user.additionalInfo || []).find((f: any) => f.key === config.name)
-        return field?.value || ''
-      })
-
-      const row = [
-        `"${user.name.replace(/"/g, '""')}"`,
-        `"${user.email}"`,
-        `"${user.role}"`,
-        `"${user.id || ''}"`,
-        ...customFieldValues.map((v: string) => `"${v.replace(/"/g, '""')}"`),
-        `"${user.room ? user.room.roomName : ''}"`,
-      ]
-      csvRows.push(row.join(','))
-    })
-
-    const blob = new Blob(['\uFEFF' + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.setAttribute('href', url)
-    link.setAttribute('download', `Hostel_Members_${new Date().toISOString().split('T')[0]}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    toast.success('Excel/CSV Sheet exported successfully')
+    try {
+      exportUsersToExcel(sortedUsers, customFieldConfigs, hostel?.name)
+      toast.success('Excel spreadsheet (.xlsx) exported successfully')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to export Excel spreadsheet')
+    }
   }
 
-  const openEditModal = (user: any) => {
+  const openEditModal = (user: ManageableUser) => {
     setSelectedUser(user)
     setIsEditOpen(true)
   }
@@ -161,7 +171,7 @@ export default function ManageUsers() {
   return (
     <div className="space-y-5 pb-12 w-full max-w-full min-w-0">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-border/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
             <Users className="h-5 w-5" />
@@ -176,15 +186,41 @@ export default function ManageUsers() {
           </div>
         </div>
 
-        <Button
-          onClick={() => setIsAddOpen(true)}
-          size="sm"
-          className="gap-1.5 self-start sm:self-auto h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-xs cursor-pointer rounded-xl"
-        >
-          <UserPlus className="h-4 w-4" />
-          <span>Add Member</span>
-        </Button>
+        {canManageUsers && (
+          <Button
+            onClick={() => setIsAddOpen(true)}
+            size="sm"
+            className="gap-1.5 self-start sm:self-auto h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-xs cursor-pointer rounded-xl"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Add Member</span>
+          </Button>
+        )}
       </div>
+
+      {/* Error Alert Banner */}
+      {usersError && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive animate-in fade-in duration-200">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <p className="text-xs sm:text-sm font-medium">
+              {(usersErrorObj as any)?.response?.data?.message ||
+                (usersErrorObj as any)?.message ||
+                'Failed to load users. Please verify your connection or permissions.'}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetchUsers()}
+            disabled={usersFetching}
+            className="border-destructive/40 hover:bg-destructive/20 text-destructive shrink-0 cursor-pointer h-8 gap-1.5 text-xs"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${usersFetching ? 'animate-spin' : ''}`} />
+            <span>Retry</span>
+          </Button>
+        </div>
+      )}
 
       {/* Metrics Row */}
       <MetricsHeader
@@ -208,7 +244,7 @@ export default function ManageUsers() {
         currentRole={currentRole}
         sortOrder={sortOrder}
         onToggleSort={handleToggleSort}
-        onExport={handleExportCSV}
+        onExport={handleExportExcel}
         counts={counts}
       />
 
@@ -221,6 +257,7 @@ export default function ManageUsers() {
         onPageChange={setCurrentPage}
         onEditClick={openEditModal}
         customFieldConfigs={customFieldConfigs}
+        isSuperAdmin={currentRole === 'superadmin'}
       />
 
       {/* Add User Modal */}
@@ -240,6 +277,7 @@ export default function ManageUsers() {
         }}
         user={selectedUser}
         hostel={hostel}
+        currentRole={currentRole}
       />
     </div>
   )

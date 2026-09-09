@@ -69,7 +69,7 @@ export default function ComplaintDetailModal({
   ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div
         className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
@@ -131,9 +131,19 @@ export default function ComplaintDetailModal({
             <div className="p-2.5 sm:p-3 rounded-xl border border-border bg-card space-y-0.5 sm:space-y-1">
               <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-blue-500" />
-                Student Roll No
+                Student Information
               </span>
-              <p className="text-xs sm:text-sm font-semibold font-mono text-foreground">{complaint.roll_number}</p>
+              <p className="text-xs sm:text-sm font-semibold text-foreground">
+                {typeof complaint.studentId === 'object' && complaint.studentId !== null
+                  ? complaint.studentId.name
+                  : complaint.roll_number}
+              </p>
+              <p className="text-[10px] sm:text-[11px] font-mono text-muted-foreground">
+                Roll No: {complaint.roll_number}
+                {typeof complaint.studentId === 'object' && complaint.studentId?.email && (
+                  <span> • {complaint.studentId.email}</span>
+                )}
+              </p>
             </div>
 
             <div className="p-2.5 sm:p-3 rounded-xl border border-border bg-card space-y-0.5 sm:space-y-1">

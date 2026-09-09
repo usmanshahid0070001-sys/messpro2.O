@@ -1,6 +1,7 @@
 import express from 'express';
 import { 
   buildNewRoom, 
+  updateRoomDetails,
   fetchAllRooms, 
   assignRoom, 
   removeStudentFromRoom, 
@@ -23,6 +24,8 @@ router.post('/my-room/cleaning', restrictTo('student', 'manager'), markRoomClean
 // Permitted Routes to admin, permitted manager and student
 // 3. Room Allocation
 router.post('/', requirePermission('residence_management'), buildNewRoom);
+router.patch('/:id', requirePermission('residence_management'), updateRoomDetails);
+router.put('/:id', requirePermission('residence_management'), updateRoomDetails);
 router.delete('/:id', requirePermission('residence_management'), removeRoom);
 router.post('/allote', requirePermission('residence_management'), assignRoom);
 router.post('/disallote', requirePermission('residence_management'), removeStudentFromRoom);

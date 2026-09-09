@@ -1,0 +1,32 @@
+# ==============================================================================
+# MessPro 2.0 Robots Exclusion File
+# Website: https://messpro.app
+# ==============================================================================
+
+User-agent: *
+# Allow crawling of all public product and marketing pages
+Allow: /$
+Allow: /landing
+Allow: /docs
+Allow: /docs/
+Allow: /terms
+Allow: /privacy
+Allow: /login
+
+# Disallow authenticated dashboards, user profiles, internal settings & APIs
+Disallow: /app/
+Disallow: /app/*
+Disallow: /api/
+Disallow: /api/*
+
+# Block indexing of internal query parameters that may duplicate content
+Disallow: /*?*token=
+Disallow: /*?*session=
+Disallow: /*?*auth=
+
+# Crawl Delay to prevent scraping overload
+Crawl-delay: 1
+
+# Sitemap declarations
+Sitemap: https://messpro.app/sitemap.xml
+Host: https://messpro.app

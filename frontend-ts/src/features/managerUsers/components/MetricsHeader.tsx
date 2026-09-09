@@ -8,6 +8,10 @@ interface MetricsHeaderProps {
   maxStudents?: number
 }
 
+/**
+ * MetricsHeader - High-level directory statistics including total active profiles,
+ * role breakdowns, and plan student enrollment capacity track.
+ */
 export default function MetricsHeader({ users, currentRole, maxStudents }: MetricsHeaderProps) {
   const metrics = useMemo(() => {
     const stats = { total: users.length, admins: 0, managers: 0, students: 0 }
@@ -138,11 +142,7 @@ export default function MetricsHeader({ users, currentRole, maxStudents }: Metri
             <div className="h-1.5 w-full bg-muted rounded-full mt-2 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-300 ${
-                  capacityPct >= 90
-                    ? 'bg-rose-500'
-                    : capacityPct >= 75
-                    ? 'bg-amber-500'
-                    : 'bg-amber-500'
+                  capacityPct >= 90 ? 'bg-rose-500' : 'bg-amber-500'
                 }`}
                 style={{ width: `${capacityPct}%` }}
               />

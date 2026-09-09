@@ -7,13 +7,6 @@ import {
   Settings2,
   Copy,
   Trash2,
-  CheckCircle2,
-  AlertCircle,
-  Eye,
-  Sliders,
-  Sparkles,
-  ChevronRight,
-  ShieldCheck,
 } from 'lucide-react'
 import type { MealSchedule, MenuItem } from '@/hooks/queries/useMealQueries'
 import { useUpdateMealSchedule } from '@/hooks/mutations/useMealMutations'
@@ -304,35 +297,31 @@ export default function AdminMealManager({
   }
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* ── Top Hero Configuration Strip ── */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border flex flex-col lg:flex-row lg:items-center justify-between gap-5 shadow-xs">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              Mess Management
-            </span>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-              Weekly Menu Configuration
-            </span>
+    <div className="space-y-5 pb-12 w-full max-w-full min-w-0">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+            <Utensils className="h-5 w-5" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Weekly Meal Schedule
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Set daily dishes, pricing, student ordering quotas, and selection cutoff times.
-          </p>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
+              Weekly Meal Schedule
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Set daily dishes, pricing, student ordering quotas, and selection cutoff times.
+            </p>
+          </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setIsTimingModalOpen(true)}
-            className="gap-1.5 h-9 text-xs rounded-xl border-border hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"
+            className="gap-1.5 h-9 text-xs font-semibold rounded-xl border-border hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer shadow-xs"
           >
             <Clock className="h-3.5 w-3.5" />
             <span>Configure Slots ({mealNames.length})</span>
@@ -340,153 +329,212 @@ export default function AdminMealManager({
         </div>
       </div>
 
-      {/* ── Global Parameters Card ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Status Switcher */}
-        <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col justify-between gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-medium text-muted-foreground">Ordering Status</span>
-            <span
-              className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
-                status === 'active'
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-              }`}
-            >
+      {/* ── Global Parameters Card: Column stacked controls + Large Configured Slots ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        {/* Left Column: Ordering Status & Max Meals stacked in a column */}
+        <div className="lg:col-span-5 flex flex-col gap-4">
+          {/* Card 1: Ordering Status */}
+          <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col justify-between gap-3 h-full">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-medium text-muted-foreground">Ordering Status</span>
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
-                }`}
-              />
-              {status === 'active' ? 'Active (Open)' : 'Inactive (View Only)'}
-            </span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mt-1">
-              <Button
-                type="button"
-                variant={status === 'active' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => {
-                  setStatus('active')
-                  setIsDirty(true)
-                }}
-                className={`flex-1 h-8 text-xs rounded-lg cursor-pointer ${
-                  status === 'active' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
+                className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                  status === 'active'
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                 }`}
               >
-                Allow Pre-orders
-              </Button>
-              <Button
-                type="button"
-                variant={status === 'inactive' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => {
-                  setStatus('inactive')
-                  setIsDirty(true)
-                }}
-                className={`flex-1 h-8 text-xs rounded-lg cursor-pointer ${
-                  status === 'inactive' ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''
-                }`}
-              >
-                Menu Only
-              </Button>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1.5">
-              {status === 'active'
-                ? 'Residents can select & pre-order meals for the week.'
-                : 'Ordering locked. Residents can only view the menu.'}
-            </p>
-          </div>
-        </div>
-
-        {/* Max Meal Selection Quota */}
-        <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col justify-between gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-medium text-muted-foreground">
-              Max Portions per Student
-            </span>
-            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-muted text-foreground">
-              Limit: {maxMealSelection}
-            </span>
-          </div>
-          <div>
-            <div className="flex items-center gap-3 mt-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  if (maxMealSelection > 1) {
-                    setMaxMealSelection((prev) => prev - 1)
-                    setIsDirty(true)
-                  }
-                }}
-                disabled={maxMealSelection <= 1}
-                className="h-8 w-8 rounded-lg cursor-pointer font-bold text-sm"
-              >
-                -
-              </Button>
-              <span className="text-2xl font-bold font-mono text-foreground text-center min-w-[40px]">
-                {maxMealSelection}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  if (maxMealSelection < 10) {
-                    setMaxMealSelection((prev) => prev + 1)
-                    setIsDirty(true)
-                  }
-                }}
-                disabled={maxMealSelection >= 10}
-                className="h-8 w-8 rounded-lg cursor-pointer font-bold text-sm"
-              >
-                +
-              </Button>
-              <span className="text-xs text-muted-foreground">food box / portions</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1.5">
-              Maximum food boxes or plates a student can pre-order for a single meal.
-            </p>
-          </div>
-        </div>
-
-        {/* Active Slots Overview */}
-        <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col justify-between gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-medium text-muted-foreground">Configured Slots</span>
-            <button
-              type="button"
-              onClick={() => setIsTimingModalOpen(true)}
-              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
-            >
-              <Settings2 className="h-3 w-3" />
-              <span>Edit</span>
-            </button>
-          </div>
-          <div>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {mealNames.map((name, i) => (
                 <span
-                  key={i}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-muted/60 border border-border/60 text-foreground"
-                >
-                  <Utensils className="h-3 w-3 text-emerald-500" />
-                  <span className="font-semibold">{name}</span>
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
-                    Serving: {formatTimeRange(servingTiming[i])}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    &bull; Cutoff: {selectionTiming[i]?.end || selectionTiming[i]?.start || '—'}
-                  </span>
-                </span>
-              ))}
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                  }`}
+                />
+                {status === 'active' ? 'Active (Open)' : 'Inactive (View Only)'}
+              </span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-2">
-              {mealNames.length} meal slots active with configured selection windows and dining serving time ranges.
-            </p>
+            <div>
+              <div className="flex items-center gap-2 mt-1">
+                <Button
+                  type="button"
+                  variant={status === 'active' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setStatus('active')
+                    setIsDirty(true)
+                  }}
+                  className={`flex-1 h-8 text-xs rounded-lg cursor-pointer ${
+                    status === 'active' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
+                  }`}
+                >
+                  Allow Pre-orders
+                </Button>
+                <Button
+                  type="button"
+                  variant={status === 'inactive' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setStatus('inactive')
+                    setIsDirty(true)
+                  }}
+                  className={`flex-1 h-8 text-xs rounded-lg cursor-pointer ${
+                    status === 'inactive' ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''
+                  }`}
+                >
+                  Menu Only
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                {status === 'active'
+                  ? 'Residents can select & pre-order meals for the week.'
+                  : 'Ordering locked. Residents can only view the menu.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2: Max Meals per Student */}
+          <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col justify-between gap-3 h-full">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-medium text-muted-foreground">
+                Max Meals per Student
+              </span>
+              <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-md bg-muted text-foreground border border-border/60">
+                Limit: {maxMealSelection}
+              </span>
+            </div>
+            <div>
+              <div className="flex items-center gap-3 mt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    if (maxMealSelection > 1) {
+                      setMaxMealSelection((prev) => prev - 1)
+                      setIsDirty(true)
+                    }
+                  }}
+                  disabled={maxMealSelection <= 1}
+                  className="h-8 w-8 rounded-lg cursor-pointer font-bold text-sm"
+                >
+                  -
+                </Button>
+                <span className="text-2xl font-bold font-mono text-foreground text-center min-w-[36px]">
+                  {maxMealSelection}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    if (maxMealSelection < 10) {
+                      setMaxMealSelection((prev) => prev + 1)
+                      setIsDirty(true)
+                    }
+                  }}
+                  disabled={maxMealSelection >= 10}
+                  className="h-8 w-8 rounded-lg cursor-pointer font-bold text-sm"
+                >
+                  +
+                </Button>
+                <span className="text-xs text-muted-foreground font-medium">
+                  {maxMealSelection === 1 ? 'meal / student' : 'meals / student'}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Maximum meal plates or items a student can pre-order for a single meal session.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Big Configured Slots Card */}
+        <div className="lg:col-span-7 p-5 rounded-2xl bg-card border border-border/80 shadow-xs flex flex-col justify-between gap-3.5">
+          <div className="flex items-center justify-between pb-2 border-b border-border/60">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <Clock className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-[13px] font-bold text-foreground">Configured Meal Slots & Timings</h3>
+                <p className="text-[11px] text-muted-foreground">
+                  {mealNames.length} active slots &bull; Daily schedule across all 7 days (Mon – Sun)
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsTimingModalOpen(true)}
+              className="h-7 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 flex items-center gap-1.5 cursor-pointer font-medium"
+            >
+              <Settings2 className="h-3.5 w-3.5" />
+              <span>Edit Slots</span>
+            </Button>
+          </div>
+
+          {/* Slots Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+            {mealNames.map((name, i) => {
+              const serv = servingTiming[i]
+              const sel = selectionTiming[i]
+              const servRange = serv ? `${serv.start} – ${serv.end}` : '—'
+              const cutoffTime = sel?.end || (typeof sel === 'string' ? sel : '—')
+              const orderWindow = sel?.start && sel?.end ? `${sel.start} – ${sel.end}` : cutoffTime
+
+              return (
+                <div
+                  key={i}
+                  className="p-3.5 rounded-xl bg-muted/30 border border-border/70 hover:border-emerald-500/30 transition-colors flex flex-col justify-between gap-2.5 shadow-2xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-bold text-sm text-foreground">
+                      <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <Utensils className="h-3.5 w-3.5" />
+                      </div>
+                      <span>{name}</span>
+                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      Slot #{i + 1}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between p-1.5 rounded-lg bg-background/80 border border-border/50">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-emerald-500" /> Serving Time:
+                      </span>
+                      <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                        {servRange}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-1.5 rounded-lg bg-background/80 border border-border/50">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <RotateCcw className="w-3 h-3 text-amber-500" /> Order Cutoff:
+                      </span>
+                      <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
+                        {cutoffTime}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] text-muted-foreground flex items-center justify-between pt-1 border-t border-border/40 font-mono">
+                    <span>Selection: {orderWindow}</span>
+                    <span>Daily: Mon – Sun</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
+            <span>
+              Orders close automatically at each slot's cutoff deadline for that day.
+            </span>
+            <span className="font-semibold text-foreground">
+              Schedule active for 7 days/week
+            </span>
           </div>
         </div>
       </div>

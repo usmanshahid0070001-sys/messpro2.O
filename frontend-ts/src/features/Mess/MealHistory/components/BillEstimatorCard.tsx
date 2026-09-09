@@ -19,6 +19,15 @@ import type {
   StudentMonthlyMealRecord,
   MealSchedule,
 } from '@/hooks/queries/useMealQueries'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 export interface EstimatedSubcharge {
   id: string
@@ -413,19 +422,43 @@ export default function BillEstimatorCard({
                     <label className="text-xs font-semibold text-foreground">
                       Calculation Type
                     </label>
-                    <select
-                      value={newChargeType}
-                      onChange={(e) =>
-                        setNewChargeType(
-                          e.target.value as 'fixed' | 'multiplier' | 'percentage'
-                        )
-                      }
-                      className="w-full px-3 py-2 text-xs bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-foreground cursor-pointer"
-                    >
-                      <option value="fixed">Fixed Flat Fee (Rs.)</option>
-                      <option value="multiplier">Per Meal Factor (Rs./portion)</option>
-                      <option value="percentage">Percentage Fee (%)</option>
-                    </select>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full inline-flex items-center justify-between px-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground font-medium hover:bg-muted/40 cursor-pointer shadow-2xs"
+                        >
+                          <span className="truncate">
+                            {newChargeType === 'fixed'
+                              ? 'Fixed Flat Fee (Rs.)'
+                              : newChargeType === 'multiplier'
+                              ? 'Per Meal Factor (Rs./portion)'
+                              : 'Percentage Fee (%)'}
+                          </span>
+                          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-60">
+                        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                          Calculation Type
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuRadioGroup
+                          value={newChargeType}
+                          onValueChange={(val: any) => setNewChargeType(val)}
+                        >
+                          <DropdownMenuRadioItem value="fixed" className="text-xs cursor-pointer">
+                            Fixed Flat Fee (Rs.)
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="multiplier" className="text-xs cursor-pointer">
+                            Per Meal Factor (Rs./portion)
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="percentage" className="text-xs cursor-pointer">
+                            Percentage Fee (%)
+                          </DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   <div className="space-y-1">

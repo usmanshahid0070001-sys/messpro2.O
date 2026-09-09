@@ -53,10 +53,13 @@ export default function ComplainManagement() {
         typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.roomNumber : ''
       const block =
         typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.block || '' : ''
+      const studentName =
+        typeof c.studentId === 'object' && c.studentId !== null ? c.studentId.name || '' : ''
 
       const matchSearch =
         !term ||
         c.roll_number.toLowerCase().includes(term) ||
+        studentName.toLowerCase().includes(term) ||
         c.category.toLowerCase().includes(term) ||
         c.description.toLowerCase().includes(term) ||
         roomNumber.toLowerCase().includes(term) ||
@@ -110,54 +113,49 @@ export default function ComplainManagement() {
     })
   }
 
-  const handleExportCSV = () => {
+  const handleExportExcel = async () => {
     if (sortedComplaints.length === 0) {
       toast.error('No complaints to export')
       return
     }
 
-    const headers = [
-      'Ticket ID',
-      'Roll Number',
-      'Category',
-      'Intensity',
-      'Status',
-      'Room',
-      'Block',
-      'Description',
-      'Reported Date',
-    ]
+    try {
+      const XLSX = await import('xlsx')
+      const dataToExport = sortedComplaints.map((c) => {
+        const studentName =
+          typeof c.studentId === 'object' && c.studentId !== null ? c.studentId.name : 'N/A'
+        const roomNum =
+          typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.roomNumber : 'N/A'
+        const block =
+          typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.block || 'N/A' : 'N/A'
+        const date = new Date(c.createdAt).toLocaleString()
 
-    const rows = sortedComplaints.map((c) => {
-      const roomNum =
-        typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.roomNumber : 'N/A'
-      const block =
-        typeof c.roomid === 'object' && c.roomid !== null ? c.roomid.block || 'N/A' : 'N/A'
-      const date = new Date(c.createdAt).toLocaleString()
+        return {
+          'Ticket ID': c._id,
+          'Student Name': studentName,
+          'Roll Number': c.roll_number,
+          Category: c.category,
+          Intensity: c.intensity,
+          Status: c.status,
+          Room: roomNum,
+          Block: block,
+          Description: c.description,
+          'Reported Date': date,
+        }
+      })
 
-      return [
-        `"${c._id}"`,
-        `"${c.roll_number}"`,
-        `"${c.category}"`,
-        `"${c.intensity}"`,
-        `"${c.status}"`,
-        `"${roomNum}"`,
-        `"${block}"`,
-        `"${c.description.replace(/"/g, '""')}"`,
-        `"${date}"`,
-      ].join(',')
-    })
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Complaints')
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `complaints_export_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    toast.success(`Exported ${sortedComplaints.length} complaints to CSV`)
+      const fileName = `Complaints_Report_${new Date().toISOString().slice(0, 10)}.xlsx`
+      XLSX.writeFile(workbook, fileName)
+      toast.success(`Exported ${sortedComplaints.length} complaints to Excel (.xlsx)`)
+    } catch (err: any) {
+      toast.error('Export Failed', {
+        description: err?.message || 'Could not generate Excel spreadsheet.',
+      })
+    }
   }
 
   const handleViewDetails = (complaint: Complaint) => {
@@ -167,10 +165,10 @@ export default function ComplainManagement() {
 
   return (
     <div className="space-y-4 pb-10 w-full max-w-full min-w-0">
-      {/* Header Banner */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
             <FileText className="h-5 w-5" />
           </div>
           <div>
@@ -212,7 +210,7 @@ export default function ComplainManagement() {
         availableCategories={availableCategories}
         sortOrder={sortOrder}
         onToggleSort={handleToggleSort}
-        onExport={handleExportCSV}
+        onExport={handleExportExcel}
         onRefresh={() => refetch()}
         isRefreshing={isLoading || isRefetching}
       />

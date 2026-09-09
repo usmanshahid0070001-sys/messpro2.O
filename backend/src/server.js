@@ -40,10 +40,29 @@ const app = express();
 // ==========================================
 
 // 1. Trust Reverse Proxy (Required for rate limiting behind Nginx/Cloudflare)
-app.set('trust proxy', process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) : false);
+app.set('trust proxy', process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) : 1);
 
-// 2. Set Security HTTP Headers
-app.use(helmet());
+// 2. Production HTTPS Redirection
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    if (!isHttps) {
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
+
+// 3. Set Security HTTP Headers & HSTS
+app.use(
+  helmet({
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
 
 // 3. Cross-Origin Resource Sharing (CORS)
 const allowedOriginPattern = /^(https?:\/\/localhost:\d+|https?:\/\/127\.0\.0\.1:\d+|https?:\/\/192\.168\.\d+\.\d+:\d+)$/;
@@ -74,7 +93,7 @@ const globalLimiter = rateLimit({
 app.use('/api', globalLimiter);
 
 // 5. Body Parser & Payload Limits (Prevents RAM Overloading)
-app.use(express.json({ limit: '10kb' })); 
+app.use(express.json({ limit: '2mb' })); 
 app.use(cookieParser());
 
 // 6. Data Sanitization against NoSQL Query Injection
@@ -102,6 +121,7 @@ app.use('/api/plans', planRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/residence', residenceRoutes);
 app.use('/api/meal-schedule', mealRoutes);
+app.use('/api/meals', mealRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/billing', billRoutes);
 app.use('/api/complaints', complaintRoutes);
@@ -165,10 +185,16 @@ io.use(async (socket, next) => {
 io.on('connection', (socket) => {
   console.log(`🔌 New client connected: ${socket.id}`);
   
-  // Clients will join a room based on their hostelId to receive targeted notifications
-  socket.on('join_hostel_room', () => {
-    if (!['admin', 'manager'].includes(socket.user.role)) return;
+  // Admins and managers automatically join their hostel room
+  if (socket.user && ['admin', 'manager'].includes(socket.user.role) && socket.user.hostelId) {
     socket.join(`hostel:${socket.user.hostelId}`);
+  }
+
+  // Clients can also explicitly join their hostel room
+  socket.on('join_hostel_room', () => {
+    if (socket.user && ['admin', 'manager'].includes(socket.user.role) && socket.user.hostelId) {
+      socket.join(`hostel:${socket.user.hostelId}`);
+    }
   });
 
   socket.on('disconnect', () => {

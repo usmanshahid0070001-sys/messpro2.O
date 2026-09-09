@@ -62,3 +62,27 @@ export const sendCredentialsEmail = async (userEmail, role, plainTextPassword, h
   // We call Codex's generic function using our specific data!
   await sendEmail({ to: userEmail, subject, html });
 };
+
+// 4. Onboarding Email Verification OTP Template
+export const sendOtpEmail = async (userEmail, otp, userName = 'Resident') => {
+  const subject = `MessPro - Email Verification Code: ${otp}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; padding: 24px; border-radius: 12px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #0f172a; margin: 0; font-size: 20px;">Email Verification Code</h2>
+        <p style="color: #64748b; font-size: 13px; margin-top: 6px;">Hi ${userName}, use this 6-digit code to verify and bind your new email address to your MessPro account.</p>
+      </div>
+      <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; margin: 20px 0;">
+        <span style="font-family: monospace; font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #2563eb;">${otp}</span>
+      </div>
+      <p style="color: #64748b; font-size: 12px; text-align: center; margin-top: 16px;">This verification code is valid for 10 minutes. If you did not request this, you can safely ignore this message.</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject,
+    text: `Your MessPro verification code is: ${otp}. It will expire in 10 minutes.`,
+    html,
+  });
+};

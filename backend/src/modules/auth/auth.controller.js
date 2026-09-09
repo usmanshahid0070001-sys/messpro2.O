@@ -1,92 +1,3 @@
-// import { catchAsync } from '../../utils/catchAsync.js';
-// import { registerSchema, loginSchema } from './auth.validation.js';
-// import {
-//   registerUser,
-//   loginUser,
-//   verifyUser,
-//   logoutUser,
-//   buildGoogleAuthUrl,
-//   authenticateWithGoogle,
-// } from './auth.service.js';
-
-// // Centralized cookie configuration helper moved to the top
-// const createAuthCookieOptions = () => ({
-//   httpOnly: true,
-//   sameSite: 'lax',
-//   secure: process.env.NODE_ENV === 'production',
-//   maxAge: 7 * 24 * 60 * 60 * 1000,
-// });
-
-// export const register = catchAsync(async (req, res) => {
-//   const data = registerSchema.parse(req.body);
-//   const result = await registerUser(data);  
-
-//   res.status(201).json({
-//     success: true,
-//     message: 'User registered successfully.',
-//     ...result,
-//   });
-// });
-
-// export const login = catchAsync(async (req, res) => {
-//   const data = loginSchema.parse(req.body);
-  
-//   // Call the service (no req/res passed!)
-//   const result = await loginUser(data);
-
-//   // The Controller sets the cookie!
-//   res.cookie('token', result.token, createAuthCookieOptions());
-
-//   res.status(200).json({
-//     success: true,
-//     message: 'Login successful.',
-//     ...result, 
-//   });
-// });
-
-// export const verify = catchAsync(async (req, res) => {
-//   const result = await verifyUser(req);
-
-//   res.status(200).json({
-//     success: true,
-//     message: 'Session is valid.',
-//     ...result,
-//   });
-// });
-
-// export const logout = catchAsync(async (req, res) => {
-//   // Clear the cookie directly in the controller
-//   res.clearCookie('token', createAuthCookieOptions());
-  
-//   res.status(200).json({ 
-//     success: true, 
-//     message: 'Logged out successfully.' 
-//   });
-// });
-
-// export const googleAuth = catchAsync(async (req, res) => {
-//   const authUrl = buildGoogleAuthUrl();
-//   res.redirect(authUrl);
-// });
-
-// export const googleCallback = catchAsync(async (req, res) => {
-//   const { code } = req.query;
-
-//   if (!code) {
-//     return res.status(400).json({ success: false, message: 'Google login was cancelled.' });
-//   }
-
-//   // Passing the code to the service
-//   const result = await authenticateWithGoogle(code);
-
-//   // Set the token cookie using our clean helper function
-//   res.cookie('token', result.token, createAuthCookieOptions());
-
-//   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-//   res.redirect(`${frontendUrl}/?auth=google`);
-// });
-
-
 import { catchAsync } from '../../utils/catchAsync.js';
 import { registerSchema, loginSchema } from './auth.validation.js';
 import hostelService from '../hostel/hostel.service.js'; // 👈 Imported our service
@@ -97,6 +8,9 @@ import {
   logoutUser,
   buildGoogleAuthUrl,
   authenticateWithGoogle,
+  sendOnboardingEmailOtp,
+  verifyOnboardingEmailOtp,
+  updateOnboardingPassword,
 } from './auth.service.js';
 
 const createAuthCookieOptions = () => ({
@@ -104,6 +18,12 @@ const createAuthCookieOptions = () => ({
   sameSite: 'lax',
   secure: process.env.NODE_ENV === 'production',
   maxAge: 7 * 24 * 60 * 60 * 1000,
+});
+
+const createClearCookieOptions = () => ({
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
 });
 
 export const register = catchAsync(async (req, res) => {
@@ -127,13 +47,14 @@ export const login = catchAsync(async (req, res) => {
     result.user.hostelStatus = await hostelService.getAndSyncHostelStatus(result.user.hostelId);
   }
 
-  const { token, ...session } = result;
-  res.cookie('token', token, createAuthCookieOptions());
+  res.cookie('token', result.token, createAuthCookieOptions());
 
   res.status(200).json({
     success: true,
     message: 'Login successful.',
-    data: session,
+    user: result.user,
+    token: result.token,
+    data: result,
   });
 });
 
@@ -153,7 +74,7 @@ export const verify = catchAsync(async (req, res) => {
 });
 
 export const logout = catchAsync(async (req, res) => {
-  res.clearCookie('token', createAuthCookieOptions());
+  res.clearCookie('token', createClearCookieOptions());
   
   res.status(200).json({ 
     success: true, 
@@ -167,15 +88,55 @@ export const googleAuth = catchAsync(async (req, res) => {
 });
 
 export const googleCallback = catchAsync(async (req, res) => {
-  const { code } = req.query;
+  const { code, error } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-  if (!code) {
-    return res.status(400).json({ success: false, message: 'Google login was cancelled.' });
+  if (error || !code) {
+    const errorMsg = error || 'Google login was cancelled.';
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorMsg)}`);
   }
 
-  const result = await authenticateWithGoogle(code);
+  try {
+    const result = await authenticateWithGoogle(code);
+    res.cookie('token', result.token, createAuthCookieOptions());
+    res.redirect(`${frontendUrl}/?auth=google`);
+  } catch (authError) {
+    const errorMsg = authError.message || 'Google authentication failed.';
+    res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorMsg)}`);
+  }
+});
+
+export const sendEmailOtpHandler = catchAsync(async (req, res) => {
+  const { newEmail } = req.body;
+  const result = await sendOnboardingEmailOtp(req.user._id, newEmail);
+
+  res.status(200).json({
+    status: 'success',
+    success: true,
+    data: result,
+  });
+});
+
+export const verifyEmailOtpHandler = catchAsync(async (req, res) => {
+  const { newEmail, otp } = req.body;
+  const result = await verifyOnboardingEmailOtp(req.user._id, newEmail, otp);
+
   res.cookie('token', result.token, createAuthCookieOptions());
 
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  res.redirect(`${frontendUrl}/?auth=google`);
+  res.status(200).json({
+    status: 'success',
+    success: true,
+    data: result,
+  });
+});
+
+export const updateOnboardingPasswordHandler = catchAsync(async (req, res) => {
+  const { newPassword } = req.body;
+  const result = await updateOnboardingPassword(req.user._id, newPassword);
+
+  res.status(200).json({
+    status: 'success',
+    success: true,
+    data: result,
+  });
 });

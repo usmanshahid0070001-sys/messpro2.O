@@ -23,11 +23,14 @@ import {
   Check,
   RotateCcw,
   Users,
-  Shield,
   Layers,
-  BedDouble,
   Info,
   SlidersHorizontal,
+  LocateFixed,
+  ExternalLink,
+  Loader2,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import type { RootState } from '@/store'
 import { useGetMyHostel } from '@/hooks/queries/useHostelQueries'
@@ -41,6 +44,15 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 // ── Timezone options ─────────────────────────────────────────────────────────
 const TIMEZONE_OPTIONS = [
@@ -270,6 +282,12 @@ export default function HostelConfiguration() {
   const [customFields, setCustomFields] = useState<CustomRegistrationField[]>([])
   const [features, setFeatures] = useState<PlanFeatureConfig[]>([])
   const [copiedSecret, setCopiedSecret] = useState(false)
+  const [lat, setLat] = useState('')
+  const [lng, setLng] = useState('')
+  const [isLocating, setIsLocating] = useState(false)
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   // Seed from server data
   useEffect(() => {
@@ -277,6 +295,11 @@ export default function HostelConfiguration() {
     setSubdomain(hostel.subdomain || '')
     setLocation(hostel.location || 'Asia/Karachi')
     setAutoMeal(hostel.settings?.autoMealVerification ?? true)
+    setLat(hostel.locationCoords?.lat !== undefined ? String(hostel.locationCoords.lat) : '')
+    setLng(hostel.locationCoords?.lng !== undefined ? String(hostel.locationCoords.lng) : '')
+    setGpsAccuracy(null)
+    setPassword('')
+    setShowPassword(false)
     setCustomFields(
       (hostel.customRegistrationFields || []).map((f: any) => ({
         name: f.name || '',
@@ -323,12 +346,56 @@ export default function HostelConfiguration() {
     }
   }, [location])
 
+  // Capture fresh GPS coordinates from browser Geolocation API
+  const handleCaptureCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser.')
+      return
+    }
+
+    setIsLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setIsLocating(false)
+        const latitude = position.coords.latitude.toFixed(6)
+        const longitude = position.coords.longitude.toFixed(6)
+        setLat(latitude)
+        setLng(longitude)
+        setGpsAccuracy(Math.round(position.coords.accuracy))
+        toast.success(`Fresh GPS coordinates captured! (±${Math.round(position.coords.accuracy)}m accuracy)`)
+      },
+      (err) => {
+        setIsLocating(false)
+        let msg = 'Failed to retrieve GPS location.'
+        if (err.code === 1) {
+          msg = 'Location permission was denied. Please enable location access in your browser settings.'
+        } else if (err.code === 2) {
+          msg = 'Location unavailable. Please verify GPS is enabled on your device.'
+        } else if (err.code === 3) {
+          msg = 'GPS request timed out. Please try again.'
+        }
+        toast.error(msg)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    )
+  }
+
   // Dirty tracking
   const hasChanges = useMemo(() => {
     if (!hostel) return false
+    if (password.trim().length > 0) return true
     if (subdomain !== (hostel.subdomain || '')) return true
     if (location !== (hostel.location || 'Asia/Karachi')) return true
     if (autoMealVerification !== (hostel.settings?.autoMealVerification ?? true)) return true
+
+    const prevLat = hostel.locationCoords?.lat !== undefined ? String(hostel.locationCoords.lat) : ''
+    const prevLng = hostel.locationCoords?.lng !== undefined ? String(hostel.locationCoords.lng) : ''
+    if (lat !== prevLat || lng !== prevLng) return true
+
     const initFields = (hostel.customRegistrationFields || []).map((f: any) => ({
       name: f.name || '',
       isRequired: Boolean(f.isRequired),
@@ -339,7 +406,7 @@ export default function HostelConfiguration() {
       isEnabled: isCore(f.name) ? true : Boolean(f.isEnabled),
     }))
     return JSON.stringify(features) !== JSON.stringify(initFeats)
-  }, [subdomain, location, autoMealVerification, customFields, features, hostel])
+  }, [password, subdomain, location, autoMealVerification, lat, lng, customFields, features, hostel])
 
   // Custom field handlers
   const addField = () => {
@@ -362,9 +429,14 @@ export default function HostelConfiguration() {
 
   const handleDiscard = () => {
     if (!hostel) return
+    setPassword('')
+    setShowPassword(false)
     setSubdomain(hostel.subdomain || '')
     setLocation(hostel.location || 'Asia/Karachi')
     setAutoMeal(hostel.settings?.autoMealVerification ?? true)
+    setLat(hostel.locationCoords?.lat !== undefined ? String(hostel.locationCoords.lat) : '')
+    setLng(hostel.locationCoords?.lng !== undefined ? String(hostel.locationCoords.lng) : '')
+    setGpsAccuracy(null)
     setCustomFields(
       (hostel.customRegistrationFields || []).map((f: any) => ({
         name: f.name || '',
@@ -381,6 +453,11 @@ export default function HostelConfiguration() {
   }
 
   const handleSave = () => {
+    if (password.trim() && password.trim().length < 8) {
+      toast.error('Admin password must be at least 8 characters long')
+      return
+    }
+
     for (let i = 0; i < customFields.length; i++) {
       if (!customFields[i].name.trim()) {
         toast.error(`Custom registration field #${i + 1} requires a valid name`)
@@ -396,19 +473,41 @@ export default function HostelConfiguration() {
       return
     }
 
-    mutation.mutate({
-      subdomain: subdomain.trim().toLowerCase(),
-      location: location.trim(),
-      customRegistrationFields: customFields.map((f) => ({
-        name: f.name.trim(),
-        isRequired: f.isRequired,
-      })),
-      planFeatures: features.map((f) => ({
-        name: f.name,
-        isEnabled: isCore(f.name) ? true : f.isEnabled,
-      })),
-      settings: { autoMealVerification },
-    })
+    const sub = subdomain.trim()
+    if (sub && !/^@?[a-zA-Z0-9.-]+$/.test(sub)) {
+      toast.error('Domain suffix must be a valid domain or prefix (e.g. @student.uet.edu.pk or campus-hostel)')
+      return
+    }
+
+    const parsedLat = lat.trim() ? parseFloat(lat) : undefined
+    const parsedLng = lng.trim() ? parseFloat(lng) : undefined
+
+    mutation.mutate(
+      {
+        subdomain: sub.toLowerCase(),
+        location: location.trim(),
+        locationCoords:
+          parsedLat !== undefined && parsedLng !== undefined
+            ? { lat: parsedLat, lng: parsedLng }
+            : undefined,
+        password: password.trim() ? password.trim() : undefined,
+        customRegistrationFields: customFields.map((f) => ({
+          name: f.name.trim(),
+          isRequired: f.isRequired,
+        })),
+        planFeatures: features.map((f) => ({
+          name: f.name,
+          isEnabled: isCore(f.name) ? true : f.isEnabled,
+        })),
+        settings: { autoMealVerification },
+      },
+      {
+        onSuccess: () => {
+          setPassword('')
+          setShowPassword(false)
+        },
+      }
+    )
   }
 
   const handleCopyQrSecret = () => {
@@ -445,38 +544,38 @@ export default function HostelConfiguration() {
   }
 
   return (
-    <div className="space-y-6 pb-24">
-      {/* ── 1. Header & Live Profile Strip ── */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20">
-              Tenant System Configuration
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {hostel?.status || 'Active'}
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
-              {hostel?.plan?.name || 'Standard Tier'}
-            </span>
+    <div className="space-y-5 pb-24 w-full max-w-full min-w-0">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 shrink-0">
+            <Building2 className="h-5 w-5" />
           </div>
-
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            {hostel?.name || 'Hostel Settings'}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Configure institutional identity, attendance timezone, custom resident admission fields,
-            and enabled plan modules.
-          </p>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
+                {hostel?.name || 'Hostel Settings'}
+              </h1>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {hostel?.status || 'Active'}
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+                {hostel?.plan?.name || 'Standard Tier'}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Configure institutional identity, attendance timezone, custom admission fields, and enabled modules.
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start md:self-auto">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <Button
             onClick={handleSave}
             disabled={mutation.isPending || !hasChanges}
             size="sm"
-            className="gap-1.5 h-9 px-4 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs"
+            className="gap-1.5 h-9 px-4 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs disabled:opacity-50"
           >
             <Save className="h-3.5 w-3.5" />
             <span>{mutation.isPending ? 'Saving…' : 'Save Changes'}</span>
@@ -650,58 +749,118 @@ export default function HostelConfiguration() {
             <label className="text-xs font-semibold text-foreground">
               System Timezone <span className="text-rose-500">*</span>
             </label>
-            <div className="relative">
-              <select
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full appearance-none px-3 py-2 pr-8 bg-background border border-input rounded-xl text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors cursor-pointer h-9"
-              >
-                {TIMEZONE_OPTIONS.map((tz) => (
-                  <option key={tz.value} value={tz.value}>
-                    {tz.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full inline-flex items-center justify-between px-3 py-2 bg-background border border-input rounded-xl text-xs text-foreground hover:bg-muted/40 transition-colors cursor-pointer h-9 shadow-2xs"
+                >
+                  <span className="truncate">
+                    {TIMEZONE_OPTIONS.find((t) => t.value === location)?.label || location || 'Select Timezone'}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-80 max-h-60 overflow-y-auto">
+                <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                  Available Global Timezones
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={location}
+                  onValueChange={(val) => setLocation(val)}
+                >
+                  {TIMEZONE_OPTIONS.map((tz) => (
+                    <DropdownMenuRadioItem key={tz.value} value={tz.value} className="text-xs cursor-pointer">
+                      {tz.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center justify-between">
               <span>Active local time:</span>
               <span className="font-mono font-bold">{currentTimeInZone}</span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── 4. Mess & Counter Terminal Automations ── */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <Utensils className="h-5 w-5" />
+        {/* Admin Account Password Security */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              <Lock className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Change Admin Password</h3>
+              <p className="text-xs text-muted-foreground">
+                Update the primary administrator credentials for this hostel.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-foreground">Dining & Terminal Automations</h3>
-            <p className="text-xs text-muted-foreground">
-              Configure counter POS behavior and automated meal validation rules.
-            </p>
+
+          <div className="space-y-2 pt-1">
+            <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+              <span>New Password</span>
+              <span className="text-[11px] font-normal text-muted-foreground">Optional (min 8 chars)</span>
+            </label>
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Leave blank to keep existing password"
+                className="font-mono text-xs h-9 pr-9"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-2">
+              <Info className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                Leave blank to keep existing password. If entered, must meet standard security protocol (min 8 characters).
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="pt-2 divide-y divide-border/60">
-          <div className="flex items-center justify-between py-3">
-            <div className="space-y-0.5 pr-4">
-              <span className="text-xs font-bold text-foreground block">
-                Instant Auto-Verification on QR Token Scan
-              </span>
-              <p className="text-[11px] text-muted-foreground">
-                When enabled, scanned student QR tokens at dining hall counters immediately mark meals
-                as served without requiring secondary manager confirmation.
+        {/* Mess & Counter Terminal Automations */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <Utensils className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Dining & Terminal Automations</h3>
+              <p className="text-xs text-muted-foreground">
+                Configure counter POS behavior and automated meal validation rules.
               </p>
             </div>
-            <Switch
-              checked={autoMealVerification}
-              onCheckedChange={setAutoMeal}
-              className="cursor-pointer shrink-0"
-            />
+          </div>
+
+          <div className="pt-2 divide-y divide-border/60">
+            <div className="flex items-center justify-between py-3">
+              <div className="space-y-0.5 pr-4">
+                <span className="text-xs font-bold text-foreground block">
+                  Instant Auto-Verification on QR Scan
+                </span>
+                <p className="text-[11px] text-muted-foreground">
+                  When enabled, scanned student QR tokens at dining counters immediately mark meals
+                  as served without requiring secondary confirmation.
+                </p>
+              </div>
+              <Switch
+                checked={autoMealVerification}
+                onCheckedChange={setAutoMeal}
+                className="cursor-pointer shrink-0"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -861,7 +1020,148 @@ export default function HostelConfiguration() {
         )}
       </div>
 
-      {/* ── 7. Sticky Floating Save Bar (When Changes are Dirty) ── */}
+      {/* ── 7. GPS Geofence & Security Controls ── */}
+      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/60">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">GPS Geofence & Dining Hall Security</h3>
+              <p className="text-xs text-muted-foreground">
+                Set geographic boundary constraints and inspect rotated QR terminal credentials.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleCaptureCurrentLocation}
+            disabled={isLocating}
+            className="gap-1.5 text-xs rounded-xl self-start sm:self-auto bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30 hover:bg-teal-500/20 cursor-pointer font-semibold h-8"
+          >
+            {isLocating ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Locating GPS...</span>
+              </>
+            ) : (
+              <>
+                <LocateFixed className="h-3.5 w-3.5" />
+                <span>Capture Fresh Location</span>
+              </>
+            )}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">
+              Dining Hall Latitude (GPS)
+            </label>
+            <Input
+              value={lat}
+              onChange={(e) => {
+                setLat(e.target.value)
+                setGpsAccuracy(null)
+              }}
+              placeholder="e.g. 33.642512"
+              className="text-xs font-mono h-9"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">
+              Dining Hall Longitude (GPS)
+            </label>
+            <Input
+              value={lng}
+              onChange={(e) => {
+                setLng(e.target.value)
+                setGpsAccuracy(null)
+              }}
+              placeholder="e.g. 72.990415"
+              className="text-xs font-mono h-9"
+            />
+          </div>
+        </div>
+
+        {/* GPS Verification and Maps Helper */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground pt-1">
+          <div className="flex items-center gap-2">
+            {gpsAccuracy !== null && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <Check className="h-3 w-3" /> ±{gpsAccuracy}m GPS accuracy
+              </span>
+            )}
+            {lat && lng && (
+              <a
+                href={`https://www.google.com/maps?q=${lat},${lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+              >
+                <ExternalLink className="h-3 w-3" /> Verify Pin on Google Maps
+              </a>
+            )}
+          </div>
+          {lat && lng && (
+            <button
+              type="button"
+              onClick={() => {
+                setLat('')
+                setLng('')
+                setGpsAccuracy(null)
+              }}
+              className="text-rose-500 hover:underline cursor-pointer"
+            >
+              Clear GPS coordinates
+            </button>
+          )}
+        </div>
+
+        <p className="text-[11px] text-muted-foreground bg-muted/30 p-2.5 rounded-xl border border-border/60">
+          📍 <strong>30-Meter Radius Rule:</strong> When configured, student QR scans must be physically within 30 meters of this coordinate pin to prevent off-campus fraudulent meal scans.
+        </p>
+
+        {/* Rotated QR Counter Secret */}
+        {hostel?.qrSecret && (
+          <div className="p-3 rounded-xl bg-muted/20 border border-border/80 flex items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <span className="text-xs font-semibold text-foreground block">
+                Counter QR Secret Key (Rotated)
+              </span>
+              <span className="font-mono text-xs font-bold tracking-widest text-foreground">
+                {hostel.qrSecret}
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopyQrSecret}
+              className="h-8 gap-1.5 text-xs rounded-xl cursor-pointer"
+            >
+              {copiedSecret ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy Secret</span>
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* ── 8. Sticky Floating Save Bar (When Changes are Dirty) ── */}
       {hasChanges && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-xl p-4 rounded-2xl bg-card/95 backdrop-blur-md border border-blue-500/40 shadow-2xl flex items-center justify-between gap-4 animate-in slide-in-from-bottom-5">
           <div className="flex items-center gap-2 text-xs">

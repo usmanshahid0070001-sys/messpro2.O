@@ -9,12 +9,15 @@ import {
   Loader2,
   UserPlus,
   ArrowLeftRight,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGetRooms, type Room } from '@/hooks/queries/useResidenceQueries'
 import { useGetUsers } from '@/hooks/queries/useUserQueries'
 import {
   useCreateRoom,
+  useUpdateRoom,
   useDeleteRoom,
   useAlloteRoom,
   useDisalloteRoom,
@@ -33,8 +36,18 @@ type SortOrder = 'name-asc' | 'name-desc' | 'occupancy'
 
 export default function RoomAllocation() {
   // Data Fetching
-  const { data: rooms = [], isLoading: isRoomsLoading } = useGetRooms()
-  const { data: users = [], isLoading: isUsersLoading } = useGetUsers()
+  const {
+    data: rooms = [],
+    isLoading: isRoomsLoading,
+    isError: isRoomsError,
+    refetch: refetchRooms,
+  } = useGetRooms()
+  const {
+    data: users = [],
+    isLoading: isUsersLoading,
+    isError: isUsersError,
+    refetch: refetchUsers,
+  } = useGetUsers()
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('')
@@ -44,12 +57,15 @@ export default function RoomAllocation() {
 
   // Modals state
   const [isAddRoomOpen, setIsAddRoomOpen] = useState(false)
+  const [isEditRoomOpen, setIsEditRoomOpen] = useState(false)
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null)
   const [isAlloteOpen, setIsAlloteOpen] = useState(false)
   const [isChangeOpen, setIsChangeOpen] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
 
   // Mutations
   const createRoomMutation = useCreateRoom()
+  const updateRoomMutation = useUpdateRoom()
   const deleteRoomMutation = useDeleteRoom()
   const alloteRoomMutation = useAlloteRoom()
   const disalloteRoomMutation = useDisalloteRoom()
@@ -159,30 +175,66 @@ export default function RoomAllocation() {
   }, [filteredRooms, sortOrder])
 
   // Handlers for Modals / Mutations
-  const handleCreateRoom = async (roomName: string, capacity: number) => {
-    await createRoomMutation.mutateAsync({ roomName, capacity })
-    setIsAddRoomOpen(false)
+  const handleCreateRoom = async (data: { roomName: string; capacity: number; status?: any }) => {
+    try {
+      await createRoomMutation.mutateAsync({ roomName: data.roomName, capacity: data.capacity })
+      setIsAddRoomOpen(false)
+    } catch {
+      // Error toast handled by useCreateRoom mutation hook; keep modal open
+    }
+  }
+
+  const handleUpdateRoomSubmit = async (data: { roomName: string; capacity: number; status?: any }) => {
+    if (!editingRoom) return
+    try {
+      await updateRoomMutation.mutateAsync({
+        roomId: editingRoom._id,
+        roomName: data.roomName,
+        capacity: data.capacity,
+        status: data.status,
+      })
+      setIsEditRoomOpen(false)
+      setEditingRoom(null)
+    } catch {
+      // Error toast handled by useUpdateRoom mutation hook; keep modal open
+    }
   }
 
   const handleAlloteSubmit = async (studentId: string, roomId: string) => {
-    await alloteRoomMutation.mutateAsync({ studentId, roomId })
-    setIsAlloteOpen(false)
+    try {
+      await alloteRoomMutation.mutateAsync({ studentId, roomId })
+      setIsAlloteOpen(false)
+    } catch {
+      // Error toast handled by useAlloteRoom mutation hook
+    }
   }
 
   const handleChangeRoomSubmit = async (studentId: string, newRoomId: string) => {
-    await changeRoomMutation.mutateAsync({ studentId, newRoomId })
-    setIsChangeOpen(false)
+    try {
+      await changeRoomMutation.mutateAsync({ studentId, newRoomId })
+      setIsChangeOpen(false)
+    } catch {
+      // Error toast handled by useChangeRoom mutation hook
+    }
   }
 
   const handleQuickDisallote = async (studentId: string, studentName: string) => {
     if (window.confirm(`Are you sure you want to remove ${studentName} from this room?`)) {
-      await disalloteRoomMutation.mutateAsync({ studentId })
+      try {
+        await disalloteRoomMutation.mutateAsync({ studentId })
+      } catch {
+        // Error toast handled by useDisalloteRoom mutation hook
+      }
     }
   }
 
   const handleDeleteRoom = async (roomId: string, roomName: string) => {
     if (window.confirm(`Are you sure you want to delete "${roomName}"? All occupants will be deallocated.`)) {
-      await deleteRoomMutation.mutateAsync(roomId)
+      try {
+        await deleteRoomMutation.mutateAsync(roomId)
+      } catch {
+        // Error toast handled by useDeleteRoom mutation hook
+      }
     }
   }
 
@@ -191,12 +243,17 @@ export default function RoomAllocation() {
     setIsAlloteOpen(true)
   }
 
+  const handleOpenEditRoom = (room: Room) => {
+    setEditingRoom(room)
+    setIsEditRoomOpen(true)
+  }
+
   return (
     <div className="space-y-4 pb-12 w-full max-w-full min-w-0">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
             <BedDouble className="h-5 w-5" />
           </div>
           <div>
@@ -245,6 +302,28 @@ export default function RoomAllocation() {
         </div>
       </div>
 
+      {/* ── Network / Query Error Banner ────────────────────────── */}
+      {(isRoomsError || isUsersError) && (
+        <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-xs font-medium">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <span>Unable to load residence rooms or resident directory. Please check your network connection.</span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              refetchRooms()
+              refetchUsers()
+            }}
+            className="self-start sm:self-auto h-8 text-xs font-semibold border-destructive/30 hover:bg-destructive/10 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5 mr-1" />
+            Retry
+          </Button>
+        </div>
+      )}
+
       {/* Metrics strip */}
       <ResidenceMetrics metrics={metricConfigs} />
 
@@ -285,6 +364,7 @@ export default function RoomAllocation() {
               residents={users.filter((u) => u.room && u.room._id === room._id)}
               isDeletePending={deleteRoomMutation.isPending}
               onAllot={openAlloteForRoom}
+              onEdit={handleOpenEditRoom}
               onDisallot={handleQuickDisallote}
               onDelete={handleDeleteRoom}
             />
@@ -298,6 +378,17 @@ export default function RoomAllocation() {
         onClose={() => setIsAddRoomOpen(false)}
         isPending={createRoomMutation.isPending}
         onSubmit={handleCreateRoom}
+      />
+
+      <RoomFormModal
+        isOpen={isEditRoomOpen}
+        initialData={editingRoom}
+        onClose={() => {
+          setIsEditRoomOpen(false)
+          setEditingRoom(null)
+        }}
+        isPending={updateRoomMutation.isPending}
+        onSubmit={handleUpdateRoomSubmit}
       />
 
       <AllotModal

@@ -1,7 +1,16 @@
 import React, { useState, useMemo } from 'react'
-import { UserPlus, X, Loader2, Search, Check, User } from 'lucide-react'
+import { UserPlus, X, Loader2, Search, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { Room } from '@/hooks/queries/useResidenceQueries'
 import type { ManageableUser } from '@/hooks/queries/useUserQueries'
 
@@ -70,7 +79,7 @@ export default function AllotModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div
         className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
@@ -181,32 +190,58 @@ export default function AllotModal({
             <label className="text-xs font-semibold text-foreground">
               Destination Room <span className="text-rose-500">*</span>
             </label>
-            <select
-              value={targetRoomId}
-              onChange={(e) => setTargetRoomId(e.target.value)}
-              className="w-full h-9 px-2.5 rounded-lg border border-border bg-background text-xs font-medium text-foreground focus:ring-1 focus:ring-teal-500 cursor-pointer"
-              required
-            >
-              <option value="">Select target room...</option>
-              {rooms
-                .filter((r) => r.status === 'Available' && r.occupants < r.capacity)
-                .map((rm) => (
-                  <option key={rm._id} value={rm._id}>
-                    {rm.roomName} ({rm.capacity - rm.occupants} vacant / {rm.capacity} total)
-                  </option>
-                ))}
-            </select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full h-9 px-2.5 rounded-xl border border-border bg-background text-xs font-medium text-foreground hover:bg-muted/40 transition-colors inline-flex items-center justify-between cursor-pointer shadow-2xs"
+                >
+                  <span className="truncate">
+                    {targetRoomId
+                      ? rooms.find((r) => r._id === targetRoomId)?.roomName
+                      : 'Select target room...'}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-80 max-h-60 overflow-y-auto">
+                <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                  Available Vacant Rooms
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={targetRoomId}
+                  onValueChange={(val) => setTargetRoomId(val)}
+                >
+                  {rooms
+                    .filter((r) => r.status === 'Available' && r.occupants < r.capacity)
+                    .map((rm) => (
+                      <DropdownMenuRadioItem key={rm._id} value={rm._id} className="text-xs cursor-pointer flex items-center justify-between">
+                        <span className="font-semibold">{rm.roomName}</span>
+                        <span className="text-[11px] text-teal-600 dark:text-teal-400 font-mono">
+                          {rm.capacity - rm.occupants} vacant / {rm.capacity} total
+                        </span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={onClose}>
+          <div className="pt-3 flex justify-end gap-2.5 border-t border-border/60">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="h-9 px-4 text-xs font-semibold border-border hover:bg-muted text-foreground cursor-pointer"
+            >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isPending || !selectedStudent || !targetRoomId}
-              className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-9"
+              className="h-9 px-4 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs cursor-pointer disabled:opacity-50"
             >
               {isPending ? (
                 <>

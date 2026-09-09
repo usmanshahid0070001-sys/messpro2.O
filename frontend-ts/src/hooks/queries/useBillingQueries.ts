@@ -67,6 +67,10 @@ export const useGetMealPricesForBilling = (
     },
     enabled: enabled && Boolean(startDate && endDate),
     staleTime: 1000 * 60 * 2, // 2 minutes cache
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404 || error?.response?.status === 403) return false
+      return failureCount < 2
+    },
   })
 }
 
@@ -123,6 +127,10 @@ export const useGetBillingSettings = () => {
       return response.data?.data || { customCharges: [], isDynamicBillingEnabled: true }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes cache
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404 || error?.response?.status === 403) return false
+      return failureCount < 2
+    },
   })
 }
 
@@ -158,6 +166,9 @@ export const useGetBills = (params?: UseGetBillsParams, enabled: boolean = true)
     },
     enabled,
     staleTime: 1000 * 60 * 2, // 2 minutes cache
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404 || error?.response?.status === 403) return false
+      return failureCount < 2
+    },
   })
 }
-

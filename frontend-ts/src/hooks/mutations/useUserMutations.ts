@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/api/client';
 import { toast } from 'sonner';
+import { extractApiErrorMessage } from './useHostelMutations';
 
 export interface CreateUserPayload {
   name: string;
@@ -13,6 +14,8 @@ export interface CreateUserPayload {
 
 export interface UpdateUserPayload {
   name?: string;
+  status?: 'Active' | 'Suspended';
+  password?: string;
   permissions?: string[];
   additionalInfo?: Array<{ key: string; value: any }>;
 }
@@ -27,11 +30,13 @@ export const useCreateUser = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['myHostel'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'hostels'] });
       toast.success('User created successfully and email notification sent');
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Failed to create user';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to create user');
+      toast.error(msg);
     },
   });
 };
@@ -46,11 +51,35 @@ export const useUpdateUser = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['myHostel'] });
       toast.success('User updated successfully');
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Failed to update user';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to update user');
+      toast.error(msg);
+    },
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiClient.delete(`/users/${userId}`);
+      return response.data;
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['myHostel'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['residence'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'hostels'] });
+      toast.success(data?.message || 'User deleted successfully');
+    },
+    onError: (error: any) => {
+      const msg = extractApiErrorMessage(error, 'Failed to delete user');
+      toast.error(msg);
     },
   });
 };

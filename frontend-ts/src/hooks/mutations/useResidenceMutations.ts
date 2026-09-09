@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/api/client';
 import { toast } from 'sonner';
+import { extractApiErrorMessage } from './useHostelMutations';
 
 export interface CreateRoomPayload {
   roomName: string;
@@ -21,6 +22,13 @@ export interface ChangeRoomPayload {
   newRoomId: string;
 }
 
+export interface UpdateRoomPayload {
+  roomId: string;
+  roomName?: string;
+  capacity?: number;
+  status?: 'Available' | 'Full' | 'Maintenance';
+}
+
 export const useCreateRoom = () => {
   const queryClient = useQueryClient();
 
@@ -32,15 +40,33 @@ export const useCreateRoom = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['residence'] });
       toast.success('Room created successfully', {
-        description: `Room "${data.data?.roomName}" is now available for allocation.`,
+        description: `Room "${data.data?.roomName}" is now ready for bed allocation.`,
       });
     },
     onError: (error: any) => {
-      const msg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Failed to create room';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to create room.');
+      toast.error(msg);
+    },
+  });
+};
+
+export const useUpdateRoom = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ roomId, ...payload }: UpdateRoomPayload) => {
+      const response = await apiClient.patch(`/residence/${roomId}`, payload);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['residence'] });
+      toast.success('Room updated successfully', {
+        description: `Room "${data.data?.roomName}" configuration and capacity updated.`,
+      });
+    },
+    onError: (error: any) => {
+      const msg = extractApiErrorMessage(error, 'Failed to update room.');
+      toast.error(msg);
     },
   });
 };
@@ -53,19 +79,16 @@ export const useDeleteRoom = () => {
       const response = await apiClient.delete(`/residence/${roomId}`);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['residence'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Room removed successfully', {
-        description: 'The room and any residents were disalloted.',
+      toast.success(data.message || 'Room removed successfully', {
+        description: 'All occupants have been deallocated.',
       });
     },
     onError: (error: any) => {
-      const msg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Failed to delete room';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to delete room.');
+      toast.error(msg);
     },
   });
 };
@@ -78,17 +101,14 @@ export const useAlloteRoom = () => {
       const response = await apiClient.post('/residence/allote', payload);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['residence'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Resident allotted to room successfully');
+      toast.success(data.message || 'Resident allotted to room successfully');
     },
     onError: (error: any) => {
-      const msg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Failed to allot room';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to allot room.');
+      toast.error(msg);
     },
   });
 };
@@ -101,17 +121,14 @@ export const useDisalloteRoom = () => {
       const response = await apiClient.post('/residence/disallote', payload);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['residence'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Resident deallocated from room');
+      toast.success(data.message || 'Resident deallocated from room');
     },
     onError: (error: any) => {
-      const msg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Failed to deallocate resident';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to deallocate resident.');
+      toast.error(msg);
     },
   });
 };
@@ -124,17 +141,14 @@ export const useChangeRoom = () => {
       const response = await apiClient.post('/residence/change', payload);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['residence'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Resident room changed successfully');
+      toast.success(data.message || 'Resident room changed successfully');
     },
     onError: (error: any) => {
-      const msg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Failed to swap room';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to transfer resident room.');
+      toast.error(msg);
     },
   });
 };
@@ -147,18 +161,15 @@ export const useMarkRoomCleaning = () => {
       const response = await apiClient.post('/residence/my-room/cleaning');
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['residence'] });
-      toast.success('Cleaning attendance logged successfully', {
-        description: "Your room's cleaning date has been updated.",
+      toast.success(data.message || 'Cleaning attendance logged successfully', {
+        description: "Your room's sanitation record has been updated.",
       });
     },
     onError: (error: any) => {
-      const msg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Failed to log cleaning attendance';
-      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const msg = extractApiErrorMessage(error, 'Failed to log cleaning attendance.');
+      toast.error(msg);
     },
   });
 };

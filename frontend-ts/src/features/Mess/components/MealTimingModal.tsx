@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Plus, Trash2, Clock, Utensils, AlertCircle, Sparkles, Check } from 'lucide-react'
+import { X, Plus, Trash2, Clock, Utensils, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { TimeWindow } from '@/hooks/queries/useMealQueries'
@@ -124,7 +124,7 @@ export default function MealTimingModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in-0">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in-0">
       <div className="relative w-full max-w-2xl rounded-3xl bg-card border border-border p-6 sm:p-7 shadow-2xl space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-border/80">

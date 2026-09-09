@@ -22,7 +22,8 @@ export const globalErrorHandler = (err, req, res, next) => {
 
   if (err.code === 11000) {
     statusCode = 409;
-    message = 'A record with this value already exists.';
+    const duplicateField = Object.keys(err.keyPattern || err.keyValue || {})[0] || 'value';
+    message = `A record with this ${duplicateField} already exists.`;
   }
 
   if (err.name === 'ValidationError') {

@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useSEO } from '@/hooks/useSEO';
 import { setCredentials } from '../../store/slices/AuthSlice';
 import { useLoginMutation } from '../../hooks/mutations/useAuthMutations';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Loader2, User, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader2, User, Lock, Headphones, Sparkles } from 'lucide-react';
 import logoUrl from '@/assets/pwa-192x192.png';
+import SupportUpgradeModal from '@/components/SupportUpgradeModal';
 
 const loginSchema = z.object({
     email: z
@@ -19,40 +21,65 @@ const loginSchema = z.object({
     password: z
         .string()
         .min(1, 'Password is required')
-        .min(7, 'Password must be at least 7 characters'),
+        .min(6, 'Password must be at least 6 characters'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-// Maps known API error shapes to a friendly message.
-// Falls back to a generic message rather than leaking raw server/network errors.
+// Maps API error shapes to a user-friendly message.
 function getErrorMessage(error: unknown): string {
     if (error && typeof error === 'object') {
-        const err = error as { status?: number; data?: { message?: string } };
-        if (err.status === 401 || err.status === 400) {
-            return 'Incorrect email or password. Please try again.';
+        const axiosErr = error as {
+            response?: {
+                status?: number;
+                data?: { message?: string; error?: string };
+            };
+            message?: string;
+        };
+
+        const status = axiosErr.response?.status;
+        const serverMessage = axiosErr.response?.data?.message || axiosErr.response?.data?.error;
+
+        if (status === 429) {
+            return serverMessage || 'Too many attempts. Please wait a moment and try again.';
         }
-        if (err.status === 429) {
-            return 'Too many attempts. Please wait a moment and try again.';
+        if (status === 401 || status === 400) {
+            return serverMessage || 'Incorrect email or password. Please try again.';
         }
-        if (err.status && err.status >= 500) {
+        if (status && status >= 500) {
             return 'Something went wrong on our end. Please try again shortly.';
         }
-        if (err.data?.message) {
-            return err.data.message;
+        if (serverMessage) {
+            return serverMessage;
         }
-    }
-    if (error instanceof Error && error.message === 'Failed to fetch') {
-        return 'Unable to reach the server. Check your connection and try again.';
+        if (axiosErr.message === 'Network Error' || axiosErr.message === 'Failed to fetch') {
+            return 'Unable to reach the server. Check your connection and try again.';
+        }
     }
     return 'Invalid credentials. Please try again.';
 }
 
 export default function LoginForm() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const dispatch = useDispatch();
     const loginMutation = useLoginMutation();
     const [showPassword, setShowPassword] = useState(false);
+    const [isSupportOpen, setIsSupportOpen] = useState(false);
+
+    useEffect(() => {
+        const errorParam = searchParams.get('error');
+        if (errorParam) {
+            toast.error(errorParam);
+        }
+    }, [searchParams]);
+
+    useSEO({
+        title: 'Sign In — MessPro 2.0',
+        description: 'Log in to your MessPro account to manage hostel rooms, meals, QR attendance, and student billing.',
+        canonicalUrl: '/login',
+        robots: 'index, follow',
+    });
 
     const {
         register,
@@ -67,14 +94,21 @@ export default function LoginForm() {
 
     const onSubmit = async (data: LoginFormData) => {
         try {
-            const response = await loginMutation.mutateAsync({
+            const response: any = await loginMutation.mutateAsync({
                 email: data.email,
                 password: data.password,
             });
 
-            dispatch(setCredentials({ user: response.user, token: response.token }));
-            toast.success('Successfully logged in');
-            navigate('/app');
+            const user = response?.user || response?.data?.user;
+            const token = response?.token || response?.data?.token || '';
+
+            if (user) {
+                dispatch(setCredentials({ user, token }));
+                toast.success('Successfully logged in');
+                navigate('/app');
+            } else {
+                toast.error('Unexpected login response format. Please try again.');
+            }
         } catch (error) {
             console.error('Login failed', error);
             const message = getErrorMessage(error);
@@ -222,10 +256,26 @@ export default function LoginForm() {
                     </div>
                 </form>
 
-                <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Register Hostel? <a href="https://messprouet.vercel.app/register" target="_blank" rel="noopener noreferrer" className="font-bold text-foreground hover:underline">Click here</a>
+                <div className="mt-5 pt-4 border-t border-border/60 text-center space-y-2">
+                    <div className="text-xs text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap">
+                        <span>Register a new hostel?</span>
+                        <Link
+                            to="/?action=setup"
+                            className="font-bold text-primary hover:underline transition-colors inline-flex items-center gap-1"
+                        >
+                            <Sparkles className="w-3 h-3 text-primary" />
+                            <span>Setup your Hostel</span>
+                        </Link>
+                    </div>
                 </div>
             </div>
+
+            {/* Support / Setup Helpline Modal */}
+            <SupportUpgradeModal
+                isOpen={isSupportOpen}
+                onClose={() => setIsSupportOpen(false)}
+                initialReason="setup"
+            />
         </div>
     );
 }

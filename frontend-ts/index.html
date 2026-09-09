@@ -18,10 +18,12 @@
     />
     <meta name="author" content="MessPro Technologies" />
     <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://messpro.app/" />
 
     <!-- Security & Privacy Policies -->
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
 
     <!-- PWA & Mobile Web App -->
     <link rel="manifest" href="/manifest.json" />
@@ -33,44 +35,88 @@
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 
     <!-- Favicons & App Icons -->
-    <link rel="icon" type="image/png" href="/src/assets/pwa-192x192.png" />
-    <link rel="apple-touch-icon" href="/src/assets/pwa-192x192.png" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2" />
 
-    <!-- Open Graph / Facebook / LinkedIn -->
+    <!-- Open Graph / Facebook / LinkedIn (1200x630 Social Preview Card) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MessPro 2.0" />
+    <meta property="og:url" content="https://messpro.app/" />
     <meta property="og:title" content="MessPro 2.0 — Smart Hostel &amp; Mess Management System" />
     <meta
       property="og:description"
       content="Next-generation SaaS platform for streamlined hostel mess operations, automated attendance, dynamic meal pricing, and resident ledger management."
     />
-    <meta property="og:image" content="/src/assets/pwa-512x512.png" />
+    <meta property="og:image" content="https://messpro.app/pwa-512x512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="MessPro 2.0 Logo" />
 
     <!-- Twitter Cards -->
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="MessPro 2.0 — Smart Hostel &amp; Mess Management System" />
     <meta
       name="twitter:description"
       content="Next-generation SaaS platform for streamlined hostel mess operations, automated attendance, dynamic meal pricing, and resident ledger management."
     />
-    <meta name="twitter:image" content="/src/assets/pwa-512x512.png" />
+    <meta name="twitter:image" content="https://messpro.app/pwa-512x512.png" />
+    <meta name="twitter:image:alt" content="MessPro 2.0 Logo" />
 
     <!-- JSON-LD Structured Data for Search Engines -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "MessPro 2.0",
-        "url": "https://messpro.app",
-        "description": "Smart Hostel & Mess Management SaaS platform offering real-time meal tracking, QR attendance, and automated billing.",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "All modern browsers, iOS, Android",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        }
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://messpro.app/#organization",
+            "name": "MessPro Technologies",
+            "url": "https://messpro.app",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://messpro.app/pwa-512x512.png"
+            },
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "email": "support@messpro.app",
+              "contactType": "Customer Support"
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://messpro.app/#website",
+            "url": "https://messpro.app",
+            "name": "MessPro 2.0",
+            "description": "Smart Hostel & Mess Management SaaS System",
+            "publisher": {
+              "@id": "https://messpro.app/#organization"
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://messpro.app/#software",
+            "name": "MessPro 2.0",
+            "url": "https://messpro.app",
+            "description": "Smart Hostel & Mess Management SaaS platform offering real-time meal tracking, QR attendance, and automated billing.",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, iOS, Android (PWA)",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "featureList": [
+              "QR Code Dining Attendance",
+              "Automated Meal Invoicing & Ledgers",
+              "Real-time Room Allocations",
+              "Multi-tenant Superadmin Governance",
+              "Offline-first Scanner Caching"
+            ]
+          }
+        ]
       }
     </script>
 
@@ -120,17 +166,11 @@
       }
 
       .loader-brand-icon {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         border-radius: 10px;
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #ffffff;
-        font-weight: 800;
-        font-size: 20px;
-        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+        object-fit: contain;
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
       }
 
       .loader-brand-name {
@@ -197,7 +237,7 @@
     <!-- Initial Loading Screen (dismissed as soon as React mounts) -->
     <div id="app-loader" aria-hidden="true">
       <div class="loader-brand">
-        <div class="loader-brand-icon">M</div>
+        <img src="/src/assets/pwa-192x192.png" alt="MessPro Logo" class="loader-brand-icon" />
         <div class="loader-brand-name">MessPro<span>2.0</span></div>
       </div>
       <div class="loader-bar-bg">

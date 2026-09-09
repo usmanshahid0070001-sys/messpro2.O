@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/api/client';
 import { toast } from 'sonner';
+import { extractApiErrorMessage } from './useHostelMutations';
 
 export interface SaveAttendanceRecordItem {
   rollNumber: string;
@@ -39,10 +40,12 @@ export const useSaveAttendance = () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       queryClient.invalidateQueries({ queryKey: ['liveQRAttendance'] });
       queryClient.invalidateQueries({ queryKey: ['dailyOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['managerLiveOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['studentMonthlyRecords'] });
       toast.success(res.message || 'Attendance saved successfully!');
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to save attendance.';
+      const msg = extractApiErrorMessage(error, 'Failed to save attendance.');
       toast.error(msg);
     },
   });
@@ -88,11 +91,13 @@ export const useScanStudentQR = () => {
         queryClient.invalidateQueries({ queryKey: ['liveQRAttendance'] });
         queryClient.invalidateQueries({ queryKey: ['dailyOverview'] });
         queryClient.invalidateQueries({ queryKey: ['attendance'] });
+        queryClient.invalidateQueries({ queryKey: ['managerLiveOverview'] });
+        queryClient.invalidateQueries({ queryKey: ['studentMonthlyRecords'] });
         toast.success(res.message || 'Student attendance marked!');
       }
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to process student QR code.';
+      const msg = extractApiErrorMessage(error, 'Failed to process student QR code.');
       toast.error(msg);
     },
   });
@@ -124,10 +129,12 @@ export const useRespondGuestPermission = () => {
       queryClient.invalidateQueries({ queryKey: ['liveQRAttendance'] });
       queryClient.invalidateQueries({ queryKey: ['dailyOverview'] });
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['managerLiveOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['studentMonthlyRecords'] });
       toast.success(res.message || 'Permission updated successfully!');
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to update guest permission.';
+      const msg = extractApiErrorMessage(error, 'Failed to update guest permission.');
       toast.error(msg);
     },
   });
@@ -161,26 +168,128 @@ export interface ProcessBiometricResponse {
   };
 }
 
-export const useProcessBiometricAttendance = () => {
-  const queryClient = useQueryClient();
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState } from '@/store';
+import {
+  startSyncProgress,
+  updateSyncChunkProgress,
+  finishSyncSuccess,
+  setSyncError,
+  type BiometricSyncStats,
+} from '@/store/slices/BiometricSyncSlice';
 
-  return useMutation<ProcessBiometricResponse, any, ProcessBiometricPayload>({
-    mutationFn: async (payload: ProcessBiometricPayload) => {
-      const { data } = await apiClient.post<ProcessBiometricResponse>(
-        '/attendance/biometric/upload',
-        payload
-      );
-      return data;
-    },
-    onSuccess: (res) => {
+export const BIOMETRIC_CHUNK_SIZE = 100; // 100 records per HTTP batch
+
+export const useChunkedBiometricSync = () => {
+  const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  const biometricSyncState = useSelector((state: RootState) => state.biometricSync);
+
+  const startSync = async (params: {
+    records: BiometricAttendanceItem[];
+    unrecognizedStudentAction: 'guest' | 'skip';
+    duplicatePunchStrategy: 'deduplicate' | 'accumulate';
+    fileName?: string;
+  }) => {
+    const {
+      records,
+      unrecognizedStudentAction,
+      duplicatePunchStrategy,
+      fileName = 'biometric_data.xlsx',
+    } = params;
+
+    if (!records || records.length === 0) {
+      toast.error('No biometric records to sync.');
+      return;
+    }
+
+    // Split records into manageable chunks of BIOMETRIC_CHUNK_SIZE
+    const chunks: BiometricAttendanceItem[][] = [];
+    for (let i = 0; i < records.length; i += BIOMETRIC_CHUNK_SIZE) {
+      chunks.push(records.slice(i, i + BIOMETRIC_CHUNK_SIZE));
+    }
+
+    const totalChunks = chunks.length;
+    const totalRecords = records.length;
+
+    dispatch(
+      startSyncProgress({
+        fileName,
+        totalRecords,
+        totalChunks,
+      })
+    );
+
+    const aggregated: BiometricSyncStats = {
+      totalSubmitted: totalRecords,
+      totalProcessed: 0,
+      recordsCreated: 0,
+      recordsUpdated: 0,
+      guestsMarked: 0,
+      skippedCount: 0,
+    };
+
+    try {
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = chunks[i];
+        const payload: ProcessBiometricPayload = {
+          records: chunk,
+          unrecognizedStudentAction,
+          duplicatePunchStrategy,
+        };
+
+        const { data } = await apiClient.post<ProcessBiometricResponse>(
+          '/attendance/biometric/upload',
+          payload
+        );
+
+        if (data && data.stats) {
+          aggregated.recordsCreated += data.stats.recordsCreated || 0;
+          aggregated.recordsUpdated += data.stats.recordsUpdated || 0;
+          aggregated.guestsMarked += data.stats.guestsMarked || 0;
+          aggregated.skippedCount += data.stats.skippedCount || 0;
+          aggregated.totalProcessed += data.stats.totalProcessed || chunk.length;
+        } else {
+          aggregated.totalProcessed += chunk.length;
+        }
+
+        dispatch(
+          updateSyncChunkProgress({
+            chunkIndex: i,
+            chunkRecordsCount: chunk.length,
+            chunkStats: data?.stats,
+          })
+        );
+      }
+
+      dispatch(finishSyncSuccess({ finalStats: aggregated }));
+
+      // Invalidate queries so that live counters and dashboards update immediately
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       queryClient.invalidateQueries({ queryKey: ['liveQRAttendance'] });
       queryClient.invalidateQueries({ queryKey: ['dailyOverview'] });
-      toast.success(res.message || 'Biometric attendance synced successfully!');
-    },
-    onError: (error: any) => {
-      const msg = error?.response?.data?.message || 'Failed to process biometric file.';
-      toast.error(msg);
-    },
-  });
+      queryClient.invalidateQueries({ queryKey: ['managerLiveOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['studentMonthlyRecords'] });
+
+      toast.success('Biometric Sync Complete', {
+        description: `Successfully processed ${totalRecords} records (${aggregated.recordsCreated} created, ${aggregated.recordsUpdated} updated, ${aggregated.guestsMarked} guests).`,
+        duration: 8000,
+      });
+
+      return aggregated;
+    } catch (err: any) {
+      const msg = extractApiErrorMessage(err, 'Failed to process biometric batch.');
+      dispatch(setSyncError(msg));
+      toast.error('Biometric Sync Interrupted', {
+        description: msg,
+        duration: 8000,
+      });
+      throw err;
+    }
+  };
+
+  return {
+    startSync,
+    biometricSyncState,
+  };
 };

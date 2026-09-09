@@ -76,3 +76,30 @@ export const requirePermission = (requiredPermission) => {
     });
   });
 };
+
+export const requireAnyPermission = (...permissions) => {
+  return catchAsync(async (req, res, next) => {
+    const user = req.user;
+
+    // 1. Superadmins bypass the check completely
+    if (user.role === 'superadmin') {
+      return next();
+    }
+
+    // 2. Check if user has ANY of the permissions specified
+    if (
+      ['student', 'manager', 'admin'].includes(user.role) &&
+      user.permissions &&
+      permissions.some((p) => user.permissions.includes(p))
+    ) {
+      return next();
+    }
+
+    // 3. If none matched, block the request
+    return res.status(403).json({
+      success: false,
+      message: `Access Denied: You need at least one of the following permissions: ${permissions.join(', ')}.`,
+    });
+  });
+};
+

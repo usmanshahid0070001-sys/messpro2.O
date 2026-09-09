@@ -62,7 +62,8 @@ export const useGetAttendance = (
 // ── 1. Manager QR Fortress Token ───────────────────────────────────────────
 export interface ManagerQRSecretData {
   h: string; // hostel ID
-  s: string; // 8-char secure secret string
+  hostelId?: string;
+  s?: string; // 8-char secure secret string
 }
 
 export const useGetManagerQR = (enabled: boolean = true) => {
