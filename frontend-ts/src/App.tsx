@@ -10,32 +10,33 @@ import { StorageWarningModal } from "@/components/StorageWarningModal";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-// Route-based Code Splitting (Lazy-loaded per Section 8 of AGENTS.md)
-const LoginForm = React.lazy(() => import("./features/auth/LoginForm"));
-const Dashboard = React.lazy(() => import("./features/app/Dashboard"));
-const ManageUsers = React.lazy(() => import("./features/managerUsers/ManageUsers"));
-const HostelConfiguration = React.lazy(() => import("./features/hostel/HostelConfiguration"));
-const ComplaintIndex = React.lazy(() => import("./features/complain/ComplaintIndex"));
-const RoomAllocation = React.lazy(() => import("./features/Residence/RoomAllocation"));
-const RoomService = React.lazy(() => import("./features/Residence/RoomService"));
-const MyRoom = React.lazy(() => import("./features/Residence/MyRoom"));
-const WeeklySchedule = React.lazy(() => import("./features/Mess/WeeklySchedule"));
-const ManageMealSchedule = React.lazy(() => import("./features/Mess/ManageMealSchedule"));
-const MealHistoryPage = React.lazy(() => import("./features/Mess/MealHistory/MealHistoryPage"));
-const MealControlPage = React.lazy(() => import("./features/Mess/MealControl/MealControlPage"));
-const StudentAttendancePage = React.lazy(() => import("./features/attendance/QR/StudentAttendancePage"));
-const QRAttendancePage = React.lazy(() => import("./features/attendance/QR/QRAttendancePage"));
-const ManualAttendancePage = React.lazy(() => import("./features/attendance/Manual/ManualAttendancePage"));
-const BiometricAttendancePage = React.lazy(() => import("./features/attendance/Biometric/BiometricAttendancePage"));
-const MealPricesPage = React.lazy(() => import("./features/Finance/MealPrices/MealPricesPage"));
-const BillGenerationPage = React.lazy(() => import("./features/Finance/BillGeneration/BillGenerationPage"));
-const BillManagementPage = React.lazy(() => import("./features/Finance/BillManagement/BillManagementPage"));
-const MyBillsPage = React.lazy(() => import("./features/Finance/MyBills/MyBillsPage"));
-const ManageTenantsPage = React.lazy(() => import("./features/superadmin/ManageTenantsPage"));
-const ManagePlansPage = React.lazy(() => import("./features/superadmin/ManagePlansPage"));
-const HostelRequestsPage = React.lazy(() => import("./features/superadmin/HostelRequestsPage"));
-const LandingPage = React.lazy(() => import("./features/landing/LandingPage"));
+// Core Application & Authenticated Module Pages (Statically Imported for Instant Navigation)
+import LoginForm from "./features/auth/LoginForm";
+import Dashboard from "./features/app/Dashboard";
+import ManageUsers from "./features/managerUsers/ManageUsers";
+import HostelConfiguration from "./features/hostel/HostelConfiguration";
+import ComplaintIndex from "./features/complain/ComplaintIndex";
+import RoomAllocation from "./features/Residence/RoomAllocation";
+import RoomService from "./features/Residence/RoomService";
+import MyRoom from "./features/Residence/MyRoom";
+import WeeklySchedule from "./features/Mess/WeeklySchedule";
+import ManageMealSchedule from "./features/Mess/ManageMealSchedule";
+import MealHistoryPage from "./features/Mess/MealHistory/MealHistoryPage";
+import MealControlPage from "./features/Mess/MealControl/MealControlPage";
+import StudentAttendancePage from "./features/attendance/QR/StudentAttendancePage";
+import QRAttendancePage from "./features/attendance/QR/QRAttendancePage";
+import ManualAttendancePage from "./features/attendance/Manual/ManualAttendancePage";
+import BiometricAttendancePage from "./features/attendance/Biometric/BiometricAttendancePage";
+import MealPricesPage from "./features/Finance/MealPrices/MealPricesPage";
+import BillGenerationPage from "./features/Finance/BillGeneration/BillGenerationPage";
+import BillManagementPage from "./features/Finance/BillManagement/BillManagementPage";
+import MyBillsPage from "./features/Finance/MyBills/MyBillsPage";
+import ManageTenantsPage from "./features/superadmin/ManageTenantsPage";
+import ManagePlansPage from "./features/superadmin/ManagePlansPage";
+import HostelRequestsPage from "./features/superadmin/HostelRequestsPage";
 
+// Public & Informational Pages (Lazy-loaded)
+const LandingPage = React.lazy(() => import("./features/landing/LandingPage"));
 const TermsPage = React.lazy(() => import("./features/legal/TermsPage"));
 const PrivacyPolicyPage = React.lazy(() => import("./features/legal/PrivacyPolicyPage"));
 const CookiePolicyPage = React.lazy(() => import("./features/legal/CookiePolicyPage"));
@@ -110,14 +111,7 @@ const App = () => {
 
               {/* Public Routes (Accessible only if NOT logged in) */}
               <Route element={<PublicRoute />}>
-                <Route
-                  path="/login"
-                  element={
-                    <Suspense fallback={<div className="min-h-screen bg-background" />}>
-                      <LoginForm />
-                    </Suspense>
-                  }
-                />
+                <Route path="/login" element={<LoginForm />} />
               </Route>
 
               {/* Protected Routes (Accessible only if logged in) */}
