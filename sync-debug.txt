@@ -1,0 +1,101 @@
+STARTING SYNC FROM: E:\messpro2.O\scripts\backup
+CAUGHT ERROR: Command failed: node syncLocalToCloud.js
+
+❌  Synchronization failed with an unexpected error:
+MongooseServerSelectionError: Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/
+    at _handleConnectionErrors (E:\messpro2.O\scripts\backup\node_modules\mongoose\lib\connection.js:1180:11)
+    at NativeConnection.asPromise (E:\messpro2.O\scripts\backup\node_modules\mongoose\lib\connection.js:1643:11)
+    at async syncLocalToCloud (file:///E:/messpro2.O/scripts/backup/syncLocalToCloud.js:107:17) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-n9qwweu-shard-00-00.tnjpzra.mongodb.net:27017' => [ServerDescription],
+      'ac-n9qwweu-shard-00-01.tnjpzra.mongodb.net:27017' => [ServerDescription],
+      'ac-n9qwweu-shard-00-02.tnjpzra.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-n8gebi-shard-0',
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  cause: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-n9qwweu-shard-00-00.tnjpzra.mongodb.net:27017' => [ServerDescription],
+      'ac-n9qwweu-shard-00-01.tnjpzra.mongodb.net:27017' => [ServerDescription],
+      'ac-n9qwweu-shard-00-02.tnjpzra.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-n8gebi-shard-0',
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  }
+}
+
+STDOUT: ◇ injected env (3) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (9) from ..\..\backend\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+
+[2026-09-09 13:15:46]  🚀  Starting Local MongoDB → Cloud MongoDB Synchronization…
+[2026-09-09 13:15:46]     Source (Local) → mongodb://127.0.0.1:27017/messpro_saas
+[2026-09-09 13:15:46]     Target (Cloud) → mongodb://localhostuser:******@ac-n9qwweu-shard-00-00.tnjpzra.mongodb.net:27017,ac-n9qwweu-shard-00-01.tnjpzra.mongodb.net:27017,ac-n9qwweu-shard-00-02.tnjpzra.mongodb.net:27017/hostelmess?ssl=true&authSource=admin&replicaSet=atlas-n8gebi-shard-0&retryWrites=true&w=majority
+[2026-09-09 13:15:46]     Mode           → SAFE UPSERT (Preserve & Update by _id)
+
+[2026-09-09 13:15:46]  🔌  Connecting to Local MongoDB…
+[2026-09-09 13:15:46]  ✅  Connected to Local MongoDB.
+[2026-09-09 13:15:46]  🔌  Connecting to Cloud MongoDB Atlas…
+
+STDERR: 
+❌  Synchronization failed with an unexpected error:
+MongooseServerSelectionError: Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/
+    at _handleConnectionErrors (E:\messpro2.O\scripts\backup\node_modules\mongoose\lib\connection.js:1180:11)
+    at NativeConnection.asPromise (E:\messpro2.O\scripts\backup\node_modules\mongoose\lib\connection.js:1643:11)
+    at async syncLocalToCloud (file:///E:/messpro2.O/scripts/backup/syncLocalToCloud.js:107:17) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-n9qwweu-shard-00-00.tnjpzra.mongodb.net:27017' => [ServerDescription],
+      'ac-n9qwweu-shard-00-01.tnjpzra.mongodb.net:27017' => [ServerDescription],
+      'ac-n9qwweu-shard-00-02.tnjpzra.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-n8gebi-shard-0',
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  cause: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-n9qwweu-shard-00-00.tnjpzra.mongodb.net:27017' => [ServerDescription],
+      'ac-n9qwweu-shard-00-01.tnjpzra.mongodb.net:27017' => [ServerDescription],
+      'ac-n9qwweu-shard-00-02.tnjpzra.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-n8gebi-shard-0',
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  }
+}

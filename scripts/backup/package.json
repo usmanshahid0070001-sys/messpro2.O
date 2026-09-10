@@ -6,6 +6,10 @@
   "type": "module",
   "scripts": {
     "backup": "node backupMessPro.js",
+    "sync:cloud": "node syncLocalToCloud.js",
+    "sync:cloud:mirror": "node syncLocalToCloud.js --drop",
+    "sync:local": "node syncCloudToLocal.js",
+    "sync:local:mirror": "node syncCloudToLocal.js --drop",
     "migrate-users": "node migrate_users.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

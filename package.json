@@ -1,4 +1,12 @@
 {
+  "name": "messpro2.0",
+  "private": true,
+  "scripts": {
+    "sync:cloud": "npm --prefix scripts/backup run sync:cloud",
+    "sync:cloud:mirror": "npm --prefix scripts/backup run sync:cloud:mirror",
+    "sync:local": "npm --prefix scripts/backup run sync:local",
+    "sync:local:mirror": "npm --prefix scripts/backup run sync:local:mirror"
+  },
   "dependencies": {
     "node-ssh": "^13.2.1"
   }
