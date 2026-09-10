@@ -28,19 +28,29 @@ export default defineConfig(({ mode }) => ({
   ...(mode === 'production'
     ? {
         esbuild: {
-          drop: ['console', 'debugger'] as const,
-        },
+          drop: ['console', 'debugger'],
+        } as any,
       }
     : {}),
   build: {
     sourcemap: false, // Prevents exposing raw source code structure in production
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-state': ['@reduxjs/toolkit', 'react-redux', 'zustand'],
-          'vendor-query': ['@tanstack/react-query'],
-          'vendor-icons': ['lucide-react'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/react-router-dom/')) {
+              return 'vendor-react';
+            }
+            if (id.includes('/@reduxjs/toolkit/') || id.includes('/react-redux/') || id.includes('/zustand/')) {
+              return 'vendor-state';
+            }
+            if (id.includes('/@tanstack/react-query/')) {
+              return 'vendor-query';
+            }
+            if (id.includes('/lucide-react/')) {
+              return 'vendor-icons';
+            }
+          }
         },
       },
     },

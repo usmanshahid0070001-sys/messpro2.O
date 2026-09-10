@@ -88,7 +88,7 @@ export default function StudentDashboard({
 
   // Count how many meals are reserved/claimed for today
   const reservedCount = todaySelections.filter(
-    (s) => s.date === todayDateStr && (s.count > 0 || s.hasSelected)
+    (s) => s.date === todayDateStr && ((s.count ?? 0) > 0 || s.hasSelected)
   ).length
   const totalMealsCount = mealNames.length
 

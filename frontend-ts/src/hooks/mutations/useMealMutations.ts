@@ -90,7 +90,7 @@ export const useBulkSelectMeals = () => {
 
 export interface ScanManagerQRPayload {
   h: string
-  s: string
+  s?: string
   lat?: number
   lng?: number
 }

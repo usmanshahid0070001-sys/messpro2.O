@@ -4,6 +4,7 @@ import apiClient from '@/api/client';
 export interface ManageableUser {
   _id: string;
   id?: string; // Roll number for students
+  rollNumber?: string;
   name: string;
   email: string;
   role: 'student' | 'manager' | 'admin' | 'superadmin';

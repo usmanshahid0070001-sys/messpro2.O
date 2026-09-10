@@ -8,6 +8,7 @@ export interface User {
   role: 'superadmin' | 'admin' | 'manager' | 'student';
   hostelId?: string;
   hostelStatus?: any; // You can type this more strictly if you know the status shape
+  status?: string;
   permissions?: string[];
   room?: string;
   additionalInfo?: Array<{ key: string; value: string }>;
