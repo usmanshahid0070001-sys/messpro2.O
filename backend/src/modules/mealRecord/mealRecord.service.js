@@ -610,8 +610,26 @@ class MealRecordService {
   }
 
   async getLiveQRAttendance(hostelId, targetDate) {
-    const currentMealData = await this.calculateCurrentMeal(hostelId);
-    const activeDate = targetDate || currentMealData.date;
+    let currentMealData;
+    let activeDate = targetDate;
+
+    try {
+      currentMealData = await this.calculateCurrentMeal(hostelId);
+      if (!activeDate) activeDate = currentMealData.date;
+    } catch (error) {
+      if (error.statusCode === 400) {
+        currentMealData = { mealType: 'None' };
+        if (!activeDate) {
+          const hostel = await hostelService.getHostelById(hostelId);
+          const timezone = getSafeTimezone(hostel?.location);
+          activeDate = new Intl.DateTimeFormat('en-CA', {
+            timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit'
+          }).format(new Date());
+        }
+      } else {
+        throw error;
+      }
+    }
     
     const schedule = await mealService.getScheduleByHostel(hostelId);
     const mealTypes = schedule ? schedule.mealNames : [];
