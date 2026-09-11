@@ -3,6 +3,7 @@
  * 
  * Features:
  * - Strict 30 MB (30 * 1024 * 1024 bytes) memory limit with LRU eviction.
+ * - Periodic expired-item sweep every 60 seconds.
  * - Staggered expiry (TTL Jitter) to prevent Cache Stampedes.
  * - Dynamic Redis Cloud support if REDIS_URL is provided in .env.
  * - Read-through (getOrSet) and Write-through cache invalidation.
@@ -19,6 +20,10 @@ class MemoryLRUCache {
       misses: 0,
       evictions: 0,
     };
+
+    // Periodically sweep expired items to free memory proactively
+    this._sweepInterval = setInterval(() => this._sweepExpired(), 60_000);
+    if (this._sweepInterval.unref) this._sweepInterval.unref(); // don't block process exit
   }
 
   _calculateSize(key, value) {
@@ -30,7 +35,19 @@ class MemoryLRUCache {
     }
   }
 
+  _sweepExpired() {
+    const now = Date.now();
+    for (const [key, item] of this.cache) {
+      if (item.expiresAt && now > item.expiresAt) {
+        this.currentSizeBytes -= item.sizeBytes;
+        this.cache.delete(key);
+      }
+    }
+  }
+
   _evictOldest() {
+    // Map iteration is insertion-order; oldest = first key
+    // Re-insertion on get() promotes items to tail, so head = LRU
     const oldestKey = this.cache.keys().next().value;
     if (oldestKey !== undefined) {
       const item = this.cache.get(oldestKey);
@@ -57,29 +74,30 @@ class MemoryLRUCache {
       return null;
     }
 
-    // Move to most recently used position (re-insert in Map)
+    // Move to most recently used position (re-insert at tail of Map)
     this.cache.delete(key);
     this.cache.set(key, item);
     this.stats.hits += 1;
     return item.value;
   }
 
-  set(key, value, ttlSeconds = 3600, maxJitterSeconds = 300) {
-    // If key exists, subtract old size
+  /**
+   * @param {string} key
+   * @param {any} value
+   * @param {number} effectiveTtlSeconds — already-jittered TTL (set 0 for no expiry)
+   */
+  set(key, value, effectiveTtlSeconds = 3600) {
+    // If key exists, subtract old size first
     if (this.cache.has(key)) {
       const old = this.cache.get(key);
       this.currentSizeBytes -= old.sizeBytes;
       this.cache.delete(key);
     }
 
-    // Compute TTL with random jitter
-    const jitter = Math.floor(Math.random() * maxJitterSeconds);
-    const effectiveTtlMs = (ttlSeconds + jitter) * 1000;
-    const expiresAt = ttlSeconds > 0 ? Date.now() + effectiveTtlMs : null;
-
+    const expiresAt = effectiveTtlSeconds > 0 ? Date.now() + effectiveTtlSeconds * 1000 : null;
     const sizeBytes = this._calculateSize(key, value);
 
-    // Evict oldest items until under memory ceiling
+    // Evict oldest (LRU) items until under memory ceiling
     while (this.currentSizeBytes + sizeBytes > this.maxSizeBytes && this.cache.size > 0) {
       this._evictOldest();
     }
@@ -145,19 +163,35 @@ class CacheManager {
     if (process.env.REDIS_URL) {
       try {
         const { default: Redis } = await import('ioredis');
+        // Do NOT use lazyConnect — ioredis auto-connects on construction.
+        // lazyConnect + manual .connect() is incompatible and breaks silently.
         this.redisClient = new Redis(process.env.REDIS_URL, {
           maxRetriesPerRequest: 2,
           enableReadyCheck: true,
-          lazyConnect: true,
         });
 
-        await this.redisClient.connect();
+        await new Promise((resolve, reject) => {
+          this.redisClient.once('ready', resolve);
+          this.redisClient.once('error', reject);
+        });
+
         console.log('✅ Connected to Redis Cloud Cache');
       } catch (err) {
-        console.warn('⚠️ Redis connection not available, falling back to 30MB In-Memory Cache:', err.message);
-        this.redisClient = null;
+        console.warn('⚠️ Redis connection failed, using 30MB In-Memory Cache:', err.message);
+        if (this.redisClient) {
+          this.redisClient.disconnect();
+          this.redisClient = null;
+        }
       }
     }
+  }
+
+  /**
+   * Compute a single jittered TTL value (shared between Redis and memory paths)
+   */
+  _effectiveTtl(baseTtlSeconds, maxJitterSeconds) {
+    const jitter = Math.floor(Math.random() * (maxJitterSeconds + 1));
+    return baseTtlSeconds + jitter;
   }
 
   /**
@@ -177,25 +211,25 @@ class CacheManager {
   }
 
   /**
-   * Set an item in Cache with base TTL and jitter
+   * Set an item in Cache with base TTL and jitter.
+   * Jitter is computed once and applied identically to both Redis and memory.
    * @param {string} key
    * @param {any} value
    * @param {number} baseTtlSeconds default 3600s (1 hour)
    * @param {number} maxJitterSeconds default 300s (5 mins)
    */
   async set(key, value, baseTtlSeconds = 3600, maxJitterSeconds = 300) {
-    const jitter = Math.floor(Math.random() * maxJitterSeconds);
-    const effectiveTtl = baseTtlSeconds + jitter;
+    const ttl = this._effectiveTtl(baseTtlSeconds, maxJitterSeconds);
 
     if (this.redisClient) {
       try {
-        await this.redisClient.set(key, JSON.stringify(value), 'EX', effectiveTtl);
+        await this.redisClient.set(key, JSON.stringify(value), 'EX', ttl);
+        return; // Redis write succeeded — memory cache is a fallback, don't double-write
       } catch {
-        this.memoryCache.set(key, value, baseTtlSeconds, maxJitterSeconds);
+        // Fall through to memory cache
       }
-    } else {
-      this.memoryCache.set(key, value, baseTtlSeconds, maxJitterSeconds);
     }
+    this.memoryCache.set(key, value, ttl); // jitter already baked into ttl
   }
 
   /**
@@ -211,15 +245,22 @@ class CacheManager {
   }
 
   /**
-   * Delete all keys starting with prefix
+   * Delete all keys starting with prefix.
+   * Uses SCAN (non-blocking) instead of KEYS when Redis is active.
    */
   async delPattern(prefix) {
     if (this.redisClient) {
       try {
-        const keys = await this.redisClient.keys(`${prefix}*`);
-        if (keys.length > 0) {
-          await this.redisClient.del(...keys);
-        }
+        let cursor = '0';
+        do {
+          const [nextCursor, keys] = await this.redisClient.scan(
+            cursor, 'MATCH', `${prefix}*`, 'COUNT', 100
+          );
+          cursor = nextCursor;
+          if (keys.length > 0) {
+            await this.redisClient.del(...keys);
+          }
+        } while (cursor !== '0');
       } catch {}
     }
     this.memoryCache.delPattern(prefix);

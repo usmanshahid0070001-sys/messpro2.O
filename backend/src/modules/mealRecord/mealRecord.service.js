@@ -29,6 +29,17 @@ function parseTimeToMinutes(timeStr) {
   return hours * 60 + minutes;
 }
 
+// Helper to safely obtain a valid IANA timezone name without throwing RangeError
+function getSafeTimezone(tz) {
+  if (!tz || typeof tz !== 'string') return 'Asia/Karachi';
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tz });
+    return tz;
+  } catch {
+    return 'Asia/Karachi';
+  }
+}
+
 // In-memory cooldown map for guest / walk-in permission socket requests
 const permissionCooldownMap = new Map();
 // In-memory map to prevent duplicate acceptance/rejection of the same request
@@ -60,7 +71,7 @@ class MealRecordService {
       throw error;
     }
     const hostel = await hostelService.getHostelById(hostelId);
-    const timezone = hostel?.location || 'Asia/Karachi';
+    const timezone = getSafeTimezone(hostel?.location);
     const now = new Date();
 
     const localTodayStr = new Intl.DateTimeFormat('en-CA', {
@@ -354,7 +365,7 @@ class MealRecordService {
     const mealData = await this.calculateCurrentMeal(hostelId);
 
     const isGuest = student.hostelId.toString() !== hostelId.toString();
-    const autoVerification = Boolean(hostel.settings?.autoVerification);
+    const autoVerification = Boolean(hostel.settings?.autoMealVerification);
 
     // 🛡️ GUEST LOGIC: Different Hostel -> Always Request Manager Permission via Socket
     if (isGuest) {
@@ -514,7 +525,7 @@ class MealRecordService {
       throw new Error('Meal schedule not configured for this hostel');
     }
 
-    const timezone = hostel.location || 'Asia/Karachi';
+    const timezone = getSafeTimezone(hostel.location);
     const now = new Date();
 
     const localDateStr = new Intl.DateTimeFormat('en-CA', {
@@ -631,13 +642,11 @@ class MealRecordService {
         resultData[mType] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
       }
       
-      const isAttended = att.attendance?.count > 0;
+      const attCount = att.attendance?.count || 0;
       const selCount = att.selection?.count || 0;
       
       resultData[mType].summary.totalSelections += selCount;
-      if (isAttended) {
-        resultData[mType].summary.totalAttendance += 1;
-      }
+      resultData[mType].summary.totalAttendance += attCount;
 
       const matchedUser = att.studentId || (att.rollNumber ? fallbackUserMap.get(att.rollNumber.toLowerCase()) : null);
       const resolvedName = matchedUser?.name || (att.isGuest ? 'Guest Entry' : (att.rollNumber || 'Resident'));
@@ -647,9 +656,9 @@ class MealRecordService {
         name: resolvedName,
         rollNumber: resolvedRoll,
         isGuest: att.isGuest,
-        attendanceCount: att.attendance?.count || 0,
+        attendanceCount: attCount,
         selectionCount: selCount,
-        hasAttended: isAttended,
+        hasAttended: attCount > 0,
         isSelected: selCount > 0
       });
     });
@@ -700,13 +709,11 @@ class MealRecordService {
         resultData[mType] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
       }
       
-      const isAttended = att.attendance?.count > 0;
+      const attCount = att.attendance?.count || 0;
       const selCount = att.selection?.count || 0;
-      
+
       resultData[mType].summary.totalSelections += selCount;
-      if (isAttended) {
-        resultData[mType].summary.totalAttendance += 1;
-      }
+      resultData[mType].summary.totalAttendance += attCount;
 
       const matchedUser = att.studentId || (att.rollNumber ? fallbackUserMap.get(att.rollNumber.toLowerCase()) : null);
       const resolvedName = matchedUser?.name || (att.isGuest ? 'Guest Entry' : (att.rollNumber || 'Resident'));
@@ -716,9 +723,9 @@ class MealRecordService {
         name: resolvedName,
         rollNumber: resolvedRoll,
         isGuest: att.isGuest,
-        attendanceCount: att.attendance?.count || 0,
+        attendanceCount: attCount,
         selectionCount: selCount,
-        hasAttended: isAttended,
+        hasAttended: attCount > 0,
         isSelected: selCount > 0
       });
     });
@@ -766,12 +773,11 @@ class MealRecordService {
       allStudents.forEach(student => {
         const att = recordMap[mType]?.[student.id];
         const isAttended = att?.attendance?.count > 0;
+        const attCount = att?.attendance?.count || 0;
         const selCount = att?.selection?.count || 0;
-        
+
         resultData[mType].summary.totalSelections += selCount;
-        if (isAttended) {
-          resultData[mType].summary.totalAttendance += 1;
-        }
+        resultData[mType].summary.totalAttendance += attCount;
 
         if (selCount > 0 || isAttended) {
           resultData[mType].data.push({
@@ -791,12 +797,11 @@ class MealRecordService {
         Object.values(recordMap[mType]).forEach(att => {
           if (att.isGuest) {
             const isAttended = att.attendance?.count > 0;
+            const guestAttCount = att.attendance?.count || 0;
             const selCount = att.selection?.count || 0;
-            
+
             resultData[mType].summary.totalSelections += selCount;
-            if (isAttended) {
-              resultData[mType].summary.totalAttendance += 1;
-            }
+            resultData[mType].summary.totalAttendance += guestAttCount;
 
             if (isAttended || selCount > 0) {
               resultData[mType].data.push({

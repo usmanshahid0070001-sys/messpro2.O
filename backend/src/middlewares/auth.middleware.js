@@ -59,17 +59,17 @@ export const requirePermission = (requiredPermission) => {
   return catchAsync(async (req, res, next) => {
     const user = req.user;
 
-    // 1. Superadmins bypass the check completely
-    if (user.role === 'superadmin') {
+    // 1. Superadmins and Admins bypass the check — they have full hostel access
+    if (user.role === 'superadmin' || user.role === 'admin') {
       return next();
     }
 
-    // 3. For students, or Managers accessing non-exempt features, check individual permissions
-    if (['student', 'manager', 'admin'].includes(user.role) && user.permissions && user.permissions.includes(requiredPermission)) {
+    // 2. For managers and students, check individual permissions
+    if (user.permissions && user.permissions.includes(requiredPermission)) {
       return next();
     }
 
-    // 4. If they don't have the permission, block the request
+    // 3. If they don't have the permission, block the request
     return res.status(403).json({ 
       success: false, 
       message: `Access Denied: You do not have the '${requiredPermission}' permission.` 
@@ -81,14 +81,13 @@ export const requireAnyPermission = (...permissions) => {
   return catchAsync(async (req, res, next) => {
     const user = req.user;
 
-    // 1. Superadmins bypass the check completely
-    if (user.role === 'superadmin') {
+    // 1. Superadmins and Admins bypass the check — they have full hostel access
+    if (user.role === 'superadmin' || user.role === 'admin') {
       return next();
     }
 
     // 2. Check if user has ANY of the permissions specified
     if (
-      ['student', 'manager', 'admin'].includes(user.role) &&
       user.permissions &&
       permissions.some((p) => user.permissions.includes(p))
     ) {
