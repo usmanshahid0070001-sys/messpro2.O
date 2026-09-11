@@ -161,8 +161,10 @@ export default function StudentAttendancePage() {
 
     scanManagerMutation.mutate(
       {
+        hostelId: qrData.h,
         h: qrData.h,
         s: qrData.s,
+        qrSecret: qrData.s,
       },
       {
         onSuccess: (res) => {

@@ -89,8 +89,10 @@ export const useBulkSelectMeals = () => {
 }
 
 export interface ScanManagerQRPayload {
-  h: string
+  h?: string
+  hostelId?: string
   s?: string
+  qrSecret?: string
   lat?: number
   lng?: number
 }

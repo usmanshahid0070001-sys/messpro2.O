@@ -6,8 +6,10 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Bell, ShieldAlert } from "lucide-react"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
 import type { RootState } from "@/store"
+import { useGetMyHostel } from "@/hooks/queries/useHostelQueries"
+import { setHostel } from "@/store/slices/HostelSlice"
 import { GlobalSearch } from "@/features/app/components/global-search"
 import {
   Breadcrumb,
@@ -26,8 +28,18 @@ import logoUrl from "@/assets/pwa-512x512.png"
 
 export default function AppLayout() {
   const location = useLocation()
+  const dispatch = useDispatch()
   const { navMain } = useNavigation()
   const { user: currentUser } = useSelector((s: RootState) => s.auth)
+
+  // Top-level layout query: syncs logged-in user's assigned hostel across all routes & tabs
+  const { data: myHostel } = useGetMyHostel(currentUser?.role)
+
+  React.useEffect(() => {
+    if (myHostel) {
+      dispatch(setHostel(myHostel))
+    }
+  }, [myHostel, dispatch])
 
   // Resolve breadcrumbs dynamically based on active route and navigation items
   const breadcrumbs = React.useMemo(() => {

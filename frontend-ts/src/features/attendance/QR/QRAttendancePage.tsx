@@ -8,7 +8,7 @@ import {
   Calendar,
   Utensils,
   AlertCircle,
-  Clock,
+  Download,
   Users,
   Search,
   Maximize2,
@@ -18,7 +18,7 @@ import {
   Check,
   Loader2,
   Info,
-  Download,
+  Printer,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -34,6 +34,7 @@ import {
   type ScanStudentQRPermission,
 } from '@/hooks/mutations/useAttendanceMutations';
 import QRCodeSVG from './components/QRCodeSVG';
+import PrintQRCodeModal from './components/PrintQRCodeModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { QRReaderEngine } from './utils/qrReaderEngine';
 import { playScanSuccessSound, playScanNoticeSound, triggerHaptic } from './utils/qrFeedback';
@@ -42,6 +43,9 @@ import { socketClient } from '@/lib/socket';
 export default function QRAttendancePage() {
   const { user } = useSelector((state: RootState) => state.auth);
   const { currentHostel } = useSelector((state: RootState) => state.hostel);
+
+  // ── Print Modal State ───────────────────────────────────────────────────
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   // ── Tab State ────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'counter' | 'scanner' | 'live' | 'overview'>('counter');
@@ -138,6 +142,7 @@ export default function QRAttendancePage() {
     return JSON.stringify({
       hostelId: cleanHostelId,
       h: cleanHostelId,
+      s: managerQRData?.s || undefined,
     });
   }, [managerQRData, currentHostel, user]);
 
@@ -451,6 +456,16 @@ export default function QRAttendancePage() {
         {/* Action Controls */}
         <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
           <button
+            type="button"
+            onClick={() => setIsPrintModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer"
+            title="Print Counter QR Code on Paper / Stand"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Print QR Code</span>
+          </button>
+
+          <button
             onClick={() => {
               refetchQR();
               refetchLive();
@@ -573,7 +588,7 @@ export default function QRAttendancePage() {
                 <span className="text-xs text-muted-foreground">Generating secure token...</span>
               </div>
             ) : counterQRPayload ? (
-              <div className="py-4">
+              <div className="py-4 space-y-4">
                 <div className="p-6 sm:p-8 bg-white rounded-3xl inline-block shadow-xl border-4 border-emerald-500/30">
                   <QRCodeSVG
                     value={counterQRPayload}
@@ -581,25 +596,25 @@ export default function QRAttendancePage() {
                     className="w-56 h-56 sm:w-72 sm:h-72 mx-auto"
                   />
                 </div>
+
+                {/* Print Placard / Stand Quick Action */}
+                <div className="flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsPrintModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs hover:shadow-md cursor-pointer"
+                    title="Print high-contrast poster, counter placard, or stickers"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Print Placard / Paper Stand</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="p-8 text-center text-rose-500 text-xs font-semibold">
                 Unable to load hostel QR secret. Please verify hostel configuration.
               </div>
             )}
-
-            <div className="p-3 bg-muted/40 border border-border/80 rounded-2xl flex items-center justify-between text-xs font-medium max-w-md mx-auto">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>Geofencing Active &bull; Secret Token Embedded</span>
-              </div>
-              <button
-                onClick={() => refetchQR()}
-                className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
-              >
-                Refresh Secret
-              </button>
-            </div>
           </div>
 
           {/* Right Column: Live Turnout Snapshot */}
@@ -1077,6 +1092,24 @@ export default function QRAttendancePage() {
           )}
         </div>
       )}
+
+      {/* ── Print QR Modal ──────────────────────────────────────────────── */}
+      <PrintQRCodeModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        qrPayload={counterQRPayload}
+        hostelName={currentHostel?.name || user?.hostelName || 'Hostel Dining Hall'}
+        hostelId={
+          managerQRData?.h ||
+          managerQRData?.hostelId ||
+          user?.hostelId ||
+          (typeof currentHostel?._id === 'string'
+            ? currentHostel._id
+            : currentHostel?._id?.$oid) ||
+          ''
+        }
+        currentMealName={currentMealName}
+      />
     </div>
   );
 }

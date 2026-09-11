@@ -1,11 +1,11 @@
 /**
  * High-Performance Universal Cross-Browser QR Code Detection Engine
  * Integrates:
- *  1. Native Hardware-accelerated BarcodeDetector (when supported)
- *  2. Optimized Sub-3ms Pure TypeScript Canvas QR Decoder
+ *  1. Native Hardware-accelerated BarcodeDetector (Chrome Android/Mac/Edge)
+ *  2. jsQR — battle-tested, full-spec QR decoder (all mask patterns, error correction)
  */
 
-import { decodeQRFromImageDataFast } from './pureQrDecoder';
+import jsQR from 'jsqr';
 
 export interface QRScanResult {
   rawValue: string;
@@ -103,7 +103,7 @@ export class QRReaderEngine {
   private async detectFrame(): Promise<void> {
     if (!this.video || this.video.videoWidth === 0 || this.video.videoHeight === 0) return;
 
-    // 1. Try Native BarcodeDetector (Fastest & hardware-accelerated when supported)
+    // ── 1. Native BarcodeDetector (fastest, hardware-accelerated when supported) ──
     if (this.barcodeDetector) {
       try {
         const barcodes = await this.barcodeDetector.detect(this.video);
@@ -115,53 +115,32 @@ export class QRReaderEngine {
           }
         }
       } catch {
-        // Fall back to canvas processing
+        // Fall through to canvas-based decoding
       }
     }
 
-    // 2. Center-Cropped Canvas Frame Processing (250x250 for instant sub-3ms decoding)
+    // ── 2. Canvas-based decoding via jsQR ──────────────────────────────────────
+    // Draw the full video frame (not center-cropped) so the QR can be anywhere in frame.
     if (!this.ctx) return;
 
     const vw = this.video.videoWidth;
     const vh = this.video.videoHeight;
-    const cropSize = Math.min(vw, vh);
-    const sx = (vw - cropSize) >> 1;
-    const sy = (vh - cropSize) >> 1;
 
-    const targetDim = 260; // Optimal matrix resolution for standard QR codes
-    if (this.canvas.width !== targetDim || this.canvas.height !== targetDim) {
-      this.canvas.width = targetDim;
-      this.canvas.height = targetDim;
+    if (this.canvas.width !== vw || this.canvas.height !== vh) {
+      this.canvas.width = vw;
+      this.canvas.height = vh;
     }
 
-    // Draw center of video stream
-    this.ctx.drawImage(this.video, sx, sy, cropSize, cropSize, 0, 0, targetDim, targetDim);
+    this.ctx.drawImage(this.video, 0, 0, vw, vh);
+    const imgData = this.ctx.getImageData(0, 0, vw, vh);
 
-    // Try canvas with BarcodeDetector
-    if (this.barcodeDetector) {
-      try {
-        const barcodes = await this.barcodeDetector.detect(this.canvas);
-        if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-          const raw = barcodes[0].rawValue.trim();
-          if (raw) {
-            this.handleDetected(raw);
-            return;
-          }
-        }
-      } catch {
-        // Fall back to pure QR decoder
-      }
-    }
+    // jsQR handles all 8 mask patterns, error correction, and orientation
+    const result = jsQR(imgData.data, vw, vh, {
+      inversionAttempts: 'dontInvert',
+    });
 
-    // 3. Ultra-Fast Pure TypeScript In-Browser QR Decoder (< 3ms)
-    try {
-      const imgData = this.ctx.getImageData(0, 0, targetDim, targetDim);
-      const decoded = decodeQRFromImageDataFast(imgData.data, targetDim, targetDim);
-      if (decoded && decoded.trim()) {
-        this.handleDetected(decoded.trim());
-      }
-    } catch {
-      // Frame scan pass
+    if (result && result.data && result.data.trim()) {
+      this.handleDetected(result.data.trim());
     }
   }
 

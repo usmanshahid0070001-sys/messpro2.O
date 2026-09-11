@@ -7,6 +7,7 @@ export interface User {
   email: string;
   role: 'superadmin' | 'admin' | 'manager' | 'student';
   hostelId?: string;
+  hostelName?: string;
   hostelStatus?: any; // You can type this more strictly if you know the status shape
   status?: string;
   permissions?: string[];
@@ -91,6 +92,7 @@ const authSlice = createSlice({
       try {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('currentHostel');
       } catch (e) {
         console.warn('Could not clear auth credentials from localStorage', e);
       }

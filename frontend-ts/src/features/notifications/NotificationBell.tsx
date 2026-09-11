@@ -317,7 +317,7 @@ export default function NotificationBell() {
           <div className="p-3.5 rounded-2xl bg-card border border-emerald-500/30 shadow-2xl backdrop-blur-md space-y-2.5 ring-1 ring-black/5 dark:ring-white/10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                <Sparkles className="w-3.5 h-3.5" />
                 <span>New Meal Request</span>
               </div>
               <button

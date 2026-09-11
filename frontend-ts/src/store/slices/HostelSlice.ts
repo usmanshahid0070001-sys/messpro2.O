@@ -70,22 +70,41 @@ export interface HostelState {
   currentHostel: Hostel | null
 }
 
+const getStoredHostel = (): Hostel | null => {
+  try {
+    if (typeof window === 'undefined') return null;
+    const raw = localStorage.getItem('currentHostel');
+    if (!raw || raw === 'undefined' || raw === 'null') return null;
+    return JSON.parse(raw) as Hostel;
+  } catch {
+    return null;
+  }
+};
+
 const initialState: HostelState = {
-  currentHostel: null,
-}
+  currentHostel: getStoredHostel(),
+};
 
 const hostelSlice = createSlice({
   name: 'hostel',
   initialState,
   reducers: {
     setHostel: (state, action: PayloadAction<Hostel>) => {
-      state.currentHostel = action.payload
+      state.currentHostel = action.payload;
+      if (typeof window !== 'undefined' && action.payload) {
+        try {
+          localStorage.setItem('currentHostel', JSON.stringify(action.payload));
+        } catch {}
+      }
     },
     clearHostel: (state) => {
-      state.currentHostel = null
+      state.currentHostel = null;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('currentHostel');
+      }
     },
   },
-})
+});
 
-export const { setHostel, clearHostel } = hostelSlice.actions
+export const { setHostel, clearHostel } = hostelSlice.actions;
 export default hostelSlice.reducer

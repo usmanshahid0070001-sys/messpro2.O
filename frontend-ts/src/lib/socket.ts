@@ -16,7 +16,7 @@ class AppSocketClient {
   public isConnected = false;
 
   private getSocketUrl(token: string): string {
-    const rawUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    const rawUrl = import.meta.env.VITE_SOCKET_URL || 'https://messpro.duckdns.org';
     const cleanUrl = rawUrl.replace(/\/$/, '');
     const wsProto = cleanUrl.startsWith('https') ? 'wss' : 'ws';
     const host = cleanUrl.replace(/^https?:\/\//, '');
@@ -36,8 +36,12 @@ class AppSocketClient {
       return;
     }
 
-    // If already connected with identical token, do not recreate
-    if (this.ws && this.isConnected && this.currentToken === token) {
+    // If already connected or currently connecting with identical token, do not recreate
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) &&
+      this.currentToken === token
+    ) {
       return;
     }
 
@@ -208,14 +212,25 @@ class AppSocketClient {
     clearTimeout(this.reconnectTimer);
 
     if (this.ws) {
-      this.ws.onopen = null;
-      this.ws.onmessage = null;
-      this.ws.onerror = null;
-      this.ws.onclose = null;
-      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
-        this.ws.close();
-      }
+      const socket = this.ws;
       this.ws = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.onopen = null;
+        socket.close();
+      } else if (socket.readyState === WebSocket.CONNECTING) {
+        // Prevent browser error: wait for open before closing cleanly
+        socket.onopen = () => {
+          try {
+            socket.close();
+          } catch {}
+        };
+      } else {
+        socket.onopen = null;
+      }
     }
   }
 }
