@@ -24,6 +24,7 @@ import {
 import QRCodeSVG from './components/QRCodeSVG';
 import { QRReaderEngine } from './utils/qrReaderEngine';
 import { playScanSuccessSound, playScanNoticeSound, triggerHaptic } from './utils/qrFeedback';
+import { socketClient } from '@/lib/socket';
 
 // ── Helper: Safe Manager QR Payload Parser ──────────────────────────────
 export function parseManagerQRPayload(rawText: string): { h: string; s?: string } | null {
@@ -92,6 +93,8 @@ export default function StudentAttendancePage() {
   const [successRecord, setSuccessRecord] = useState<any | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isWaitingForManager, setIsWaitingForManager] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const countdownTimerRef = useRef<any>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -99,6 +102,35 @@ export default function StudentAttendancePage() {
 
   const scanManagerMutation = useScanManagerQR();
   const requestPermissionMutation = useRequestGuestPermission();
+
+  // Connect socket and listen for real-time manager approval/decline responses
+  useEffect(() => {
+    socketClient.connect();
+
+    const unbind = socketClient.on('permission_response', (res: any) => {
+      if (!res) return;
+
+      clearInterval(countdownTimerRef.current);
+      setIsWaitingForManager(false);
+      setPermissionPrompt(null);
+
+      if (res.isApproved) {
+        playScanSuccessSound();
+        triggerHaptic('success');
+        setSuccessRecord(res.record || { meal: 'Approved Meal', count: 1 });
+        toast.success(res.message || 'Manager approved your dining request!');
+      } else {
+        triggerHaptic('error');
+        setErrorMessage(res.message || 'Your dining request was declined by the manager or admin.');
+        toast.error('Dining request was declined.');
+      }
+    });
+
+    return () => {
+      unbind();
+      clearInterval(countdownTimerRef.current);
+    };
+  }, []);
 
   // ── 1. Process Scanned QR Payload (Instant Execution) ────────────────
   const processScannedData = (rawScannedText: string) => {
@@ -117,7 +149,12 @@ export default function StudentAttendancePage() {
     setIsFlashing(true);
     setTimeout(() => setIsFlashing(false), 300);
 
-    // Stop camera stream once successfully captured
+    // CRITICAL: Immediately pause and stop scanning to prevent infinite loop of error requests
+    if (qrEngineRef.current) {
+      qrEngineRef.current.pause();
+      qrEngineRef.current.stop();
+      qrEngineRef.current = null;
+    }
     stopCamera();
     setIsVerifying(true);
     setErrorMessage(null);
@@ -237,19 +274,33 @@ export default function StudentAttendancePage() {
     if (!permissionPrompt) return;
 
     setIsWaitingForManager(true);
+    setCountdown(30);
+
+    clearInterval(countdownTimerRef.current);
+    let timeLeft = 30;
+    countdownTimerRef.current = setInterval(() => {
+      timeLeft -= 1;
+      setCountdown(timeLeft);
+      if (timeLeft <= 0) {
+        clearInterval(countdownTimerRef.current);
+        setIsWaitingForManager(false);
+        setPermissionPrompt(null);
+        triggerHaptic('warning');
+        setErrorMessage(
+          'Request timed out after 30 seconds. No manager or admin responded. Please approach the dining counter directly.'
+        );
+        toast.error('Permission request timed out.');
+      }
+    }, 1000);
+
     requestPermissionMutation.mutate(
       {
         managerHostelId: permissionPrompt.managerHostelId,
         reason: permissionPrompt.reason,
       },
       {
-        onSuccess: () => {
-          setTimeout(() => {
-            setIsWaitingForManager(false);
-            setPermissionPrompt(null);
-          }, 3000);
-        },
         onError: () => {
+          clearInterval(countdownTimerRef.current);
           setIsWaitingForManager(false);
         },
       }
@@ -260,7 +311,11 @@ export default function StudentAttendancePage() {
   const studentQRPayload = useMemo(() => {
     const sId = user?._id || user?.id || '';
     const rNum = user?.id || '';
-    const hId = user?.hostelId || currentHostel?._id || '';
+    const hostelIdStr =
+      typeof currentHostel?._id === 'string'
+        ? currentHostel._id
+        : currentHostel?._id?.$oid;
+    const hId = user?.hostelId || hostelIdStr || '';
     return JSON.stringify({
       studentId: sId,
       rollNumber: rNum,
@@ -411,9 +466,29 @@ export default function StudentAttendancePage() {
               </div>
 
               {isWaitingForManager ? (
-                <div className="p-4 rounded-xl bg-muted/40 border border-border flex items-center justify-center gap-3 text-xs font-semibold text-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
-                  <span>Request transmitted. Awaiting manager approval on their terminal...</span>
+                <div className="p-5 rounded-2xl bg-muted/40 border border-border text-center space-y-3">
+                  <div className="flex items-center justify-center gap-2.5 text-xs font-semibold text-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                    <span>Transmitted to online managers & admins...</span>
+                  </div>
+                  <div className="text-3xl font-extrabold font-mono tracking-tight text-foreground">
+                    {countdown}s
+                  </div>
+                  <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                    Awaiting terminal response. Request will automatically expire if unanswered in {countdown} seconds.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearInterval(countdownTimerRef.current);
+                      setIsWaitingForManager(false);
+                      setPermissionPrompt(null);
+                      startCamera();
+                    }}
+                    className="px-4 py-1.5 text-xs font-semibold rounded-lg border border-border hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
+                  >
+                    Cancel Request
+                  </button>
                 </div>
               ) : (
                 <div className="flex justify-center gap-3 pt-2">

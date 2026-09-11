@@ -18,7 +18,7 @@
     />
     <meta name="author" content="MessPro Technologies" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://messpro.app/" />
+    <link rel="canonical" href="https://messpro.duckdns.org/" />
 
     <!-- Security & Privacy Policies -->
     <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -35,22 +35,24 @@
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 
     <!-- Favicons & App Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/pwa-192x192.png" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2" />
 
     <!-- Open Graph / Facebook / LinkedIn (1200x630 Social Preview Card) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MessPro 2.0" />
-    <meta property="og:url" content="https://messpro.app/" />
+    <meta property="og:url" content="https://messpro.duckdns.org/" />
     <meta property="og:title" content="MessPro 2.0 — Smart Hostel &amp; Mess Management System" />
     <meta
       property="og:description"
       content="Next-generation SaaS platform for streamlined hostel mess operations, automated attendance, dynamic meal pricing, and resident ledger management."
     />
-    <meta property="og:image" content="https://messpro.app/pwa-512x512.png" />
+    <meta property="og:image" content="https://messpro.duckdns.org/pwa-512x512.png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
     <meta property="og:image:alt" content="MessPro 2.0 Logo" />
@@ -62,7 +64,7 @@
       name="twitter:description"
       content="Next-generation SaaS platform for streamlined hostel mess operations, automated attendance, dynamic meal pricing, and resident ledger management."
     />
-    <meta name="twitter:image" content="https://messpro.app/pwa-512x512.png" />
+    <meta name="twitter:image" content="https://messpro.duckdns.org/pwa-512x512.png" />
     <meta name="twitter:image:alt" content="MessPro 2.0 Logo" />
 
     <!-- JSON-LD Structured Data for Search Engines -->
@@ -72,12 +74,12 @@
         "@graph": [
           {
             "@type": "Organization",
-            "@id": "https://messpro.app/#organization",
+            "@id": "https://messpro.duckdns.org/#organization",
             "name": "MessPro Technologies",
-            "url": "https://messpro.app",
+            "url": "https://messpro.duckdns.org",
             "logo": {
               "@type": "ImageObject",
-              "url": "https://messpro.app/pwa-512x512.png"
+              "url": "https://messpro.duckdns.org/pwa-512x512.png"
             },
             "contactPoint": {
               "@type": "ContactPoint",
@@ -87,19 +89,19 @@
           },
           {
             "@type": "WebSite",
-            "@id": "https://messpro.app/#website",
-            "url": "https://messpro.app",
+            "@id": "https://messpro.duckdns.org/#website",
+            "url": "https://messpro.duckdns.org",
             "name": "MessPro 2.0",
             "description": "Smart Hostel & Mess Management SaaS System",
             "publisher": {
-              "@id": "https://messpro.app/#organization"
+              "@id": "https://messpro.duckdns.org/#organization"
             }
           },
           {
             "@type": "SoftwareApplication",
-            "@id": "https://messpro.app/#software",
+            "@id": "https://messpro.duckdns.org/#software",
             "name": "MessPro 2.0",
-            "url": "https://messpro.app",
+            "url": "https://messpro.duckdns.org",
             "description": "Smart Hostel & Mess Management SaaS platform offering real-time meal tracking, QR attendance, and automated billing.",
             "applicationCategory": "BusinessApplication",
             "operatingSystem": "Web, iOS, Android (PWA)",
@@ -237,7 +239,7 @@
     <!-- Initial Loading Screen (dismissed as soon as React mounts) -->
     <div id="app-loader" aria-hidden="true">
       <div class="loader-brand">
-        <img src="/src/assets/pwa-192x192.png" alt="MessPro Logo" class="loader-brand-icon" />
+        <img src="/pwa-192x192.png" alt="MessPro Logo" class="loader-brand-icon" />
         <div class="loader-brand-name">MessPro<span>2.0</span></div>
       </div>
       <div class="loader-bar-bg">

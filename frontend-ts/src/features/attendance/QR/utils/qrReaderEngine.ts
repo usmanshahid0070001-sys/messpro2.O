@@ -18,11 +18,12 @@ export class QRReaderEngine {
   private barcodeDetector: any = null;
   private isRunning: boolean = false;
   private isBusy: boolean = false;
+  private isPaused: boolean = false;
   private rafId: number | null = null;
   private onResultCallback: ((result: string) => void) | null = null;
   private lastScanTime: number = 0;
   private lastScannedText: string = '';
-  private scanCooldownMs: number = 1000;
+  private scanCooldownMs: number = 2500; // Safe default debounce
 
   constructor(video: HTMLVideoElement, onResult: (result: string) => void) {
     this.video = video;
@@ -43,14 +44,25 @@ export class QRReaderEngine {
     if (this.isRunning) return;
     this.isRunning = true;
     this.isBusy = false;
+    this.isPaused = false;
     this.lastScanTime = 0;
     this.lastScannedText = '';
     this.loop();
   }
 
+  public pause(): void {
+    this.isPaused = true;
+  }
+
+  public resume(): void {
+    this.isPaused = false;
+    this.lastScanTime = performance.now();
+  }
+
   public stop(): void {
     this.isRunning = false;
     this.isBusy = false;
+    this.isPaused = false;
     if (this.rafId) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
@@ -61,8 +73,13 @@ export class QRReaderEngine {
     this.scanCooldownMs = ms;
   }
 
+  public resetCooldown() {
+    this.lastScannedText = '';
+    this.lastScanTime = 0;
+  }
+
   private loop = async (): Promise<void> => {
-    if (!this.isRunning) return;
+    if (!this.isRunning || this.isPaused) return;
 
     if (this.video.readyState >= 2 && !this.video.paused && !this.video.ended && !this.isBusy) {
       const now = performance.now();

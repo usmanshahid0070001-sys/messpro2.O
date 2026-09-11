@@ -21,6 +21,7 @@ import { useSEO } from "@/hooks/useSEO"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { BiometricSyncFloatingWidget } from "@/features/attendance/Biometric/components/BiometricSyncFloatingWidget"
 import OnboardingModal from "@/components/OnboardingModal"
+import NotificationBell from "@/features/notifications/NotificationBell"
 import logoUrl from "@/assets/pwa-512x512.png"
 
 export default function AppLayout() {
@@ -142,13 +143,7 @@ export default function AppLayout() {
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <GlobalSearch targetContainerId="main-page-content" />
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <Bell className="h-4 w-4" />
-            </button>
+            <NotificationBell />
           </div>
         </div>
 

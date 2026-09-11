@@ -37,6 +37,7 @@ import QRCodeSVG from './components/QRCodeSVG';
 import { Skeleton } from '@/components/ui/skeleton';
 import { QRReaderEngine } from './utils/qrReaderEngine';
 import { playScanSuccessSound, playScanNoticeSound, triggerHaptic } from './utils/qrFeedback';
+import { socketClient } from '@/lib/socket';
 
 export default function QRAttendancePage() {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -96,6 +97,18 @@ export default function QRAttendancePage() {
     refetch: refetchOverview,
   } = useGetDailyOverview(selectedDate);
 
+  // ── Real-Time Socket Attendance Refetch ──────────────────────────────────
+  useEffect(() => {
+    socketClient.connect();
+    const unbind = socketClient.on('attendance_success', () => {
+      refetchLive();
+      refetchOverview();
+    });
+    return () => {
+      unbind();
+    };
+  }, [refetchLive, refetchOverview]);
+
   // ── Mutations ────────────────────────────────────────────────────────────
   const scanStudentMutation = useScanStudentQR();
   const respondPermissionMutation = useRespondGuestPermission();
@@ -113,15 +126,18 @@ export default function QRAttendancePage() {
 
   // QR Payload String for counter screen (pure hostelId)
   const counterQRPayload = useMemo(() => {
-    const targetHostelId =
+    const rawHostelId =
       managerQRData?.h ||
       managerQRData?.hostelId ||
-      currentHostel?._id ||
-      user?.hostelId;
-    if (!targetHostelId) return '';
+      user?.hostelId ||
+      (typeof currentHostel?._id === 'string'
+        ? currentHostel._id
+        : currentHostel?._id?.$oid);
+    if (!rawHostelId) return '';
+    const cleanHostelId = String(rawHostelId).trim();
     return JSON.stringify({
-      hostelId: String(targetHostelId).trim(),
-      h: String(targetHostelId).trim(),
+      hostelId: cleanHostelId,
+      h: cleanHostelId,
     });
   }, [managerQRData, currentHostel, user]);
 
@@ -190,8 +206,10 @@ export default function QRAttendancePage() {
     }
   }, [isScanning]);
 
+  const [isProcessingScan, setIsProcessingScan] = useState(false);
+
   const handleStudentScanned = (rawText: string) => {
-    if (!rawText || !rawText.trim()) return;
+    if (!rawText || !rawText.trim() || isProcessingScan || scanStudentMutation.isPending) return;
     const trimmed = rawText.trim();
     let roll = trimmed;
     try {
@@ -209,6 +227,12 @@ export default function QRAttendancePage() {
     }
 
     if (!roll) return;
+
+    // Temporarily pause engine loop to give time for scan processing
+    if (qrEngineRef.current) {
+      qrEngineRef.current.pause();
+    }
+    setIsProcessingScan(true);
 
     // Instant Feedback (< 10ms)
     playScanSuccessSound();
@@ -228,6 +252,7 @@ export default function QRAttendancePage() {
       { studentRollNumber: roll },
       {
         onSuccess: (res) => {
+          setIsProcessingScan(false);
           if (res.status === 'requires_permission') {
             playScanNoticeSound();
             triggerHaptic('warning');
@@ -240,9 +265,16 @@ export default function QRAttendancePage() {
               timestamp: new Date().toLocaleTimeString(),
               isPending: false,
             });
+            // Resume engine after brief delay for next student
+            setTimeout(() => {
+              if (qrEngineRef.current) {
+                qrEngineRef.current.resume();
+              }
+            }, 1200);
           }
         },
         onError: (err: any) => {
+          setIsProcessingScan(false);
           triggerHaptic('error');
           setLastScannedResult({
             rollNumber: roll,
@@ -251,6 +283,12 @@ export default function QRAttendancePage() {
             isPending: false,
             isError: true,
           });
+          // Resume engine after brief delay to allow next scan
+          setTimeout(() => {
+            if (qrEngineRef.current) {
+              qrEngineRef.current.resume();
+            }
+          }, 1500);
         },
       }
     );
@@ -265,10 +303,19 @@ export default function QRAttendancePage() {
 
   const handleGuestDecision = (isApproved: boolean) => {
     if (!guestPrompt) return;
+    const hostelIdStr =
+      typeof currentHostel?._id === 'string'
+        ? currentHostel._id
+        : currentHostel?._id?.$oid;
+    const targetHostel = user?.hostelId || hostelIdStr || '';
+    const uniqueReqId = `manager_scan_${guestPrompt._id}_${Date.now()}`;
+
     respondPermissionMutation.mutate(
       {
+        requestId: uniqueReqId,
         studentId: guestPrompt._id,
         isApproved,
+        hostelId: targetHostel,
       },
       {
         onSuccess: () => {
@@ -286,6 +333,20 @@ export default function QRAttendancePage() {
             toast.info('Guest attendance declined');
           }
           setGuestPrompt(null);
+          // Resume engine for next scan
+          setTimeout(() => {
+            if (qrEngineRef.current) {
+              qrEngineRef.current.resume();
+            }
+          }, 1000);
+        },
+        onError: () => {
+          setGuestPrompt(null);
+          setTimeout(() => {
+            if (qrEngineRef.current) {
+              qrEngineRef.current.resume();
+            }
+          }, 1000);
         },
       }
     );

@@ -132,26 +132,54 @@ class MealRecordRepository {
     if (!identifier) return null;
     let str = String(identifier).trim();
 
+    // 1. If it's a JSON string, extract any embedded student identifier
+    let embeddedId = null;
+    let embeddedRoll = null;
     try {
       const parsed = JSON.parse(str);
       if (parsed && typeof parsed === 'object') {
-        str = String(parsed.rollNumber || parsed.id || parsed.studentRollNumber || parsed.studentId || str).trim();
+        embeddedRoll = parsed.rollNumber || parsed.studentRollNumber;
+        embeddedId = parsed.studentId || parsed._id || parsed.id;
+        str = String(embeddedRoll || embeddedId || str).trim();
       }
-    } catch {}
-
-    const orConditions = [
-      { id: str },
-      { id: str.toLowerCase() },
-      { email: str.toLowerCase() }
-    ];
-
-    if (mongoose.isValidObjectId(str)) {
-      orConditions.push({ _id: new mongoose.Types.ObjectId(str) });
+    } catch {
+      // If not JSON, check if it's URL-encoded or contains key-value pairs
+      const rollMatch = str.match(/"?(?:rollNumber|studentRollNumber)"?\s*[:=]\s*"?([a-zA-Z0-9_-]+)"?/i);
+      const idMatch = str.match(/"?(?:studentId|id|_id)"?\s*[:=]\s*"?([a-f0-9]{24}|[a-zA-Z0-9_-]+)"?/i);
+      if (rollMatch && rollMatch[1]) embeddedRoll = rollMatch[1].trim();
+      if (idMatch && idMatch[1]) embeddedId = idMatch[1].trim();
+      if (embeddedRoll || embeddedId) {
+        str = String(embeddedRoll || embeddedId).trim();
+      }
     }
 
-    // Escape regex characters and do case-insensitive exact match
-    const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    orConditions.push({ id: { $regex: new RegExp(`^${escaped}$`, 'i') } });
+    const identifiersToTest = new Set([
+      str,
+      str.toLowerCase(),
+      str.toUpperCase(),
+      str.replace(/\s+/g, ''),
+    ]);
+    if (embeddedRoll) {
+      identifiersToTest.add(embeddedRoll);
+      identifiersToTest.add(embeddedRoll.toLowerCase());
+    }
+    if (embeddedId) {
+      identifiersToTest.add(embeddedId);
+      identifiersToTest.add(embeddedId.toLowerCase());
+    }
+
+    const orConditions = [];
+
+    for (const val of identifiersToTest) {
+      if (!val) continue;
+      orConditions.push({ id: val });
+      orConditions.push({ email: val });
+      if (mongoose.isValidObjectId(val)) {
+        orConditions.push({ _id: new mongoose.Types.ObjectId(val) });
+      }
+      const escaped = val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      orConditions.push({ id: { $regex: new RegExp(`^${escaped}$`, 'i') } });
+    }
 
     return User.findOne({
       $or: orConditions

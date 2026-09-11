@@ -76,14 +76,19 @@ export const scanManagerQRSchema = z.object({
 });
 
 export const requestGuestPermissionSchema = z.object({
-  managerHostelId: z.string().regex(objectIdRegex, "Invalid Manager Hostel ID"),
+  managerHostelId: z.string().regex(objectIdRegex, "Invalid Manager Hostel ID").optional(),
+  hostelId: z.string().regex(objectIdRegex, "Invalid Hostel ID").optional(),
   reason: z.string().trim().optional(),
+}).refine((data) => Boolean(data.managerHostelId || data.hostelId), {
+  message: "managerHostelId or hostelId is required",
 });
 
 export const respondGuestPermissionSchema = z.object({
   requestId: z.string().min(1, "requestId is required"),
   studentId: z.string().regex(objectIdRegex, "Invalid Student ID"),
   isApproved: z.boolean(),
+  hostelId: z.string().regex(objectIdRegex, "Invalid Hostel ID").optional(),
+  managerHostelId: z.string().regex(objectIdRegex, "Invalid Manager Hostel ID").optional(),
 });
 
 export const scanStudentQRSchema = z.object({

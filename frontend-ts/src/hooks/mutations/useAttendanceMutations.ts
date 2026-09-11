@@ -108,6 +108,7 @@ export interface RespondGuestPermissionPayload {
   requestId?: string;
   studentId: string;
   isApproved: boolean;
+  hostelId?: string;
 }
 
 export const useRespondGuestPermission = () => {

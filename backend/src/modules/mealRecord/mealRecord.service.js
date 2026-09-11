@@ -31,6 +31,8 @@ function parseTimeToMinutes(timeStr) {
 
 // In-memory cooldown map for guest / walk-in permission socket requests
 const permissionCooldownMap = new Map();
+// In-memory map to prevent duplicate acceptance/rejection of the same request
+const resolvedRequestsMap = new Map();
 
 class MealRecordService {
   // ==========================================
@@ -356,12 +358,11 @@ class MealRecordService {
 
     // 🛡️ GUEST LOGIC: Different Hostel -> Always Request Manager Permission via Socket
     if (isGuest) {
-      this.requestGuestPermission(student, hostelId, 'guest');
       return {
         status: 'requires_permission',
         reason: 'guest',
         managerHostelId: hostelId,
-        message: 'You are registered in a different hostel. Request sent to manager for guest dining approval.'
+        message: 'You are registered in a different hostel. Please request dining permission from the manager or admin.'
       };
     }
 
@@ -376,12 +377,11 @@ class MealRecordService {
     if (!record) {
       // 🛡️ WALK-IN SCENARIO (No Pre-Selection for Today)
       if (!autoVerification) {
-        this.requestGuestPermission(student, hostelId, 'unselected');
         return {
           status: 'requires_permission',
           reason: 'unselected',
           managerHostelId: hostelId,
-          message: 'You did not pre-reserve this meal. Request sent to manager for walk-in approval.'
+          message: 'You did not pre-reserve this meal. Please request dining permission from the manager or admin.'
         };
       }
 
@@ -406,23 +406,21 @@ class MealRecordService {
 
       if (isUnselected) {
         if (!autoVerification) {
-          this.requestGuestPermission(student, hostelId, 'unselected');
           return {
             status: 'requires_permission',
             reason: 'unselected',
             managerHostelId: hostelId,
-            message: 'You did not pre-reserve this meal. Request sent to manager for approval.'
+            message: 'You did not pre-reserve this meal. Please request dining permission from the manager or admin.'
           };
         }
       } else if (isLimitReached) {
         // EXTRA MEAL (Attendance >= Selection)
         if (!autoVerification) {
-          this.requestGuestPermission(student, hostelId, 'extra_meal');
           return {
             status: 'requires_permission',
             reason: 'extra_meal',
             managerHostelId: hostelId,
-            message: `You have already claimed your reserved portion (${record.selection.count}). Request sent to manager for extra portion.`
+            message: `You have already claimed your reserved portion (${record.selection.count}). Please request manager approval for an extra portion.`
           };
         }
       }
@@ -832,29 +830,80 @@ class MealRecordService {
     const now = Date.now();
     const lastRequestTime = permissionCooldownMap.get(studentKey);
 
-    // Cooldown: prevent socket flooding if a duplicate request is dispatched within 15 seconds
-    if (lastRequestTime && (now - lastRequestTime) < 15000) {
-      return { message: 'Permission request already sent to manager. Please wait.' };
+    // Cooldown: prevent socket flooding if duplicate request within 10 seconds
+    if (lastRequestTime && (now - lastRequestTime) < 10000) {
+      return { 
+        message: 'Permission request already sent. Please wait for the manager to respond.',
+        requestId: null 
+      };
     }
 
     permissionCooldownMap.set(studentKey, now);
-    setTimeout(() => permissionCooldownMap.delete(studentKey), 60000);
+    setTimeout(() => permissionCooldownMap.delete(studentKey), 35000);
 
-    io.to(`hostel:${managerHostelId}`).emit('guest_permission_request', {
-      requestId: `${student._id}_${Date.now()}`,
+    const requestId = `req_${student._id}_${now}_${Math.random().toString(36).substring(2, 7)}`;
+    const expiresAt = now + 30000; // 30s timeout
+
+    const payload = {
+      requestId,
       rollNumber: student.id,
       name: student.name,
-      studentId: student._id,
-      sourceHostelId: student.hostelId,
-      reason: reason || 'guest'
-    });
+      studentId: student._id.toString(),
+      sourceHostelId: student.hostelId?.toString(),
+      targetHostelId: managerHostelId.toString(),
+      reason: reason || 'guest',
+      createdAt: now,
+      expiresAt
+    };
 
-    return { message: 'Permission request sent to manager.' };
+    // Broadcast live permission card to all online managers and admins of this hostel
+    io.to(`hostel:${managerHostelId}`).emit('guest_permission_request', payload);
+
+    return { 
+      message: 'Permission request sent to manager and admins.',
+      requestId,
+      data: payload
+    };
   }
 
   async respondGuestPermission(managerHostelId, recordedById, { requestId, studentId, isApproved }) {
+    // 🛡️ ANTI-DUPLICATE GUARD: Prevent the same request from ever being accepted or declined twice
+    if (requestId) {
+      const existingResolution = resolvedRequestsMap.get(requestId);
+      if (existingResolution) {
+        const error = new Error(`This request has already been ${existingResolution.status}.`);
+        error.statusCode = 409;
+        throw error;
+      }
+
+      resolvedRequestsMap.set(requestId, {
+        status: isApproved ? 'accepted' : 'declined',
+        resolvedBy: recordedById,
+        timestamp: Date.now()
+      });
+      // Retain resolved memory for 10 minutes then free memory
+      setTimeout(() => resolvedRequestsMap.delete(requestId), 600000);
+    }
+
     if (!isApproved) {
-      return { status: 'success', message: 'Rejected.' };
+      // Notify student in their personal socket room
+      io.to(`user:${studentId}`).emit('permission_response', {
+        requestId,
+        studentId,
+        isApproved: false,
+        message: 'Your dining request was declined by the manager/admin.'
+      });
+
+      // Sync with all manager windows in this hostel
+      io.to(`hostel:${managerHostelId}`).emit('guest_permission_updated', {
+        requestId,
+        studentId,
+        isApproved: false,
+        status: 'declined',
+        resolvedBy: recordedById
+      });
+
+      return { status: 'success', message: 'Request declined.' };
     }
 
     const student = await mealRecordRepository.findUserById(studentId);
@@ -899,6 +948,7 @@ class MealRecordService {
       { upsert: true, new: true }
     );
 
+    // 1. Emit live attendance update to manager dashboard
     io.to(`hostel:${managerHostelId}`).emit('attendance_success', {
       rollNumber: student.id,
       name: student.name,
@@ -909,10 +959,39 @@ class MealRecordService {
       selectionCount: record.selection?.count || 0
     });
 
+    // 2. Notify student in their personal socket room with full record payload
+    io.to(`user:${studentId}`).emit('permission_response', {
+      requestId,
+      studentId,
+      isApproved: true,
+      message: 'Attendance approved and marked successfully!',
+      record: {
+        mealType: mealData.mealType,
+        meal: mealData.mealInfo?.name || 'Regular Meal',
+        count: record.attendance.count,
+        date: mealData.date,
+        attendance: {
+          hasEaten: true,
+          count: record.attendance.count,
+          method: 'Manual'
+        }
+      }
+    });
+
+    // 3. Sync with all manager terminals in this hostel
+    io.to(`hostel:${managerHostelId}`).emit('guest_permission_updated', {
+      requestId,
+      studentId,
+      isApproved: true,
+      status: 'accepted',
+      resolvedBy: recordedById
+    });
+
     return {
       status: 'success',
       message: 'Guest approved and attendance marked.',
-      data: mealData
+      data: mealData,
+      record
     };
   }
 
@@ -934,6 +1013,14 @@ class MealRecordService {
     const mealData = await this.calculateCurrentMeal(managerHostelId);
 
     if (student.hostelId.toString() === managerHostelId.toString()) {
+      // Find existing record to preserve selection count if any
+      const existingRecord = await mealRecordRepository.findSingleRecord({
+        hostelId: managerHostelId,
+        date: mealData.date,
+        mealType: mealData.mealType,
+        rollNumber: student.id
+      });
+
       // Same hostel, force upsert
       const record = await mealRecordRepository.findOneAndUpdate(
         { hostelId: managerHostelId, date: mealData.date, mealType: mealData.mealType, rollNumber: student.id },
@@ -949,6 +1036,10 @@ class MealRecordService {
             'attendance.hasEaten': true,
             'attendance.method': 'QR',
             'attendance.recordedBy': recordedById
+          },
+          $setOnInsert: {
+            'selection.hasSelected': existingRecord?.selection?.hasSelected || false,
+            'selection.count': existingRecord?.selection?.count || 0
           },
           $inc: { 'attendance.count': 1 }
         },

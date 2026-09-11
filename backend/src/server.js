@@ -164,7 +164,7 @@ const getSocketToken = (socket) => {
     .map((part) => part.trim())
     .find((part) => part.startsWith('token='))
     ?.slice('token='.length);
-  return socket.handshake.auth?.token || bearer || cookieToken;
+  return socket.handshake.auth?.token || socket.handshake.query?.token || bearer || cookieToken;
 };
 
 io.use(async (socket, next) => {
@@ -173,7 +173,7 @@ io.use(async (socket, next) => {
     const token = getSocketToken(socket);
     if (!token) throw new Error('Authentication required.');
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(payload.sub).select('_id hostelId role');
+    const user = await User.findById(payload.sub).select('_id hostelId role permissions name');
     if (!user) throw new Error('Authentication required.');
     socket.user = user;
     next();
@@ -185,15 +185,28 @@ io.use(async (socket, next) => {
 io.on('connection', (socket) => {
   console.log(`🔌 New client connected: ${socket.id}`);
   
-  // Admins and managers automatically join their hostel room
-  if (socket.user && ['admin', 'manager'].includes(socket.user.role) && socket.user.hostelId) {
-    socket.join(`hostel:${socket.user.hostelId}`);
+  // Every authenticated user joins their personal room for direct notifications
+  if (socket.user?._id) {
+    socket.join(`user:${socket.user._id.toString()}`);
+  }
+
+  // Admins and managers with qr_attendance permission automatically join their hostel room
+  if (socket.user && socket.user.hostelId) {
+    const hasQrPerm =
+      socket.user.role === 'superadmin' ||
+      socket.user.role === 'admin' ||
+      (Array.isArray(socket.user.permissions) && socket.user.permissions.includes('qr_attendance'));
+
+    if (hasQrPerm) {
+      socket.join(`hostel:${socket.user.hostelId.toString()}`);
+    }
   }
 
   // Clients can also explicitly join their hostel room
-  socket.on('join_hostel_room', () => {
-    if (socket.user && ['admin', 'manager'].includes(socket.user.role) && socket.user.hostelId) {
-      socket.join(`hostel:${socket.user.hostelId}`);
+  socket.on('join_hostel_room', (data) => {
+    const targetHostelId = (data && typeof data === 'object' ? data.hostelId : data) || socket.user?.hostelId;
+    if (targetHostelId) {
+      socket.join(`hostel:${targetHostelId.toString()}`);
     }
   });
 

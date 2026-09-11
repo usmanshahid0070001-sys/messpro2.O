@@ -171,20 +171,29 @@ export const scanManagerQR = catchAsync(async (req, res) => {
 // ==========================================
 
 export const requestGuestPermission = catchAsync(async (req, res) => {
-  const { managerHostelId, reason } = requestGuestPermissionSchema.parse(req.body);
+  const parsed = requestGuestPermissionSchema.parse(req.body);
+  const managerHostelId = parsed.managerHostelId || parsed.hostelId;
   const student = req.user;
 
-  const result = mealRecordService.requestGuestPermission(student, managerHostelId, reason);
+  const result = mealRecordService.requestGuestPermission(student, managerHostelId, parsed.reason);
 
   res.status(200).json({
     status: 'success',
-    message: result.message
+    message: result.message,
+    requestId: result.requestId,
+    data: result.data
   });
 });
 
 export const respondGuestPermission = catchAsync(async (req, res) => {
   const payload = respondGuestPermissionSchema.parse(req.body);
-  const managerHostelId = req.user.hostelId;
+  const managerHostelId = payload.managerHostelId || payload.hostelId || req.user.hostelId;
+
+  if (!managerHostelId) {
+    const error = new Error('Hostel ID is required to process this request.');
+    error.statusCode = 400;
+    throw error;
+  }
 
   const result = await mealRecordService.respondGuestPermission(
     managerHostelId,
