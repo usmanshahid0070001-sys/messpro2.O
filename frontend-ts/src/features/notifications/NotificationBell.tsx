@@ -208,9 +208,37 @@ export default function NotificationBell() {
       setPreviewNotification((prev) => (prev?.requestId === payload.requestId ? null : prev));
     });
 
+    // Listen for successful attendance (auto-verified or manually verified)
+    const unbindSuccess = socketClient.on('attendance_success', (payload: any) => {
+      if (!payload || !payload.rollNumber) return;
+      
+      playNotificationChime();
+
+      const newItem: QRNotificationItem = {
+        requestId: `att_${payload.rollNumber}_${Date.now()}`,
+        studentId: payload.studentId || payload.rollNumber,
+        rollNumber: payload.rollNumber || 'Resident',
+        name: payload.name || 'Student',
+        reason: 'attendance_success',
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 30000,
+        status: 'accepted', // Automatically accepted since it's a success event
+        isRead: false,
+      };
+
+      updateNotifications((prev) => [newItem, ...prev]);
+
+      setPreviewNotification(newItem);
+      clearTimeout(previewTimerRef.current);
+      previewTimerRef.current = setTimeout(() => {
+        setPreviewNotification(null);
+      }, 3000); // Shorter preview for success
+    });
+
     return () => {
       unbindRequest();
       unbindUpdated();
+      unbindSuccess();
       clearTimeout(previewTimerRef.current);
     };
   }, [canReceiveRequests]);
@@ -336,11 +364,13 @@ export default function NotificationBell() {
               <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
                 <span className="font-mono">{previewNotification.rollNumber}</span>
                 <span>•</span>
-                <span className="capitalize font-medium text-amber-600 dark:text-amber-400">
+                <span className={`capitalize font-medium ${previewNotification.reason === 'attendance_success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                   {previewNotification.reason === 'guest'
                     ? 'Guest Dining'
                     : previewNotification.reason === 'extra_meal'
                     ? 'Extra Portion'
+                    : previewNotification.reason === 'attendance_success'
+                    ? 'Attendance Marked'
                     : 'Walk-In'}
                 </span>
               </div>
@@ -359,24 +389,26 @@ export default function NotificationBell() {
                 <ChevronRight className="w-3 h-3" />
               </button>
 
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  disabled={respondingId === previewNotification.requestId}
-                  onClick={() => handleRespond(previewNotification, false)}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors cursor-pointer"
-                >
-                  Decline
-                </button>
-                <button
-                  type="button"
-                  disabled={respondingId === previewNotification.requestId}
-                  onClick={() => handleRespond(previewNotification, true)}
-                  className="px-3 py-1 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-xs cursor-pointer"
-                >
-                  Accept
-                </button>
-              </div>
+              {previewNotification.status === 'pending' && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={respondingId === previewNotification.requestId}
+                    onClick={() => handleRespond(previewNotification, false)}
+                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors cursor-pointer"
+                  >
+                    Decline
+                  </button>
+                  <button
+                    type="button"
+                    disabled={respondingId === previewNotification.requestId}
+                    onClick={() => handleRespond(previewNotification, true)}
+                    className="px-3 py-1 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-xs cursor-pointer"
+                  >
+                    Accept
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -452,6 +484,8 @@ export default function NotificationBell() {
                               ? 'Cross-Hostel Guest'
                               : item.reason === 'extra_meal'
                               ? 'Extra Meal'
+                              : item.reason === 'attendance_success'
+                              ? 'Attendance Marked'
                               : 'Unreserved Walk-In'}
                           </span>
                         </div>

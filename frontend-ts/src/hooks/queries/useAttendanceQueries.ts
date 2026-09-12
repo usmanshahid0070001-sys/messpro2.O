@@ -117,8 +117,6 @@ export const useGetLiveQRAttendance = (date?: string, enabled: boolean = true) =
       return data.data;
     },
     enabled,
-    refetchInterval: 1000 * 5, // Auto-poll every 5 seconds for live dining counter
-    refetchIntervalInBackground: false, // Do not poll when tab is inactive to preserve battery & data
     placeholderData: (previousData) => previousData,
   });
 };

@@ -21,7 +21,7 @@ import {
   Printer,
 } from 'lucide-react';
 import { toast } from 'sonner';
-
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useGetManagerQR,
   useGetLiveQRAttendance,
@@ -41,6 +41,7 @@ import { playScanSuccessSound, playScanNoticeSound, triggerHaptic } from './util
 import { socketClient } from '@/lib/socket';
 
 export default function QRAttendancePage() {
+  const queryClient = useQueryClient();
   const { user } = useSelector((state: RootState) => state.auth);
   const { currentHostel } = useSelector((state: RootState) => state.hostel);
 
@@ -104,14 +105,71 @@ export default function QRAttendancePage() {
   // ── Real-Time Socket Attendance Refetch ──────────────────────────────────
   useEffect(() => {
     socketClient.connect();
-    const unbind = socketClient.on('attendance_success', () => {
-      refetchLive();
-      refetchOverview();
+    const unbind = socketClient.on('attendance_success', (payload: any) => {
+      if (!payload || !payload.mealType) return;
+
+      const updateData = (oldData: any) => {
+        if (!oldData || !oldData.data) return oldData;
+        
+        // Deep clone to ensure React state updates trigger correctly
+        const newData = JSON.parse(JSON.stringify(oldData));
+        
+        if (!newData.data[payload.mealType]) {
+          newData.data[payload.mealType] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
+        }
+        
+        const mealData = newData.data[payload.mealType];
+        
+        const existingStudentIdx = mealData.data.findIndex(
+          (s: any) => String(s.rollNumber).toLowerCase() === String(payload.rollNumber).toLowerCase()
+        );
+
+        if (existingStudentIdx >= 0) {
+          const current = mealData.data[existingStudentIdx];
+          const newAttCount = payload.count || (current.attendanceCount + 1);
+          
+          if (!current.hasAttended && newAttCount > 0) {
+             mealData.summary.totalAttendance += 1;
+          }
+          
+          mealData.data[existingStudentIdx] = {
+            ...current,
+            attendanceCount: newAttCount,
+            hasAttended: newAttCount > 0
+          };
+        } else {
+          mealData.summary.totalAttendance += 1;
+          const selCount = payload.selectionCount || 0;
+          if (selCount > 0) {
+            mealData.summary.totalSelections += selCount;
+          }
+          
+          // Add to beginning of the list for instant visibility
+          mealData.data.unshift({
+            name: payload.name || 'Guest / Walk-in',
+            rollNumber: payload.rollNumber,
+            isGuest: payload.isGuest || false,
+            attendanceCount: payload.count || 1,
+            selectionCount: selCount,
+            hasAttended: true,
+            isSelected: selCount > 0
+          });
+        }
+        
+        return newData;
+      };
+
+      // 1. Update Live QR Attendance Cache (No API calls!)
+      queryClient.setQueryData(['liveQRAttendance', selectedDate], updateData);
+      
+      // 2. Update Daily Overview Cache (No API calls!)
+      queryClient.setQueryData(['dailyOverview', selectedDate], updateData);
     });
+
     return () => {
       unbind();
     };
-  }, [refetchLive, refetchOverview]);
+  }, [queryClient, selectedDate]);
 
   // ── Mutations ────────────────────────────────────────────────────────────
   const scanStudentMutation = useScanStudentQR();
