@@ -609,22 +609,20 @@ function SuperadminDashboard({ user }: { user: any }) {
                         </td>
                         <td className="py-3 text-right">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                              h.status === 'Active'
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${h.status === 'Active'
                                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                                 : h.status === 'Trial'
-                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-                            }`}
+                                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                              }`}
                           >
                             <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                h.status === 'Active'
+                              className={`h-1.5 w-1.5 rounded-full ${h.status === 'Active'
                                   ? 'bg-emerald-500'
                                   : h.status === 'Trial'
-                                  ? 'bg-amber-500'
-                                  : 'bg-rose-500'
-                              }`}
+                                    ? 'bg-amber-500'
+                                    : 'bg-rose-500'
+                                }`}
                             />
                             {h.status || 'Active'}
                           </span>
@@ -731,7 +729,7 @@ function AdminManagerDashboard({
   const isExpired = hostel?.status === 'Expired' || daysRemaining === 0
 
   const planName = hostel?.plan?.name || 'Standard Plan'
-  
+
   // Real occupancy & resident calculations
   const totalRoomCapacity = rooms.reduce((acc, r) => acc + (r.capacity || 0), 0)
   const totalRoomOccupants = rooms.reduce((acc, r) => acc + (r.occupants || 0), 0)
@@ -961,11 +959,10 @@ function AdminManagerDashboard({
             </span>
             {daysRemaining !== null && (
               <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  daysRemaining <= 7
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${daysRemaining <= 7
                     ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                     : 'bg-muted text-muted-foreground'
-                }`}
+                  }`}
               >
                 <Clock className="h-3 w-3 text-amber-500" />
                 {daysRemaining} days remaining
@@ -1139,13 +1136,12 @@ function AdminManagerDashboard({
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-foreground">{meal.name}</span>
                       <span
-                        className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          meal.status === 'Serving'
+                        className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${meal.status === 'Serving'
                             ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                             : meal.status === 'Completed'
-                            ? 'bg-muted text-muted-foreground'
-                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                        }`}
+                              ? 'bg-muted text-muted-foreground'
+                              : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                          }`}
                       >
                         {meal.status === 'Serving' && (
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
@@ -1191,13 +1187,12 @@ function AdminManagerDashboard({
                         </div>
                         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-300 ${
-                              meal.turnoutPct >= 80
+                            className={`h-full rounded-full transition-all duration-300 ${meal.turnoutPct >= 80
                                 ? 'bg-emerald-500'
                                 : meal.turnoutPct >= 50
-                                ? 'bg-teal-500'
-                                : 'bg-amber-500'
-                            }`}
+                                  ? 'bg-teal-500'
+                                  : 'bg-amber-500'
+                              }`}
                             style={{ width: `${Math.min(100, meal.turnoutPct)}%` }}
                           />
                         </div>
@@ -1307,52 +1302,81 @@ function StudentDashboard({
 
   const studentShortcuts = extractQuickActions(navMain)
 
+  // ── Determine Contextual Insight ──────────────────────────────────────
+  let contextualInsight = { text: 'No pending actions.', color: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20' }
+  if (totalRemainingDues > 0) {
+    contextualInsight = { text: `You have Rs. ${totalRemainingDues.toLocaleString()} in pending dues.`, color: 'text-amber-700 dark:text-amber-400', dot: 'bg-amber-500', bg: 'bg-amber-500/10 border-amber-500/20' }
+  } else if (reservedCount > 0) {
+    contextualInsight = { text: `You have ${reservedCount} meals reserved for today.`, color: 'text-blue-700 dark:text-blue-400', dot: 'bg-blue-500', bg: 'bg-blue-500/10 border-blue-500/20' }
+  } else if (activeTickets.length > 0) {
+    contextualInsight = { text: `You have ${activeTickets.length} active complaints being processed.`, color: 'text-purple-700 dark:text-purple-400', dot: 'bg-purple-500', bg: 'bg-purple-500/10 border-purple-500/20' }
+  }
+
   return (
     <div className="space-y-6">
-      {/* 1. Student Welcome Header */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              Student Resident
-            </span>
-            {hasResidenceFeature && (
-              <button
-                type="button"
-                onClick={() => navigate('/app/my-room')}
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/20 transition-colors cursor-pointer"
-              >
-                <BedDouble className="h-3 w-3" />
-                {displayRoomName}
-              </button>
-            )}
-            <span className="text-xs text-muted-foreground font-medium">
-              &bull; {todayDayName}, {now.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            {getGreeting()}, {user?.name || 'Student'}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Resident of <strong className="text-foreground">{hostelName}</strong> &bull; Roll / ID:{' '}
-            <span className="font-mono text-foreground font-semibold">
-              {user?.id || user?._id || 'STD-8841'}
-            </span>
-          </p>
-        </div>
+      {/* 1. Student Welcome Header (Pulse Insight Card) */}
+      <div className="relative overflow-hidden rounded-[2rem] bg-card border border-border shadow-xs group">
+        {/* Breathing Glowing Orb */}
+        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-72 h-72 rounded-full bg-gradient-to-br from-purple-500/30 to-cyan-500/30 blur-[80px] animate-[pulse_4s_ease-in-out_infinite]" />
 
-        {hasQrFeature && (
-          <div className="flex items-center gap-2 self-start md:self-auto">
-            <Button
-              size="sm"
-              onClick={() => navigate('/app/meals/qr')}
-              className="gap-2 shadow-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
-            >
-              <QrCode className="h-4 w-4" />
-              Mark Attendance
-            </Button>
+        {/* Animated Border gradient on bottom */}
+        <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-purple-500 via-cyan-500 to-emerald-500 opacity-70 group-hover:opacity-100 transition-opacity" />
+
+        <div className="relative p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 z-10">
+
+          <div className="space-y-4">
+            {/* Contextual Subtitle */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${contextualInsight.bg}`}>
+                <span className={`w-2 h-2 rounded-full ${contextualInsight.dot} animate-pulse`} />
+                <span className={contextualInsight.color}>{contextualInsight.text}</span>
+              </span>
+
+              {hasResidenceFeature && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/app/my-room')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-500/20 transition-colors cursor-pointer"
+                >
+                  <BedDouble className="h-3.5 w-3.5" />
+                  {displayRoomName}
+                </button>
+              )}
+            </div>
+
+            {/* Greeting Text */}
+            <div>
+              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+                <span className="text-foreground mr-2">{getGreeting()},</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-cyan-500 dark:from-purple-400 dark:to-cyan-400">
+                  {user?.name || 'Student'}
+                </span>
+              </h1>
+            </div>
+
+            {/* Sub-info */}
+            <p className="text-sm text-muted-foreground font-medium">
+              Resident of <strong className="text-foreground">{hostelName}</strong> &bull; Roll / ID:{' '}
+              <span className="font-mono text-foreground font-bold bg-muted px-1.5 py-0.5 rounded-md border border-border/50">
+                {user?.id || user?._id || 'STD-8841'}
+              </span>
+            </p>
           </div>
-        )}
+
+          {/* Action Area */}
+          {hasQrFeature && (
+            <div className="flex items-center gap-2 self-start md:self-auto shrink-0 mt-2 md:mt-0">
+              <Button
+                size="lg"
+                onClick={() => navigate('/app/meals/qr')}
+                className="gap-2.5 shadow-lg font-bold bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white rounded-xl cursor-pointer hover:scale-105 transition-all border-none"
+              >
+                <QrCode className="h-5 w-5" />
+                Mark Attendance
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 2. Real-Time Connected Stat Highlights (Mobile-Optimized Compact Grid) */}
@@ -1533,10 +1557,10 @@ function StudentDashboard({
                   const servingWindow = servingItem?.start && servingItem?.end
                     ? `${servingItem.start} – ${servingItem.end}`
                     : (mealName.toLowerCase().includes('breakfast')
-                        ? '07:30 AM – 10:00 AM'
-                        : mealName.toLowerCase().includes('lunch')
-                          ? '12:30 PM – 03:00 PM'
-                          : '07:30 PM – 10:00 PM')
+                      ? '07:30 AM – 10:00 AM'
+                      : mealName.toLowerCase().includes('lunch')
+                        ? '12:30 PM – 03:00 PM'
+                        : '07:30 PM – 10:00 PM')
 
                   // Find today's student selection/attendance record
                   const selRecord = todaySelections.find(
@@ -1559,13 +1583,12 @@ function StudentDashboard({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-foreground">{mealName}</span>
                           <span
-                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                              hasEaten
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${hasEaten
                                 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                                 : isReserved
-                                ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
-                                : 'bg-muted text-muted-foreground'
-                            }`}
+                                  ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                                  : 'bg-muted text-muted-foreground'
+                              }`}
                           >
                             {hasEaten ? (
                               <>

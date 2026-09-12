@@ -10,6 +10,10 @@ import {
   ArrowUpRight,
   CheckCircle2,
   ChevronRight,
+  Sun,
+  Sunrise,
+  Sunset,
+  Moon,
 } from 'lucide-react'
 import type { PlanFeature } from '@/store/slices/HostelSlice'
 import {
@@ -64,6 +68,7 @@ export default function StudentDashboard({
   const todayDayName = daysOfWeek[now.getDay()]
   const todayDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
+
   // ── Real Data Queries ────────────────────────────────────────────────
   const { data: myRoom } = useGetMyRoom(hasResidenceFeature)
   const { data: schedule, isLoading: isScheduleLoading } = useGetMealSchedule(hasMealFeature)
@@ -100,52 +105,81 @@ export default function StudentDashboard({
 
   const studentShortcuts = extractQuickActions(navMain)
 
+  // ── Determine Contextual Insight ──────────────────────────────────────
+  let contextualInsight = { text: 'You are all set for the day! 🎉', color: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' }
+  if (totalRemainingDues > 0) {
+    contextualInsight = { text: `You have Rs. ${totalRemainingDues.toLocaleString()} in pending dues.`, color: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' }
+  } else if (reservedCount > 0) {
+    contextualInsight = { text: `You have ${reservedCount} meals reserved for today.`, color: 'text-blue-600 dark:text-blue-400', dot: 'bg-blue-500' }
+  } else if (activeTickets.length > 0) {
+    contextualInsight = { text: `You have ${activeTickets.length} active complaints being processed.`, color: 'text-purple-600 dark:text-purple-400', dot: 'bg-purple-500' }
+  }
+
   return (
     <div className="space-y-6">
-      {/* 1. Student Welcome Header */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              Student Resident
-            </span>
-            {hasResidenceFeature && (
-              <button
-                type="button"
-                onClick={() => navigate('/app/my-room')}
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/20 transition-colors cursor-pointer"
-              >
-                <BedDouble className="h-3 w-3" />
-                {displayRoomName}
-              </button>
-            )}
-            <span className="text-xs text-muted-foreground font-medium">
-              &bull; {todayDayName}, {now.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            {getGreeting()}, {user?.name || 'Student'}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Resident of <strong className="text-foreground">{hostelName}</strong> &bull; Roll / ID:{' '}
-            <span className="font-mono text-foreground font-semibold">
-              {user?.id || user?._id || 'STD-8841'}
-            </span>
-          </p>
-        </div>
+      {/* 1. Student Welcome Header (Pulse Insight Card) */}
+      <div className="relative overflow-hidden rounded-[2rem] bg-card border border-border shadow-xs group">
+        {/* Breathing Glowing Orb */}
+        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-72 h-72 rounded-full bg-gradient-to-br from-purple-500/30 to-cyan-500/30 blur-[80px] animate-[pulse_4s_ease-in-out_infinite]" />
 
-        {hasQrFeature && (
-          <div className="flex items-center gap-2 self-start md:self-auto">
-            <Button
-              size="sm"
-              onClick={() => navigate('/app/meals/qr')}
-              className="gap-2 shadow-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
-            >
-              <QrCode className="h-4 w-4" />
-              Mark Attendance
-            </Button>
+        {/* Animated Border gradient on bottom */}
+        <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-purple-500 via-cyan-500 to-emerald-500 opacity-70 group-hover:opacity-100 transition-opacity" />
+
+        <div className="relative p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 z-10">
+
+          <div className="space-y-4">
+            {/* Contextual Subtitle */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-muted/80 dark:bg-muted/50 border border-border/80 shadow-xs backdrop-blur-md">
+                <span className={`w-2 h-2 rounded-full ${contextualInsight.dot} animate-pulse`} />
+                <span className={contextualInsight.color}>{contextualInsight.text}</span>
+              </span>
+
+              {hasResidenceFeature && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/app/my-room')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/20 transition-colors cursor-pointer"
+                >
+                  <BedDouble className="h-3.5 w-3.5" />
+                  {displayRoomName}
+                </button>
+              )}
+            </div>
+
+            {/* Greeting Text */}
+            <div>
+              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+                <span className="text-muted-foreground mr-2">{getGreeting()},</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-cyan-500 dark:from-purple-400 dark:to-cyan-400">
+                  {user?.name || 'Student'}
+                </span>
+              </h1>
+            </div>
+
+            {/* Sub-info */}
+            <p className="text-sm text-muted-foreground font-medium">
+              Resident of <strong className="text-foreground">{hostelName}</strong> &bull; Roll / ID:{' '}
+              <span className="font-mono text-foreground font-bold bg-muted px-1.5 py-0.5 rounded-md border border-border/50">
+                {user?.id || user?._id || 'STD-8841'}
+              </span>
+            </p>
           </div>
-        )}
+
+          {/* Action Area */}
+          {hasQrFeature && (
+            <div className="flex items-center gap-2 self-start md:self-auto shrink-0 mt-2 md:mt-0">
+              <Button
+                size="lg"
+                onClick={() => navigate('/app/meals/qr')}
+                className="gap-2.5 shadow-lg font-bold bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white rounded-xl cursor-pointer hover:scale-105 transition-all border-none"
+              >
+                <QrCode className="h-5 w-5" />
+                Mark Attendance
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 2. Real-Time Connected Stat Highlights (Mobile-Optimized Compact Grid) */}
@@ -326,10 +360,10 @@ export default function StudentDashboard({
                   const servingWindow = servingItem?.start && servingItem?.end
                     ? `${servingItem.start} – ${servingItem.end}`
                     : (mealName.toLowerCase().includes('breakfast')
-                        ? '07:30 AM – 10:00 AM'
-                        : mealName.toLowerCase().includes('lunch')
-                          ? '12:30 PM – 03:00 PM'
-                          : '07:30 PM – 10:00 PM')
+                      ? '07:30 AM – 10:00 AM'
+                      : mealName.toLowerCase().includes('lunch')
+                        ? '12:30 PM – 03:00 PM'
+                        : '07:30 PM – 10:00 PM')
 
                   // Find today's student selection/attendance record
                   const selRecord = todaySelections.find(
@@ -352,13 +386,12 @@ export default function StudentDashboard({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-foreground">{mealName}</span>
                           <span
-                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                              hasEaten
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${hasEaten
                                 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                                 : isReserved
-                                ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
-                                : 'bg-muted text-muted-foreground'
-                            }`}
+                                  ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                                  : 'bg-muted text-muted-foreground'
+                              }`}
                           >
                             {hasEaten ? (
                               <>
