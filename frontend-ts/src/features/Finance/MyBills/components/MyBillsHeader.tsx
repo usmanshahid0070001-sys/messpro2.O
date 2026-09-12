@@ -53,37 +53,42 @@ export default function MyBillsHeader({
   return (
     <div className="space-y-4">
       {/* ── Page Header ────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+      <div className="flex flex-col gap-2 sm:gap-0">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
             <FileText className="w-5 h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
               <h1 className="text-xl font-bold tracking-tight text-foreground">
                 My Hostel Dues & Invoices
               </h1>
-              <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+              <span className="w-fit text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                 {totalBillsCount} {totalBillsCount === 1 ? 'Invoice' : 'Invoices'}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            {/* Desktop paragraph */}
+            <p className="hidden sm:block text-xs text-muted-foreground mt-1">
               Review your monthly hostel dues, itemized meal charges, and payment verification receipts.
             </p>
           </div>
         </div>
+        {/* Mobile paragraph */}
+        <p className="sm:hidden text-xs text-muted-foreground">
+          Review your monthly hostel dues, itemized meal charges, and payment verification receipts.
+        </p>
       </div>
 
       {/* Filter & View Mode Controls Bar */}
       <div className="bg-card border border-border p-3 sm:p-4 rounded-2xl shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Left Group: View Mode Toggle (Current Cycle vs Monthly Archive) */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center p-1 bg-muted/60 rounded-xl border border-border/60 shadow-2xs">
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center p-1 bg-muted/60 rounded-xl border border-border/60 shadow-2xs w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => onViewModeChange('current')}
-                className={`px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                className={`flex-1 sm:flex-none justify-center px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                   viewMode === 'current'
                     ? 'bg-card text-purple-600 dark:text-purple-400 shadow-xs border border-border/80'
                     : 'text-muted-foreground hover:text-foreground'
@@ -96,7 +101,7 @@ export default function MyBillsHeader({
               <button
                 type="button"
                 onClick={() => onViewModeChange('monthly')}
-                className={`px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                className={`flex-1 sm:flex-none justify-center px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                   viewMode === 'monthly'
                     ? 'bg-card text-purple-600 dark:text-purple-400 shadow-xs border border-border/80'
                     : 'text-muted-foreground hover:text-foreground'
@@ -109,25 +114,25 @@ export default function MyBillsHeader({
 
             {/* Month Picker (When monthly archive mode is active) */}
             {viewMode === 'monthly' && (
-              <div className="flex items-center gap-1.5 bg-muted/40 border border-border/80 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium shadow-2xs">
+              <div className="flex items-center justify-center gap-1.5 bg-muted/40 border border-border/80 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium shadow-2xs w-full sm:w-auto">
                 <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
                 <input
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => onMonthChange(e.target.value)}
-                  className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer text-xs sm:text-sm"
+                  className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer text-xs sm:text-sm w-full sm:w-auto text-center sm:text-left"
                 />
               </div>
             )}
           </div>
 
           {/* Right Group: Status Filter & Reset */}
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-xl bg-muted/40 border border-border/80 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer min-w-[140px]"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-xl bg-muted/40 border border-border/80 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer sm:min-w-[140px]"
                 >
                   <div className="flex items-center gap-1.5 truncate">
                     <span
@@ -174,7 +179,7 @@ export default function MyBillsHeader({
               <button
                 type="button"
                 onClick={onResetFilters}
-                className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border border-border/80 shadow-2xs cursor-pointer"
+                className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border border-border/80 shadow-2xs cursor-pointer shrink-0"
                 title="Reset Filters"
               >
                 <RotateCcw className="w-4 h-4" />

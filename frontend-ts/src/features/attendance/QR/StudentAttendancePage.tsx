@@ -376,7 +376,7 @@ export default function StudentAttendancePage() {
           }`}
         >
           <QrCode className="w-4 h-4" />
-          <span>My Student QR Code</span>
+          <span>My QR Code</span>
         </button>
       </div>
 
