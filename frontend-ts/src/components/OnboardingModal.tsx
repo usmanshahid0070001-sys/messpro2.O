@@ -368,7 +368,7 @@ export default function OnboardingModal() {
               </div>
 
               {!passwordUpdated ? (
-                <form onSubmit={handleUpdatePassword} className="space-y-3.5">
+                <form onSubmit={handleUpdatePassword} className="space-y-3.5" method="POST" action="#">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-foreground block">
                       New Password (min 8 characters)

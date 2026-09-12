@@ -129,7 +129,7 @@ export default function LoginForm() {
             </div>
 
             <div className="w-full max-w-[400px] bg-card rounded-2xl border border-border shadow-xl p-6 sm:p-8">
-                <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+                <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate method="POST" action="#">
                     {/* Email Address */}
                     <div className="space-y-2">
                         <label htmlFor="email" className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
