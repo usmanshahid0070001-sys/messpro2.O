@@ -10,22 +10,22 @@ export function AuthSync({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
   const { isAuthenticated, token } = useSelector((state: RootState) => state.auth);
 
-  // Check if we have an active session or an OAuth callback query param
-  const hasTokenOrOAuth = Boolean(
-    token || (typeof window !== 'undefined' && (localStorage.getItem('token') || window.location.search.includes('auth=')))
-  );
+  const isOAuthCallback =
+    typeof window !== 'undefined' && window.location.search.includes('auth=');
+  const hasStoredToken =
+    typeof window !== 'undefined' && Boolean(localStorage.getItem('token'));
 
-  // Verify session with the backend whenever an authenticated session is active or OAuth returned
+  // Enable verify session if authenticated or when returning with an OAuth callback/stored token
   const { data, error, isSuccess } = useVerifySession({
-    enabled: hasTokenOrOAuth && isAuthenticated,
+    enabled: isAuthenticated || isOAuthCallback || hasStoredToken,
   });
 
   useEffect(() => {
-    // Only sync if user is currently authenticated and verified data was returned
-    if (isSuccess && data && isAuthenticated) {
+    // When backend verifies the session (e.g. from HttpOnly cookie), populate Redux credentials
+    if (isSuccess && data?.user) {
       dispatch(setCredentials({ user: data.user, token: data.token || token || '' }));
     }
-  }, [isSuccess, data, dispatch, isAuthenticated]);
+  }, [isSuccess, data, dispatch, token]);
 
   useEffect(() => {
     // If the token is invalid or expired on backend, log the user out cleanly
@@ -38,5 +38,3 @@ export function AuthSync({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
-
-
