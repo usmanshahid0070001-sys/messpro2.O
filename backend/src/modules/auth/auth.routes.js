@@ -17,7 +17,7 @@ import {
 const router = express.Router();
 
 const loginLimiter = rateLimit({
-  max: 15, // Block after 5 failed attempts
+  max: 15, // Block after 15 failed attempts
   windowMs: 15 * 60 * 1000, // 15 minute lockout
   message: 'Too many login attempts from this IP, please try again after 15 minutes.'
 });
