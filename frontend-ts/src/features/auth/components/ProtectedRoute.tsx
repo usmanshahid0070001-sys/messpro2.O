@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { usePermissions } from '@/hooks/usePermissions';
-import { ShieldAlert, ArrowLeft } from 'lucide-react';
+import { useVerifySession } from '@/hooks/queries/useAuthQueries';
+import { ShieldAlert, ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
@@ -19,16 +20,34 @@ export const ProtectedRoute = ({
   const location = useLocation();
   const { isAuthenticated, role, isSuperAdmin, hasPermission, hasFeature } = usePermissions();
 
+  // If not authenticated in Redux state, check with backend via HttpOnly cookie or OAuth callback
+  const { isLoading: isCheckingSession } = useVerifySession({
+    enabled: !isAuthenticated,
+  });
+
+  // 0. Wait for session verification to finish before making routing decisions
+  if (!isAuthenticated && isCheckingSession) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-xs text-muted-foreground font-medium">
+          Verifying authentication session...
+        </p>
+      </div>
+    );
+  }
+
+  // 1. If still unauthenticated after verification completes, bounce to login
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 1. Check Role Authorization
+  // 2. Check Role Authorization
   if (allowedRoles && role && !allowedRoles.includes(role as any)) {
     return <Navigate to={fallbackPath} replace />;
   }
 
-  // 2. Check Granular Permission Authorization (e.g. manager without user_management)
+  // 3. Check Granular Permission Authorization
   if (requiredPermission && !hasPermission(requiredPermission)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center space-y-4">
@@ -53,7 +72,7 @@ export const ProtectedRoute = ({
     );
   }
 
-  // 3. Check Plan Feature Enablement (e.g. hostel plan disables biometric or residence)
+  // 4. Check Plan Feature Enablement
   if (requiredFeature && !hasFeature(requiredFeature) && !isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center space-y-4">
