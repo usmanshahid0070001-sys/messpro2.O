@@ -128,11 +128,72 @@ class MealRecordRepository {
     return User.find({ hostelId, role: 'student' }).select('name id').lean();
   }
 
+  // async findStudentByRollNumber(identifier) {
+  //   if (!identifier) return null;
+  //   let str = String(identifier).trim();
+
+  //   // 1. If it's a JSON string, extract any embedded student identifier
+  //   let embeddedId = null;
+  //   let embeddedRoll = null;
+  //   try {
+  //     const parsed = JSON.parse(str);
+  //     if (parsed && typeof parsed === 'object') {
+  //       embeddedRoll = parsed.rollNumber || parsed.studentRollNumber;
+  //       embeddedId = parsed.studentId || parsed._id || parsed.id;
+  //       str = String(embeddedRoll || embeddedId || str).trim();
+  //     }
+  //   } catch {
+  //     // If not JSON, check if it's URL-encoded or contains key-value pairs
+  //     const rollMatch = str.match(/"?(?:rollNumber|studentRollNumber)"?\s*[:=]\s*"?([a-zA-Z0-9_-]+)"?/i);
+  //     const idMatch = str.match(/"?(?:studentId|id|_id)"?\s*[:=]\s*"?([a-f0-9]{24}|[a-zA-Z0-9_-]+)"?/i);
+  //     if (rollMatch && rollMatch[1]) embeddedRoll = rollMatch[1].trim();
+  //     if (idMatch && idMatch[1]) embeddedId = idMatch[1].trim();
+  //     if (embeddedRoll || embeddedId) {
+  //       str = String(embeddedRoll || embeddedId).trim();
+  //     }
+  //   }
+
+  //   const identifiersToTest = new Set([
+  //     str,
+  //     str.toLowerCase(),
+  //     str.toUpperCase(),
+  //     str.replace(/\s+/g, ''),
+  //   ]);
+  //   if (embeddedRoll) {
+  //     identifiersToTest.add(embeddedRoll);
+  //     identifiersToTest.add(embeddedRoll.toLowerCase());
+  //   }
+  //   if (embeddedId) {
+  //     identifiersToTest.add(embeddedId);
+  //     identifiersToTest.add(embeddedId.toLowerCase());
+  //   }
+
+  //   const orConditions = [];
+
+  //   for (const val of identifiersToTest) {
+  //     if (!val) continue;
+  //     orConditions.push({ id: val });
+  //     orConditions.push({ email: val });
+  //     if (mongoose.isValidObjectId(val)) {
+  //       orConditions.push({ _id: new mongoose.Types.ObjectId(val) });
+  //     }
+  //     const escaped = val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //     orConditions.push({ id: { $regex: new RegExp(`^${escaped}$`, 'i') } });
+  //   }
+
+  //   return User.findOne({
+  //     $or: orConditions
+  //   });
+  // }
+
   async findStudentByRollNumber(identifier) {
     if (!identifier) return null;
-    let str = String(identifier).trim();
 
-    // 1. If it's a JSON string, extract any embedded student identifier
+    // 1. Convert to string and sanitize null bytes & non-printable control characters
+    let str = String(identifier).replace(/\0/g, '').trim();
+    if (!str) return null;
+
+    // 2. If it's a JSON string, extract any embedded student identifier
     let embeddedId = null;
     let embeddedRoll = null;
     try {
@@ -140,14 +201,14 @@ class MealRecordRepository {
       if (parsed && typeof parsed === 'object') {
         embeddedRoll = parsed.rollNumber || parsed.studentRollNumber;
         embeddedId = parsed.studentId || parsed._id || parsed.id;
-        str = String(embeddedRoll || embeddedId || str).trim();
+        str = String(embeddedRoll || embeddedId || str).replace(/\0/g, '').trim();
       }
     } catch {
       // If not JSON, check if it's URL-encoded or contains key-value pairs
-      const rollMatch = str.match(/"?(?:rollNumber|studentRollNumber)"?\s*[:=]\s*"?([a-zA-Z0-9_-]+)"?/i);
-      const idMatch = str.match(/"?(?:studentId|id|_id)"?\s*[:=]\s*"?([a-f0-9]{24}|[a-zA-Z0-9_-]+)"?/i);
-      if (rollMatch && rollMatch[1]) embeddedRoll = rollMatch[1].trim();
-      if (idMatch && idMatch[1]) embeddedId = idMatch[1].trim();
+      const rollMatch = str.match(/"?(?:rollNumber|studentRollNumber)"?\s*[:=]\s*"?([a-zA-Z0-9_.-]+)"?/i);
+      const idMatch = str.match(/"?(?:studentId|id|_id)"?\s*[:=]\s*"?([a-f0-9]{24}|[a-zA-Z0-9_.-]+)"?/i);
+      if (rollMatch && rollMatch[1]) embeddedRoll = rollMatch[1].replace(/\0/g, '').trim();
+      if (idMatch && idMatch[1]) embeddedId = idMatch[1].replace(/\0/g, '').trim();
       if (embeddedRoll || embeddedId) {
         str = String(embeddedRoll || embeddedId).trim();
       }
@@ -172,14 +233,25 @@ class MealRecordRepository {
 
     for (const val of identifiersToTest) {
       if (!val) continue;
+
+      // Direct exact match
       orConditions.push({ id: val });
       orConditions.push({ email: val });
+
       if (mongoose.isValidObjectId(val)) {
         orConditions.push({ _id: new mongoose.Types.ObjectId(val) });
       }
-      const escaped = val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      orConditions.push({ id: { $regex: new RegExp(`^${escaped}$`, 'i') } });
+
+      // 3. SAFE REGEX: Only evaluate regex on valid printable strings (no binary or control characters)
+      if (val.length <= 50 && !/[\x00-\x1F\x7F]/.test(val)) {
+        const escaped = val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        orConditions.push({
+          id: { $regex: `^${escaped}$`, $options: 'i' }
+        });
+      }
     }
+
+    if (orConditions.length === 0) return null;
 
     return User.findOne({
       $or: orConditions
