@@ -1,19 +1,17 @@
 import User from '../auth/auth.model.js';
-import { AppError } from '../../middlewares/error.middleware.js';
-
 export const subscribeToNotifications = async (req, res, next) => {
   try {
     const { subscription } = req.body;
 
     if (!subscription || !subscription.endpoint) {
-      return next(new AppError('Invalid subscription object', 400));
+      return res.status(400).json({ status: 'error', message: 'Invalid subscription object' });
     }
 
     const userId = req.user.id;
 
     const user = await User.findById(userId);
     if (!user) {
-      return next(new AppError('User not found', 404));
+      return res.status(404).json({ status: 'error', message: 'User not found' });
     }
 
     // Check if subscription already exists (using endpoint as unique identifier)
