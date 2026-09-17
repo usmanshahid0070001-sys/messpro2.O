@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, authorizeRoles } from '../../middlewares/auth.middleware.js';
+import { protect, restrictTo } from '../../middlewares/auth.middleware.js';
 import * as notificationController from './notification.controller.js';
 
 const router = express.Router();
@@ -7,6 +7,6 @@ const router = express.Router();
 router.use(protect);
 
 // Post a new push subscription
-router.post('/subscribe', authorizeRoles('student', 'admin', 'superadmin', 'manager'), notificationController.subscribeToNotifications);
+router.post('/subscribe', restrictTo('student', 'admin', 'superadmin', 'manager'), notificationController.subscribeToNotifications);
 
 export default router;
