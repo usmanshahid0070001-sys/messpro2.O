@@ -47,6 +47,13 @@ const userSchema = new mongoose.Schema(
       default: [], // Starts empty so it uses zero extra memory!
     },
     // 👆 END NEW PERMISSIONS 👆
+    
+    // 👇 PUSH NOTIFICATIONS SUBSCRIPTIONS 👇
+    pushSubscriptions: {
+      type: Array,
+      default: [],
+    },
+    // 👆 PUSH NOTIFICATIONS SUBSCRIPTIONS 👆
 
     email: {
       type: String,

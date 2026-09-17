@@ -26,6 +26,8 @@ import mealRoutes from './modules/meal/meal.routes.js';
 import attendanceRoutes from './modules/mealRecord/mealRecord.routes.js';
 import billRoutes from './modules/billing/bill.routes.js';
 import complaintRoutes from './modules/complaint/complaint.routes.js';
+import notificationRoutes from './modules/notification/notification.routes.js';
+import './cron/notification.cron.js';
 
 dotenv.config(); // this will load the environment variables first 
 
@@ -125,6 +127,7 @@ app.use('/api/meals', mealRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/billing', billRoutes);
 app.use('/api/complaints', complaintRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req, res) => {
   res.send('MessPro SaaS API is running securely...');
