@@ -199,3 +199,47 @@ export const broadcastNotification = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getSubscribers = async (req, res, next) => {
+  try {
+    const query = {
+      role: 'student',
+      pushSubscriptions: { $exists: true, $not: { $size: 0 } },
+    };
+
+    // If admin is assigned to a specific hostel, scope to that hostel if populated
+    if (req.user.role === 'admin' && req.user.hostelId) {
+      const hostelCount = await User.countDocuments({
+        ...query,
+        hostelId: req.user.hostelId,
+      });
+      if (hostelCount > 0) {
+        query.hostelId = req.user.hostelId;
+      }
+    }
+
+    const students = await User.find(query).select('_id name email pushSubscriptions');
+
+    const subscribers = students.map((student) => {
+      const activeCount = Array.isArray(student.pushSubscriptions) ? student.pushSubscriptions.length : 0;
+      return {
+        _id: student._id,
+        name: student.name,
+        email: student.email,
+        activeSubscriptionsCount: activeCount,
+        subscriptionCount: activeCount,
+      };
+    });
+
+    res.status(200).json({
+      status: 'success',
+      subscribers,
+      data: {
+        subscribers,
+        totalSubscribers: subscribers.length,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

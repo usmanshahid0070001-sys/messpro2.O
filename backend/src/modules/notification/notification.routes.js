@@ -35,4 +35,11 @@ router.post(
   notificationController.broadcastNotification
 );
 
+// Get subscribed students for subscriber audit (admin and superadmin only)
+router.get(
+  '/subscribers',
+  restrictTo('admin', 'superadmin'),
+  notificationController.getSubscribers
+);
+
 export default router;

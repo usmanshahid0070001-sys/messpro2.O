@@ -27,7 +27,7 @@ import attendanceRoutes from './modules/mealRecord/mealRecord.routes.js';
 import billRoutes from './modules/billing/bill.routes.js';
 import complaintRoutes from './modules/complaint/complaint.routes.js';
 import notificationRoutes from './modules/notification/notification.routes.js';
-import './cron/notification.cron.js'; 
+// import './cron/notification.cron.js'; 
 
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET is required in production.');

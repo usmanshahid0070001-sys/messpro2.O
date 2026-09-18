@@ -9,6 +9,8 @@ import {
   ShieldCheck, 
   Trash2, 
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Sparkles,
   Send,
   Loader2
@@ -18,6 +20,13 @@ import { socketClient } from '@/lib/socket';
 import { useRespondGuestPermission } from '@/hooks/mutations/useAttendanceMutations';
 import apiClient from '@/api/client';
 import { toast } from 'sonner';
+
+export interface PushSubscriberItem {
+  _id: string;
+  name: string;
+  email: string;
+  activeSubscriptionsCount: number;
+}
 
 export interface QRNotificationItem {
   requestId: string;
@@ -99,6 +108,30 @@ export default function NotificationBell() {
 
   const respondMutation = useRespondGuestPermission();
 
+  const [subscribers, setSubscribers] = useState<PushSubscriberItem[]>([]);
+  const [isLoadingSubscribers, setIsLoadingSubscribers] = useState(false);
+  const [showSubscribers, setShowSubscribers] = useState(false);
+
+  const fetchSubscribers = async () => {
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) return;
+    setIsLoadingSubscribers(true);
+    try {
+      const res = await apiClient.get('/notifications/subscribers');
+      const list = res.data?.data?.subscribers || res.data?.subscribers || [];
+      setSubscribers(list);
+    } catch (err) {
+      console.error('Failed to load notification subscribers:', err);
+    } finally {
+      setIsLoadingSubscribers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.role === 'admin' || user?.role === 'superadmin') {
+      fetchSubscribers();
+    }
+  }, [user?.role]);
+
   const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!broadcastTitle.trim() || !broadcastBody.trim()) {
@@ -115,6 +148,7 @@ export default function NotificationBell() {
       toast.success(res.data?.message || 'Notification broadcasted to students!');
       setBroadcastTitle('');
       setBroadcastBody('');
+      fetchSubscribers();
     } catch (err: any) {
       console.error('Broadcast notification error:', err);
       toast.error(err.response?.data?.message || 'Failed to send broadcast notification.');
@@ -469,6 +503,73 @@ export default function NotificationBell() {
               </div>
 
               <form onSubmit={handleBroadcast} className="space-y-2.5">
+                {/* 🟢 Clickable Subscriber Audit Status Badge & Expandable List */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setShowSubscribers((prev) => !prev)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                      title="Click to view subscribed students"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      <span>
+                        {isLoadingSubscribers
+                          ? 'Checking subscribers...'
+                          : `${subscribers.length} Active Subscriber${subscribers.length === 1 ? '' : 's'}`}
+                      </span>
+                      {showSubscribers ? (
+                        <ChevronUp className="w-3 h-3 opacity-70 ml-0.5" />
+                      ) : (
+                        <ChevronDown className="w-3 h-3 opacity-70 ml-0.5" />
+                      )}
+                    </button>
+
+                    {showSubscribers && (
+                      <button
+                        type="button"
+                        onClick={fetchSubscribers}
+                        className="text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        title="Refresh subscriber list"
+                      >
+                        Refresh
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Expandable Scrollable Subscriber List */}
+                  {showSubscribers && (
+                    <div className="max-h-28 overflow-y-auto rounded-lg border border-border/80 bg-background/90 p-2 space-y-1 text-xs shadow-inner">
+                      {subscribers.length === 0 ? (
+                        <div className="py-2 text-center text-[11px] text-muted-foreground">
+                          No students currently subscribed.
+                        </div>
+                      ) : (
+                        subscribers.map((student) => (
+                          <div
+                            key={student._id}
+                            className="flex items-center justify-between gap-2 py-1 px-1.5 rounded hover:bg-muted/40 transition-colors"
+                          >
+                            <div className="min-w-0">
+                              <div className="font-semibold text-foreground text-[11px] truncate leading-tight">
+                                {student.name}
+                              </div>
+                              <div className="text-muted-foreground text-[10px] truncate leading-tight">
+                                {student.email}
+                              </div>
+                            </div>
+                            {student.activeSubscriptionsCount > 1 && (
+                              <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-medium rounded bg-muted text-muted-foreground">
+                                {student.activeSubscriptionsCount} devices
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label htmlFor="broadcast-title" className="block text-[11px] font-medium text-muted-foreground mb-1">
                     Notification Title
