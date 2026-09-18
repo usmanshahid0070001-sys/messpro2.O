@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '@/api/client';
 import { toast } from 'sonner';
+
 
 // Make sure to replace this with the generated public VAPID key
 // Ideally this should come from import.meta.env.VITE_VAPID_PUBLIC_KEY
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
+
 
 // Helper function to convert base64 URL to Uint8Array
 const urlBase64ToUint8Array = (base64String: string) => {
@@ -52,8 +54,17 @@ export const usePushNotifications = () => {
         throw new Error('Notification permission denied');
       }
 
-      // 2. Get Service Worker Registration
-      const registration = await navigator.serviceWorker.ready;
+      // 2. Ensure Service Worker Registration exists and is ready
+      let registration: ServiceWorkerRegistration;
+      try {
+        const existing = await navigator.serviceWorker.getRegistration('/sw.js');
+        registration = existing || (await navigator.serviceWorker.register('/sw.js', { scope: '/' }));
+        await navigator.serviceWorker.ready;
+      } catch (regError) {
+        console.error('[PWA] Service Worker registration failed in usePushNotifications:', regError);
+        throw new Error('Service Worker registration failed');
+      }
+
 
       // 3. Subscribe to Push Manager
       const subscription = await registration.pushManager.subscribe({
@@ -61,14 +72,8 @@ export const usePushNotifications = () => {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
-      // 4. Send Subscription to Backend
-      // NOTE: Axios should ideally use an interceptor instance that injects the auth token
-      // Assuming your api requests are authenticated
-      await axios.post(
-        `${import.meta.env.VITE_API_URL || '/api'}/notifications/subscribe`,
-        { subscription },
-        { withCredentials: true } // adjust based on auth setup
-      );
+      // 4. Send Subscription to Backend via configured apiClient
+      await apiClient.post('/notifications/subscribe', { subscription });
 
       toast.success('Successfully subscribed to notifications!');
     } catch (error: any) {
@@ -83,10 +88,21 @@ export const usePushNotifications = () => {
     }
   };
 
+  const sendTestNotification = async () => {
+    try {
+      await apiClient.post('/notifications/test');
+      toast.success('Test notification requested!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to trigger test notification');
+    }
+  };
+
   return {
     isSupported,
     permission,
     isSubscribing,
     subscribeToNotifications,
+    sendTestNotification,
   };
 };
+

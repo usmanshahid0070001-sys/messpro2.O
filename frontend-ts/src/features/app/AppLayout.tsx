@@ -116,18 +116,18 @@ export default function AppLayout() {
       <AppSidebar side="left" variant="sidebar" collapsible="icon" />
 
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-w-0 max-w-full">
-        <div className="flex items-center justify-between h-12 w-full sticky top-0 z-30 bg-background/95 backdrop-blur-xs border-b border-border/40 px-1">
+        <div className="flex items-center justify-between h-12 w-full sticky top-0 z-30 bg-background/95 backdrop-blur-xs border-b border-border/40 px-2 sm:px-3">
           <div className="flex items-center gap-2 min-w-0">
-            <SidebarTrigger className="-ml-1" />
+            <SidebarTrigger className="-ml-1 shrink-0" />
 
             {/* Mobile / Small screen: Logo & Brand Name */}
-            <div className="flex items-center gap-2 md:hidden">
+            <div className="flex items-center gap-1.5 md:hidden min-w-0">
               <img
                 src={logoUrl}
                 alt="MessPro Logo"
-                className="h-6 w-6 rounded-md object-contain"
+                className="h-6 w-6 rounded-md object-contain shrink-0"
               />
-              <span className="font-semibold text-sm tracking-tight text-foreground">
+              <span className="font-semibold text-sm tracking-tight text-foreground truncate hidden xs:inline">
                 MessPro
               </span>
             </div>
@@ -154,12 +154,13 @@ export default function AppLayout() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-2">
             <GlobalSearch targetContainerId="main-page-content" />
             <PushNotificationPrompt />
             <NotificationBell />
           </div>
         </div>
+
 
         {currentUser?.status === 'Suspended' && (
           <div className="mx-1 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between text-xs text-amber-700 dark:text-amber-300">

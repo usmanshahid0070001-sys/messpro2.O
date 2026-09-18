@@ -9,4 +9,8 @@ router.use(protect);
 // Post a new push subscription
 router.post('/subscribe', restrictTo('student', 'admin', 'superadmin', 'manager'), notificationController.subscribeToNotifications);
 
+// Test push notification (for immediate verification)
+router.post('/test', restrictTo('student', 'admin', 'superadmin', 'manager'), notificationController.sendTestNotification);
+
 export default router;
+

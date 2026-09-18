@@ -7,26 +7,19 @@ export function registerServiceWorker(onUpdate?: (registration: ServiceWorkerReg
     return;
   }
 
-  // In development, unregister any existing service worker to prevent intercepting Vite HMR & WebSockets
-  if (import.meta.env.DEV) {
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      for (const registration of registrations) {
-        registration.unregister().catch(() => {});
-      }
-    }).catch(() => {});
-    return;
-  }
-
-  // Register service worker in production after window load
-  window.addEventListener('load', async () => {
+  const register = async () => {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',
       });
 
+      console.log('[PWA] Service Worker registered successfully with scope:', registration.scope);
+
       // Check for updates periodically (e.g. every 1 hour)
       setInterval(() => {
-        registration.update().catch(() => {});
+        registration.update().catch((err) => {
+          console.error('[PWA] Periodic update check failed:', err);
+        });
       }, 60 * 60 * 1000);
 
       registration.addEventListener('updatefound', () => {
@@ -45,9 +38,17 @@ export function registerServiceWorker(onUpdate?: (registration: ServiceWorkerReg
         });
       });
     } catch (error) {
-      console.warn('[PWA] Service Worker registration failed:', error);
+      console.error('[PWA] Service Worker registration failed:', error);
     }
-  });
+  };
+
+  // If window already loaded, register immediately; otherwise wait for load event
+  if (document.readyState === 'complete') {
+    register();
+  } else {
+    window.addEventListener('load', register);
+  }
+
 
   // Handle controller reload loop prevention
   let refreshing = false;

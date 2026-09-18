@@ -341,7 +341,8 @@ export default function NotificationBell() {
 
       {/* ── 5-Second Floating Request Preview Card (Pops below the Bell) ── */}
       {previewNotification && !isOpen && (
-        <div className="absolute right-0 top-10 z-50 w-80 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 top-10 z-50 w-[min(20rem,calc(100vw-1.5rem))] animate-in fade-in slide-in-from-top-2 duration-200">
+
           <div className="p-3.5 rounded-2xl bg-card border border-emerald-500/30 shadow-2xl backdrop-blur-md space-y-2.5 ring-1 ring-black/5 dark:ring-white/10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
@@ -416,7 +417,8 @@ export default function NotificationBell() {
 
       {/* ── Main Notifications Dropdown Menu ── */}
       {isOpen && (
-        <div className="absolute right-0 top-10 z-50 w-88 sm:w-96 rounded-2xl bg-card border border-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 top-10 z-50 w-[min(24rem,calc(100vw-1.5rem))] sm:w-96 rounded-2xl bg-card border border-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+
           {/* Header */}
           <div className="p-3.5 px-4 bg-muted/40 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
