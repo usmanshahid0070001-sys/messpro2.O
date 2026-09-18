@@ -1,12 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import apiClient from '@/api/client';
 import { toast } from 'sonner';
 
-
-// Make sure to replace this with the generated public VAPID key
-// Ideally this should come from import.meta.env.VITE_VAPID_PUBLIC_KEY
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
-
 
 // Helper function to convert base64 URL to Uint8Array
 const urlBase64ToUint8Array = (base64String: string) => {
@@ -23,14 +19,38 @@ const urlBase64ToUint8Array = (base64String: string) => {
 export const usePushNotifications = () => {
   const [isSupported, setIsSupported] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribing, setIsSubscribing] = useState(false);
 
-  useEffect(() => {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      setIsSupported(true);
-      setPermission(Notification.permission);
+  const checkSubscription = useCallback(async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setIsSupported(false);
+      return false;
+    }
+
+    setIsSupported(true);
+    setPermission(Notification.permission);
+
+    try {
+      const reg = await navigator.serviceWorker.getRegistration('/sw.js');
+      if (reg) {
+        const sub = await reg.pushManager.getSubscription();
+        const active = Boolean(sub);
+        setIsSubscribed(active);
+        return active;
+      }
+      setIsSubscribed(false);
+      return false;
+    } catch (err) {
+      console.error('[PWA] Error checking push subscription:', err);
+      setIsSubscribed(false);
+      return false;
     }
   }, []);
+
+  useEffect(() => {
+    checkSubscription();
+  }, [checkSubscription]);
 
   const subscribeToNotifications = async () => {
     if (!isSupported) {
@@ -65,16 +85,16 @@ export const usePushNotifications = () => {
         throw new Error('Service Worker registration failed');
       }
 
-
       // 3. Subscribe to Push Manager
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
-      // 4. Send Subscription to Backend via configured apiClient
+      // 4. Send Subscription to Backend
       await apiClient.post('/notifications/subscribe', { subscription });
 
+      setIsSubscribed(true);
       toast.success('Successfully subscribed to notifications!');
     } catch (error: any) {
       console.error('Error subscribing to notifications:', error);
@@ -83,6 +103,34 @@ export const usePushNotifications = () => {
       } else {
         toast.error('Failed to subscribe to notifications.');
       }
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
+  const unsubscribeFromNotifications = async () => {
+    setIsSubscribing(true);
+
+    try {
+      const reg = await navigator.serviceWorker.getRegistration('/sw.js');
+      if (reg) {
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          const endpoint = sub.endpoint;
+          await sub.unsubscribe();
+          try {
+            await apiClient.post('/notifications/unsubscribe', { endpoint });
+          } catch (apiErr) {
+            console.warn('[PWA] Backend unsubscribe notification failed:', apiErr);
+          }
+        }
+      }
+
+      setIsSubscribed(false);
+      toast.success('Push notifications disabled.');
+    } catch (error: any) {
+      console.error('Error unsubscribing from notifications:', error);
+      toast.error('Failed to disable notifications.');
     } finally {
       setIsSubscribing(false);
     }
@@ -100,9 +148,11 @@ export const usePushNotifications = () => {
   return {
     isSupported,
     permission,
+    isSubscribed,
     isSubscribing,
     subscribeToNotifications,
+    unsubscribeFromNotifications,
     sendTestNotification,
+    checkSubscription,
   };
 };
-

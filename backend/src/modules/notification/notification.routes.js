@@ -9,16 +9,30 @@ router.use(protect);
 
 // Save / update push subscription for current user
 router.post(
-    '/subscribe',
-    restrictTo('student', 'admin', 'superadmin', 'manager'),
-    notificationController.subscribeToNotifications
+  '/subscribe',
+  restrictTo('student', 'admin', 'superadmin', 'manager'),
+  notificationController.subscribeToNotifications
+);
+
+// Remove push subscription for current user
+router.post(
+  '/unsubscribe',
+  restrictTo('student', 'admin', 'superadmin', 'manager'),
+  notificationController.unsubscribeFromNotifications
 );
 
 // Test push notification endpoint (for immediate verification)
 router.post(
-    '/test',
-    restrictTo('student', 'admin', 'superadmin', 'manager'),
-    notificationController.sendTestNotification
+  '/test',
+  restrictTo('student', 'admin', 'superadmin', 'manager'),
+  notificationController.sendTestNotification
+);
+
+// Broadcast notification to students (admin and superadmin only)
+router.post(
+  '/broadcast',
+  restrictTo('admin', 'superadmin'),
+  notificationController.broadcastNotification
 );
 
 export default router;

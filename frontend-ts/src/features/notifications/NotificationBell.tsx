@@ -9,11 +9,15 @@ import {
   ShieldCheck, 
   Trash2, 
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Send,
+  Loader2
 } from 'lucide-react';
 import type { RootState } from '@/store';
 import { socketClient } from '@/lib/socket';
 import { useRespondGuestPermission } from '@/hooks/mutations/useAttendanceMutations';
+import apiClient from '@/api/client';
+import { toast } from 'sonner';
 
 export interface QRNotificationItem {
   requestId: string;
@@ -86,10 +90,38 @@ export default function NotificationBell() {
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
   const [respondingId, setRespondingId] = useState<string | null>(null);
 
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastBody, setBroadcastBody] = useState('');
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const previewTimerRef = useRef<any>(null);
 
   const respondMutation = useRespondGuestPermission();
+
+  const handleBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastTitle.trim() || !broadcastBody.trim()) {
+      toast.error('Please enter both a title and message body.');
+      return;
+    }
+
+    setIsBroadcasting(true);
+    try {
+      const res = await apiClient.post('/notifications/broadcast', {
+        title: broadcastTitle.trim(),
+        body: broadcastBody.trim(),
+      });
+      toast.success(res.data?.message || 'Notification broadcasted to students!');
+      setBroadcastTitle('');
+      setBroadcastBody('');
+    } catch (err: any) {
+      console.error('Broadcast notification error:', err);
+      toast.error(err.response?.data?.message || 'Failed to send broadcast notification.');
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
 
   // Check if current user is authorized to manage QR dining requests
   const canReceiveRequests = useMemo(() => {
@@ -417,7 +449,76 @@ export default function NotificationBell() {
 
       {/* ── Main Notifications Dropdown Menu ── */}
       {isOpen && (
-        <div className="absolute right-0 top-10 z-50 w-[min(24rem,calc(100vw-1.5rem))] sm:w-96 rounded-2xl bg-card border border-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 top-10 z-50 w-[min(26rem,calc(100vw-1.5rem))] sm:w-96 rounded-2xl bg-card border border-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] flex flex-col">
+
+          {/* Broadcast to Students Section (Admin Only) */}
+          {(user?.role === 'admin' || user?.role === 'superadmin') && (
+            <div className="p-3.5 px-4 bg-muted/20 border-b border-border space-y-3 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                    <Send className="w-3.5 h-3.5" />
+                  </div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    Broadcast Notification
+                  </h4>
+                </div>
+                <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                  Admin
+                </span>
+              </div>
+
+              <form onSubmit={handleBroadcast} className="space-y-2.5">
+                <div>
+                  <label htmlFor="broadcast-title" className="block text-[11px] font-medium text-muted-foreground mb-1">
+                    Notification Title
+                  </label>
+                  <input
+                    id="broadcast-title"
+                    type="text"
+                    value={broadcastTitle}
+                    onChange={(e) => setBroadcastTitle(e.target.value)}
+                    placeholder="e.g., Dinner Schedule Update"
+                    disabled={isBroadcasting}
+                    className="w-full px-3 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-hidden focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition-colors disabled:opacity-50"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="broadcast-body" className="block text-[11px] font-medium text-muted-foreground mb-1">
+                    Message Body
+                  </label>
+                  <textarea
+                    id="broadcast-body"
+                    rows={2}
+                    value={broadcastBody}
+                    onChange={(e) => setBroadcastBody(e.target.value)}
+                    placeholder="e.g., Dinner service will start at 8:00 PM tonight."
+                    disabled={isBroadcasting}
+                    className="w-full px-3 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-hidden focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition-colors resize-none disabled:opacity-50"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isBroadcasting || !broadcastTitle.trim() || !broadcastBody.trim()}
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {isBroadcasting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Broadcasting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Broadcast to Students</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
 
           {/* Header */}
           <div className="p-3.5 px-4 bg-muted/40 border-b border-border flex items-center justify-between">
