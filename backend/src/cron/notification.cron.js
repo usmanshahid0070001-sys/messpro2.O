@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import cron from 'node-cron';
 import webpush from 'web-push';
 import MealSchedule from '../modules/meal/meal.model.js';

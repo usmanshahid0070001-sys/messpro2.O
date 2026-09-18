@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import webpush from 'web-push';
 import User from '../auth/auth.model.js';
 

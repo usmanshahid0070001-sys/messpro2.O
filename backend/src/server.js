@@ -1,5 +1,5 @@
+import 'dotenv/config'; // MUST be the first import so process.env is populated before any route/cron modules load
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -27,9 +27,7 @@ import attendanceRoutes from './modules/mealRecord/mealRecord.routes.js';
 import billRoutes from './modules/billing/bill.routes.js';
 import complaintRoutes from './modules/complaint/complaint.routes.js';
 import notificationRoutes from './modules/notification/notification.routes.js';
-import './cron/notification.cron.js';
-
-dotenv.config(); // this will load the environment variables first 
+import './cron/notification.cron.js'; 
 
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET is required in production.');
