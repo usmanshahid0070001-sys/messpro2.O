@@ -8,12 +8,12 @@ export default function PushNotificationPrompt() {
   const { user } = useSelector((state: RootState) => state.auth);
   const { isSupported, permission, isSubscribing, subscribeToNotifications, sendTestNotification } = usePushNotifications();
 
-  // Only show if user is authenticated and browser supports push notifications
-  if (!user || !isSupported) {
+  // Only hide if the user is not logged in
+  if (!user) {
     return null;
   }
 
-  // If already granted, provide a one-click test button so users can verify it works
+  // Permanently visible: If already granted, provide a 1-click test button
   if (permission === 'granted') {
     return (
       <button
@@ -28,7 +28,7 @@ export default function PushNotificationPrompt() {
     );
   }
 
-  // Not yet granted: prompt user to enable alerts
+  // Permanently visible in both development and production
   return (
     <button
       type="button"
@@ -42,4 +42,3 @@ export default function PushNotificationPrompt() {
     </button>
   );
 }
-
