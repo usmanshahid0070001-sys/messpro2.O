@@ -1364,18 +1364,28 @@ function StudentDashboard({
           </div>
 
           {/* Action Area */}
-          {hasQrFeature && (
-            <div className="flex items-center gap-2 self-start md:self-auto shrink-0 mt-2 md:mt-0">
+          <div className="flex flex-col gap-3 self-start md:self-auto shrink-0 mt-2 md:mt-0 w-full md:w-auto md:min-w-[200px]">
+            {hasQrFeature && (
               <Button
                 size="lg"
                 onClick={() => navigate('/app/meals/qr')}
-                className="gap-2.5 shadow-lg font-bold bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white rounded-xl cursor-pointer hover:scale-105 transition-all border-none"
+                className="w-full justify-start px-5 gap-3 shadow-lg font-bold bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white rounded-xl cursor-pointer hover:scale-105 transition-all border-none"
               >
-                <QrCode className="h-5 w-5" />
-                Mark Attendance
+                <QrCode className="h-5 w-5 shrink-0" />
+                <span>Mark Attendance</span>
               </Button>
-            </div>
-          )}
+            )}
+            {hasMealFeature && (
+              <Button
+                size="lg"
+                onClick={() => navigate('/app/meals/schedule')}
+                className="w-full justify-start px-5 gap-3 shadow-lg font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl cursor-pointer hover:scale-105 transition-all border-none"
+              >
+                <Utensils className="h-5 w-5 shrink-0" />
+                <span>Mark Selection</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

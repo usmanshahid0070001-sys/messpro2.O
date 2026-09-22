@@ -419,6 +419,107 @@ export default function QRAttendancePage() {
   const currentMealName = liveData?.currentMeal || 'Active Meal';
   const availableMealTypes = liveData?.mealTypes || [];
 
+  // ── Meal-by-Meal Statistics for Session Performance ──────────────────────
+  const mealPerformanceList = useMemo(() => {
+    if (!liveData?.data) return [];
+
+    // Use schedule meal types if available, else fallback to keys of data
+    const types =
+      liveData.mealTypes && liveData.mealTypes.length > 0
+        ? liveData.mealTypes
+        : Object.keys(liveData.data);
+
+    return types.map((mealName) => {
+      const mealData = liveData.data[mealName] || {
+        summary: { totalSelections: 0, totalAttendance: 0 },
+        data: [],
+      };
+      const students = mealData.data || [];
+
+      // 1. Total Pre-Reserved Selections for this meal
+      const preReservedCount =
+        mealData.summary?.totalSelections ??
+        students.reduce(
+          (acc, s) => acc + (s.selectionCount || (s.isSelected ? 1 : 0)),
+          0
+        );
+
+      // 2. Count of attendance marked for pre-reserved meal
+      // (Resident students who pre-reserved and have attended)
+      const preReservedAttendedStudents = students.filter(
+        (s) =>
+          (s.hasAttended || s.attendanceCount > 0) &&
+          (s.isSelected || s.selectionCount > 0) &&
+          !s.isGuest
+      );
+      const preReservedAttendanceCount = preReservedAttendedStudents.reduce(
+        (acc, s) => acc + (s.attendanceCount || 1),
+        0
+      );
+
+      // 3. Count of students that walked in or from outer hostel
+      // Resident walk-ins (no pre-reservation) who attended
+      const walkInStudents = students.filter(
+        (s) =>
+          (s.hasAttended || s.attendanceCount > 0) &&
+          !s.isGuest &&
+          !s.isSelected &&
+          (!s.selectionCount || s.selectionCount === 0)
+      );
+      const walkInCount = walkInStudents.reduce(
+        (acc, s) => acc + (s.attendanceCount || 1),
+        0
+      );
+
+      // Outer hostel guests who attended
+      const guestStudents = students.filter(
+        (s) => (s.hasAttended || s.attendanceCount > 0) && s.isGuest
+      );
+      const guestCount = guestStudents.reduce(
+        (acc, s) => acc + (s.attendanceCount || 1),
+        0
+      );
+
+      const walkInOrGuestCount = walkInCount + guestCount;
+
+      // 4. Total Attendance Marked for this Meal
+      const totalAttendance =
+        mealData.summary?.totalAttendance ??
+        (preReservedAttendanceCount + walkInOrGuestCount);
+
+      // Percentage of pre-reserved attendees claimed
+      const claimRate =
+        preReservedCount > 0
+          ? Math.round((preReservedAttendanceCount / preReservedCount) * 100)
+          : 0;
+
+      // Overall turnout percentage
+      const turnoutPercent =
+        preReservedCount > 0
+          ? Math.round((totalAttendance / preReservedCount) * 100)
+          : totalAttendance > 0
+          ? 100
+          : 0;
+
+      const isCurrent =
+        mealName.toLowerCase() === currentMealName?.toLowerCase();
+
+      return {
+        mealName,
+        isCurrent,
+        preReservedCount,
+        preReservedAttendanceCount,
+        walkInCount,
+        guestCount,
+        walkInOrGuestCount,
+        totalAttendance,
+        claimRate,
+        turnoutPercent,
+        totalRecords: students.length,
+      };
+    });
+  }, [liveData, currentMealName]);
+
   const activeMealData = useMemo(() => {
     if (!liveData?.data) return { summary: { totalSelections: 0, totalAttendance: 0 }, data: [] };
     if (selectedMealFilter === 'all') {
@@ -616,9 +717,9 @@ export default function QRAttendancePage() {
 
       {/* ── TAB 1: COUNTER DISPLAY (ROLLING QR FORTRESS) ────────────────────── */}
       {activeTab === 'counter' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          {/* Large QR Display Card */}
-          <div className="lg:col-span-7 bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-md text-center space-y-5 relative overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Large QR Display Card (Left Column) */}
+          <div className="lg:col-span-5 xl:col-span-5 bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-md text-center space-y-5 relative overflow-hidden lg:sticky lg:top-6">
             <div className="absolute -top-12 -right-12 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="flex items-center justify-between border-b border-border/70 pb-4">
@@ -675,64 +776,186 @@ export default function QRAttendancePage() {
             )}
           </div>
 
-          {/* Right Column: Live Turnout Snapshot */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="p-6 rounded-3xl bg-card border border-border/80 shadow-xs space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Session Performance
-                </span>
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  Live Counter
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-4 rounded-2xl bg-purple-500/5 border border-purple-500/20">
-                  <span className="text-[11px] font-semibold text-muted-foreground block">
-                    Pre-Reserved
-                  </span>
-                  <div className="text-2xl font-bold text-foreground font-mono mt-1">
-                    {activeMealData.summary.totalSelections}
+          {/* Right Column: Separated Session Performance by Meal */}
+          <div className="lg:col-span-7 xl:col-span-7 space-y-4">
+            <div className="p-6 rounded-3xl bg-card border border-border/80 shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-border/70 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <Activity className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground leading-tight">
+                      Session Performance
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      Real-time turnout separated by each meal session
+                    </p>
                   </div>
                 </div>
-
-                <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20">
-                  <span className="text-[11px] font-semibold text-muted-foreground block">
-                    Meals Claimed
-                  </span>
-                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-1">
-                    {activeMealData.summary.totalAttendance}
-                  </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Live Counter</span>
                 </div>
               </div>
 
-              {/* Progress bar */}
-              <div>
-                <div className="flex justify-between text-xs font-semibold mb-1.5">
-                  <span className="text-muted-foreground">Dining Hall Progress</span>
-                  <span className="text-foreground font-mono">
-                    {activeMealData.summary.totalSelections > 0
-                      ? `${Math.round(
-                          (activeMealData.summary.totalAttendance / activeMealData.summary.totalSelections) * 100
-                        )}%`
-                      : '0%'}
-                  </span>
+              {/* Meal Cards List */}
+              {mealPerformanceList.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground text-xs">
+                  No meal sessions active or scheduled for today.
                 </div>
-                <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        activeMealData.summary.totalSelections > 0
-                          ? (activeMealData.summary.totalAttendance / activeMealData.summary.totalSelections) * 100
-                          : 0
-                      )}%`,
-                    }}
-                  />
+              ) : (
+                <div className="space-y-4">
+                  {mealPerformanceList.map((meal) => (
+                    <div
+                      key={meal.mealName}
+                      className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                        meal.isCurrent
+                          ? 'bg-emerald-500/[0.04] border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/20'
+                          : 'bg-muted/20 border-border/70 hover:border-border'
+                      } space-y-3.5`}
+                    >
+                      {/* Meal Header */}
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
+                              meal.isCurrent
+                                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            <Utensils className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-sm sm:text-base text-foreground">
+                                {meal.mealName}
+                              </h4>
+                              {meal.isCurrent && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  Active Now
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-muted-foreground">
+                              {meal.turnoutPercent}% Turnout ({meal.totalAttendance} of {meal.preReservedCount} reserved)
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-foreground font-mono">
+                            Total: {meal.totalAttendance} Served
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 4 Stats Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        {/* 1. Pre-Reserved */}
+                        <div className="p-3 sm:p-3.5 rounded-xl bg-purple-500/5 border border-purple-500/20 flex flex-col justify-between">
+                          <span className="text-[11px] font-medium text-muted-foreground block truncate">
+                            Pre-Reserved
+                          </span>
+                          <div className="text-xl sm:text-2xl font-bold text-foreground font-mono mt-1">
+                            {meal.preReservedCount}
+                          </div>
+                          <span className="text-[10px] text-muted-foreground/80 mt-0.5 block truncate">
+                            Total Booked
+                          </span>
+                        </div>
+
+                        {/* 2. Attendance Marked for Pre-Reserved Meal */}
+                        <div className="p-3 sm:p-3.5 rounded-xl bg-blue-500/5 border border-blue-500/20 flex flex-col justify-between">
+                          <span className="text-[11px] font-medium text-muted-foreground block truncate">
+                            Reserved Marked
+                          </span>
+                          <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 font-mono mt-1">
+                            {meal.preReservedAttendanceCount}
+                          </div>
+                          <span className="text-[10px] text-muted-foreground/80 mt-0.5 block truncate">
+                            {meal.claimRate}% of reserved
+                          </span>
+                        </div>
+
+                        {/* 3. Walk-in or Outer Hostel */}
+                        <div className="p-3 sm:p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 flex flex-col justify-between">
+                          <span className="text-[11px] font-medium text-muted-foreground block truncate">
+                            Walk-in / Guest
+                          </span>
+                          <div className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400 font-mono mt-1">
+                            {meal.walkInOrGuestCount}
+                          </div>
+                          <span
+                            className="text-[10px] text-muted-foreground/80 mt-0.5 block truncate"
+                            title={`${meal.walkInCount} resident walk-in, ${meal.guestCount} outer hostel guest`}
+                          >
+                            {meal.walkInCount} walk-in · {meal.guestCount} guest
+                          </span>
+                        </div>
+
+                        {/* 4. Total Claimed */}
+                        <div className="p-3 sm:p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex flex-col justify-between">
+                          <span className="text-[11px] font-medium text-muted-foreground block truncate">
+                            Total Claimed
+                          </span>
+                          <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-1">
+                            {meal.totalAttendance}
+                          </div>
+                          <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium mt-0.5 block truncate">
+                            All attendees
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold mb-1">
+                          <span className="text-muted-foreground">Claim Progress</span>
+                          <span className="text-foreground font-mono">
+                            {meal.preReservedCount > 0
+                              ? `${Math.min(100, Math.round((meal.preReservedAttendanceCount / meal.preReservedCount) * 100))}% reserved claimed`
+                              : `${meal.totalAttendance} served`}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden flex">
+                          <div
+                            className="h-full bg-emerald-500 transition-all duration-500"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                meal.preReservedCount > 0
+                                  ? (meal.preReservedAttendanceCount / meal.preReservedCount) * 100
+                                  : 0
+                              )}%`,
+                            }}
+                            title={`Reserved Marked: ${meal.preReservedAttendanceCount}`}
+                          />
+                          <div
+                            className="h-full bg-amber-500/80 transition-all duration-500"
+                            style={{
+                              width: `${Math.min(
+                                100 -
+                                  (meal.preReservedCount > 0
+                                    ? (meal.preReservedAttendanceCount / meal.preReservedCount) * 100
+                                    : 0),
+                                meal.preReservedCount > 0
+                                  ? (meal.walkInOrGuestCount / meal.preReservedCount) * 100
+                                  : meal.totalAttendance > 0
+                                  ? 100
+                                  : 0
+                              )}%`,
+                            }}
+                            title={`Walk-in / Guest: ${meal.walkInOrGuestCount}`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Quick action card */}
