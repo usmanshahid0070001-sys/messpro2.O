@@ -35,11 +35,16 @@ export interface QRNotificationItem {
   name: string;
   sourceHostelId?: string;
   targetHostelId?: string;
-  reason: 'guest' | 'unselected' | 'extra_meal' | string;
+  reason: 'guest' | 'unselected' | 'extra_meal' | 'attendance_success' | string;
   createdAt: number;
   expiresAt: number;
   status: 'pending' | 'accepted' | 'declined' | 'expired';
   isRead: boolean;
+  // Attendance-specific fields (populated for reason === 'attendance_success')
+  isGuest?: boolean;
+  selectionCount?: number;
+  attendanceCount?: number;
+  mealType?: string;
 }
 
 const STORAGE_KEY = 'messpro_qr_notifications';
@@ -288,8 +293,13 @@ export default function NotificationBell() {
         reason: 'attendance_success',
         createdAt: Date.now(),
         expiresAt: Date.now() + 30000,
-        status: 'accepted', // Automatically accepted since it's a success event
+        status: 'accepted',
         isRead: false,
+        // Attendance-specific: derive marked status
+        isGuest: payload.isGuest ?? false,
+        selectionCount: payload.selectionCount ?? 0,
+        attendanceCount: payload.count ?? 1,
+        mealType: payload.mealType,
       };
 
       updateNotifications((prev) => [newItem, ...prev]);
@@ -431,13 +441,21 @@ export default function NotificationBell() {
               <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
                 <span className="font-mono">{previewNotification.rollNumber}</span>
                 <span>•</span>
-                <span className={`capitalize font-medium ${previewNotification.reason === 'attendance_success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                  {previewNotification.reason === 'guest'
+                <span className={`capitalize font-medium ${
+                  previewNotification.reason === 'attendance_success'
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-amber-600 dark:text-amber-400'
+                }`}>
+                  {previewNotification.reason === 'attendance_success'
+                    ? previewNotification.isGuest
+                      ? 'Guest Dining'
+                      : (previewNotification.selectionCount ?? 0) > 0
+                      ? 'Reserved ✔'
+                      : 'Walk-in'
+                    : previewNotification.reason === 'guest'
                     ? 'Guest Dining'
                     : previewNotification.reason === 'extra_meal'
                     ? 'Extra Portion'
-                    : previewNotification.reason === 'attendance_success'
-                    ? 'Attendance Marked'
                     : 'Walk-In'}
                 </span>
               </div>
@@ -684,12 +702,16 @@ export default function NotificationBell() {
                           <span className="font-mono">{item.rollNumber}</span>
                           <span>•</span>
                           <span className="capitalize font-medium text-foreground/80">
-                            {item.reason === 'guest'
+                            {item.reason === 'attendance_success'
+                              ? item.isGuest
+                                ? 'Guest Dining'
+                                : (item.selectionCount ?? 0) > 0
+                                ? 'Reserved Marked'
+                                : 'Walk-in'
+                              : item.reason === 'guest'
                               ? 'Cross-Hostel Guest'
                               : item.reason === 'extra_meal'
                               ? 'Extra Meal'
-                              : item.reason === 'attendance_success'
-                              ? 'Attendance Marked'
                               : 'Unreserved Walk-In'}
                           </span>
                         </div>

@@ -460,7 +460,8 @@ class MealRecordService {
       isGuest,
       mealType: mealData.mealType,
       date: mealData.date,
-      count: record.attendance.count
+      count: record.attendance.count,
+      selectionCount: record.selection?.count || 0
     });
 
     const recordPayload = {
@@ -610,31 +611,39 @@ class MealRecordService {
   }
 
   async getLiveQRAttendance(hostelId, targetDate) {
-    let currentMealData;
+    let currentMealData = { mealType: 'None' };
     let activeDate = targetDate;
 
     try {
       currentMealData = await this.calculateCurrentMeal(hostelId);
       if (!activeDate) activeDate = currentMealData.date;
-    } catch (error) {
-      if (error.statusCode === 400) {
-        currentMealData = { mealType: 'None' };
-        if (!activeDate) {
+    } catch (_error) {
+      currentMealData = { mealType: 'None' };
+      if (!activeDate) {
+        try {
           const hostel = await hostelService.getHostelById(hostelId);
           const timezone = getSafeTimezone(hostel?.location);
           activeDate = new Intl.DateTimeFormat('en-CA', {
             timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit'
           }).format(new Date());
+        } catch {
+          activeDate = new Date().toISOString().split('T')[0];
         }
-      } else {
-        throw error;
       }
     }
     
     const schedule = await mealService.getScheduleByHostel(hostelId);
-    const mealTypes = schedule ? schedule.mealNames : [];
+    let mealTypes = schedule?.mealNames && schedule.mealNames.length > 0
+      ? [...schedule.mealNames]
+      : ['Breakfast', 'Lunch', 'Dinner'];
 
     const attendances = await mealRecordRepository.findDailyRecords(hostelId, activeDate);
+
+    attendances.forEach(a => {
+      if (a.mealType && !mealTypes.includes(a.mealType)) {
+        mealTypes.push(a.mealType);
+      }
+    });
 
     // Resolve any records with missing populated studentId
     const missingRolls = attendances
@@ -691,17 +700,17 @@ class MealRecordService {
 
   async getDailyOverview(hostelId, targetDate) {
     const schedule = await mealService.getScheduleByHostel(hostelId);
-    const mealTypes = schedule ? schedule.mealNames : [];
-
-    if (!mealTypes.length) {
-      return {
-        date: targetDate,
-        mealTypes: [],
-        data: {}
-      };
-    }
+    let mealTypes = schedule?.mealNames && schedule.mealNames.length > 0
+      ? [...schedule.mealNames]
+      : ['Breakfast', 'Lunch', 'Dinner'];
 
     const attendances = await mealRecordRepository.findDailyRecords(hostelId, targetDate);
+
+    attendances.forEach(a => {
+      if (a.mealType && !mealTypes.includes(a.mealType)) {
+        mealTypes.push(a.mealType);
+      }
+    });
 
     // Resolve any records with missing populated studentId
     const missingRolls = attendances
@@ -1075,7 +1084,8 @@ class MealRecordService {
         isGuest: false,
         mealType: mealData.mealType,
         date: mealData.date,
-        count: record.attendance.count
+        count: record.attendance.count,
+        selectionCount: record.selection?.count || 0
       });
 
       return {

@@ -19,6 +19,7 @@ import {
   Loader2,
   Info,
   Printer,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -40,6 +41,8 @@ import { QRReaderEngine } from './utils/qrReaderEngine';
 import { playScanSuccessSound, playScanNoticeSound, triggerHaptic } from './utils/qrFeedback';
 import { socketClient } from '@/lib/socket';
 
+type ActiveTab = 'counter' | 'scanner' | 'live' | 'overview';
+
 export default function QRAttendancePage() {
   const queryClient = useQueryClient();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -49,7 +52,7 @@ export default function QRAttendancePage() {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   // ── Tab State ────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<'counter' | 'scanner' | 'live' | 'overview'>('counter');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('counter');
 
   // ── Date for Overview & Matrix ───────────────────────────────────────────
   const [selectedDate, setSelectedDate] = useState<string>(() => {
@@ -93,6 +96,7 @@ export default function QRAttendancePage() {
 
   const {
     data: liveData,
+    isLoading: isLiveLoading,
     refetch: refetchLive,
   } = useGetLiveQRAttendance(selectedDate);
 
@@ -126,32 +130,40 @@ export default function QRAttendancePage() {
 
         if (existingStudentIdx >= 0) {
           const current = mealData.data[existingStudentIdx];
-          const newAttCount = payload.count || (current.attendanceCount + 1);
-          
-          if (!current.hasAttended && newAttCount > 0) {
-             mealData.summary.totalAttendance += 1;
+          const oldAttCount = current.attendanceCount || (current.hasAttended ? 1 : 0) || 0;
+          const newAttCount = payload.count !== undefined ? payload.count : (oldAttCount + 1);
+          const attDiff = newAttCount - oldAttCount;
+
+          if (mealData.summary) {
+            mealData.summary.totalAttendance = Math.max(0, (mealData.summary.totalAttendance || 0) + attDiff);
           }
           
           mealData.data[existingStudentIdx] = {
             ...current,
             attendanceCount: newAttCount,
-            hasAttended: newAttCount > 0
+            hasAttended: newAttCount > 0,
+            selectionCount: payload.selectionCount !== undefined ? payload.selectionCount : current.selectionCount,
+            isSelected: (payload.selectionCount !== undefined ? payload.selectionCount : current.selectionCount) > 0,
           };
         } else {
-          mealData.summary.totalAttendance += 1;
+          const newAttCount = payload.count !== undefined ? payload.count : 1;
           const selCount = payload.selectionCount || 0;
-          if (selCount > 0) {
-            mealData.summary.totalSelections += selCount;
+          
+          if (mealData.summary) {
+            mealData.summary.totalAttendance = (mealData.summary.totalAttendance || 0) + newAttCount;
+            if (selCount > 0) {
+              mealData.summary.totalSelections = (mealData.summary.totalSelections || 0) + selCount;
+            }
           }
           
           // Add to beginning of the list for instant visibility
           mealData.data.unshift({
-            name: payload.name || 'Guest / Walk-in',
+            name: payload.name || (payload.isGuest ? 'Guest Entry' : 'Walk-in Student'),
             rollNumber: payload.rollNumber,
             isGuest: payload.isGuest || false,
-            attendanceCount: payload.count || 1,
+            attendanceCount: newAttCount,
             selectionCount: selCount,
-            hasAttended: true,
+            hasAttended: newAttCount > 0,
             isSelected: selCount > 0
           });
         }
@@ -416,76 +428,86 @@ export default function QRAttendancePage() {
   };
 
   // ── Live Stream Computations ─────────────────────────────────────────────
-  const currentMealName = liveData?.currentMeal || 'Active Meal';
-  const availableMealTypes = liveData?.mealTypes || [];
+  const currentMealName =
+    liveData?.currentMeal && liveData.currentMeal !== 'None'
+      ? liveData.currentMeal
+      : 'Active Meal';
+  const availableMealTypes =
+    liveData?.mealTypes && liveData.mealTypes.length > 0
+      ? liveData.mealTypes
+      : dailyOverview?.mealTypes && dailyOverview.mealTypes.length > 0
+      ? dailyOverview.mealTypes
+      : ['Breakfast', 'Lunch', 'Dinner'];
 
   // ── Meal-by-Meal Statistics for Session Performance ──────────────────────
   const mealPerformanceList = useMemo(() => {
-    if (!liveData?.data) return [];
-
-    // Use schedule meal types if available, else fallback to keys of data
-    const types =
-      liveData.mealTypes && liveData.mealTypes.length > 0
-        ? liveData.mealTypes
-        : Object.keys(liveData.data);
+    // 1. Resolve meal session names: from liveData, dailyOverview, or standard defaults
+    let types: string[] = [];
+    if (liveData?.mealTypes && liveData.mealTypes.length > 0) {
+      types = liveData.mealTypes;
+    } else if (dailyOverview?.mealTypes && dailyOverview.mealTypes.length > 0) {
+      types = dailyOverview.mealTypes;
+    } else if (liveData?.data && Object.keys(liveData.data).length > 0) {
+      types = Object.keys(liveData.data);
+    } else if (dailyOverview?.data && Object.keys(dailyOverview.data).length > 0) {
+      types = Object.keys(dailyOverview.data);
+    } else {
+      types = ['Breakfast', 'Lunch', 'Dinner'];
+    }
 
     return types.map((mealName) => {
-      const mealData = liveData.data[mealName] || {
-        summary: { totalSelections: 0, totalAttendance: 0 },
-        data: [],
-      };
+      // Look up mealData from liveData first, then fallback to dailyOverview
+      const mealData =
+        liveData?.data?.[mealName] ||
+        dailyOverview?.data?.[mealName] || {
+          summary: { totalSelections: 0, totalAttendance: 0 },
+          data: [],
+        };
       const students = mealData.data || [];
 
-      // 1. Total Pre-Reserved Selections for this meal
-      const preReservedCount =
-        mealData.summary?.totalSelections ??
-        students.reduce(
-          (acc, s) => acc + (s.selectionCount || (s.isSelected ? 1 : 0)),
-          0
-        );
+      // Calculate accurate counts per student
+      let preReservedCount = 0;
+      let preReservedAttendanceCount = 0;
+      let walkInCount = 0;
+      let guestCount = 0;
+      let totalAttendance = 0;
 
-      // 2. Count of attendance marked for pre-reserved meal
-      // (Resident students who pre-reserved and have attended)
-      const preReservedAttendedStudents = students.filter(
-        (s) =>
-          (s.hasAttended || s.attendanceCount > 0) &&
-          (s.isSelected || s.selectionCount > 0) &&
-          !s.isGuest
-      );
-      const preReservedAttendanceCount = preReservedAttendedStudents.reduce(
-        (acc, s) => acc + (s.attendanceCount || 1),
-        0
-      );
+      students.forEach((s) => {
+        const sel = s.isGuest ? 0 : (s.selectionCount || (s.isSelected ? 1 : 0) || 0);
+        const att = s.attendanceCount || (s.hasAttended ? 1 : 0) || 0;
 
-      // 3. Count of students that walked in or from outer hostel
-      // Resident walk-ins (no pre-reservation) who attended
-      const walkInStudents = students.filter(
-        (s) =>
-          (s.hasAttended || s.attendanceCount > 0) &&
-          !s.isGuest &&
-          !s.isSelected &&
-          (!s.selectionCount || s.selectionCount === 0)
-      );
-      const walkInCount = walkInStudents.reduce(
-        (acc, s) => acc + (s.attendanceCount || 1),
-        0
-      );
+        preReservedCount += sel;
+        totalAttendance += att;
 
-      // Outer hostel guests who attended
-      const guestStudents = students.filter(
-        (s) => (s.hasAttended || s.attendanceCount > 0) && s.isGuest
-      );
-      const guestCount = guestStudents.reduce(
-        (acc, s) => acc + (s.attendanceCount || 1),
-        0
-      );
+        if (s.isGuest) {
+          // All outer-hostel guest attendance belongs to guest count
+          guestCount += att;
+        } else {
+          // Resident student
+          if (sel > 0) {
+            // Student pre-reserved: attendance up to reservation is reserved marked
+            const reservedMarked = Math.min(att, sel);
+            // Any attendance beyond reservation is extra portion (treated as guest/walk-in)
+            const extraPortions = Math.max(0, att - sel);
+
+            preReservedAttendanceCount += reservedMarked;
+            guestCount += extraPortions;
+          } else {
+            // Student did not pre-reserve: walk-in resident
+            walkInCount += att;
+          }
+        }
+      });
+
+      // Fallback to mealData.summary if students list is empty or summary has more recorded reservations
+      if (students.length === 0 && mealData.summary) {
+        preReservedCount = mealData.summary.totalSelections || 0;
+        totalAttendance = mealData.summary.totalAttendance || 0;
+      } else if (mealData.summary?.totalSelections && mealData.summary.totalSelections > preReservedCount) {
+        preReservedCount = mealData.summary.totalSelections;
+      }
 
       const walkInOrGuestCount = walkInCount + guestCount;
-
-      // 4. Total Attendance Marked for this Meal
-      const totalAttendance =
-        mealData.summary?.totalAttendance ??
-        (preReservedAttendanceCount + walkInOrGuestCount);
 
       // Percentage of pre-reserved attendees claimed
       const claimRate =
@@ -502,6 +524,8 @@ export default function QRAttendancePage() {
           : 0;
 
       const isCurrent =
+        currentMealName !== 'None' &&
+        currentMealName !== 'Active Meal' &&
         mealName.toLowerCase() === currentMealName?.toLowerCase();
 
       return {
@@ -518,7 +542,7 @@ export default function QRAttendancePage() {
         totalRecords: students.length,
       };
     });
-  }, [liveData, currentMealName]);
+  }, [liveData, dailyOverview, currentMealName]);
 
   const activeMealData = useMemo(() => {
     if (!liveData?.data) return { summary: { totalSelections: 0, totalAttendance: 0 }, data: [] };
@@ -589,185 +613,145 @@ export default function QRAttendancePage() {
     }
   };
 
+  // ── Tab config ───────────────────────────────────────────────────────────
+  const TABS: { id: ActiveTab; icon: React.ReactNode; label: string; short: string }[] = [
+    { id: 'counter',  icon: <QrCode className="w-4 h-4" />,   label: 'Counter QR',  short: 'QR'    },
+    { id: 'scanner',  icon: <Scan className="w-4 h-4" />,     label: 'Scanner',     short: 'Scan'  },
+    { id: 'live',     icon: <Activity className="w-4 h-4" />, label: 'Live Feed',   short: 'Live'  },
+    { id: 'overview', icon: <Calendar className="w-4 h-4" />, label: 'Overview',    short: 'Stats' },
+  ];
+
   return (
-    <div className="space-y-5 pb-16 w-full max-w-full min-w-0 animate-in fade-in duration-300">
+    <div className="space-y-4 pb-20 w-full max-w-full min-w-0 animate-in fade-in duration-300">
       {/* ── Page Header ──────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-        <div className="flex items-center gap-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <QrCode className="w-5 h-5" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold tracking-tight text-foreground">
-                QR Attendance Management
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground leading-tight">
+                QR Attendance
               </h1>
-              <span className="text-xs font-mono bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-mono bg-muted text-muted-foreground px-2 py-0.5 rounded-full hidden sm:inline-flex">
                 {currentHostel?.name || 'Main Hostel'}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Display dynamic dining hall counter QR codes, scan resident badges, and monitor live turnout.
+            <p className="text-[11px] text-muted-foreground mt-0.5 hidden sm:block">
+              Display QR codes, scan badges, and monitor live turnout.
             </p>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+        {/* Compact action tray */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => setIsPrintModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer"
-            title="Print Counter QR Code on Paper / Stand"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xs transition-all cursor-pointer"
+            title="Print Counter QR Code"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Print QR Code</span>
+            <span className="hidden sm:inline">Print QR</span>
           </button>
 
           <button
-            onClick={() => {
-              refetchQR();
-              refetchLive();
-              refetchOverview();
-              toast.success('Refreshed QR sessions and feeds');
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
-            title="Refresh active session data"
+            onClick={() => { refetchQR(); refetchLive(); refetchOverview(); toast.success('Refreshed'); }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
+            title="Refresh data"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isQRFetching ? 'animate-spin' : ''}`} />
-            <span>Sync</span>
+            <span className="hidden sm:inline">Sync</span>
           </button>
 
           <button
             onClick={toggleFullscreen}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
-            title="Toggle TV / Counter Fullscreen Display"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
+            title="Toggle Fullscreen"
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            <span>{isFullscreen ? 'Exit Fullscreen' : 'Counter Mode'}</span>
+            <span className="hidden lg:inline">{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
           </button>
         </div>
       </div>
 
-      {/* ── Navigation Tabs ─────────────────────────────────────────────────── */}
-      <div className="flex items-center p-1.5 bg-muted/60 border border-border/80 rounded-2xl shadow-xs overflow-x-auto">
-        <button
-          type="button"
-          onClick={() => {
-            stopCamera();
-            setActiveTab('counter');
-          }}
-          className={`flex-1 min-w-[140px] py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'counter'
-              ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <QrCode className="w-4 h-4" />
-          <span>Counter Screen (QR)</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('scanner');
-          }}
-          className={`flex-1 min-w-[140px] py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'scanner'
-              ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Scan className="w-4 h-4" />
-          <span>Staff Scanner</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            stopCamera();
-            setActiveTab('live');
-          }}
-          className={`flex-1 min-w-[140px] py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'live'
-              ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Activity className="w-4 h-4" />
-          <span>Live Stream Feed</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            stopCamera();
-            setActiveTab('overview');
-          }}
-          className={`flex-1 min-w-[140px] py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'overview'
-              ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          <span>Daily Overview Matrix</span>
-        </button>
+      {/* ── Navigation Tabs — 4-col equal grid, icon+short on mobile ─── */}
+      <div className="grid grid-cols-4 gap-1 p-1.5 bg-muted/60 border border-border/80 rounded-2xl shadow-xs">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => {
+              if (tab.id !== 'scanner') stopCamera();
+              setActiveTab(tab.id);
+            }}
+            className={`py-2.5 px-2 sm:px-4 text-[11px] sm:text-xs font-bold rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0 ${
+              activeTab === tab.id
+                ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {tab.icon}
+            <span className="truncate leading-tight">
+              <span className="sm:hidden">{tab.short}</span>
+              <span className="hidden sm:inline">{tab.label}</span>
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* ── TAB 1: COUNTER DISPLAY (ROLLING QR FORTRESS) ────────────────────── */}
       {activeTab === 'counter' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Large QR Display Card (Left Column) */}
-          <div className="lg:col-span-5 xl:col-span-5 bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-md text-center space-y-5 relative overflow-hidden lg:sticky lg:top-6">
+            <div className="lg:col-span-5 xl:col-span-4 bg-card border border-border p-4 sm:p-6 rounded-3xl shadow-md text-center space-y-4 relative overflow-hidden lg:sticky lg:top-6 min-w-0">
             <div className="absolute -top-12 -right-12 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="flex items-center justify-between border-b border-border/70 pb-4">
-              <div className="flex items-center gap-2 text-left">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-                <div>
-                  <h3 className="text-base font-bold text-foreground leading-tight">
-                    Dining Counter Live QR
+            <div className="flex items-center justify-between border-b border-border/70 pb-4 gap-2">
+              <div className="flex items-center gap-2 text-left min-w-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-foreground leading-tight truncate">
+                    Dining Counter QR
                   </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Students scan this code with their camera on `/app/meals/qr`
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    Students scan at `/app/meals/qr`
                   </p>
                 </div>
               </div>
 
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono shrink-0 whitespace-nowrap">
                 {currentMealName}
               </span>
             </div>
 
             {/* QR Code SVG */}
             {isQRLoading ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-3">
+              <div className="py-10 flex flex-col items-center justify-center gap-3">
                 <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
                 <span className="text-xs text-muted-foreground">Generating secure token...</span>
               </div>
             ) : counterQRPayload ? (
-              <div className="py-4 space-y-4">
-                <div className="p-6 sm:p-8 bg-white rounded-3xl inline-block shadow-xl border-4 border-emerald-500/30">
+              <div className="py-1 space-y-4 flex flex-col items-center">
+                {/* max-w uses min() so on mobile up to 80vw, capped at 260px on larger screens */}
+                <div className="p-3.5 sm:p-5 bg-white rounded-3xl shadow-lg border-4 border-emerald-500/30 flex items-center justify-center w-full max-w-[min(80vw,260px)] sm:max-w-[260px] aspect-square mx-auto">
                   <QRCodeSVG
                     value={counterQRPayload}
-                    size={280}
-                    className="w-56 h-56 sm:w-72 sm:h-72 mx-auto"
+                    size={240}
+                    className="w-full h-full object-contain"
                   />
                 </div>
 
-                {/* Print Placard / Stand Quick Action */}
-                <div className="flex items-center justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setIsPrintModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs hover:shadow-md cursor-pointer"
-                    title="Print high-contrast poster, counter placard, or stickers"
-                  >
-                    <Printer className="w-4 h-4" />
-                    <span>Print Placard / Paper Stand</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPrintModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all shadow-xs cursor-pointer w-full"
+                  title="Print poster or counter placard"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print Placard / Stand</span>
+                </button>
               </div>
             ) : (
               <div className="p-8 text-center text-rose-500 text-xs font-semibold">
@@ -777,30 +761,35 @@ export default function QRAttendancePage() {
           </div>
 
           {/* Right Column: Separated Session Performance by Meal */}
-          <div className="lg:col-span-7 xl:col-span-7 space-y-4">
-            <div className="p-6 rounded-3xl bg-card border border-border/80 shadow-xs space-y-5">
-              <div className="flex items-center justify-between border-b border-border/70 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <div className="lg:col-span-7 xl:col-span-8 space-y-4 min-w-0">
+            <div className="p-4 sm:p-6 rounded-3xl bg-card border border-border/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-border/70 pb-4 gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
                     <Activity className="w-4 h-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-sm font-bold text-foreground leading-tight">
                       Session Performance
                     </h3>
-                    <p className="text-[11px] text-muted-foreground">
-                      Real-time turnout separated by each meal session
+                    <p className="text-[11px] text-muted-foreground hidden sm:block">
+                      Real-time turnout by meal session
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold shrink-0">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Live Counter</span>
+                  <span>Live</span>
                 </div>
               </div>
 
               {/* Meal Cards List */}
-              {mealPerformanceList.length === 0 ? (
+              {isLiveLoading && isOverviewLoading ? (
+                <div className="space-y-4">
+                  <div className="h-44 rounded-2xl bg-muted/40 animate-pulse border border-border" />
+                  <div className="h-44 rounded-2xl bg-muted/40 animate-pulse border border-border" />
+                </div>
+              ) : mealPerformanceList.length === 0 ? (
                 <div className="py-8 text-center text-muted-foreground text-xs">
                   No meal sessions active or scheduled for today.
                 </div>
@@ -809,11 +798,11 @@ export default function QRAttendancePage() {
                   {mealPerformanceList.map((meal) => (
                     <div
                       key={meal.mealName}
-                      className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                      className={`p-3.5 sm:p-5 rounded-2xl border transition-all ${
                         meal.isCurrent
                           ? 'bg-emerald-500/[0.04] border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/20'
                           : 'bg-muted/20 border-border/70 hover:border-border'
-                      } space-y-3.5`}
+                      } space-y-3`}
                     >
                       {/* Meal Header */}
                       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -833,9 +822,9 @@ export default function QRAttendancePage() {
                                 {meal.mealName}
                               </h4>
                               {meal.isCurrent && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                  Active Now
+                                  Active
                                 </span>
                               )}
                             </div>
@@ -853,59 +842,45 @@ export default function QRAttendancePage() {
                       </div>
 
                       {/* 4 Stats Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                        {/* 1. Pre-Reserved */}
-                        <div className="p-3 sm:p-3.5 rounded-xl bg-purple-500/5 border border-purple-500/20 flex flex-col justify-between">
-                          <span className="text-[11px] font-medium text-muted-foreground block truncate">
-                            Pre-Reserved
-                          </span>
-                          <div className="text-xl sm:text-2xl font-bold text-foreground font-mono mt-1">
-                            {meal.preReservedCount}
-                          </div>
-                          <span className="text-[10px] text-muted-foreground/80 mt-0.5 block truncate">
-                            Total Booked
-                          </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {/* 1. Reserved */}
+                        <div className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/20 space-y-0.5">
+                          <span className="text-[10px] font-medium text-muted-foreground block">Reserved</span>
+                          <div className="text-xl font-bold text-foreground font-mono">{meal.preReservedCount}</div>
+                          <span className="text-[10px] text-muted-foreground/80 block">Pre-Booked</span>
                         </div>
 
-                        {/* 2. Attendance Marked for Pre-Reserved Meal */}
-                        <div className="p-3 sm:p-3.5 rounded-xl bg-blue-500/5 border border-blue-500/20 flex flex-col justify-between">
-                          <span className="text-[11px] font-medium text-muted-foreground block truncate">
-                            Reserved Marked
-                          </span>
-                          <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 font-mono mt-1">
+                        {/* 2. Reserved Marked */}
+                        <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/20 space-y-0.5">
+                          <span className="text-[10px] font-medium text-muted-foreground block">Rsv. Marked</span>
+                          <div className="text-xl font-bold text-blue-600 dark:text-blue-400 font-mono">
                             {meal.preReservedAttendanceCount}
                           </div>
-                          <span className="text-[10px] text-muted-foreground/80 mt-0.5 block truncate">
-                            {meal.claimRate}% of reserved
-                          </span>
+                          <span className="text-[10px] text-muted-foreground/80 block">{meal.claimRate}% claimed</span>
                         </div>
 
-                        {/* 3. Walk-in or Outer Hostel */}
-                        <div className="p-3 sm:p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 flex flex-col justify-between">
-                          <span className="text-[11px] font-medium text-muted-foreground block truncate">
-                            Walk-in / Guest
-                          </span>
-                          <div className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400 font-mono mt-1">
+                        {/* 3. Walk-in / Guest */}
+                        <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-0.5">
+                          <span className="text-[10px] font-medium text-muted-foreground block">Walk-in/Guest</span>
+                          <div className="text-xl font-bold text-amber-600 dark:text-amber-400 font-mono">
                             {meal.walkInOrGuestCount}
                           </div>
                           <span
-                            className="text-[10px] text-muted-foreground/80 mt-0.5 block truncate"
-                            title={`${meal.walkInCount} resident walk-in, ${meal.guestCount} outer hostel guest`}
+                            className="text-[10px] text-muted-foreground/80 block truncate"
+                            title={`${meal.walkInCount} walk-in, ${meal.guestCount} guest`}
                           >
-                            {meal.walkInCount} walk-in · {meal.guestCount} guest
+                            {meal.walkInCount}W · {meal.guestCount}G
                           </span>
                         </div>
 
-                        {/* 4. Total Claimed */}
-                        <div className="p-3 sm:p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex flex-col justify-between">
-                          <span className="text-[11px] font-medium text-muted-foreground block truncate">
-                            Total Claimed
-                          </span>
-                          <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-1">
+                        {/* 4. Total */}
+                        <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 space-y-0.5">
+                          <span className="text-[10px] font-medium text-muted-foreground block">Total Served</span>
+                          <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
                             {meal.totalAttendance}
                           </div>
-                          <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium mt-0.5 block truncate">
-                            All attendees
+                          <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium block">
+                            All portions
                           </span>
                         </div>
                       </div>
@@ -979,66 +954,71 @@ export default function QRAttendancePage() {
 
       {/* ── TAB 2: STAFF SCANNER TERMINAL ───────────────────────────────────── */}
       {activeTab === 'scanner' && (
-        <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-200">
+        <div className="max-w-xl mx-auto space-y-4 animate-in fade-in duration-200">
           {/* Guest Permission Prompt Modal / Dialog */}
           {guestPrompt ? (
-            <div className="p-6 bg-card border-2 border-amber-500/40 rounded-3xl shadow-xl text-center space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="p-5 sm:p-6 bg-card border-2 border-amber-500/40 rounded-3xl shadow-xl text-center space-y-4 animate-in zoom-in-95 duration-150">
               <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
                 <AlertCircle className="w-7 h-7" />
               </div>
 
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
                   Cross-Hostel Guest Detected
                 </span>
-                <h3 className="text-xl font-bold text-foreground mt-1">
-                  {guestPrompt.name} ({guestPrompt.rollNumber})
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  This student belongs to an external hostel. Do you wish to approve meal access as a guest?
+                <h3 className="text-lg sm:text-xl font-bold text-foreground mt-1">{guestPrompt.name}</h3>
+                <p className="text-xs text-muted-foreground font-mono mt-0.5">{guestPrompt.rollNumber}</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  This student belongs to an external hostel. Approve meal access as guest?
                 </p>
               </div>
 
-              <div className="flex items-center justify-center gap-3 pt-2">
+              {/* 2-col grid — large thumbable buttons */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => handleGuestDecision(false)}
                   disabled={respondPermissionMutation.isPending}
-                  className="px-5 py-2.5 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-colors cursor-pointer"
+                  className="py-3.5 text-sm font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                 >
+                  <X className="w-4 h-4" />
                   Decline
                 </button>
                 <button
                   type="button"
                   onClick={() => handleGuestDecision(true)}
                   disabled={respondPermissionMutation.isPending}
-                  className="px-6 py-2.5 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer active:scale-95 flex items-center gap-1.5"
+                  className="py-3.5 text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all shadow-xs cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>Approve & Mark Attendance</span>
+                  {respondPermissionMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
+                  Approve
                 </button>
               </div>
             </div>
           ) : (
-            <div className="bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-xs text-center space-y-6">
+            <div className="bg-card border border-border rounded-3xl shadow-xs overflow-hidden">
               {isScanning ? (
-                <div className="space-y-4">
+                <div className="p-4 sm:p-6 space-y-4">
                   {/* Camera Viewfinder */}
-                  <div className="relative w-full max-w-sm aspect-square mx-auto rounded-2xl overflow-hidden bg-black border-2 border-emerald-500/50 shadow-md flex items-center justify-center">
+                  <div className="relative w-full max-w-sm aspect-square mx-auto rounded-2xl overflow-hidden bg-black border-2 border-emerald-500/50 shadow-md">
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
 
-                    {/* Flash effect upon successful scan */}
+                    {/* Flash effect */}
                     {isFlashing && (
                       <div className="absolute inset-0 bg-emerald-400/40 backdrop-blur-xs transition-opacity duration-300 pointer-events-none z-10" />
                     )}
 
-                    {/* Framing corners */}
-                    <div className="absolute top-4 left-4 w-8 h-8 border-t-3 border-l-3 border-emerald-400 rounded-tl-lg pointer-events-none" />
-                    <div className="absolute top-4 right-4 w-8 h-8 border-t-3 border-r-3 border-emerald-400 rounded-tr-lg pointer-events-none" />
-                    <div className="absolute bottom-4 left-4 w-8 h-8 border-b-3 border-l-3 border-emerald-400 rounded-bl-lg pointer-events-none" />
-                    <div className="absolute bottom-4 right-4 w-8 h-8 border-b-3 border-r-3 border-emerald-400 rounded-br-lg pointer-events-none" />
+                    {/* Corner frames */}
+                    <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-emerald-400 rounded-tl-lg pointer-events-none" />
+                    <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-emerald-400 rounded-tr-lg pointer-events-none" />
+                    <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-emerald-400 rounded-bl-lg pointer-events-none" />
+                    <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-emerald-400 rounded-br-lg pointer-events-none" />
 
-                    <div className="absolute left-6 right-6 h-0.5 bg-emerald-400 shadow-[0_0_8px_#10b981] animate-pulse pointer-events-none" />
+                    <div className="absolute left-6 right-6 h-0.5 bg-emerald-400 shadow-[0_0_8px_#10b981] animate-pulse pointer-events-none top-1/2" />
 
                     {scanStudentMutation.isPending && (
                       <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-20">
@@ -1048,116 +1028,119 @@ export default function QRAttendancePage() {
                     )}
                   </div>
 
+                  {/* Full-width stop button for easy tapping */}
                   <button
                     type="button"
                     onClick={stopCamera}
-                    className="px-5 py-2 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-colors cursor-pointer"
+                    className="w-full py-3 text-sm font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-colors cursor-pointer"
                   >
                     Stop Camera
                   </button>
                 </div>
               ) : (
-                <div className="space-y-4 py-4">
+                <div className="p-6 sm:p-8 text-center space-y-5">
                   <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-xs">
                     <Camera className="w-8 h-8" />
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-bold text-foreground">Point Camera at Student Badge</h3>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                      Scan student phone QR codes directly or type their Roll Number / ID below for instant logging.
+                    <h3 className="text-base sm:text-lg font-bold text-foreground">Point Camera at Student Badge</h3>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                      Scan student QR codes or type their Roll Number below for instant logging.
                     </p>
                   </div>
 
                   {cameraError && (
-                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-700 dark:text-amber-300 max-w-md mx-auto flex items-center gap-2 text-left">
-                      <Info className="w-4 h-4 shrink-0" />
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-700 dark:text-amber-300 max-w-sm mx-auto flex items-start gap-2 text-left">
+                      <Info className="w-4 h-4 shrink-0 mt-0.5" />
                       <span>{cameraError}</span>
                     </div>
                   )}
 
+                  {/* Full-width big tap target */}
                   <button
                     type="button"
                     onClick={startCamera}
-                    className="inline-flex items-center gap-2 px-6 py-3 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs active:scale-95 cursor-pointer"
+                    className="inline-flex items-center justify-center gap-2 w-full max-w-xs mx-auto py-4 text-sm font-bold rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all shadow-xs cursor-pointer"
                   >
-                    <Scan className="w-4 h-4" />
+                    <Scan className="w-5 h-5" />
                     <span>Launch Staff Camera</span>
                   </button>
                 </div>
               )}
 
               {/* Manual Input Form */}
-              <div className="border-t border-border/70 pt-5">
-                <form onSubmit={handleManualRollSubmit} className="flex items-center gap-2 max-w-md mx-auto">
+              <div className="border-t border-border/70 px-4 sm:px-6 py-4">
+                <p className="text-[11px] font-semibold text-muted-foreground mb-2.5 uppercase tracking-wide">Manual Entry</p>
+                <form onSubmit={handleManualRollSubmit} className="flex items-center gap-2">
                   <input
                     type="text"
-                    placeholder="Enter Student Roll No. (e.g. CS-2024-001)"
+                    placeholder="Roll No. (e.g. CS-2024-001)"
                     value={manualRollInput}
                     onChange={(e) => setManualRollInput(e.target.value)}
-                    className="flex-1 bg-background border border-input rounded-xl py-2 px-3 text-xs sm:text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-mono"
+                    className="flex-1 bg-background border border-input rounded-xl py-3 px-3.5 text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-mono"
                   />
                   <button
                     type="submit"
-                    disabled={scanStudentMutation.isPending}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                    disabled={scanStudentMutation.isPending || !manualRollInput.trim()}
+                    className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-sm font-semibold transition-all cursor-pointer shrink-0 disabled:opacity-50"
                   >
                     Mark
                   </button>
                 </form>
               </div>
 
-              {/* Last Scanned Feedback Banner */}
+              {/* Last Scanned Feedback */}
               {lastScannedResult && (
-                <div
-                  className={`p-4 rounded-2xl border text-left flex items-center justify-between gap-3 animate-in fade-in ${
-                    lastScannedResult.isPending
-                      ? 'bg-amber-500/10 border-amber-500/20'
-                      : lastScannedResult.isError
-                      ? 'bg-destructive/10 border-destructive/20'
-                      : 'bg-emerald-500/10 border-emerald-500/20'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                        lastScannedResult.isPending
-                          ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                          : lastScannedResult.isError
-                          ? 'bg-destructive/20 text-destructive'
-                          : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                      }`}
-                    >
-                      {lastScannedResult.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : lastScannedResult.isError ? (
-                        <AlertCircle className="w-4 h-4" />
-                      ) : (
-                        <Check className="w-4 h-4" />
-                      )}
-                    </div>
-                    <div>
-                      <span className="font-bold text-foreground text-xs block">
-                        {lastScannedResult.name
-                          ? `${lastScannedResult.name} (${lastScannedResult.rollNumber})`
-                          : lastScannedResult.rollNumber}
-                      </span>
-                      <span
-                        className={`text-[11px] font-medium ${
+                <div className="px-4 sm:px-6 pb-4">
+                  <div
+                    className={`p-4 rounded-2xl border flex items-center justify-between gap-3 animate-in fade-in ${
+                      lastScannedResult.isPending
+                        ? 'bg-amber-500/10 border-amber-500/20'
+                        : lastScannedResult.isError
+                        ? 'bg-destructive/10 border-destructive/20'
+                        : 'bg-emerald-500/10 border-emerald-500/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold shrink-0 ${
                           lastScannedResult.isPending
-                            ? 'text-amber-600 dark:text-amber-400'
+                            ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
                             : lastScannedResult.isError
-                            ? 'text-destructive'
-                            : 'text-emerald-600 dark:text-emerald-400'
+                            ? 'bg-destructive/20 text-destructive'
+                            : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                         }`}
                       >
-                        {lastScannedResult.message}
-                      </span>
+                        {lastScannedResult.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : lastScannedResult.isError ? (
+                          <AlertCircle className="w-4 h-4" />
+                        ) : (
+                          <Check className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-bold text-foreground text-xs block truncate">
+                          {lastScannedResult.name
+                            ? `${lastScannedResult.name} (${lastScannedResult.rollNumber})`
+                            : lastScannedResult.rollNumber}
+                        </span>
+                        <span
+                          className={`text-[11px] font-medium ${
+                            lastScannedResult.isPending
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : lastScannedResult.isError
+                              ? 'text-destructive'
+                              : 'text-emerald-600 dark:text-emerald-400'
+                          }`}
+                        >
+                          {lastScannedResult.message}
+                        </span>
+                      </div>
                     </div>
+                    <span className="text-[10px] text-muted-foreground font-mono shrink-0">{lastScannedResult.timestamp}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    {lastScannedResult.timestamp}
-                  </span>
                 </div>
               )}
             </div>
@@ -1167,29 +1150,29 @@ export default function QRAttendancePage() {
 
       {/* ── TAB 3: LIVE STREAM FEED ─────────────────────────────────────────── */}
       {activeTab === 'live' && (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          {/* Filters & Session Picker */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card border border-border p-3 sm:p-4 rounded-2xl shadow-xs">
+        <div className="space-y-3 animate-in fade-in duration-200">
+          {/* Filters & Search */}
+          <div className="flex flex-col gap-2.5 bg-card border border-border p-3 sm:p-4 rounded-2xl shadow-xs">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-foreground">Session:</span>
-              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border">
+              <span className="text-[11px] font-bold text-foreground shrink-0">Session:</span>
+              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border flex-wrap">
                 <button
                   type="button"
                   onClick={() => setSelectedMealFilter('all')}
-                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
                     selectedMealFilter === 'all'
                       ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-2xs'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  All Meals
+                  All
                 </button>
                 {availableMealTypes.map((mt) => (
                   <button
                     key={mt}
                     type="button"
                     onClick={() => setSelectedMealFilter(mt)}
-                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                    className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
                       selectedMealFilter === mt
                         ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-2xs'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1200,121 +1183,155 @@ export default function QRAttendancePage() {
                 ))}
               </div>
             </div>
-
-            <div className="relative flex-1 max-w-xs">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search scanned students..."
+                placeholder="Search by name or roll number…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-background border border-input rounded-xl py-1.5 pl-9 pr-3 text-xs text-foreground focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full bg-background border border-input rounded-xl py-2.5 pl-9 pr-3 text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
           </div>
 
-          {/* Stream Roster Table */}
-          <div className="rounded-2xl bg-card border border-border/80 overflow-hidden shadow-2xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-muted/50 border-b border-border text-[11px] uppercase tracking-wider font-bold text-muted-foreground">
-                    <th className="px-5 py-3.5">Student Profile</th>
-                    <th className="px-5 py-3.5">Roll Number</th>
-                    <th className="px-5 py-3.5">Type</th>
-                    <th className="px-5 py-3.5 text-center">Portions Pre-Selected</th>
-                    <th className="px-5 py-3.5 text-center">Attendance Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {filteredStudentStream.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-5 py-10 text-center text-muted-foreground">
-                        <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="font-semibold text-xs">No active logs for this filter</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredStudentStream.map((item, idx) => (
-                      <tr
-                        key={`${item.rollNumber}_${idx}`}
-                        className={`transition-colors ${
-                          item.hasAttended ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : 'hover:bg-muted/30'
-                        }`}
-                      >
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div
-                              className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${
-                                item.hasAttended
-                                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                                  : 'bg-muted text-muted-foreground'
-                              }`}
-                            >
-                              {item.name ? item.name.charAt(0).toUpperCase() : 'S'}
+          {isLiveLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+            </div>
+          ) : filteredStudentStream.length === 0 ? (
+            <div className="p-10 bg-card border border-border rounded-2xl text-center">
+              <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
+              <p className="font-semibold text-xs text-muted-foreground">No active logs for this filter</p>
+            </div>
+          ) : (
+            <>
+              {/* Mobile card list — hidden on md+ */}
+              <div className="md:hidden space-y-2">
+                {filteredStudentStream.map((item, idx) => (
+                  <div
+                    key={`${item.rollNumber}_${idx}`}
+                    className={`p-3.5 rounded-2xl border flex items-center gap-3 ${
+                      item.hasAttended ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-card border-border/70'
+                    }`}
+                  >
+                    <div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                        item.hasAttended
+                          ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {item.name ? item.name.charAt(0).toUpperCase() : 'S'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-foreground text-sm truncate">{item.name}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
+                          item.isGuest ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                        }`}>{item.isGuest ? 'Guest' : 'Resident'}</span>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground font-mono">{item.rollNumber}</span>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      {item.hasAttended ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <Check className="w-3 h-3" />{item.attendanceCount}×
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/60 text-xs">Pending</span>
+                      )}
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {item.selectionCount > 0 ? `${item.selectionCount} reserved` : 'walk-in'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table — hidden below md */}
+              <div className="hidden md:block rounded-2xl bg-card border border-border/80 overflow-hidden shadow-2xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-muted/50 border-b border-border text-[11px] uppercase tracking-wider font-bold text-muted-foreground">
+                        <th className="px-5 py-3.5">Student</th>
+                        <th className="px-5 py-3.5">Roll Number</th>
+                        <th className="px-5 py-3.5">Type</th>
+                        <th className="px-5 py-3.5 text-center">Reserved</th>
+                        <th className="px-5 py-3.5 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60">
+                      {filteredStudentStream.map((item, idx) => (
+                        <tr
+                          key={`${item.rollNumber}_${idx}`}
+                          className={`transition-colors ${
+                            item.hasAttended ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : 'hover:bg-muted/30'
+                          }`}
+                        >
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${
+                                item.hasAttended ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'
+                              }`}>{item.name ? item.name.charAt(0).toUpperCase() : 'S'}</div>
+                              <span className="font-semibold text-foreground text-sm">{item.name}</span>
                             </div>
-                            <span className="font-semibold text-foreground text-sm">{item.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 font-mono text-muted-foreground">{item.rollNumber}</td>
-                        <td className="px-5 py-3">
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                          </td>
+                          <td className="px-5 py-3 font-mono text-muted-foreground">{item.rollNumber}</td>
+                          <td className="px-5 py-3">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                               item.isGuest
                                 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                                 : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                            }`}
-                          >
-                            {item.isGuest ? 'Guest Entry' : 'Resident'}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 text-center font-mono font-bold text-foreground">
-                          {item.selectionCount}
-                        </td>
-                        <td className="px-5 py-3 text-center">
-                          {item.hasAttended ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              <Check className="w-3 h-3" />
-                              <span>Eaten ({item.attendanceCount})</span>
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground/60 text-xs">Unattended</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                            }`}>{item.isGuest ? 'Guest Entry' : 'Resident'}</span>
+                          </td>
+                          <td className="px-5 py-3 text-center font-mono font-bold text-foreground">{item.selectionCount}</td>
+                          <td className="px-5 py-3 text-center">
+                            {item.hasAttended ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <Check className="w-3 h-3" />
+                                Eaten ({item.attendanceCount})
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/60 text-xs">Unattended</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
       {/* ── TAB 4: DAILY OVERVIEW MATRIX ────────────────────────────────────── */}
       {activeTab === 'overview' && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          {/* Top Control Bar with Date Selector & Excel Export */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card border border-border p-4 rounded-2xl shadow-xs">
+          {/* Control Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card border border-border p-3.5 sm:p-4 rounded-2xl shadow-xs">
             <div className="flex items-center gap-3">
-              <label className="text-xs font-bold text-foreground shrink-0">Target Date:</label>
-              <div className="relative">
+              <label className="text-xs font-bold text-foreground shrink-0">Date:</label>
+              <div className="relative flex-1">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-background border border-input rounded-xl py-1.5 pl-9 pr-3 text-xs text-foreground font-medium focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 [color-scheme:dark]"
+                  className="w-full bg-background border border-input rounded-xl py-2 pl-9 pr-3 text-sm text-foreground font-medium focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 [color-scheme:dark]"
                 />
               </div>
             </div>
 
             <button
               onClick={exportOverviewExcel}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors cursor-pointer sm:shrink-0"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export Matrix (Excel)</span>
+              <span>Export Excel</span>
             </button>
           </div>
 
