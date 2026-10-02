@@ -31,11 +31,39 @@ const DAYS_OF_WEEK = [
 
 type DayName = (typeof DAYS_OF_WEEK)[number]
 
+const formatTimeAMPM = (timeStr?: string): string => {
+  if (!timeStr || typeof timeStr !== 'string') return '—'
+  const trimmed = timeStr.trim()
+  if (!trimmed) return '—'
+
+  // If already contains AM or PM
+  const match12 = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+  if (match12) {
+    const hours = parseInt(match12[1], 10)
+    const minutes = match12[2]
+    const period = match12[3].toUpperCase()
+    return `${hours}:${minutes} ${period}`
+  }
+
+  // 24-hour format: "07:30", "19:30", "7:30"
+  const match24 = trimmed.match(/^(\d{1,2}):(\d{2})$/)
+  if (match24) {
+    let hours = parseInt(match24[1], 10)
+    const minutes = match24[2]
+    const period = hours >= 12 ? 'PM' : 'AM'
+    hours = hours % 12
+    if (hours === 0) hours = 12
+    return `${hours}:${minutes} ${period}`
+  }
+
+  return trimmed
+}
+
 const formatTimeRange = (range?: { start?: string; end?: string } | string) => {
   if (!range) return '—'
-  if (typeof range === 'string') return range
-  if (range.start && range.end) return `${range.start} – ${range.end}`
-  return range.end || range.start || '—'
+  if (typeof range === 'string') return formatTimeAMPM(range)
+  if (range.start && range.end) return `${formatTimeAMPM(range.start)} – ${formatTimeAMPM(range.end)}`
+  return formatTimeAMPM(range.end || range.start || '')
 }
 
 export default function AdminMealManager({
@@ -478,9 +506,9 @@ export default function AdminMealManager({
             {mealNames.map((name, i) => {
               const serv = servingTiming[i]
               const sel = selectionTiming[i]
-              const servRange = serv ? `${serv.start} – ${serv.end}` : '—'
-              const cutoffTime = sel?.end || (typeof sel === 'string' ? sel : '—')
-              const orderWindow = sel?.start && sel?.end ? `${sel.start} – ${sel.end}` : cutoffTime
+              const servRange = formatTimeRange(serv)
+              const cutoffTime = formatTimeAMPM(sel?.end || (typeof sel === 'string' ? sel : ''))
+              const orderWindow = formatTimeRange(sel)
 
               return (
                 <div

@@ -61,6 +61,7 @@ export function NavUser({
   // Full user and hostel context from Redux
   const { user: authUser } = useSelector((state: RootState) => state.auth)
   const { currentHostel } = useSelector((state: RootState) => state.hostel)
+  const isStudent = (authUser as any)?.role === 'student' || (user as any)?.role === 'student'
 
   // Modal states
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false)
@@ -124,16 +125,20 @@ export function NavUser({
                   </div>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onClick={() => setIsUpgradeOpen(true)}
-                  className="cursor-pointer text-purple-600 dark:text-purple-400 font-medium focus:text-purple-700 dark:focus:text-purple-300 focus:bg-purple-500/10"
-                >
-                  <Sparkles className="w-4 h-4 text-purple-500" />
-                  <span>Upgrade Plan</span>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
+              {!isStudent && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      onClick={() => setIsUpgradeOpen(true)}
+                      className="cursor-pointer text-purple-600 dark:text-purple-400 font-medium focus:text-purple-700 dark:focus:text-purple-300 focus:bg-purple-500/10"
+                    >
+                      <Sparkles className="w-4 h-4 text-purple-500" />
+                      <span>Upgrade Plan</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem
@@ -143,13 +148,15 @@ export function NavUser({
                   <BadgeCheck className="w-4 h-4 text-blue-500" />
                   <span>Account Details</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigate('/#plans')}
-                  className="cursor-pointer"
-                >
-                  <CreditCard className="w-4 h-4 text-purple-500" />
-                  <span>Plans & Pricing</span>
-                </DropdownMenuItem>
+                {!isStudent && (
+                  <DropdownMenuItem
+                    onClick={() => navigate('/#plans')}
+                    className="cursor-pointer"
+                  >
+                    <CreditCard className="w-4 h-4 text-purple-500" />
+                    <span>Plans & Pricing</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                   className="cursor-pointer"

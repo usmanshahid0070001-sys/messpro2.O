@@ -1,10 +1,9 @@
 import React, { useState, useMemo } from 'react'
 import {
   useGetBills,
-  type Bill,
 } from '@/hooks/queries/useBillingQueries'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Receipt, FileText, Sparkles } from 'lucide-react'
+import { Receipt } from 'lucide-react'
 
 // Modular Subcomponents
 import MyBillsHeader, {
@@ -12,7 +11,6 @@ import MyBillsHeader, {
   type StudentBillStatusFilter,
 } from './components/MyBillsHeader'
 import MyBillCard from './components/MyBillCard'
-import MyBillInvoiceModal from './components/MyBillInvoiceModal'
 
 function getCurrentYearMonth(): string {
   const d = new Date()
@@ -26,7 +24,6 @@ export default function MyBillsPage() {
   const [viewMode, setViewMode] = useState<StudentBillViewMode>('current')
   const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentYearMonth)
   const [statusFilter, setStatusFilter] = useState<StudentBillStatusFilter>('all')
-  const [selectedInvoice, setSelectedInvoice] = useState<Bill | null>(null)
 
   // ── 2. Query ─────────────────────────────────────────────────────────
   const queryParams = useMemo(() => {
@@ -60,11 +57,11 @@ export default function MyBillsPage() {
         hasActiveFilters={hasActiveFilters}
       />
 
-      {/* 2. Bills List */}
+      {/* 2. Bills List rendered as Professional Slip Cards */}
       {isLoading ? (
         <div className="space-y-4">
-          <Skeleton className="h-44 w-full rounded-2xl" />
-          <Skeleton className="h-44 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
       ) : bills.length === 0 ? (
         <div className="bg-card border border-border/80 rounded-2xl p-12 text-center shadow-xs">
@@ -79,23 +76,15 @@ export default function MyBillsPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {bills.map((bill) => (
             <MyBillCard
               key={bill._id}
               bill={bill}
-              onOpenInvoice={(b) => setSelectedInvoice(b)}
             />
           ))}
         </div>
       )}
-
-      {/* 3. Invoice Receipt Modal */}
-      <MyBillInvoiceModal
-        isOpen={Boolean(selectedInvoice)}
-        onClose={() => setSelectedInvoice(null)}
-        bill={selectedInvoice}
-      />
     </div>
   )
 }

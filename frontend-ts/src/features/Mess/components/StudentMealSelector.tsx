@@ -39,42 +39,125 @@ const STATIC_DAYS = [
   'Saturday',
 ] as const
 
+const formatTimeAMPM = (timeStr?: string): string => {
+  if (!timeStr || typeof timeStr !== 'string') return '—'
+  const trimmed = timeStr.trim()
+  if (!trimmed) return '—'
+
+  // If already contains AM or PM
+  const match12 = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+  if (match12) {
+    const hours = parseInt(match12[1], 10)
+    const minutes = match12[2]
+    const period = match12[3].toUpperCase()
+    return `${hours}:${minutes} ${period}`
+  }
+
+  // 24-hour format: "07:30", "19:30", "7:30"
+  const match24 = trimmed.match(/^(\d{1,2}):(\d{2})$/)
+  if (match24) {
+    let hours = parseInt(match24[1], 10)
+    const minutes = match24[2]
+    const period = hours >= 12 ? 'PM' : 'AM'
+    hours = hours % 12
+    if (hours === 0) hours = 12
+    return `${hours}:${minutes} ${period}`
+  }
+
+  return trimmed
+}
+
 const formatTimeRange = (range?: { start?: string; end?: string } | string) => {
   if (!range) return '—'
-  if (typeof range === 'string') return range
-  if (range.start && range.end) return `${range.start} – ${range.end}`
-  return range.end || range.start || '—'
+  if (typeof range === 'string') return formatTimeAMPM(range)
+  if (range.start && range.end) return `${formatTimeAMPM(range.start)} – ${formatTimeAMPM(range.end)}`
+  return formatTimeAMPM(range.end || range.start || '')
+}
+
+const parseTimeToMinutes = (timeStr?: string): number | null => {
+  if (!timeStr || typeof timeStr !== 'string') return null
+  const trimmed = timeStr.trim()
+  if (!trimmed) return null
+
+  const match12 = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+  if (match12) {
+    let hours = parseInt(match12[1], 10)
+    const minutes = parseInt(match12[2], 10)
+    const period = match12[3].toUpperCase()
+    if (period === 'PM' && hours < 12) hours += 12
+    if (period === 'AM' && hours === 12) hours = 0
+    return hours * 60 + minutes
+  }
+
+  const match24 = trimmed.match(/^(\d{1,2}):(\d{2})$/)
+  if (match24) {
+    const hours = parseInt(match24[1], 10)
+    const minutes = parseInt(match24[2], 10)
+    return hours * 60 + minutes
+  }
+
+  return null
 }
 
 const hasTimePassed = (timing?: { start?: string; end?: string } | string): boolean => {
   if (!timing) return false
   const timeStr = typeof timing === 'object' && timing.end ? timing.end : (typeof timing === 'string' ? timing : '')
   if (!timeStr) return false
-  try {
-    const now = new Date()
-    const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const targetMinutes = parseTimeToMinutes(timeStr)
+  if (targetMinutes === null) return false
 
-    const match12 = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i)
-    if (match12) {
-      let hours = parseInt(match12[1], 10)
-      const minutes = parseInt(match12[2], 10)
-      const period = match12[3].toUpperCase()
-      if (period === 'PM' && hours < 12) hours += 12
-      if (period === 'AM' && hours === 12) hours = 0
-      return currentMinutes >= hours * 60 + minutes
-    }
+  const now = new Date()
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  return currentMinutes >= targetMinutes
+}
 
-    const match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/)
-    if (match24) {
-      const hours = parseInt(match24[1], 10)
-      const minutes = parseInt(match24[2], 10)
-      return currentMinutes >= hours * 60 + minutes
-    }
+type ServingStatus = 'already_served' | 'serving' | 'passed' | 'upcoming'
 
-    return false
-  } catch {
-    return false
+const getServingStatus = (
+  day: { isToday: boolean; offsetIndex: number },
+  timing?: { start?: string; end?: string } | string,
+  hasEaten?: boolean
+): ServingStatus => {
+  if (hasEaten) {
+    return 'already_served'
   }
+
+  if (day.offsetIndex < 0) {
+    return 'passed'
+  }
+
+  if (!day.isToday && day.offsetIndex > 0) {
+    return 'upcoming'
+  }
+
+  // It's Today
+  const startStr = typeof timing === 'object' ? timing?.start : ''
+  const endStr = typeof timing === 'object' ? timing?.end : (typeof timing === 'string' ? timing : '')
+
+  const startMin = parseTimeToMinutes(startStr)
+  const endMin = parseTimeToMinutes(endStr)
+
+  const now = new Date()
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+
+  if (endMin !== null && currentMinutes > endMin) {
+    return 'passed'
+  }
+
+  if (startMin !== null && endMin !== null) {
+    if (currentMinutes >= startMin && currentMinutes <= endMin) {
+      return 'serving'
+    }
+    if (currentMinutes < startMin) {
+      return 'upcoming'
+    }
+  } else if (endMin !== null) {
+    if (currentMinutes <= endMin) {
+      return 'serving'
+    }
+  }
+
+  return 'upcoming'
 }
 
 // Generate the 7 days starting from Today (index 0 = Today, 1 = Tomorrow, ..., 6)
@@ -173,6 +256,19 @@ export default function StudentMealSelector({
   const [selectionsMap, setSelectionsMap] = useState<Record<string, number>>({})
   const [isDirty, setIsDirty] = useState(false)
   const [showCutoffModal, setShowCutoffModal] = useState(false)
+
+  const attendanceMap = useMemo(() => {
+    const map: Record<string, boolean> = {}
+    selections.forEach((rec) => {
+      const key = `${rec.date}_${rec.mealType}`
+      const hasEaten = Boolean(
+        rec.attendance?.hasEaten ||
+        (rec.attendance?.count && rec.attendance.count > 0)
+      )
+      map[key] = hasEaten
+    })
+    return map
+  }, [selections])
 
   useEffect(() => {
     const initialMap: Record<string, number> = {}
@@ -354,7 +450,9 @@ export default function StudentMealSelector({
                 Weekly Meal Plan
               </h1>
               <p className="text-xs text-muted-foreground">
-                {totalWeekSelectedMeals} of {maxTotalWeekSlots} meals reserved this week
+                {!isInactive
+                  ? `${totalWeekSelectedMeals} of ${maxTotalWeekSlots} meals reserved this week`
+                  : 'Weekly hostel menu & dining schedule'}
               </p>
             </div>
           </div>
@@ -381,14 +479,16 @@ export default function StudentMealSelector({
               {!isInactive ? 'Open' : 'Locked'}
             </span>
 
-            <button
-              type="button"
-              onClick={() => setShowCutoffModal(true)}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-              title="View Cutoff Rules & Timing Info"
-            >
-              <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </button>
+            {!isInactive && (
+              <button
+                type="button"
+                onClick={() => setShowCutoffModal(true)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                title="View Cutoff Rules & Timing Info"
+              >
+                <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -475,17 +575,19 @@ export default function StudentMealSelector({
                 <span>{d.isToday ? 'Today' : d.shortDay}</span>
                 <span className="text-[10px] text-muted-foreground/80">{d.dayOfMonth}</span>
               </div>
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-md font-semibold ${
-                  daySelectedCount === mealNames.length
-                    ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                    : daySelectedCount > 0
-                    ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {daySelectedCount}/{mealNames.length}
-              </span>
+              {!isInactive && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-md font-semibold ${
+                    daySelectedCount === mealNames.length
+                      ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                      : daySelectedCount > 0
+                      ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {daySelectedCount}/{mealNames.length}
+                </span>
+              )}
             </button>
           )
         })}
@@ -539,9 +641,11 @@ export default function StudentMealSelector({
                   )}
                 </div>
 
-                <span className="text-[11px] text-muted-foreground font-medium">
-                  {daySelectedCount}/{mealNames.length} selected
-                </span>
+                {!isInactive && (
+                  <span className="text-[11px] text-muted-foreground font-medium">
+                    {daySelectedCount}/{mealNames.length} selected
+                  </span>
+                )}
               </div>
 
               {/* Day Meals Grid */}
@@ -591,7 +695,61 @@ export default function StudentMealSelector({
                           </div>
                         </div>
 
-                        {isLocked ? (
+                        {isInactive ? (
+                          (() => {
+                            const servStatus = getServingStatus(
+                              day,
+                              servingTiming[slotIdx],
+                              attendanceMap[key]
+                            )
+
+                            if (servStatus === 'already_served') {
+                              return (
+                                <span
+                                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                                  title="You have already received this meal"
+                                >
+                                  <CheckCircle2 className="h-2.5 w-2.5" />
+                                  Already Served
+                                </span>
+                              )
+                            }
+
+                            if (servStatus === 'serving') {
+                              return (
+                                <span
+                                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                                  title="Currently serving in the dining hall"
+                                >
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  Serving
+                                </span>
+                              )
+                            }
+
+                            if (servStatus === 'passed') {
+                              return (
+                                <span
+                                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                                  title="Serving time has ended"
+                                >
+                                  <Lock className="h-2.5 w-2.5" />
+                                  Passed
+                                </span>
+                              )
+                            }
+
+                            return (
+                              <span
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60"
+                                title="Upcoming meal"
+                              >
+                                <Clock className="h-2.5 w-2.5" />
+                                Upcoming
+                              </span>
+                            )
+                          })()
+                        ) : isLocked ? (
                           <span
                             className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
                             title={`Selection cutoff was ${formatTimeRange(cutoff)}. Orders for this meal are locked.`}
@@ -617,7 +775,7 @@ export default function StudentMealSelector({
                                   : 'text-muted-foreground'
                               }`}
                             />
-                            Cutoff: {typeof cutoff === 'object' && cutoff?.end ? cutoff.end : (typeof cutoff === 'string' ? cutoff : '—')}
+                            Cutoff: {formatTimeAMPM(typeof cutoff === 'object' && cutoff?.end ? cutoff.end : (typeof cutoff === 'string' ? cutoff : '—'))}
                           </span>
                         ) : null}
                       </div>
@@ -639,67 +797,78 @@ export default function StudentMealSelector({
                       </div>
 
                       {/* Stepper & Action Controls */}
-                      <div className="pt-1.5 flex items-center justify-between gap-2 border-t border-border/50">
-                        {isLocked || isInactive ? (
-                          <div className="text-[11px] text-muted-foreground flex items-center gap-1 py-1">
-                            {isSelected ? (
-                              <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                <Check className="h-3 w-3" />
-                                {currentCount} portion{currentCount > 1 ? 's' : ''} reserved
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground/70">Not ordered</span>
-                            )}
-                          </div>
-                        ) : (
-                          <>
-                            {/* Tap to Toggle button */}
-                            <button
-                              type="button"
-                              onClick={() => handleToggle(day.isoDate, mealType, isLocked)}
-                              className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
-                                isSelected
-                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                                  : 'bg-card text-foreground border-border hover:bg-muted'
-                              }`}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              <span>{isSelected ? 'Selected' : 'Select'}</span>
-                            </button>
-
-                            {/* Quantity Stepper (if maxAllowed > 1) */}
-                            {maxAllowed > 1 && (
-                              <div className="flex items-center gap-1 bg-card border border-border p-0.5 rounded-xl">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleUpdateCount(day.isoDate, mealType, -1, isLocked)
-                                  }
-                                  disabled={currentCount <= 0}
-                                  className="h-6 w-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
-                                  title="Decrease portion"
-                                >
-                                  <Minus className="h-3 w-3" />
-                                </button>
-                                <span className="font-mono text-xs font-bold text-foreground px-1 min-w-[16px] text-center">
-                                  {currentCount}
+                      {!isInactive ? (
+                        <div className="pt-1.5 flex items-center justify-between gap-2 border-t border-border/50">
+                          {isLocked ? (
+                            <div className="text-[11px] text-muted-foreground flex items-center gap-1 py-1">
+                              {isSelected ? (
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                  <Check className="h-3 w-3" />
+                                  {currentCount} portion{currentCount > 1 ? 's' : ''} reserved
                                 </span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleUpdateCount(day.isoDate, mealType, 1, isLocked)
-                                  }
-                                  disabled={currentCount >= maxAllowed}
-                                  className="h-6 w-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
-                                  title="Increase portion"
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </button>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
+                              ) : (
+                                <span className="text-muted-foreground/70">Not ordered</span>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              {/* Tap to Toggle button */}
+                              <button
+                                type="button"
+                                onClick={() => handleToggle(day.isoDate, mealType, isLocked)}
+                                className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                  isSelected
+                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                                    : 'bg-card text-foreground border-border hover:bg-muted'
+                                }`}
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                <span>{isSelected ? 'Selected' : 'Select'}</span>
+                              </button>
+
+                              {/* Quantity Stepper (if maxAllowed > 1) */}
+                              {maxAllowed > 1 && (
+                                <div className="flex items-center gap-1 bg-card border border-border p-0.5 rounded-xl">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleUpdateCount(day.isoDate, mealType, -1, isLocked)
+                                    }
+                                    disabled={currentCount <= 0}
+                                    className="h-6 w-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
+                                    title="Decrease portion"
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </button>
+                                  <span className="font-mono text-xs font-bold text-foreground px-1 min-w-[16px] text-center">
+                                    {currentCount}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleUpdateCount(day.isoDate, mealType, 1, isLocked)
+                                    }
+                                    disabled={currentCount >= maxAllowed}
+                                    className="h-6 w-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
+                                    title="Increase portion"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ) : isSelected ? (
+                        <div className="pt-1.5 flex items-center justify-between gap-2 border-t border-border/50">
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-1 py-1">
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <Check className="h-3 w-3" />
+                              {currentCount} portion{currentCount > 1 ? 's' : ''} reserved
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   )
                 })}
@@ -777,18 +946,18 @@ export default function StudentMealSelector({
 
       {/* ── 5. Sticky Floating Save Bar (When Unsaved Changes) ── */}
       {isDirty && !isInactive && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md p-3.5 rounded-2xl bg-card/95 backdrop-blur-md border border-emerald-500/40 shadow-2xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-semibold text-foreground">Unsaved selections</span>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md p-3.5 sm:p-4 rounded-2xl bg-card/95 backdrop-blur-md border border-emerald-500/40 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
+          <div className="flex items-center gap-2 text-xs w-full sm:w-auto">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="font-semibold text-foreground">Click Save button to reserve your selected meals</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleDiscard}
-              className="h-8 text-xs rounded-xl cursor-pointer"
+              className="h-8.5 sm:h-8 flex-1 sm:flex-initial text-xs rounded-xl cursor-pointer"
             >
               <RotateCcw className="h-3 w-3 mr-1" />
               <span>Discard</span>
@@ -798,7 +967,7 @@ export default function StudentMealSelector({
               size="sm"
               onClick={handleSave}
               disabled={bulkSelectMutation.isPending}
-              className="h-8 px-4 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm"
+              className="h-8.5 sm:h-8 flex-1 sm:flex-initial px-4 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm"
             >
               <Save className="h-3 w-3 mr-1" />
               <span>{bulkSelectMutation.isPending ? 'Saving...' : 'Save'}</span>
