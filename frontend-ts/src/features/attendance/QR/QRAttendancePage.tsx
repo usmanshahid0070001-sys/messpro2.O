@@ -20,6 +20,7 @@ import {
   Info,
   Printer,
   X,
+  Building2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -114,16 +115,16 @@ export default function QRAttendancePage() {
 
       const updateData = (oldData: any) => {
         if (!oldData || !oldData.data) return oldData;
-        
+
         // Deep clone to ensure React state updates trigger correctly
         const newData = JSON.parse(JSON.stringify(oldData));
-        
+
         if (!newData.data[payload.mealType]) {
           newData.data[payload.mealType] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
         }
-        
+
         const mealData = newData.data[payload.mealType];
-        
+
         const existingStudentIdx = mealData.data.findIndex(
           (s: any) => String(s.rollNumber).toLowerCase() === String(payload.rollNumber).toLowerCase()
         );
@@ -137,7 +138,7 @@ export default function QRAttendancePage() {
           if (mealData.summary) {
             mealData.summary.totalAttendance = Math.max(0, (mealData.summary.totalAttendance || 0) + attDiff);
           }
-          
+
           mealData.data[existingStudentIdx] = {
             ...current,
             attendanceCount: newAttCount,
@@ -148,14 +149,14 @@ export default function QRAttendancePage() {
         } else {
           const newAttCount = payload.count !== undefined ? payload.count : 1;
           const selCount = payload.selectionCount || 0;
-          
+
           if (mealData.summary) {
             mealData.summary.totalAttendance = (mealData.summary.totalAttendance || 0) + newAttCount;
             if (selCount > 0) {
               mealData.summary.totalSelections = (mealData.summary.totalSelections || 0) + selCount;
             }
           }
-          
+
           // Add to beginning of the list for instant visibility
           mealData.data.unshift({
             name: payload.name || (payload.isGuest ? 'Guest Entry' : 'Walk-in Student'),
@@ -167,13 +168,13 @@ export default function QRAttendancePage() {
             isSelected: selCount > 0
           });
         }
-        
+
         return newData;
       };
 
       // 1. Update Live QR Attendance Cache (No API calls!)
       queryClient.setQueryData(['liveQRAttendance', selectedDate], updateData);
-      
+
       // 2. Update Daily Overview Cache (No API calls!)
       queryClient.setQueryData(['dailyOverview', selectedDate], updateData);
     });
@@ -190,10 +191,10 @@ export default function QRAttendancePage() {
   // ── Fullscreen toggle ───────────────────────────────────────────────────
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
+      document.documentElement.requestFullscreen().catch(() => { });
       setIsFullscreen(true);
     } else {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().catch(() => { });
       setIsFullscreen(false);
     }
   };
@@ -277,7 +278,7 @@ export default function QRAttendancePage() {
             qrEngineRef.current.start();
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [isScanning]);
 
@@ -436,8 +437,8 @@ export default function QRAttendancePage() {
     liveData?.mealTypes && liveData.mealTypes.length > 0
       ? liveData.mealTypes
       : dailyOverview?.mealTypes && dailyOverview.mealTypes.length > 0
-      ? dailyOverview.mealTypes
-      : ['Breakfast', 'Lunch', 'Dinner'];
+        ? dailyOverview.mealTypes
+        : ['Breakfast', 'Lunch', 'Dinner'];
 
   // ── Meal-by-Meal Statistics for Session Performance ──────────────────────
   const mealPerformanceList = useMemo(() => {
@@ -520,8 +521,8 @@ export default function QRAttendancePage() {
         preReservedCount > 0
           ? Math.round((totalAttendance / preReservedCount) * 100)
           : totalAttendance > 0
-          ? 100
-          : 0;
+            ? 100
+            : 0;
 
       const isCurrent =
         currentMealName !== 'None' &&
@@ -615,97 +616,127 @@ export default function QRAttendancePage() {
 
   // ── Tab config ───────────────────────────────────────────────────────────
   const TABS: { id: ActiveTab; icon: React.ReactNode; label: string; short: string }[] = [
-    { id: 'counter',  icon: <QrCode className="w-4 h-4" />,   label: 'Counter QR',  short: 'QR'    },
-    { id: 'scanner',  icon: <Scan className="w-4 h-4" />,     label: 'Scanner',     short: 'Scan'  },
-    { id: 'live',     icon: <Activity className="w-4 h-4" />, label: 'Live Feed',   short: 'Live'  },
-    { id: 'overview', icon: <Calendar className="w-4 h-4" />, label: 'Overview',    short: 'Stats' },
+    { id: 'counter', icon: <QrCode className="w-4 h-4" />, label: 'Counter QR', short: 'QR' },
+    { id: 'scanner', icon: <Scan className="w-4 h-4" />, label: 'Scanner', short: 'Scan' },
+    { id: 'live', icon: <Activity className="w-4 h-4" />, label: 'Live Feed', short: 'Live' },
+    { id: 'overview', icon: <Calendar className="w-4 h-4" />, label: 'Overview', short: 'Stats' },
   ];
 
   return (
     <div className="space-y-4 pb-20 w-full max-w-full min-w-0 animate-in fade-in duration-300">
       {/* ── Page Header ──────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <QrCode className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground leading-tight">
-                QR Attendance
-              </h1>
-              <span className="text-[10px] font-mono bg-muted text-muted-foreground px-2 py-0.5 rounded-full hidden sm:inline-flex">
-                {currentHostel?.name || 'Main Hostel'}
+      <header className="mt-1">
+        <div className="relative flex items-center justify-between gap-3">
+          {/* ── Title block ── */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative shrink-0 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500/15 via-emerald-500/10 to-teal-500/5 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-sm shadow-emerald-500/10">
+              <QrCode className="w-5 h-5 sm:w-6 sm:h-6" aria-hidden="true" />
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5" aria-hidden="true">
+                <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 ring-2 ring-background sm:ring-card" />
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5 hidden sm:block">
-              Display QR codes, scan badges, and monitor live turnout.
-            </p>
-          </div>
-        </div>
 
-        {/* Compact action tray */}
-        <div className="flex items-center gap-1.5 shrink-0">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-foreground leading-tight truncate">
+                  QR Attendance
+                </h1>
+
+                <span
+                  role="status"
+                  className="shrink-0 inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse motion-reduce:animate-none" />
+                  <span className="sm:hidden">Live</span>
+                  <span className="hidden sm:inline">Live Terminal</span>
+                </span>
+
+                {/* Hostel pill (desktop) */}
+                <span className="hidden sm:inline-flex items-center gap-1 max-w-[14rem] text-[11px] font-medium bg-muted/80 text-muted-foreground border border-border/60 px-2.5 py-0.5 rounded-full">
+                  <Building2 className="w-3 h-3 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{currentHostel?.name || 'Main Hostel'}</span>
+                </span>
+              </div>
+
+              {/* Hostel subtitle (mobile) */}
+              <p className="sm:hidden mt-0.5 flex items-center gap-1 text-xs text-muted-foreground min-w-0">
+                <Building2 className="w-3 h-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">{currentHostel?.name || 'Main Hostel'}</span>
+              </p>
+
+              {/* Description (desktop) */}
+              <p className="hidden sm:block mt-1 text-[13px] text-muted-foreground leading-snug">
+                Display dynamic counter QR, scan student cards, and monitor live turnout.
+              </p>
+            </div>
+          </div>
+
+          {/* ── Action ── */}
           <button
             type="button"
-            onClick={() => setIsPrintModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xs transition-all cursor-pointer"
-            title="Print Counter QR Code"
+            onClick={async () => {
+              try {
+                await Promise.all([refetchQR(), refetchLive(), refetchOverview()]);
+                toast.success('Attendance records refreshed');
+              } catch {
+                toast.error('Could not refresh. Please try again.');
+              }
+            }}
+            disabled={isQRFetching}
+            aria-busy={isQRFetching}
+            aria-label="Refresh attendance records"
+            title="Refresh attendance records"
+            className="group shrink-0 inline-flex items-center justify-center gap-2 h-10 w-10 sm:h-auto sm:w-auto sm:px-3.5 sm:py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-sm shadow-emerald-600/25 hover:shadow-md hover:shadow-emerald-600/30 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <Printer className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Print QR</span>
-          </button>
-
-          <button
-            onClick={() => { refetchQR(); refetchLive(); refetchOverview(); toast.success('Refreshed'); }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
-            title="Refresh data"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isQRFetching ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Sync</span>
-          </button>
-
-          <button
-            onClick={toggleFullscreen}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-muted/60 hover:bg-muted border border-border/80 text-foreground transition-colors cursor-pointer"
-            title="Toggle Fullscreen"
-          >
-            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            <span className="hidden lg:inline">{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
+            <RefreshCw
+              className={`w-4 h-4 sm:w-3.5 sm:h-3.5 transition-transform duration-500 ${isQRFetching ? 'animate-spin' : 'sm:group-hover:rotate-180'
+                }`}
+              aria-hidden="true"
+            />
+            <span className="hidden sm:inline">{isQRFetching ? 'Syncing…' : 'Refresh'}</span>
           </button>
         </div>
-      </div>
+      </header>
 
       {/* ── Navigation Tabs — 4-col equal grid, icon+short on mobile ─── */}
-      <div className="grid grid-cols-4 gap-1 p-1.5 bg-muted/60 border border-border/80 rounded-2xl shadow-xs">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => {
-              if (tab.id !== 'scanner') stopCamera();
-              setActiveTab(tab.id);
-            }}
-            className={`py-2.5 px-2 sm:px-4 text-[11px] sm:text-xs font-bold rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0 ${
-              activeTab === tab.id
-                ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab.icon}
-            <span className="truncate leading-tight">
-              <span className="sm:hidden">{tab.short}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
-            </span>
-          </button>
-        ))}
+      <div
+        role="tablist"
+        aria-label="Attendance sections"
+        className="grid grid-cols-4 gap-1 p-1.5 bg-muted/60 border border-border/80 rounded-2xl shadow-xs"
+      >
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => {
+                if (tab.id !== 'scanner') stopCamera();
+                setActiveTab(tab.id);
+              }}
+              className={`py-2.5 px-2 sm:px-4 text-[11px] sm:text-xs font-bold rounded-xl border transition-all duration-200 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${isActive
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/25'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 active:scale-95'
+                }`}
+            >
+              {tab.icon}
+              <span className="truncate leading-tight">
+                <span className="sm:hidden">{tab.short}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ── TAB 1: COUNTER DISPLAY (ROLLING QR FORTRESS) ────────────────────── */}
       {activeTab === 'counter' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Large QR Display Card (Left Column) */}
-            <div className="lg:col-span-5 xl:col-span-4 bg-card border border-border p-4 sm:p-6 rounded-3xl shadow-md text-center space-y-4 relative overflow-hidden lg:sticky lg:top-6 min-w-0">
+          <div className="lg:col-span-5 xl:col-span-4 bg-card border border-border p-4 sm:p-6 rounded-3xl shadow-md text-center space-y-4 relative overflow-hidden lg:sticky lg:top-6 min-w-0">
             <div className="absolute -top-12 -right-12 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="flex items-center justify-between border-b border-border/70 pb-4 gap-2">
@@ -798,21 +829,19 @@ export default function QRAttendancePage() {
                   {mealPerformanceList.map((meal) => (
                     <div
                       key={meal.mealName}
-                      className={`p-3.5 sm:p-5 rounded-2xl border transition-all ${
-                        meal.isCurrent
-                          ? 'bg-emerald-500/[0.04] border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/20'
-                          : 'bg-muted/20 border-border/70 hover:border-border'
-                      } space-y-3`}
+                      className={`p-3.5 sm:p-5 rounded-2xl border transition-all ${meal.isCurrent
+                        ? 'bg-emerald-500/[0.04] border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/20'
+                        : 'bg-muted/20 border-border/70 hover:border-border'
+                        } space-y-3`}
                     >
                       {/* Meal Header */}
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2.5">
                           <div
-                            className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
-                              meal.isCurrent
-                                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                                : 'bg-muted text-muted-foreground'
-                            }`}
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${meal.isCurrent
+                              ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                              : 'bg-muted text-muted-foreground'
+                              }`}
                           >
                             <Utensils className="w-4 h-4" />
                           </div>
@@ -913,14 +942,14 @@ export default function QRAttendancePage() {
                             style={{
                               width: `${Math.min(
                                 100 -
-                                  (meal.preReservedCount > 0
-                                    ? (meal.preReservedAttendanceCount / meal.preReservedCount) * 100
-                                    : 0),
+                                (meal.preReservedCount > 0
+                                  ? (meal.preReservedAttendanceCount / meal.preReservedCount) * 100
+                                  : 0),
                                 meal.preReservedCount > 0
                                   ? (meal.walkInOrGuestCount / meal.preReservedCount) * 100
                                   : meal.totalAttendance > 0
-                                  ? 100
-                                  : 0
+                                    ? 100
+                                    : 0
                               )}%`,
                             }}
                             title={`Walk-in / Guest: ${meal.walkInOrGuestCount}`}
@@ -1094,23 +1123,21 @@ export default function QRAttendancePage() {
               {lastScannedResult && (
                 <div className="px-4 sm:px-6 pb-4">
                   <div
-                    className={`p-4 rounded-2xl border flex items-center justify-between gap-3 animate-in fade-in ${
-                      lastScannedResult.isPending
-                        ? 'bg-amber-500/10 border-amber-500/20'
-                        : lastScannedResult.isError
+                    className={`p-4 rounded-2xl border flex items-center justify-between gap-3 animate-in fade-in ${lastScannedResult.isPending
+                      ? 'bg-amber-500/10 border-amber-500/20'
+                      : lastScannedResult.isError
                         ? 'bg-destructive/10 border-destructive/20'
                         : 'bg-emerald-500/10 border-emerald-500/20'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold shrink-0 ${
-                          lastScannedResult.isPending
-                            ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                            : lastScannedResult.isError
+                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold shrink-0 ${lastScannedResult.isPending
+                          ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                          : lastScannedResult.isError
                             ? 'bg-destructive/20 text-destructive'
                             : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                        }`}
+                          }`}
                       >
                         {lastScannedResult.isPending ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -1127,13 +1154,12 @@ export default function QRAttendancePage() {
                             : lastScannedResult.rollNumber}
                         </span>
                         <span
-                          className={`text-[11px] font-medium ${
-                            lastScannedResult.isPending
-                              ? 'text-amber-600 dark:text-amber-400'
-                              : lastScannedResult.isError
+                          className={`text-[11px] font-medium ${lastScannedResult.isPending
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : lastScannedResult.isError
                               ? 'text-destructive'
                               : 'text-emerald-600 dark:text-emerald-400'
-                          }`}
+                            }`}
                         >
                           {lastScannedResult.message}
                         </span>
@@ -1159,11 +1185,10 @@ export default function QRAttendancePage() {
                 <button
                   type="button"
                   onClick={() => setSelectedMealFilter('all')}
-                  className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
-                    selectedMealFilter === 'all'
-                      ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-2xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                  className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${selectedMealFilter === 'all'
+                    ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-2xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                    }`}
                 >
                   All
                 </button>
@@ -1172,11 +1197,10 @@ export default function QRAttendancePage() {
                     key={mt}
                     type="button"
                     onClick={() => setSelectedMealFilter(mt)}
-                    className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
-                      selectedMealFilter === mt
-                        ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-2xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
+                    className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${selectedMealFilter === mt
+                      ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                      }`}
                   >
                     {mt}
                   </button>
@@ -1211,25 +1235,22 @@ export default function QRAttendancePage() {
                 {filteredStudentStream.map((item, idx) => (
                   <div
                     key={`${item.rollNumber}_${idx}`}
-                    className={`p-3.5 rounded-2xl border flex items-center gap-3 ${
-                      item.hasAttended ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-card border-border/70'
-                    }`}
+                    className={`p-3.5 rounded-2xl border flex items-center gap-3 ${item.hasAttended ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-card border-border/70'
+                      }`}
                   >
                     <div
-                      className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                        item.hasAttended
-                          ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${item.hasAttended
+                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-muted text-muted-foreground'
+                        }`}
                     >
                       {item.name ? item.name.charAt(0).toUpperCase() : 'S'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-foreground text-sm truncate">{item.name}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
-                          item.isGuest ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                        }`}>{item.isGuest ? 'Guest' : 'Resident'}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${item.isGuest ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                          }`}>{item.isGuest ? 'Guest' : 'Resident'}</span>
                       </div>
                       <span className="text-[11px] text-muted-foreground font-mono">{item.rollNumber}</span>
                     </div>
@@ -1266,25 +1287,22 @@ export default function QRAttendancePage() {
                       {filteredStudentStream.map((item, idx) => (
                         <tr
                           key={`${item.rollNumber}_${idx}`}
-                          className={`transition-colors ${
-                            item.hasAttended ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : 'hover:bg-muted/30'
-                          }`}
+                          className={`transition-colors ${item.hasAttended ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : 'hover:bg-muted/30'
+                            }`}
                         >
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-2.5">
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${
-                                item.hasAttended ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'
-                              }`}>{item.name ? item.name.charAt(0).toUpperCase() : 'S'}</div>
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${item.hasAttended ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'
+                                }`}>{item.name ? item.name.charAt(0).toUpperCase() : 'S'}</div>
                               <span className="font-semibold text-foreground text-sm">{item.name}</span>
                             </div>
                           </td>
                           <td className="px-5 py-3 font-mono text-muted-foreground">{item.rollNumber}</td>
                           <td className="px-5 py-3">
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                              item.isGuest
-                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                                : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                            }`}>{item.isGuest ? 'Guest Entry' : 'Resident'}</span>
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${item.isGuest
+                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                              : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                              }`}>{item.isGuest ? 'Guest Entry' : 'Resident'}</span>
                           </td>
                           <td className="px-5 py-3 text-center font-mono font-bold text-foreground">{item.selectionCount}</td>
                           <td className="px-5 py-3 text-center">
