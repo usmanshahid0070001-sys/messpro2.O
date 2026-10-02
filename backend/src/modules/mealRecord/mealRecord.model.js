@@ -27,7 +27,8 @@ const mealRecordSchema = new mongoose.Schema({
   attendance: {
     hasEaten: { type: Boolean, default: false },
     count: { type: Number, default: 0 }, // How many portions they actually took
-    recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // The Manager Audit Trail
+    method: { type: String, default: null }, // 'QR', 'Manual', 'Biometric'
+    recordedBy: { type: mongoose.Schema.Types.Mixed, default: null }, // 'admin' | 'manager' | ObjectId (The Audit Trail)
   }
 }); // 👈 Removed { timestamps: true } to keep the database lightweight
 

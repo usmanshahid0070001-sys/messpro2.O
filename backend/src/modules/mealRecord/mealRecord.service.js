@@ -57,7 +57,7 @@ class MealRecordService {
     }
 
     const { selections } = bulkSelectMealsSchema.parse(payload);
-    
+
     const schedule = await mealService.getScheduleByHostel(hostelId);
     if (!schedule) {
       const error = new Error('Meal schedule not found for this hostel.');
@@ -88,7 +88,7 @@ class MealRecordService {
 
     const maxAllowed = schedule.maxMealSelection || 1;
     const bulkOps = [];
-    
+
     // Fetch existing records for checking attendance before zeroing out selection
     const existingRecords = await mealRecordRepository.findExistingRecords(
       hostelId,
@@ -193,7 +193,7 @@ class MealRecordService {
     if (bulkOps.length > 0) {
       await mealRecordRepository.bulkWriteRecords(bulkOps);
     }
-    
+
     return { count: bulkOps.length };
   }
 
@@ -601,9 +601,9 @@ class MealRecordService {
       price: menuItem?.price || 0
     };
 
-    return { 
-      date: localDateStr, 
-      mealType, 
+    return {
+      date: localDateStr,
+      mealType,
       mealInfo,
       maxMealSelection: schedule.maxMealSelection || 1,
       servingTime: servingTimes[selectedMealIndex] || null
@@ -631,7 +631,7 @@ class MealRecordService {
         }
       }
     }
-    
+
     const schedule = await mealService.getScheduleByHostel(hostelId);
     let mealTypes = schedule?.mealNames && schedule.mealNames.length > 0
       ? [...schedule.mealNames]
@@ -668,10 +668,10 @@ class MealRecordService {
       if (!resultData[mType]) {
         resultData[mType] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
       }
-      
+
       const attCount = att.attendance?.count || 0;
       const selCount = att.selection?.count || 0;
-      
+
       resultData[mType].summary.totalSelections += selCount;
       resultData[mType].summary.totalAttendance += attCount;
 
@@ -735,7 +735,7 @@ class MealRecordService {
       if (!resultData[mType]) {
         resultData[mType] = { data: [], summary: { totalSelections: 0, totalAttendance: 0 } };
       }
-      
+
       const attCount = att.attendance?.count || 0;
       const selCount = att.selection?.count || 0;
 
@@ -864,9 +864,9 @@ class MealRecordService {
 
     // Cooldown: prevent socket flooding if duplicate request within 10 seconds
     if (lastRequestTime && (now - lastRequestTime) < 10000) {
-      return { 
+      return {
         message: 'Permission request already sent. Please wait for the manager to respond.',
-        requestId: null 
+        requestId: null
       };
     }
 
@@ -891,14 +891,33 @@ class MealRecordService {
     // Broadcast live permission card to all online managers and admins of this hostel
     io.to(`hostel:${managerHostelId}`).emit('guest_permission_request', payload);
 
-    return { 
+    return {
       message: 'Permission request sent to manager and admins.',
       requestId,
       data: payload
     };
   }
 
-  async respondGuestPermission(managerHostelId, recordedById, { requestId, studentId, isApproved }) {
+  async respondGuestPermission(managerHostelId, recordedBy, { requestId, studentId, isApproved }) {
+    let recordedByRole = 'manager';
+    if (typeof recordedBy === 'string') {
+      const lower = recordedBy.toLowerCase();
+      if (lower === 'admin' || lower === 'superadmin') {
+        recordedByRole = 'admin';
+      } else if (lower === 'manager') {
+        recordedByRole = 'manager';
+      }
+    } else if (recordedBy && typeof recordedBy === 'object') {
+      const role = recordedBy.role?.toLowerCase();
+      if (role === 'admin' || role === 'superadmin') {
+        recordedByRole = 'admin';
+      } else if (role === 'manager') {
+        recordedByRole = 'manager';
+      }
+    }
+
+    const resolverId = (recordedBy && typeof recordedBy === 'object') ? recordedBy._id : recordedBy;
+
     // 🛡️ ANTI-DUPLICATE GUARD: Prevent the same request from ever being accepted or declined twice
     if (requestId) {
       const existingResolution = resolvedRequestsMap.get(requestId);
@@ -910,7 +929,7 @@ class MealRecordService {
 
       resolvedRequestsMap.set(requestId, {
         status: isApproved ? 'accepted' : 'declined',
-        resolvedBy: recordedById,
+        resolvedBy: resolverId,
         timestamp: Date.now()
       });
       // Retain resolved memory for 10 minutes then free memory
@@ -932,7 +951,7 @@ class MealRecordService {
         studentId,
         isApproved: false,
         status: 'declined',
-        resolvedBy: recordedById
+        resolvedBy: resolverId
       });
 
       return { status: 'success', message: 'Request declined.' };
@@ -947,7 +966,7 @@ class MealRecordService {
 
     const mealData = await this.calculateCurrentMeal(managerHostelId);
     const isGuest = student.hostelId.toString() !== managerHostelId.toString();
-    
+
     // Find existing record to preserve selection count if any
     const existingRecord = await mealRecordRepository.findSingleRecord({
       hostelId: managerHostelId,
@@ -969,7 +988,7 @@ class MealRecordService {
           isGuest,
           'attendance.hasEaten': true,
           'attendance.method': 'Manual',
-          'attendance.recordedBy': recordedById
+          'attendance.recordedBy': recordedByRole
         },
         $setOnInsert: {
           'selection.hasSelected': existingRecord?.selection?.hasSelected || false,
@@ -986,7 +1005,7 @@ class MealRecordService {
       name: student.name,
       isGuest,
       mealType: mealData.mealType,
-      date: mealData.date, 
+      date: mealData.date,
       count: record.attendance.count,
       selectionCount: record.selection?.count || 0
     });
@@ -1016,7 +1035,7 @@ class MealRecordService {
       studentId,
       isApproved: true,
       status: 'accepted',
-      resolvedBy: recordedById
+      resolvedBy: resolverId
     });
 
     return {
@@ -1027,7 +1046,7 @@ class MealRecordService {
     };
   }
 
-  async scanStudentQR(managerHostelId, recordedById, studentRollNumber) {
+  async scanStudentQR(managerHostelId, recordedBy, studentRollNumber) {
     const student = await mealRecordRepository.findStudentByRollNumber(studentRollNumber);
     if (!student) {
       const error = new Error('Student not found.');
@@ -1041,13 +1060,33 @@ class MealRecordService {
       throw error;
     }
 
-    // 1. Verify that a meal is actively being served right now
-    const mealData = await this.calculateCurrentMeal(managerHostelId);
+    // Determine the recorder's role: 'admin' if admin/superadmin, otherwise 'manager'
+    let recordedByRole = 'manager';
+    if (typeof recordedBy === 'string') {
+      const lower = recordedBy.toLowerCase();
+      if (lower === 'admin' || lower === 'superadmin') {
+        recordedByRole = 'admin';
+      } else if (lower === 'manager') {
+        recordedByRole = 'manager';
+      }
+    } else if (recordedBy && typeof recordedBy === 'object') {
+      const role = recordedBy.role?.toLowerCase();
+      if (role === 'admin' || role === 'superadmin') {
+        recordedByRole = 'admin';
+      } else if (role === 'manager') {
+        recordedByRole = 'manager';
+      }
+    }
 
-    if (student.hostelId.toString() === managerHostelId.toString()) {
+    const targetHostelId = managerHostelId || student.hostelId;
+
+    // 1. Verify that a meal is actively being served right now
+    const mealData = await this.calculateCurrentMeal(targetHostelId);
+
+    if (student.hostelId.toString() === targetHostelId.toString()) {
       // Find existing record to preserve selection count if any
       const existingRecord = await mealRecordRepository.findSingleRecord({
-        hostelId: managerHostelId,
+        hostelId: targetHostelId,
         date: mealData.date,
         mealType: mealData.mealType,
         rollNumber: student.id
@@ -1055,10 +1094,10 @@ class MealRecordService {
 
       // Same hostel, force upsert
       const record = await mealRecordRepository.findOneAndUpdate(
-        { hostelId: managerHostelId, date: mealData.date, mealType: mealData.mealType, rollNumber: student.id },
+        { hostelId: targetHostelId, date: mealData.date, mealType: mealData.mealType, rollNumber: student.id },
         {
           $set: {
-            hostelId: managerHostelId,
+            hostelId: targetHostelId,
             date: mealData.date,
             mealType: mealData.mealType,
             mealInfo: mealData.mealInfo,
@@ -1067,7 +1106,7 @@ class MealRecordService {
             isGuest: false,
             'attendance.hasEaten': true,
             'attendance.method': 'QR',
-            'attendance.recordedBy': recordedById
+            'attendance.recordedBy': recordedByRole
           },
           $setOnInsert: {
             'selection.hasSelected': existingRecord?.selection?.hasSelected || false,
@@ -1078,20 +1117,22 @@ class MealRecordService {
         { upsert: true, new: true }
       );
 
-      io.to(`hostel:${managerHostelId}`).emit('attendance_success', {
+      io.to(`hostel:${targetHostelId}`).emit('attendance_success', {
         rollNumber: student.id,
         name: student.name,
         isGuest: false,
         mealType: mealData.mealType,
         date: mealData.date,
         count: record.attendance.count,
-        selectionCount: record.selection?.count || 0
+        selectionCount: record.selection?.count || 0,
+        recordedBy: record.attendance.recordedBy
       });
 
       return {
         status: 'success',
         message: 'Attendance marked successfully.',
-        data: mealData
+        data: mealData,
+        record
       };
     } else {
       // Different hostel, UI should prompt manager

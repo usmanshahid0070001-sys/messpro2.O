@@ -197,7 +197,7 @@ export const respondGuestPermission = catchAsync(async (req, res) => {
 
   const result = await mealRecordService.respondGuestPermission(
     managerHostelId,
-    req.user._id,
+    req.user,
     payload
   );
 
@@ -207,11 +207,11 @@ export const respondGuestPermission = catchAsync(async (req, res) => {
 export const scanStudentQR = catchAsync(async (req, res) => {
   const parsed = scanStudentQRSchema.parse(req.body);
   const studentIdentifier = parsed.studentRollNumber || parsed.studentId || parsed.rollNumber || parsed.id;
-  const managerHostelId = req.user.hostelId;
+  const managerHostelId = req.user.hostelId || req.body.hostelId;
 
   const result = await mealRecordService.scanStudentQR(
     managerHostelId,
-    req.user._id,
+    req.user,
     studentIdentifier
   );
 

@@ -33,7 +33,6 @@ class MealRecordRepository {
 
   async getPopulatedAttendance(filter) {
     return MealRecord.find(filter)
-      .populate('attendance.recordedBy', 'name email')
       .populate('studentId', 'name id roomNumber')
       .lean();
   }
