@@ -105,6 +105,7 @@ export interface ScanManagerQRSuccessResponse {
     _id?: string
     date: string
     mealType: string
+    mealCode?: string
     mealInfo?: {
       name: string
       price: number
@@ -118,6 +119,14 @@ export interface ScanManagerQRSuccessResponse {
       count: number
       method?: string
     }
+  }
+  data?: {
+    meal?: string
+    mealType?: string
+    mealCode?: string
+    price?: number
+    count?: number
+    date?: string
   }
 }
 

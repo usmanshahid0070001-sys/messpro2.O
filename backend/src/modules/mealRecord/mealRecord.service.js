@@ -45,6 +45,53 @@ const permissionCooldownMap = new Map();
 // In-memory map to prevent duplicate acceptance/rejection of the same request
 const resolvedRequestsMap = new Map();
 
+/**
+ * Deterministic daily meal verification code generator.
+ * Produces an authoritative 3-digit code [100 - 999] per hostel, date, and meal session.
+ */
+export function generateDailyMealCode(dateInput = new Date(), mealTypeInput, secret = '') {
+  let dateStr;
+  let dateObj;
+
+  if (typeof dateInput === 'string') {
+    dateStr = dateInput.trim().slice(0, 10);
+    dateObj = new Date(dateInput);
+    if (isNaN(dateObj.getTime())) {
+      dateObj = new Date();
+    }
+  } else if (dateInput instanceof Date && !isNaN(dateInput.getTime())) {
+    dateObj = dateInput;
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    dateStr = `${y}-${m}-${d}`;
+  } else {
+    dateObj = new Date();
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    dateStr = `${y}-${m}-${d}`;
+  }
+
+  let meal = (mealTypeInput || '').toLowerCase().trim();
+  if (!meal) {
+    const hours = dateObj.getHours();
+    if (hours < 11) meal = 'breakfast';
+    else if (hours < 16) meal = 'lunch';
+    else meal = 'dinner';
+  }
+
+  const payload = secret ? `${dateStr}:${meal}:${secret}` : `${dateStr}:${meal}`;
+  let hash = 5381;
+  for (let i = 0; i < payload.length; i++) {
+    hash = ((hash << 5) + hash) + payload.charCodeAt(i);
+    hash = hash & hash;
+  }
+
+  const threeDigitNumber = 100 + (Math.abs(hash) % 900);
+  return String(threeDigitNumber);
+}
+
 class MealRecordService {
   // ==========================================
   // 1. STUDENT FEATURE: SELECT MEAL IN ADVANCE
@@ -459,6 +506,7 @@ class MealRecordService {
       name: student.name,
       isGuest,
       mealType: mealData.mealType,
+      mealCode: mealData.mealCode,
       date: mealData.date,
       count: record.attendance.count,
       selectionCount: record.selection?.count || 0
@@ -469,6 +517,7 @@ class MealRecordService {
       meal: mealData.mealInfo?.name || 'Regular Meal',
       mealInfo: mealData.mealInfo,
       date: mealData.date,
+      mealCode: mealData.mealCode,
       count: record.attendance.count,
       attendance: {
         hasEaten: true,
@@ -485,6 +534,7 @@ class MealRecordService {
       data: {
         meal: mealData.mealInfo.name,
         mealType: mealData.mealType,
+        mealCode: mealData.mealCode,
         price: mealData.mealInfo.price,
         count: record.attendance.count,
         date: mealData.date
@@ -503,10 +553,30 @@ class MealRecordService {
       error.statusCode = 404;
       throw error;
     }
+
+    let currentMeal = 'None';
+    let currentMealCode = null;
+    let todayDate = new Date().toISOString().split('T')[0];
+
+    try {
+      const currentMealData = await this.calculateCurrentMeal(hostelId);
+      currentMeal = currentMealData.mealType;
+      currentMealCode = currentMealData.mealCode;
+      todayDate = currentMealData.date;
+    } catch {
+      const timezone = getSafeTimezone(hostel?.location);
+      todayDate = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(new Date());
+    }
+
     return {
       hostelId: hostel._id.toString(),
       h: hostel._id.toString(),
-      s: hostel.qrSecret || undefined
+      s: hostel.qrSecret || undefined,
+      currentMeal,
+      currentMealCode,
+      todayDate
     };
   }
 
@@ -601,10 +671,13 @@ class MealRecordService {
       price: menuItem?.price || 0
     };
 
+    const mealCode = generateDailyMealCode(localDateStr, mealType, hostel.qrSecret);
+
     return {
       date: localDateStr,
       mealType,
       mealInfo,
+      mealCode,
       maxMealSelection: schedule.maxMealSelection || 1,
       servingTime: servingTimes[selectedMealIndex] || null
     };
@@ -690,9 +763,25 @@ class MealRecordService {
       });
     });
 
+    const hostel = await hostelService.getHostelById(hostelId);
+    const mealCodes = {};
+    mealTypes.forEach(mt => {
+      const code = generateDailyMealCode(activeDate, mt, hostel?.qrSecret);
+      mealCodes[mt] = code;
+      if (resultData[mt]?.summary) {
+        resultData[mt].summary.mealCode = code;
+      }
+    });
+
+    const currentMealCode = currentMealData.mealType !== 'None'
+      ? generateDailyMealCode(activeDate, currentMealData.mealType, hostel?.qrSecret)
+      : null;
+
     return {
       date: activeDate,
       currentMeal: currentMealData.mealType,
+      currentMealCode,
+      mealCodes,
       mealTypes,
       data: resultData
     };
@@ -757,9 +846,20 @@ class MealRecordService {
       });
     });
 
+    const hostelDoc = await hostelService.getHostelById(hostelId);
+    const dailyMealCodes = {};
+    mealTypes.forEach(mt => {
+      const code = generateDailyMealCode(targetDate, mt, hostelDoc?.qrSecret);
+      dailyMealCodes[mt] = code;
+      if (resultData[mt]?.summary) {
+        resultData[mt].summary.mealCode = code;
+      }
+    });
+
     return {
       date: targetDate,
       mealTypes,
+      mealCodes: dailyMealCodes,
       data: resultData
     };
   }
@@ -1005,6 +1105,7 @@ class MealRecordService {
       name: student.name,
       isGuest,
       mealType: mealData.mealType,
+      mealCode: mealData.mealCode,
       date: mealData.date,
       count: record.attendance.count,
       selectionCount: record.selection?.count || 0
@@ -1021,6 +1122,7 @@ class MealRecordService {
         meal: mealData.mealInfo?.name || 'Regular Meal',
         count: record.attendance.count,
         date: mealData.date,
+        mealCode: mealData.mealCode,
         attendance: {
           hasEaten: true,
           count: record.attendance.count,

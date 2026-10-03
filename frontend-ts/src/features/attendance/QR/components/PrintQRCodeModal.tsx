@@ -463,9 +463,9 @@ export default function PrintQRCodeModal({
                         <div className="w-5 h-5 rounded-full bg-black text-white font-bold flex items-center justify-center mx-auto mb-1 text-[11px]">
                           3
                         </div>
-                        <span className="font-bold block text-[11px]">Collect Meal</span>
+                        <span className="font-bold block text-[11px]">Show Verified Code</span>
                         <span className="text-[10px] text-zinc-500 leading-tight block mt-0.5">
-                          Confirmation beep sounds on approval
+                          Present live 3-digit meal code on screen
                         </span>
                       </div>
                     </div>

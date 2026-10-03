@@ -578,8 +578,15 @@ export default function QRAttendancePage() {
         currentMealName !== 'Active Meal' &&
         mealName.toLowerCase() === currentMealName?.toLowerCase();
 
+      const mealCode =
+        mealData.summary?.mealCode ||
+        liveData?.mealCodes?.[mealName] ||
+        dailyOverview?.mealCodes?.[mealName] ||
+        generateDailyMealCode(selectedDate, mealName);
+
       return {
         mealName,
+        mealCode,
         isCurrent,
         preReservedCount,
         preReservedAttendanceCount,
@@ -592,7 +599,20 @@ export default function QRAttendancePage() {
         totalRecords: students.length,
       };
     });
-  }, [liveData, dailyOverview, currentMealName]);
+  }, [liveData, dailyOverview, currentMealName, selectedDate]);
+
+  // Authoritative active meal code from backend (with local deterministic fallback)
+  const activeMealCode = useMemo(() => {
+    if (liveData?.currentMealCode) return liveData.currentMealCode;
+    if (currentMealName && currentMealName !== 'None' && currentMealName !== 'Active Meal') {
+      return (
+        liveData?.mealCodes?.[currentMealName] ||
+        dailyOverview?.mealCodes?.[currentMealName] ||
+        generateDailyMealCode(selectedDate, currentMealName)
+      );
+    }
+    return generateDailyMealCode(selectedDate, 'Dinner');
+  }, [liveData, dailyOverview, currentMealName, selectedDate]);
 
   const activeMealData = useMemo(() => {
     if (!liveData?.data) return { summary: { totalSelections: 0, totalAttendance: 0 }, data: [] };
@@ -823,6 +843,20 @@ export default function QRAttendancePage() {
                   />
                 </div>
 
+                {/* Active Session Verification Meal Code Display */}
+                <div className="w-full p-3 sm:p-4 rounded-2xl bg-emerald-500/[0.08] dark:bg-emerald-950/30 border border-emerald-500/30 text-center space-y-1">
+                  <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Active Counter Meal Code
+                  </div>
+                  <div className="text-3xl sm:text-4xl font-black font-mono tracking-widest text-foreground select-all">
+                    {activeMealCode}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Cross-check this 3-digit code on students&apos; confirmation cards
+                  </p>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setIsPrintModalOpen(true)}
@@ -913,8 +947,9 @@ export default function QRAttendancePage() {
                         </div>
 
                         <div className="text-right">
-                          <span className="text-xs font-bold text-foreground font-mono">
-                            Meal Code: {generateDailyMealCode(selectedDate, meal.mealName)}
+                          <span className="text-[10px] font-medium text-muted-foreground block">Verification Code</span>
+                          <span className="inline-block px-2.5 py-0.5 rounded-lg bg-foreground/5 border border-border text-xs sm:text-sm font-black text-foreground font-mono">
+                            {meal.mealCode}
                           </span>
                         </div>
                       </div>

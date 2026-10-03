@@ -23,8 +23,12 @@ import {
 } from '@/hooks/mutations/useMealMutations';
 import QRCodeSVG from './components/QRCodeSVG';
 import { QRReaderEngine } from './utils/qrReaderEngine';
-import { playScanSuccessSound, playScanNoticeSound, triggerHaptic } from './utils/qrFeedback';
 import { socketClient } from '@/lib/socket';
+import {
+  AttendanceConfirmationCard,
+  type AttendanceConfirmationData,
+} from './components/AttendanceConfirmationCard';
+import { playScanSuccessSound, playScanNoticeSound, triggerHaptic } from './utils/qrFeedback';
 
 // ── Helper: Safe Manager QR Payload Parser ──────────────────────────────
 export function parseManagerQRPayload(rawText: string): { h: string; s?: string } | null {
@@ -75,6 +79,55 @@ export function parseManagerQRPayload(rawText: string): { h: string; s?: string 
   return null;
 }
 
+export function generateDailyMealCode(
+  dateInput: Date | string = new Date(),
+  mealTypeInput?: string
+): string {
+  let dateStr: string;
+  let dateObj: Date;
+
+  if (typeof dateInput === 'string') {
+    dateStr = dateInput.trim().slice(0, 10);
+    dateObj = new Date(dateInput);
+    if (isNaN(dateObj.getTime())) {
+      dateObj = new Date();
+    }
+  } else if (dateInput instanceof Date && !isNaN(dateInput.getTime())) {
+    dateObj = dateInput;
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    dateStr = `${y}-${m}-${d}`;
+  } else {
+    dateObj = new Date();
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    dateStr = `${y}-${m}-${d}`;
+  }
+
+  // Resolve mealType: use provided string or detect automatically by time of day
+  let meal = (mealTypeInput || '').toLowerCase().trim();
+  if (!meal) {
+    const hours = dateObj.getHours();
+    if (hours < 11) meal = 'breakfast';
+    else if (hours < 16) meal = 'lunch';
+    else meal = 'dinner';
+  }
+
+  // Deterministic DJB2 hash over "YYYY-MM-DD:meal"
+  const payload = `${dateStr}:${meal}`;
+  let hash = 5381;
+  for (let i = 0; i < payload.length; i++) {
+    hash = ((hash << 5) + hash) + payload.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+
+  // Map to guaranteed 3-digit range [100 - 999]
+  const threeDigitNumber = 100 + (Math.abs(hash) % 900);
+  return String(threeDigitNumber);
+}
+
 export default function StudentAttendancePage() {
   const { user } = useSelector((state: RootState) => state.auth);
   const { currentHostel } = useSelector((state: RootState) => state.hostel);
@@ -87,11 +140,11 @@ export default function StudentAttendancePage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
 
-  // ── Results, Prompts & Errors ────────────────────────────────────────
+  // ── Results, Prompts & Confirmation Card ────────────────────────────
   const [permissionPrompt, setPermissionPrompt] =
     useState<ScanManagerQRPermissionResponse | null>(null);
-  const [successRecord, setSuccessRecord] = useState<any | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [confirmationResult, setConfirmationResult] =
+    useState<AttendanceConfirmationData | null>(null);
   const [isWaitingForManager, setIsWaitingForManager] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const countdownTimerRef = useRef<any>(null);
@@ -104,6 +157,11 @@ export default function StudentAttendancePage() {
   const requestPermissionMutation = useRequestGuestPermission();
 
   // Connect socket and listen for real-time manager approval/decline responses
+
+  const daytocount = (date?: string | Date, mealType?: string) => {
+    return generateDailyMealCode(date, mealType);
+  };
+
   useEffect(() => {
     socketClient.connect();
 
@@ -117,11 +175,34 @@ export default function StudentAttendancePage() {
       if (res.isApproved) {
         playScanSuccessSound();
         triggerHaptic('success');
-        setSuccessRecord(res.record || { meal: 'Approved Meal', count: 1 });
+        const rec = res.record || {};
+        setConfirmationResult({
+          type: 'verified',
+          mealCode: rec.mealCode || generateDailyMealCode(rec.date, rec.mealType),
+          date: rec.date,
+          mealType: rec.mealType,
+          mealName: rec.meal || rec.mealInfo?.name || 'Standard Menu',
+          portionCount: rec.count || rec.attendance?.count || 1,
+          statusText: 'Approved by Manager & Logged',
+          studentName: user?.name,
+          rollNumber: user?.id,
+          message: res.message || 'Manager approved your dining request!',
+        });
         toast.success(res.message || 'Manager approved your dining request!');
       } else {
         triggerHaptic('error');
-        setErrorMessage(res.message || 'Your dining request was declined by the manager or admin.');
+        setConfirmationResult({
+          type: 'declined',
+          mealCode: null,
+          date: new Date().toISOString().split('T')[0],
+          mealType: 'Dining Request',
+          mealName: 'Access Refused',
+          portionCount: 0,
+          statusText: 'Declined by Manager',
+          studentName: user?.name,
+          rollNumber: user?.id,
+          message: res.message || 'Your dining request was declined by the manager or admin.',
+        });
         toast.error('Dining request was declined.');
       }
     });
@@ -130,11 +211,11 @@ export default function StudentAttendancePage() {
       unbind();
       clearInterval(countdownTimerRef.current);
     };
-  }, []);
+  }, [user]);
 
   // ── 1. Process Scanned QR Payload (Instant Execution) ────────────────
   const processScannedData = (rawScannedText: string) => {
-    if (isVerifying || permissionPrompt || successRecord) return;
+    if (isVerifying || permissionPrompt || confirmationResult) return;
 
     const qrData = parseManagerQRPayload(rawScannedText);
 
@@ -157,7 +238,7 @@ export default function StudentAttendancePage() {
     }
     stopCamera();
     setIsVerifying(true);
-    setErrorMessage(null);
+    setConfirmationResult(null);
 
     scanManagerMutation.mutate(
       {
@@ -177,18 +258,66 @@ export default function StudentAttendancePage() {
           } else {
             playScanSuccessSound();
             triggerHaptic('success');
-            setSuccessRecord((res as any).record || (res as any).data);
+            const rec = (res as any).record || (res as any).data || {};
+            setConfirmationResult({
+              type: 'verified',
+              mealCode: rec.mealCode || generateDailyMealCode(rec.date, rec.mealType),
+              date: rec.date,
+              mealType: rec.mealType,
+              mealName: rec.mealInfo?.name || rec.meal || 'Standard Menu',
+              portionCount: rec.attendance?.count || rec.count || 1,
+              statusText: 'Claimed & Logged',
+              studentName: user?.name,
+              rollNumber: user?.id,
+              message: res.message || 'Attendance marked successfully.',
+            });
           }
         },
         onError: (err: any) => {
           setIsVerifying(false);
           triggerHaptic('error');
-          const msg =
-            err?.response?.data?.message ||
-            err?.message ||
-            'Meal verification was rejected by the server.';
-          setErrorMessage(msg);
-          toast.error(msg);
+
+          const isNetworkProblem =
+            !err?.response ||
+            err?.code === 'ERR_NETWORK' ||
+            (typeof navigator !== 'undefined' && !navigator.onLine) ||
+            err?.message?.toLowerCase().includes('network');
+
+          if (isNetworkProblem) {
+            setConfirmationResult({
+              type: 'network_error',
+              mealCode: null,
+              date: new Date().toISOString().split('T')[0],
+              mealType: 'Active Session',
+              mealName: 'Connection Timeout',
+              portionCount: 0,
+              statusText: 'Unconfirmed (Offline)',
+              studentName: user?.name,
+              rollNumber: user?.id,
+              message:
+                'Unable to reach attendance server. Please verify your WiFi or mobile data connection and scan again.',
+            });
+            toast.error('Network connection error.');
+          } else {
+            const msg =
+              err?.response?.data?.message ||
+              err?.message ||
+              'Meal verification was rejected by the server.';
+
+            setConfirmationResult({
+              type: 'declined',
+              mealCode: null,
+              date: new Date().toISOString().split('T')[0],
+              mealType: 'Active Session',
+              mealName: 'Access Denied',
+              portionCount: 0,
+              statusText: 'Declined / Access Refused',
+              studentName: user?.name,
+              rollNumber: user?.id,
+              message: msg,
+            });
+            toast.error(msg);
+          }
         },
       }
     );
@@ -198,8 +327,7 @@ export default function StudentAttendancePage() {
   const startCamera = async () => {
     setCameraError(null);
     setPermissionPrompt(null);
-    setSuccessRecord(null);
-    setErrorMessage(null);
+    setConfirmationResult(null);
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setCameraError(
@@ -288,9 +416,19 @@ export default function StudentAttendancePage() {
         setIsWaitingForManager(false);
         setPermissionPrompt(null);
         triggerHaptic('warning');
-        setErrorMessage(
-          'Request timed out after 30 seconds. No manager or admin responded. Please approach the dining counter directly.'
-        );
+        setConfirmationResult({
+          type: 'declined',
+          mealCode: null,
+          date: new Date().toISOString().split('T')[0],
+          mealType: 'Dining Request',
+          mealName: 'Request Timed Out',
+          portionCount: 0,
+          statusText: 'No Manager Response',
+          studentName: user?.name,
+          rollNumber: user?.id,
+          message:
+            'Request timed out after 30 seconds. No manager or admin responded. Please approach the dining counter directly.',
+        });
         toast.error('Permission request timed out.');
       }
     }, 1000);
@@ -353,11 +491,10 @@ export default function StudentAttendancePage() {
           onClick={() => {
             setActiveTab('scan');
           }}
-          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'scan'
+          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'scan'
               ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Scan className="w-4 h-4" />
           <span>Scan Manager QR</span>
@@ -369,11 +506,10 @@ export default function StudentAttendancePage() {
             stopCamera();
             setActiveTab('my-qr');
           }}
-          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'my-qr'
+          className={`flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'my-qr'
               ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <QrCode className="w-4 h-4" />
           <span>My QR Code</span>
@@ -383,67 +519,18 @@ export default function StudentAttendancePage() {
       {/* ── TAB 1: SCAN MANAGER QR ───────────────────────────────────── */}
       {activeTab === 'scan' && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          {/* Success State */}
-          {successRecord ? (
-            <div className="bg-card border border-emerald-500/30 p-6 sm:p-8 rounded-2xl shadow-lg text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-xs">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-                  Verification Successful
-                </span>
-                <h2 className="text-2xl font-bold text-foreground mt-1">
-                  Attendance Marked!
-                </h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Your meal portion has been claimed and registered in the hostel ledger.
-                </p>
-              </div>
-
-              {/* Meal Details Box */}
-              <div className="p-4 rounded-xl bg-muted/40 border border-border text-left space-y-2 text-xs max-w-md mx-auto">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Meal Session:</span>
-                  <span className="font-bold text-foreground">
-                    {successRecord.mealType} &bull; {successRecord.mealInfo?.name || successRecord.meal || 'Standard Menu'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Portions Taken:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {successRecord.attendance?.count || successRecord.count || 1} portion(s)
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Status:</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">Claimed & Logged</span>
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSuccessRecord(null);
-                    startCamera();
-                  }}
-                  className="px-5 py-2.5 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-foreground transition-all cursor-pointer"
-                >
-                  Scan Another
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSuccessRecord(null);
-                  }}
-                  className="px-6 py-2.5 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer"
-                >
-                  Done
-                </button>
-              </div>
-            </div>
+          {/* Unified Confirmation Card (Verified / Declined / Network Problem) */}
+          {confirmationResult ? (
+            <AttendanceConfirmationCard
+              data={confirmationResult}
+              onScanAgain={() => {
+                setConfirmationResult(null);
+                startCamera();
+              }}
+              onDone={() => {
+                setConfirmationResult(null);
+              }}
+            />
           ) : permissionPrompt ? (
             /* Permission Required Dialog */
             <div className="bg-card border border-amber-500/30 p-6 sm:p-8 rounded-2xl shadow-lg text-center space-y-4">
@@ -459,8 +546,8 @@ export default function StudentAttendancePage() {
                   {permissionPrompt.reason === 'guest'
                     ? 'Cross-Hostel Dining Request'
                     : permissionPrompt.reason === 'extra_meal'
-                    ? 'Extra Meal Limit Reached'
-                    : 'Unreserved Walk-In Meal'}
+                      ? 'Extra Meal Limit Reached'
+                      : 'Unreserved Walk-In Meal'}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
                   {permissionPrompt.message}
@@ -519,49 +606,6 @@ export default function StudentAttendancePage() {
                 </div>
               )}
             </div>
-          ) : errorMessage ? (
-            /* Error / Outside Serving Hours Dialog */
-            <div className="bg-card border border-destructive/30 p-6 sm:p-8 rounded-2xl shadow-lg text-center space-y-4 animate-in zoom-in-95 duration-150">
-              <div className="w-16 h-16 rounded-full bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto shadow-xs">
-                {errorMessage.includes('suspended') ? (
-                  <ShieldAlert className="w-8 h-8" />
-                ) : errorMessage.includes('serving') || errorMessage.includes('time') ? (
-                  <Clock className="w-8 h-8" />
-                ) : (
-                  <AlertCircle className="w-8 h-8" />
-                )}
-              </div>
-
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-destructive">
-                  Meal Access Notice
-                </span>
-                <h2 className="text-xl font-bold text-foreground mt-1">
-                  {errorMessage.includes('suspended')
-                    ? 'Account Suspended'
-                    : errorMessage.includes('serving') || errorMessage.includes('time')
-                    ? 'Dining Hall Currently Closed'
-                    : 'Attendance Not Marked'}
-                </h2>
-                <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
-                  {errorMessage}
-                </p>
-              </div>
-
-              <div className="pt-2 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setErrorMessage(null);
-                    startCamera();
-                  }}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer active:scale-95"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Scan Again</span>
-                </button>
-              </div>
-            </div>
           ) : (
             /* Camera Viewfinder & Scan Controller */
             <div className="bg-card border border-border p-6 sm:p-8 rounded-2xl shadow-xs text-center space-y-6">
@@ -576,7 +620,7 @@ export default function StudentAttendancePage() {
                       playsInline
                       muted
                       onLoadedMetadata={() => {
-                        videoRef.current?.play().catch(() => {});
+                        videoRef.current?.play().catch(() => { });
                       }}
                     />
 

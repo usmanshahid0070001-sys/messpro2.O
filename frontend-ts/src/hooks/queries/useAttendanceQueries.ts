@@ -95,6 +95,7 @@ export interface LiveMealTypeData {
   summary: {
     totalSelections: number;
     totalAttendance: number;
+    mealCode?: string;
   };
   data: LiveStudentAttendanceItem[];
 }
@@ -102,6 +103,8 @@ export interface LiveMealTypeData {
 export interface LiveQRAttendanceData {
   date: string;
   currentMeal: string;
+  currentMealCode?: string | null;
+  mealCodes?: Record<string, string>;
   mealTypes: string[];
   data: Record<string, LiveMealTypeData>;
 }
@@ -125,6 +128,7 @@ export const useGetLiveQRAttendance = (date?: string, enabled: boolean = true) =
 export interface DailyOverviewData {
   date: string;
   mealTypes: string[];
+  mealCodes?: Record<string, string>;
   data: Record<string, LiveMealTypeData>;
 }
 
