@@ -44,6 +44,55 @@ import { socketClient } from '@/lib/socket';
 
 type ActiveTab = 'counter' | 'scanner' | 'live' | 'overview';
 
+export function generateDailyMealCode(
+  dateInput: Date | string = new Date(),
+  mealTypeInput?: string
+): string {
+  let dateStr: string;
+  let dateObj: Date;
+
+  if (typeof dateInput === 'string') {
+    dateStr = dateInput.trim().slice(0, 10);
+    dateObj = new Date(dateInput);
+    if (isNaN(dateObj.getTime())) {
+      dateObj = new Date();
+    }
+  } else if (dateInput instanceof Date && !isNaN(dateInput.getTime())) {
+    dateObj = dateInput;
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    dateStr = `${y}-${m}-${d}`;
+  } else {
+    dateObj = new Date();
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    dateStr = `${y}-${m}-${d}`;
+  }
+
+  // Resolve mealType: use provided string or detect automatically by time of day
+  let meal = (mealTypeInput || '').toLowerCase().trim();
+  if (!meal) {
+    const hours = dateObj.getHours();
+    if (hours < 11) meal = 'breakfast';
+    else if (hours < 16) meal = 'lunch';
+    else meal = 'dinner';
+  }
+
+  // Deterministic DJB2 hash over "YYYY-MM-DD:meal"
+  const payload = `${dateStr}:${meal}`;
+  let hash = 5381;
+  for (let i = 0; i < payload.length; i++) {
+    hash = ((hash << 5) + hash) + payload.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+
+  // Map to guaranteed 3-digit range [100 - 999]
+  const threeDigitNumber = 100 + (Math.abs(hash) % 900);
+  return String(threeDigitNumber);
+}
+
 export default function QRAttendancePage() {
   const queryClient = useQueryClient();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -865,7 +914,7 @@ export default function QRAttendancePage() {
 
                         <div className="text-right">
                           <span className="text-xs font-bold text-foreground font-mono">
-                            Total: {meal.totalAttendance} Served
+                            Meal Code: {generateDailyMealCode(selectedDate, meal.mealName)}
                           </span>
                         </div>
                       </div>
